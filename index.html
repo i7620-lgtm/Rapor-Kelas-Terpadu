@@ -48,7 +48,6 @@
         .sync-status-indicator.syncing { background-color: #f59e0b; /* amber-500 */ }
         .sync-status-indicator.error { background-color: #ef4444; /* red-500 */ }
     </style>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="bg-gray-100 text-gray-800">
 
@@ -1236,6 +1235,16 @@ document.addEventListener('DOMContentLoaded', () => {
         spreadsheetId: null,
 
         STORAGE_KEY: 'digitalReportApp',
+        
+        SHEET_NAMES: {
+            SETTINGS: 'Settings',
+            STUDENTS: 'Students',
+            GRADES: 'Grades',
+            EXTRAS: 'Extracurricular',
+            ATTENDANCE: 'Attendance',
+            P5: 'P5Notes',
+            NOTES: 'TeacherNotes',
+        },
 
         getEmptyStudent() {
             return { id: '', nis: '', nisn: '', name: '', panggilan: '', ttl: '', jenisKelamin: '', agama: '', kewarganegaraan: '', statusKeluarga: '', anakKe: '', asalTk: '', alamat: '', namaAyah: '', namaIbu: '', pekerjaanAyah: '', pekerjaanIbu: '', alamatOrtu: '', teleponOrtu: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '', namaWali: '', pekerjaanWali: '', alamatWali: '', teleponWali: '' };
@@ -1447,8 +1456,8 @@ document.addEventListener('DOMContentLoaded', () => {
         async findOrCreateSpreadsheet() {
             if (this.spreadsheetId) return this.spreadsheetId;
 
+            const fileName = 'Rapor Kelas Terpadu Data';
             try {
-                const fileName = 'Rapor Kelas Terpadu Data';
                 const response = await gapi.client.drive.files.list({
                     q: `name='${fileName}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
                     fields: 'files(id, name)',
@@ -1456,11 +1465,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.result.files && response.result.files.length > 0) {
                     this.spreadsheetId = response.result.files[0].id;
+                    const spreadsheet = await gapi.client.sheets.spreadsheets.get({
+                        spreadsheetId: this.spreadsheetId,
+                        fields: 'sheets.properties.title'
+                    });
+                    const existingSheets = spreadsheet.result.sheets.map(s => s.properties.title);
+                    const requiredSheets = Object.values(this.SHEET_NAMES);
+                    const missingSheets = requiredSheets.filter(name => !existingSheets.includes(name));
+
+                    if (missingSheets.length > 0) {
+                        this.updateSyncStatus('syncing', 'Menyiapkan sheet...');
+                        const requests = missingSheets.map(title => ({ addSheet: { properties: { title } } }));
+                        await gapi.client.sheets.spreadsheets.batchUpdate({
+                            spreadsheetId: this.spreadsheetId,
+                            resource: { requests }
+                        });
+                    }
+
+                    const oldSheet = spreadsheet.result.sheets.find(s => s.properties.title === '_AppData');
+                    if (oldSheet) {
+                        await gapi.client.sheets.spreadsheets.batchUpdate({
+                            spreadsheetId: this.spreadsheetId,
+                            resource: { requests: [{ deleteSheet: { sheetId: oldSheet.properties.sheetId } }] }
+                        });
+                    }
                     return this.spreadsheetId;
                 } else {
+                    this.updateSyncStatus('syncing', 'Membuat file baru...');
+                    const sheets = Object.values(this.SHEET_NAMES).map(title => ({ properties: { title } }));
                     const spreadsheet = await gapi.client.sheets.spreadsheets.create({
                         properties: { title: fileName },
-                        sheets: [{ properties: { title: '_AppData' }}]
+                        sheets: sheets
                     });
                     this.spreadsheetId = spreadsheet.result.spreadsheetId;
                     return this.spreadsheetId;
@@ -1476,41 +1511,136 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isLoggedIn) return;
 
             this.updateSyncStatus('syncing', fetchOnly ? 'Mengambil data...' : 'Menyimpan...');
-
             const spreadsheetId = await this.findOrCreateSpreadsheet();
             if (!spreadsheetId) return;
 
             try {
                 if (fetchOnly) {
-                    // Fetch data from Google Sheets
-                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                    const ranges = Object.values(this.SHEET_NAMES).map(name => `${name}!A:Z`);
+                    const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                         spreadsheetId: spreadsheetId,
-                        range: '_AppData!A1',
+                        ranges: ranges,
                     });
-                    const values = response.result.values;
-                    if (values && values.length > 0 && values[0][0]) {
-                        const cloudState = JSON.parse(values[0][0]);
-                        this.state = cloudState;
-                        // Important: force a reload of the current view to show new data
-                        this.navigateTo(window.location.hash || '#dashboard');
-                        alert('Data berhasil dimuat dari Google Sheets!');
-                        this.updateSyncStatus('synced', 'Sinkronisasi berhasil');
-                    } else {
-                        // No data in cloud, so we push the local data instead
+                    
+                    const valueRanges = response.result.valueRanges;
+                    const getSheetData = (sheetName) => {
+                        const sheetIndex = Object.keys(this.SHEET_NAMES).indexOf(Object.keys(this.SHEET_NAMES).find(key => this.SHEET_NAMES[key] === sheetName));
+                        return valueRanges[sheetIndex]?.values || [];
+                    };
+
+                    const settingsData = getSheetData(this.SHEET_NAMES.SETTINGS);
+                    const studentsData = getSheetData(this.SHEET_NAMES.STUDENTS);
+                    
+                    if (studentsData.length === 0 && settingsData.length === 0) {
                         this.updateSyncStatus('syncing', 'Data cloud kosong, menyimpan...');
                         await this.syncWithGoogleSheets(false);
+                        return;
                     }
+
+                    const newState = {};
+                    if (settingsData.length > 0 && settingsData[0][0]) newState.settings = JSON.parse(settingsData[0][0]);
+                    
+                    if (studentsData.length > 1) {
+                        const headers = studentsData[0];
+                        newState.students = studentsData.slice(1).map(row => {
+                            const student = {};
+                            headers.forEach((header, index) => { student[header] = row[index] !== undefined ? row[index] : ''; });
+                            return student;
+                        });
+                    } else { newState.students = []; }
+                    
+                    const gradesData = getSheetData(this.SHEET_NAMES.GRADES);
+                    const gradesMap = {};
+                    if (gradesData.length > 1) {
+                        gradesData.slice(1).forEach(row => {
+                            const [studentId, subjectName, gradesJson] = row;
+                            if (studentId && subjectName && gradesJson) {
+                                if (!gradesMap[studentId]) gradesMap[studentId] = {};
+                                try { gradesMap[studentId][subjectName] = JSON.parse(gradesJson); } catch (e) { console.warn(`Gagal parse nilai untuk ${studentId} - ${subjectName}`); }
+                            }
+                        });
+                    }
+                    newState.grades = gradesMap;
+
+                    const extrasData = getSheetData(this.SHEET_NAMES.EXTRAS);
+                    const extrasMap = {};
+                    if (extrasData.length > 1) {
+                        extrasData.slice(1).forEach(row => {
+                            const [studentId, extrasJson] = row;
+                            if (studentId && extrasJson) {
+                                try { extrasMap[studentId] = JSON.parse(extrasJson); } catch(e) { console.warn(`Gagal parse ekstrakurikuler untuk ${studentId}`); }
+                            }
+                        });
+                    }
+                    newState.extracurricularGrades = extrasMap;
+                    
+                    const attendanceData = getSheetData(this.SHEET_NAMES.ATTENDANCE);
+                    const attendanceMap = {};
+                    if (attendanceData.length > 1) {
+                        attendanceData.slice(1).forEach(row => {
+                            const [studentId, s, i, a] = row;
+                            if (studentId) attendanceMap[studentId] = { s: parseInt(s, 10) || 0, i: parseInt(i, 10) || 0, a: parseInt(a, 10) || 0 };
+                        });
+                    }
+                    newState.attendance = attendanceMap;
+                    
+                    const p5Data = getSheetData(this.SHEET_NAMES.P5);
+                    const p5Map = {};
+                    if(p5Data.length > 1) p5Data.slice(1).forEach(row => p5Map[row[0]] = row[1] || '');
+                    newState.p5Notes = p5Map;
+                    
+                    const notesData = getSheetData(this.SHEET_NAMES.NOTES);
+                    const notesMap = {};
+                    if(notesData.length > 1) notesData.slice(1).forEach(row => notesMap[row[0]] = row[1] || '');
+                    newState.teacherNotes = notesMap;
+
+                    this.state = newState;
+                    this.loadState();
+                    this.navigateTo(window.location.hash || '#dashboard');
+                    alert('Data berhasil dimuat dari Google Sheets!');
+                    this.updateSyncStatus('synced', 'Sinkronisasi berhasil');
+
                 } else {
-                    // Save data to Google Sheets
-                    const stateString = JSON.stringify(this.state);
-                    await gapi.client.sheets.spreadsheets.values.update({
+                    const data = [];
+                    data.push({ range: `${this.SHEET_NAMES.SETTINGS}!A1`, values: [[JSON.stringify(this.state.settings)]] });
+
+                    if (this.state.students.length > 0) {
+                        const studentHeaders = Object.keys(this.getEmptyStudent());
+                        const studentValues = this.state.students.map(s => studentHeaders.map(h => s[h]));
+                        data.push({ range: this.SHEET_NAMES.STUDENTS, values: [studentHeaders, ...studentValues] });
+                    }
+
+                    const gradesRows = [];
+                    for (const studentId in this.state.grades) {
+                        for (const subjectName in this.state.grades[studentId]) {
+                            gradesRows.push([studentId, subjectName, JSON.stringify(this.state.grades[studentId][subjectName])]);
+                        }
+                    }
+                    if (gradesRows.length > 0) data.push({ range: this.SHEET_NAMES.GRADES, values: [['studentId', 'subjectName', 'gradesJson'], ...gradesRows] });
+
+                    const extrasRows = Object.entries(this.state.extracurricularGrades).map(([studentId, arr]) => [studentId, JSON.stringify(arr)]);
+                    if (extrasRows.length > 0) data.push({ range: this.SHEET_NAMES.EXTRAS, values: [['studentId', 'extrasJson'], ...extrasRows] });
+                    
+                    const attendanceRows = Object.entries(this.state.attendance).map(([studentId, att]) => [studentId, att.s, att.i, att.a]);
+                    if (attendanceRows.length > 0) data.push({ range: this.SHEET_NAMES.ATTENDANCE, values: [['studentId', 'sakit', 'izin', 'alfa'], ...attendanceRows] });
+
+                    const p5Rows = Object.entries(this.state.p5Notes).map(([studentId, note]) => [studentId, note]);
+                     if (p5Rows.length > 0) data.push({ range: this.SHEET_NAMES.P5, values: [['studentId', 'note'], ...p5Rows] });
+
+                    const notesRows = Object.entries(this.state.teacherNotes).map(([studentId, note]) => [studentId, note]);
+                    if (notesRows.length > 0) data.push({ range: this.SHEET_NAMES.NOTES, values: [['studentId', 'note'], ...notesRows] });
+                    
+                    await gapi.client.sheets.spreadsheets.values.batchClear({
                         spreadsheetId: spreadsheetId,
-                        range: '_AppData!A1',
-                        valueInputOption: 'RAW',
-                        resource: {
-                            values: [[stateString]],
-                        },
+                        resource: { ranges: Object.values(this.SHEET_NAMES) }
                     });
+
+                    if (data.length > 0) {
+                        await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                            spreadsheetId: spreadsheetId,
+                            resource: { valueInputOption: 'RAW', data: data }
+                        });
+                    }
                     this.updateSyncStatus('synced', 'Tersimpan di Google');
                 }
             } catch (err) {
@@ -3517,6 +3647,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
