@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Aplikasi rapor kelas yang berjalan sepenuhnya offline di browser. Semua data dapat diimpor dan diekspor melalui file Excel untuk portabilitas." />
     <title>Rapor Kelas Terpadu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -88,7 +89,12 @@
             
             <!-- Dashboard View -->
             <section id="view-dashboard" class="view">
-                <h2 class="text-3xl font-bold mb-2">Dashboard</h2>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-3xl font-bold">Dashboard</h2>
+                    <div id="dashboard-sync-status" class="flex items-center text-sm bg-gray-200 px-3 py-1 rounded-full">
+                        <!-- Status will be injected by JS -->
+                    </div>
+                </div>
                 <p class="text-lg text-gray-600 mb-6">Selamat datang, <span id="dashboard-teacher-name" class="font-semibold"></span>!</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -141,6 +147,7 @@
                             <tr>
                                 <th class="p-3 w-16">No. Absen</th>
                                 <th class="p-3">Nama Lengkap</th>
+                                <th class="p-3">Nama Panggilan</th>
                                 <th class="p-3">NIS</th>
                                 <th class="p-3">NISN</th>
                                 <th class="p-3 w-56 text-center">Aksi</th>
@@ -249,12 +256,36 @@
                                 <input type="text" id="setting-schoolAddress" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
                             </div>
                             <div>
+                                <label for="setting-village" class="block text-sm font-medium text-gray-700 mb-1">Desa/Kelurahan</label>
+                                <input type="text" id="setting-village" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="setting-district" class="block text-sm font-medium text-gray-700 mb-1">Kecamatan</label>
+                                <input type="text" id="setting-district" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="setting-province" class="block text-sm font-medium text-gray-700 mb-1">Provinsi</label>
+                                <input type="text" id="setting-province" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="setting-postalCode" class="block text-sm font-medium text-gray-700 mb-1">Kode Pos</label>
+                                <input type="text" id="setting-postalCode" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
                                 <label for="setting-schoolEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Sekolah</label>
                                 <input type="email" id="setting-schoolEmail" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
                             </div>
                             <div>
                                 <label for="setting-schoolPhone" class="block text-sm font-medium text-gray-700 mb-1">Telepon Sekolah</label>
                                 <input type="tel" id="setting-schoolPhone" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="setting-website" class="block text-sm font-medium text-gray-700 mb-1">Website Sekolah</label>
+                                <input type="url" id="setting-website" placeholder="https://..." class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="setting-fax" class="block text-sm font-medium text-gray-700 mb-1">Faksimile</label>
+                                <input type="text" id="setting-fax" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Logo Sekolah</label>
@@ -286,8 +317,8 @@
                                 <input type="text" id="setting-semester" placeholder="e.g., Ganjil" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
                             </div>
                             <div>
-                                <label for="setting-reportDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Rapor</label>
-                                <input type="date" id="setting-reportDate" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
+                                <label for="setting-reportDate" class="block text-sm font-medium text-gray-700 mb-1">Tempat, Tanggal Rapor</label>
+                                <input type="text" id="setting-reportDate" placeholder="e.g., Jakarta, 17 Desember 2024" class="form-input w-full rounded-md border-gray-300 bg-gray-50 focus:border-blue-500 focus:ring-blue-500">
                             </div>
                         </div>
                     </fieldset>
@@ -1229,9 +1260,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         
         pendingGradeImport: null,
+        pendingExtraImport: null,
+        pendingAttendanceImport: null,
         selectedSubjectName: null,
         selectedGradeInputSubject: null,
-        selectedExtracurricularStudent: null,
         spreadsheetId: null,
 
         STORAGE_KEY: 'digitalReportApp',
@@ -1295,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const defaultSeniTariCps = this.seniTariCpsByGrade[defaultGrade] || [];
 
             return {
-                schoolName: 'SDN 1 Harapan Bangsa', npsn: '', schoolAddress: '', schoolEmail: '', schoolPhone: '', schoolLogo: '',
+                schoolName: 'SDN 1 Harapan Bangsa', npsn: '', schoolAddress: '', village: '', district: '', province: '', postalCode: '', schoolEmail: '', schoolPhone: '', website: '', fax: '', schoolLogo: '',
                 className: 'Kelas 4A', schoolYear: '2024/2025', semester: 'Ganjil', reportDate: '',
                 headmasterName: 'Nama Kepala Sekolah, M.Pd.', headmasterNip: '197001012000011001',
                 teacherName: 'Nama Wali Kelas, S.Pd.', teacherNip: '198001012010011001',
@@ -1538,8 +1570,38 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     const newState = {};
-                    if (settingsData.length > 0 && settingsData[0][0]) newState.settings = JSON.parse(settingsData[0][0]);
-                    
+                    const reconstructedSettings = {};
+                    if (settingsData.length > 1) { // has headers
+                        settingsData.slice(1).forEach(row => {
+                            if (!row || row.length < 2 || !row[0]) return;
+                            const key = row[0];
+                            let value = row[1];
+                            
+                            // Logic to handle both old JSON and new key-value format
+                             try {
+                                const parsedValue = JSON.parse(value);
+                                reconstructedSettings[key] = parsedValue;
+                            } catch (e) {
+                                // Not a JSON string, treat as regular value
+                                if (key.startsWith('gradeRanges.')) {
+                                    const subKey = key.split('.')[1];
+                                    if (!reconstructedSettings.gradeRanges) reconstructedSettings.gradeRanges = {};
+                                    const numVal = parseInt(value, 10);
+                                    reconstructedSettings.gradeRanges[subKey] = isNaN(numVal) ? 0 : numVal;
+                                } else {
+                                    const numVal = parseFloat(value);
+                                    const isStringifiedNum = String(value).trim() !== '' && String(numVal) === String(value).trim();
+                                    reconstructedSettings[key] = isStringifiedNum ? numVal : value;
+                                }
+                            }
+                        });
+                        newState.settings = reconstructedSettings;
+                    } else if (settingsData.length === 1 && settingsData[0].length === 1) { // Old format check
+                         try { newState.settings = JSON.parse(settingsData[0][0]); } 
+                         catch(e) { console.warn("Failed to parse old settings format"); }
+                    }
+
+
                     if (studentsData.length > 1) {
                         const headers = studentsData[0];
                         newState.students = studentsData.slice(1).map(row => {
@@ -1602,7 +1664,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     const data = [];
-                    data.push({ range: `${this.SHEET_NAMES.SETTINGS}!A1`, values: [[JSON.stringify(this.state.settings)]] });
+                    // New settings format
+                    const settingsValues = [];
+                    const settings = this.state.settings;
+                    Object.keys(settings).forEach(key => {
+                        const value = settings[key];
+                        if (typeof value === 'object' && value !== null) {
+                            settingsValues.push([key, JSON.stringify(value, null, 2)]);
+                        } else {
+                            settingsValues.push([key, value]);
+                        }
+                    });
+                    data.push({ range: `${this.SHEET_NAMES.SETTINGS}!A1`, values: [['key', 'value'], ...settingsValues] });
+
 
                     if (this.state.students.length > 0) {
                         const studentHeaders = Object.keys(this.getEmptyStudent());
@@ -1638,7 +1712,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.length > 0) {
                         await gapi.client.sheets.spreadsheets.values.batchUpdate({
                             spreadsheetId: spreadsheetId,
-                            resource: { valueInputOption: 'RAW', data: data }
+                            resource: { valueInputOption: 'USER_ENTERED', data: data }
                         });
                     }
                     this.updateSyncStatus('synced', 'Tersimpan di Google');
@@ -1651,13 +1725,57 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         updateSyncStatus(status, text) {
-            const indicator = document.getElementById('sync-status-indicator');
-            const statusText = document.getElementById('sync-status-text');
-            indicator.className = 'sync-status-indicator'; // reset
-            if (status === 'synced') indicator.classList.add('synced');
-            else if (status === 'syncing') indicator.classList.add('syncing');
-            else if (status === 'error') indicator.classList.add('error');
-            statusText.textContent = text;
+            // Sidebar update
+            const sidebarIndicator = document.getElementById('sync-status-indicator');
+            const sidebarStatusText = document.getElementById('sync-status-text');
+            sidebarIndicator.className = 'sync-status-indicator'; // reset
+            if (status === 'synced') sidebarIndicator.classList.add('synced');
+            else if (status === 'syncing') sidebarIndicator.classList.add('syncing');
+            else if (status === 'error') sidebarIndicator.classList.add('error');
+            sidebarStatusText.textContent = text;
+            
+            // Dashboard header update
+            const dashboardStatusContainer = document.getElementById('dashboard-sync-status');
+            if (dashboardStatusContainer) {
+                let indicatorClass = 'bg-gray-400';
+                let textColorClass = 'text-gray-600';
+                let statusMessage = 'Sinkronisasi Otomatis Nonaktif (Login untuk mengaktifkan).';
+                let bgColorClass = 'bg-gray-200';
+
+                if(isLoggedIn) {
+                    switch(status) {
+                        case 'synced':
+                            indicatorClass = 'bg-green-500';
+                            textColorClass = 'text-green-800';
+                            bgColorClass = 'bg-green-100';
+                            statusMessage = 'Sinkronisasi otomatis aktif dan data telah tersimpan.';
+                            break;
+                        case 'syncing':
+                            indicatorClass = 'bg-amber-500 animate-pulse';
+                            textColorClass = 'text-amber-800';
+                            bgColorClass = 'bg-amber-100';
+                            statusMessage = 'Menyimpan perubahan...';
+                            break;
+                        case 'error':
+                            indicatorClass = 'bg-red-500';
+                            textColorClass = 'text-red-800';
+                            bgColorClass = 'bg-red-100';
+                            statusMessage = 'Gagal sinkronisasi. Periksa koneksi Anda.';
+                            break;
+                        default: // disconnected state while logged in
+                             indicatorClass = 'bg-gray-400';
+                             textColorClass = 'text-gray-600';
+                             bgColorClass = 'bg-gray-200';
+                             statusMessage = 'Terputus. Sinkronisasi otomatis nonaktif.';
+                    }
+                }
+                
+                dashboardStatusContainer.className = `flex items-center text-sm px-3 py-1 rounded-full ${bgColorClass} ${textColorClass}`;
+                dashboardStatusContainer.innerHTML = `
+                    <span class="w-2 h-2 rounded-full mr-2 ${indicatorClass}"></span>
+                    <span class="font-medium">${statusMessage}</span>
+                `;
+            }
         },
 
         getFinalScore(scoreData) {
@@ -1681,6 +1799,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return Math.round(sum / numericScores.length);
         },
         
+        getPredicate(score) {
+            if (score == null) return '-';
+            score = parseInt(score, 10);
+            const { gradeRanges } = this.state.settings;
+            if (score >= gradeRanges.A) return 'A'; 
+            if (score >= gradeRanges.B) return 'B'; 
+            if (score >= gradeRanges.C) return 'C';
+            return 'D';
+        },
+
         getSubjectAbbreviation(columnName) {
             const map = {
                 'Pendidikan Agama dan Budi Pekerti': 'PABP',
@@ -1825,6 +1953,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dashboard-school-year').textContent = settings.schoolYear || '-';
             document.getElementById('dashboard-semester').textContent = settings.semester || '-';
 
+            // Initial sync status render on dashboard load
+            this.updateSyncStatus(
+                isLoggedIn ? 'synced' : 'disconnected', 
+                isLoggedIn ? 'Terhubung ke Google' : 'Sinkronisasi Google'
+            );
+
             const analysisContainer = document.getElementById('dashboard-analysis-content');
             analysisContainer.innerHTML = ''; 
 
@@ -1870,8 +2004,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('setting-schoolName').value = settings.schoolName;
             document.getElementById('setting-npsn').value = settings.npsn;
             document.getElementById('setting-schoolAddress').value = settings.schoolAddress;
+            document.getElementById('setting-village').value = settings.village;
+            document.getElementById('setting-district').value = settings.district;
+            document.getElementById('setting-province').value = settings.province;
+            document.getElementById('setting-postalCode').value = settings.postalCode;
             document.getElementById('setting-schoolEmail').value = settings.schoolEmail;
             document.getElementById('setting-schoolPhone').value = settings.schoolPhone;
+            document.getElementById('setting-website').value = settings.website;
+            document.getElementById('setting-fax').value = settings.fax;
             document.getElementById('setting-className').value = settings.className;
             document.getElementById('setting-schoolYear').value = settings.schoolYear;
             document.getElementById('setting-semester').value = settings.semester;
@@ -2025,7 +2165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tableBody = document.getElementById('students-table-body');
             tableBody.innerHTML = '';
             if (this.state.students.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="text-center p-8 text-gray-500">Tidak ada data siswa. Tambahkan siswa secara manual atau unggah file Excel.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center p-8 text-gray-500">Tidak ada data siswa. Tambahkan siswa secara manual atau unggah file Excel.</td></tr>`;
                 return;
             }
             this.state.students.forEach((student, index) => {
@@ -2034,6 +2174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.innerHTML = `
                     <td class="p-3 text-center">${index + 1}</td>
                     <td class="p-3">${student.name}</td>
+                    <td class="p-3">${student.panggilan || '-'}</td>
                     <td class="p-3">${student.nis || '-'}</td>
                     <td class="p-3">${student.nisn || '-'}</td>
                     <td class="p-3 text-center space-x-1">
@@ -2185,7 +2326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="flex items-center mb-4">
                         <div class="flex-grow">
                             <label for="grade-subject-select" class="block font-medium mb-1">Pilih Mata Pelajaran:</label>
-                            <select id="grade-subject-select" class="form-select w-full md:w-2/3 rounded-md border-gray-300">
+                            <select id="grade-subject-select" class="form-select w-full md:w-2/3 rounded-md border-gray-300 bg-gray-50">
                                 <option value="">-- Pilih Mapel --</option>
                                 ${sortedSubjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('')}
                             </select>
@@ -2313,122 +2454,71 @@ document.addEventListener('DOMContentLoaded', () => {
         
         renderExtracurricular() {
             const view = document.getElementById('view-extracurricular');
-            const { students } = this.state;
-            
+            const { students, settings, extracurricularGrades } = this.state;
+
+            if (students.length === 0) {
+                view.innerHTML = `<h2 class="text-3xl font-bold mb-6">Manajemen Data Ekstrakurikuler</h2><p class="text-center text-gray-500 py-4">Belum ada data siswa.</p>`;
+                return;
+            }
+
+            const availableExtras = settings.extracurriculars || [];
+            const extraOptions = `<option value="">-- Kosong --</option>` + availableExtras.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            const MAX_EXTRAS = 5;
+
+            const tableRows = students.map((student, index) => {
+                const studentExtras = extracurricularGrades[student.id] || [];
+                let extraCells = '';
+                for (let i = 0; i < MAX_EXTRAS; i++) {
+                    const extraData = studentExtras[i];
+                    extraCells += `
+                        <td class="p-2 border-b">
+                            <div class="space-y-1">
+                                <select data-student-id="${student.id}" data-extra-index="${i}" data-field="id" class="form-select bg-gray-50 w-full text-xs rounded-md border-gray-300 p-1">
+                                    ${extraOptions.replace(`value="${extraData?.id}"`, `value="${extraData?.id}" selected`)}
+                                </select>
+                                <input type="text" data-student-id="${student.id}" data-extra-index="${i}" data-field="grade" value="${extraData?.grade || ''}" class="form-input bg-gray-50 w-full text-xs rounded-md border-gray-300 p-1" placeholder="Predikat">
+                                <input type="text" data-student-id="${student.id}" data-extra-index="${i}" data-field="description" value="${extraData?.description || ''}" class="form-input bg-gray-50 w-full text-xs rounded-md border-gray-300 p-1" placeholder="Deskripsi">
+                            </div>
+                        </td>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td class="p-2 border-b text-center align-top">${index + 1}</td>
+                        <td class="p-2 border-b font-medium align-top whitespace-nowrap">${student.name}</td>
+                        ${extraCells}
+                    </tr>
+                `;
+            }).join('');
+
             view.innerHTML = `
-                <h2 class="text-3xl font-bold mb-6">Manajemen Data Ekstrakurikuler</h2>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <label for="extracurricular-student-select" class="block mb-1 font-medium">Pilih Siswa:</label>
-                    <select id="extracurricular-student-select" class="form-select w-full md:w-1/2 rounded-md border-gray-300">
-                        <option value="">-- Pilih Siswa --</option>
-                        ${students.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
-                    </select>
-                    <div id="extracurricular-form-container" class="mt-6"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">Manajemen Data Ekstrakurikuler</h2>
+                    <div class="flex gap-2">
+                        <button id="download-extracurriculars-btn" class="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600">Unduh Data</button>
+                        <label for="upload-extracurriculars-input" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer">Unggah Data</label>
+                        <input type="file" id="upload-extracurriculars-input" class="hidden" accept=".xlsx, .xls">
+                        <button id="save-extracurriculars-btn" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Semua Perubahan</button>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 w-12">No</th>
+                                <th class="p-2 text-left" style="min-width: 150px;">Nama Siswa</th>
+                                ${Array.from({ length: MAX_EXTRAS }, (_, i) => `<th class="p-2 text-center" style="min-width: 150px;">Ekstra ${i + 1}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody id="extracurricular-table-body">${tableRows}</tbody>
+                    </table>
                 </div>
             `;
             
-            const selectEl = document.getElementById('extracurricular-student-select');
-            selectEl.addEventListener('change', (e) => {
-                this.selectedExtracurricularStudent = e.target.value;
-                this.renderExtracurricularForm(this.selectedExtracurricularStudent);
-            });
-
-            if (this.selectedExtracurricularStudent) {
-                selectEl.value = this.selectedExtracurricularStudent;
-                this.renderExtracurricularForm(this.selectedExtracurricularStudent);
-            }
-        },
-        
-        renderExtracurricularForm(studentId) {
-            const container = document.getElementById('extracurricular-form-container');
-            if (!studentId) {
-                container.innerHTML = `<p class="text-center text-gray-500 py-8">Pilih siswa untuk mengelola data ekstrakurikuler.</p>`;
-                return;
-            }
-            
-            const { settings, extracurricularGrades } = this.state;
-            const availableExtras = settings.extracurriculars || [];
-            const studentExtras = extracurricularGrades[studentId] || [];
-
-            const currentExtrasHtml = studentExtras.map((extra, index) => {
-                const extraDetails = availableExtras.find(e => e.id === extra.id);
-                return `
-                    <div class="p-3 border rounded-md mb-3 bg-gray-50">
-                        <div class="flex justify-between items-center mb-2">
-                            <p class="font-semibold">${extraDetails ? extraDetails.name : 'Ekstrakurikuler Dihapus'}</p>
-                            <button type="button" class="text-red-500 hover:text-red-700 text-sm" data-action="delete-extra-entry" data-index="${index}">Hapus</button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                            <div class="md:col-span-4">
-                                <label class="text-xs">Deskripsi</label>
-                                <input type="text" class="form-input w-full text-sm rounded-md" data-field="description" data-index="${index}" value="${extra.description || ''}" placeholder="e.g., Aktif mengikuti kegiatan">
-                            </div>
-                            <div>
-                                <label class="text-xs">Predikat</label>
-                                <input type="text" class="form-input w-full text-sm rounded-md" data-field="grade" data-index="${index}" value="${extra.grade || ''}" placeholder="e.g., Baik">
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            container.innerHTML = `
-                <form id="extracurricular-form">
-                    <h3 class="font-semibold text-lg mb-2">Ekstrakurikuler yang Diikuti</h3>
-                    <div id="current-extras-list">${currentExtrasHtml || '<p class="text-sm text-gray-500">Siswa ini belum mengikuti ekstrakurikuler.</p>'}</div>
-                    
-                    <h3 class="font-semibold text-lg mb-2 mt-6 border-t pt-4">Tambah Ekstrakurikuler Baru</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 border rounded-md bg-green-50">
-                        <div class="md:col-span-2">
-                            <label class="text-xs">Pilih Ekstrakurikuler</label>
-                            <select id="new-extra-id" class="form-select w-full text-sm rounded-md">
-                                <option value="">-- Pilih --</option>
-                                ${availableExtras.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="text-xs">Deskripsi</label>
-                            <input type="text" id="new-extra-desc" class="form-input w-full text-sm rounded-md" placeholder="Deskripsi singkat">
-                        </div>
-                        <div>
-                             <label class="text-xs">Predikat</label>
-                            <input type="text" id="new-extra-grade" class="form-input w-full text-sm rounded-md" placeholder="Predikat">
-                        </div>
-                    </div>
-                     <div class="flex justify-end gap-3 pt-6">
-                        <button type="button" id="add-extra-entry-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">Tambahkan ke Daftar</button>
-                        <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Semua Perubahan</button>
-                    </div>
-                </form>
-            `;
-            
-            document.getElementById('current-extras-list').addEventListener('click', (e) => {
-                if (e.target.dataset.action === 'delete-extra-entry') {
-                    const index = parseInt(e.target.dataset.index, 10);
-                    this.state.extracurricularGrades[studentId].splice(index, 1);
-                    this.renderExtracurricularForm(studentId);
-                }
-            });
-
-            document.getElementById('add-extra-entry-btn').addEventListener('click', () => {
-                const id = document.getElementById('new-extra-id').value;
-                const description = document.getElementById('new-extra-desc').value;
-                const grade = document.getElementById('new-extra-grade').value;
-                if (!id) {
-                    alert('Pilih ekstrakurikuler terlebih dahulu.');
-                    return;
-                }
-                if (!this.state.extracurricularGrades[studentId]) {
-                    this.state.extracurricularGrades[studentId] = [];
-                }
-                this.state.extracurricularGrades[studentId].push({ id, description, grade });
-                this.renderExtracurricularForm(studentId);
-            });
-            
-            document.getElementById('extracurricular-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleSaveExtracurricularGrades(studentId, e.target);
-            });
+            document.getElementById('save-extracurriculars-btn').addEventListener('click', this.handleSaveAllExtracurriculars.bind(this));
+            document.getElementById('download-extracurriculars-btn').addEventListener('click', this.handleDownloadExtracurriculars.bind(this));
+            document.getElementById('upload-extracurriculars-input').addEventListener('change', this.handleUploadExtracurriculars.bind(this));
         },
         
         renderGenericNotesView(viewId, title, stateKey) {
@@ -2446,15 +2536,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-2 text-center align-top">${index + 1}</td>
                     <td class="p-2 font-medium align-top">${student.name}</td>
                     <td class="p-2">
-                        <textarea data-student-id="${student.id}" class="form-textarea w-full rounded-md border-gray-300 text-sm" rows="3">${notesData[student.id] || ''}</textarea>
+                        <textarea data-student-id="${student.id}" class="form-textarea w-full rounded-md border-gray-300 text-sm bg-gray-50" rows="3">${notesData[student.id] || ''}</textarea>
                     </td>
                 </tr>
             `).join('');
+            
+            const isTeacherNotesView = stateKey === 'teacherNotes';
+            const extraButtonHtml = isTeacherNotesView 
+                ? `<button id="generate-preset-notes-btn" class="bg-sky-600 text-white px-5 py-2 rounded-md hover:bg-sky-700">Buat Catatan Preset</button>` 
+                : '';
 
             view.innerHTML = `
                  <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold">${title}</h2>
-                    <button data-action="save" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Perubahan</button>
+                    <div class="flex gap-2">
+                        ${extraButtonHtml}
+                        <button data-action="save" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Perubahan</button>
+                    </div>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
                     <table class="w-full text-sm">
@@ -2479,6 +2577,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.saveState();
                 alert('Data berhasil disimpan!');
             });
+            
+            if (isTeacherNotesView) {
+                document.getElementById('generate-preset-notes-btn').addEventListener('click', this.handleGeneratePresetNotes.bind(this));
+            }
         },
         
         renderP5() {
@@ -2503,16 +2605,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<tr class="border-b">
                     <td class="p-2 text-center">${index + 1}</td>
                     <td class="p-2 font-medium">${student.name}</td>
-                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="s" class="form-input w-20 text-center rounded-md" value="${studentAttendance.s}"></td>
-                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="i" class="form-input w-20 text-center rounded-md" value="${studentAttendance.i}"></td>
-                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="a" class="form-input w-20 text-center rounded-md" value="${studentAttendance.a}"></td>
+                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="s" class="form-input w-20 text-center rounded-md bg-gray-50" value="${studentAttendance.s}"></td>
+                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="i" class="form-input w-20 text-center rounded-md bg-gray-50" value="${studentAttendance.i}"></td>
+                    <td class="p-2"><input type="number" min="0" data-student-id="${student.id}" data-type="a" class="form-input w-20 text-center rounded-md bg-gray-50" value="${studentAttendance.a}"></td>
                 </tr>`;
             }).join('');
 
             view.innerHTML = `
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold">Manajemen Data Absensi</h2>
-                    <button id="save-attendance-btn" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Perubahan</button>
+                    <div class="flex gap-2">
+                        <button id="download-attendance-btn" class="bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600">Unduh Data</button>
+                        <label for="upload-attendance-input" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 cursor-pointer">Unggah Data</label>
+                        <input type="file" id="upload-attendance-input" class="hidden" accept=".xlsx, .xls">
+                        <button id="save-attendance-btn" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Perubahan</button>
+                    </div>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <table class="w-full text-sm">
@@ -2530,6 +2637,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>`;
                 
             document.getElementById('save-attendance-btn').addEventListener('click', this.handleSaveAttendance.bind(this));
+            document.getElementById('download-attendance-btn').addEventListener('click', this.handleDownloadAttendance.bind(this));
+            document.getElementById('upload-attendance-input').addEventListener('change', this.handleUploadAttendance.bind(this));
         },
         
         renderPrintView() {
@@ -2556,8 +2665,14 @@ document.addEventListener('DOMContentLoaded', () => {
             settings.schoolName = document.getElementById('setting-schoolName').value;
             settings.npsn = document.getElementById('setting-npsn').value;
             settings.schoolAddress = document.getElementById('setting-schoolAddress').value;
+            settings.village = document.getElementById('setting-village').value;
+            settings.district = document.getElementById('setting-district').value;
+            settings.province = document.getElementById('setting-province').value;
+            settings.postalCode = document.getElementById('setting-postalCode').value;
             settings.schoolEmail = document.getElementById('setting-schoolEmail').value;
             settings.schoolPhone = document.getElementById('setting-schoolPhone').value;
+            settings.website = document.getElementById('setting-website').value;
+            settings.fax = document.getElementById('setting-fax').value;
             settings.className = document.getElementById('setting-className').value;
             settings.schoolYear = document.getElementById('setting-schoolYear').value;
             settings.semester = document.getElementById('setting-semester').value;
@@ -2600,6 +2715,207 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.saveState();
                 this.renderExtracurricularConfig();
             }
+        },
+
+        handleSaveAllExtracurriculars() {
+            const newGrades = {};
+            const MAX_EXTRAS = 5;
+
+            this.state.students.forEach(student => {
+                const studentExtras = [];
+                for (let i = 0; i < MAX_EXTRAS; i++) {
+                    const id = document.querySelector(`select[data-student-id="${student.id}"][data-extra-index="${i}"]`).value;
+                    if (id) {
+                        const description = document.querySelector(`input[data-student-id="${student.id}"][data-extra-index="${i}"][data-field="description"]`).value;
+                        const grade = document.querySelector(`input[data-student-id="${student.id}"][data-extra-index="${i}"][data-field="grade"]`).value;
+                        studentExtras.push({ id, description, grade });
+                    }
+                }
+                newGrades[student.id] = studentExtras;
+            });
+            
+            this.state.extracurricularGrades = newGrades;
+            this.saveState();
+            alert('Data ekstrakurikuler berhasil disimpan!');
+        },
+
+        handleDownloadExtracurriculars() {
+            const { students, settings, extracurricularGrades } = this.state;
+            const MAX_EXTRAS = 5;
+
+            // 1. Create metadata
+            const metadata = [
+                ['Nama Kelas', settings.className],
+                ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
+                ['Daftar Ekstrakurikuler Tersedia', settings.extracurriculars.map(e => e.name).join(', ')],
+                [] // Empty row
+            ];
+
+            // 2. Create headers
+            const headers = ['No. Absen', 'NISN', 'Nama Siswa'];
+            for (let i = 0; i < MAX_EXTRAS; i++) {
+                headers.push(`Ekstra ${i + 1} - Nama`);
+                headers.push(`Ekstra ${i + 1} - Predikat`);
+                headers.push(`Ekstra ${i + 1} - Deskripsi`);
+            }
+
+            // 3. Create student data rows
+            const studentRows = students.map((student, index) => {
+                const row = [
+                    index + 1,
+                    student.nisn || '',
+                    student.name
+                ];
+
+                const studentExtras = extracurricularGrades[student.id] || [];
+
+                for (let i = 0; i < MAX_EXTRAS; i++) {
+                    const extraData = studentExtras[i];
+                    let extraName = '';
+                    if (extraData && extraData.id) {
+                        const extraSetting = settings.extracurriculars.find(e => e.id === extraData.id);
+                        if (extraSetting) {
+                            extraName = extraSetting.name;
+                        }
+                    }
+                    row.push(extraName);
+                    row.push(extraData?.grade || '');
+                    row.push(extraData?.description || '');
+                }
+
+                return row;
+            });
+            
+            // 4. Combine data
+            const finalSheetData = [...metadata, headers, ...studentRows];
+
+            // 5. Create worksheet and workbook
+            const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
+            
+            // 6. Adjust column widths
+            ws['!cols'] = headers.map((header, i) => {
+                const defaultWidth = String(header).length;
+                const maxLength = Math.max(
+                    defaultWidth,
+                    ...finalSheetData.map(row => (row[i] ? String(row[i]).length : 0))
+                );
+                return { wch: Math.min(maxLength + 2, 60) };
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Ekstrakurikuler");
+            XLSX.writeFile(wb, "data_ekstrakurikuler.xlsx");
+        },
+
+        handleUploadExtracurriculars(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const ws = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws);
+
+                    const previewData = { validChanges: [], errors: [], warnings: [] };
+                    const appStudentsByNisn = new Map(this.state.students.map(s => [String(s.nisn || '').trim(), s]));
+                    const extraSettingsByName = new Map(this.state.settings.extracurriculars.map(ex => [ex.name, ex.id]));
+                    const MAX_EXTRAS = 5;
+
+                    jsonData.forEach((row, rowIndex) => {
+                        const nisn = String(row['NISN'] || '').trim();
+                        if (!nisn) {
+                            previewData.warnings.push({ message: `Baris ${rowIndex + 2}: Ditemukan data tanpa NISN. Baris ini diabaikan.`});
+                            return;
+                        }
+                        
+                        const student = appStudentsByNisn.get(nisn);
+                        if (!student) {
+                            previewData.warnings.push({ message: `Siswa dengan NISN "${nisn}" (${row['Nama Siswa']}) tidak ditemukan. Data diabaikan.`});
+                            return;
+                        }
+
+                        const newStudentExtras = [];
+                        let hasChange = false;
+
+                        for (let i = 1; i <= MAX_EXTRAS; i++) {
+                            const extraName = row[`Ekstra ${i} - Nama`]?.trim();
+                            if (extraName) {
+                                const extraId = extraSettingsByName.get(extraName);
+                                if (extraId) {
+                                    const grade = row[`Ekstra ${i} - Predikat`] || '';
+                                    const description = row[`Ekstra ${i} - Deskripsi`] || '';
+                                    newStudentExtras.push({ id: extraId, grade, description });
+                                    hasChange = true;
+                                } else {
+                                     previewData.warnings.push({ message: `Ekstrakurikuler "${extraName}" untuk siswa ${student.name} tidak ditemukan di Pengaturan. Data ini diabaikan.`});
+                                }
+                            }
+                        }
+
+                        if (hasChange) {
+                            previewData.validChanges.push({ studentId: student.id, studentName: student.name, newExtras: newStudentExtras });
+                        }
+                    });
+
+                    this.showUploadExtrasPreviewModal(previewData);
+
+                } catch (error) {
+                    console.error("Error processing Excel file for extracurriculars:", error);
+                    alert("Terjadi kesalahan saat memproses file. Pastikan formatnya benar.");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+
+        showUploadExtrasPreviewModal(previewData) {
+            this.pendingExtraImport = previewData.validChanges;
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl';
+
+            const warningsHtml = previewData.warnings.length > 0 ? `
+                <div class="mb-4"><h4 class="font-bold text-yellow-600">Peringatan (Data Bermasalah Akan Diabaikan):</h4>
+                <ul class="list-disc list-inside text-sm text-yellow-700">${previewData.warnings.map(w => `<li>${w.message}</li>`).join('')}</ul></div>` : '';
+            
+            const changesHtml = this.pendingExtraImport.length > 0 ? `
+                <div class="mb-4"><h4 class="font-bold text-blue-600">Data yang akan Diimpor (${this.pendingExtraImport.length} siswa):</h4>
+                <ul class="list-disc list-inside text-sm text-blue-700 max-h-40 overflow-y-auto">${this.pendingExtraImport.map(change => `<li><b>${change.studentName}:</b> ${change.newExtras.length} kegiatan ekstra.</li>`).join('')}</ul></div>` : '<p class="text-gray-500">Tidak ada data baru yang akan diimpor.</p>';
+
+            modalContent.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-2xl font-semibold mb-4">Pratinjau Unggah Data Ekstrakurikuler</h3>
+                    <div class="max-h-80 overflow-y-auto pr-2">
+                        ${warningsHtml}
+                        ${changesHtml}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4">Mengimpor data ini akan MENIMPA semua data ekstrakurikuler yang ada untuk siswa yang terpengaruh.</p>
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
+                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Tutup</button>
+                        <button id="confirm-extra-import-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${this.pendingExtraImport.length === 0 ? 'hidden' : ''}">Konfirmasi Import</button>
+                    </div>
+                </div>`;
+            
+            document.getElementById('confirm-extra-import-btn').onclick = this.applyExtraImport.bind(this);
+            this.openModal();
+        },
+
+        applyExtraImport() {
+            if (!this.pendingExtraImport) return;
+            
+            this.pendingExtraImport.forEach(change => {
+                this.state.extracurricularGrades[change.studentId] = change.newExtras;
+            });
+            
+            this.saveState();
+            this.pendingExtraImport = null;
+            alert('Data ekstrakurikuler berhasil diimpor!');
+            this.closeModal();
+            this.renderExtracurricular();
         },
 
         handleClassNameChange(e) {
@@ -2939,21 +3255,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert(`Nilai untuk ${subjectName} berhasil disimpan!`);
         },
         
-        handleSaveExtracurricularGrades(studentId, form) {
-            const currentEntries = form.querySelectorAll('#current-extras-list > div');
-            const updatedExtras = [];
-            currentEntries.forEach((entry, index) => {
-                const originalData = this.state.extracurricularGrades[studentId][index];
-                const description = entry.querySelector('input[data-field="description"]').value;
-                const grade = entry.querySelector('input[data-field="grade"]').value;
-                updatedExtras.push({ ...originalData, description, grade });
-            });
-            this.state.extracurricularGrades[studentId] = updatedExtras;
-            this.saveState();
-            alert('Data ekstrakurikuler berhasil disimpan!');
-            this.renderExtracurricularForm(studentId);
-        },
-        
         handleSaveAttendance() {
             const inputs = document.querySelectorAll('#view-attendance input[type="number"]');
             inputs.forEach(input => {
@@ -2966,6 +3267,214 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             this.saveState();
             alert('Data absensi berhasil disimpan!');
+        },
+
+        handleDownloadAttendance() {
+            const { students, settings, attendance } = this.state;
+            
+            const metadata = [
+                ['Nama Kelas', settings.className],
+                ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
+                [] // Empty row
+            ];
+
+            const headers = ['No. Absen', 'NISN', 'Nama Siswa', 'Sakit', 'Izin', 'Alfa'];
+
+            const studentRows = students.map((student, index) => {
+                const studentAttendance = attendance[student.id] || { s: 0, i: 0, a: 0 };
+                return [
+                    index + 1,
+                    student.nisn || '',
+                    student.name,
+                    studentAttendance.s,
+                    studentAttendance.i,
+                    studentAttendance.a
+                ];
+            });
+
+            const finalSheetData = [...metadata, headers, ...studentRows];
+
+            const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
+            
+            ws['!cols'] = headers.map((header, i) => {
+                const defaultWidth = String(header).length;
+                const maxLength = Math.max(
+                    defaultWidth,
+                    ...finalSheetData.map(row => (row[i] ? String(row[i]).length : 0))
+                );
+                return { wch: Math.min(maxLength + 2, 60) };
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Absensi");
+            XLSX.writeFile(wb, "data_absensi.xlsx");
+        },
+
+        handleUploadAttendance(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const ws = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws, { range: 3 }); // Skip metadata
+
+                    const previewData = { validChanges: [], errors: [], warnings: [] };
+                    const appStudentsByNisn = new Map(this.state.students.map(s => [String(s.nisn || '').trim(), s]));
+
+                    jsonData.forEach((row, rowIndex) => {
+                        const nisn = String(row['NISN'] || '').trim();
+                        if (!nisn) {
+                            previewData.warnings.push({ message: `Baris ${rowIndex + 5}: Ditemukan data tanpa NISN. Baris ini diabaikan.` });
+                            return;
+                        }
+                        
+                        const student = appStudentsByNisn.get(nisn);
+                        if (!student) {
+                            previewData.warnings.push({ message: `Siswa dengan NISN "${nisn}" (${row['Nama Siswa']}) tidak ditemukan. Data diabaikan.` });
+                            return;
+                        }
+                        
+                        const sakit = parseInt(row['Sakit'], 10) || 0;
+                        const izin = parseInt(row['Izin'], 10) || 0;
+                        const alfa = parseInt(row['Alfa'], 10) || 0;
+                        
+                        previewData.validChanges.push({ 
+                            studentId: student.id, 
+                            studentName: student.name, 
+                            attendance: { s: sakit, i: izin, a: alfa } 
+                        });
+                    });
+
+                    this.showUploadAttendancePreviewModal(previewData);
+
+                } catch (error) {
+                    console.error("Error processing Excel file for attendance:", error);
+                    alert("Terjadi kesalahan saat memproses file. Pastikan formatnya benar.");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+
+        showUploadAttendancePreviewModal(previewData) {
+            this.pendingAttendanceImport = previewData.validChanges;
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl';
+
+            const warningsHtml = previewData.warnings.length > 0 ? `
+                <div class="mb-4"><h4 class="font-bold text-yellow-600">Peringatan (Data Bermasalah Akan Diabaikan):</h4>
+                <ul class="list-disc list-inside text-sm text-yellow-700">${previewData.warnings.map(w => `<li>${w.message}</li>`).join('')}</ul></div>` : '';
+            
+            const changesHtml = this.pendingAttendanceImport.length > 0 ? `
+                <div class="mb-4"><h4 class="font-bold text-blue-600">Data Absensi yang akan Diimpor (${this.pendingAttendanceImport.length} siswa):</h4>
+                <ul class="list-disc list-inside text-sm text-blue-700 max-h-40 overflow-y-auto">${this.pendingAttendanceImport.map(change => `<li><b>${change.studentName}:</b> S: ${change.attendance.s}, I: ${change.attendance.i}, A: ${change.attendance.a}</li>`).join('')}</ul></div>` : '<p class="text-gray-500">Tidak ada data baru yang akan diimpor.</p>';
+
+            modalContent.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-2xl font-semibold mb-4">Pratinjau Unggah Data Absensi</h3>
+                    <div class="max-h-80 overflow-y-auto pr-2">
+                        ${warningsHtml}
+                        ${changesHtml}
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4">Mengimpor data ini akan MENIMPA semua data absensi yang ada untuk siswa yang terpengaruh.</p>
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
+                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Tutup</button>
+                        <button id="confirm-attendance-import-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${this.pendingAttendanceImport.length === 0 ? 'hidden' : ''}">Konfirmasi Import</button>
+                    </div>
+                </div>`;
+            
+            document.getElementById('confirm-attendance-import-btn').onclick = this.applyAttendanceImport.bind(this);
+            this.openModal();
+        },
+
+        applyAttendanceImport() {
+            if (!this.pendingAttendanceImport) return;
+            
+            this.pendingAttendanceImport.forEach(change => {
+                this.state.attendance[change.studentId] = change.attendance;
+            });
+            
+            this.saveState();
+            this.pendingAttendanceImport = null;
+            alert('Data absensi berhasil diimpor!');
+            this.closeModal();
+            this.renderAttendance();
+        },
+
+        handleGeneratePresetNotes() {
+            if (!confirm('Tindakan ini akan menimpa semua catatan wali kelas yang ada dengan preset baru. Lanjutkan?')) {
+                return;
+            }
+
+            const { students, grades } = this.state;
+
+            students.forEach(student => {
+                const studentGrades = grades[student.id] || {};
+                
+                let excellentSubjects = [];
+                let highestScore = -1;
+                let subjectWithHighestScore = null;
+
+                Object.entries(studentGrades).forEach(([subjectName, scoreObject]) => {
+                    const finalScore = this.getFinalScore(scoreObject);
+                    if (finalScore !== null) {
+                        if (this.getPredicate(finalScore) === 'A') {
+                            excellentSubjects.push(subjectName);
+                        }
+                        if (finalScore > highestScore) {
+                            highestScore = finalScore;
+                            subjectWithHighestScore = subjectName;
+                        }
+                    }
+                });
+
+                let bestSubjectText = '';
+                if (excellentSubjects.length > 0) {
+                    const mainSubjects = new Set();
+                    excellentSubjects.forEach(s => {
+                        mainSubjects.add(s.split('(')[0].trim());
+                    });
+                    bestSubjectText = Array.from(mainSubjects).join(', ');
+                } else if (subjectWithHighestScore) {
+                    bestSubjectText = subjectWithHighestScore.split('(')[0].trim();
+                }
+
+                const praises = [
+                    "Sikap positif dan rasa ingin tahu Ananda sangat tinggi.",
+                    "Ananda menunjukkan bakat dan potensi yang luar biasa.",
+                    "Ananda adalah aset berharga di kelas ini dengan semangat belajarnya.",
+                    "Kemampuan Ananda dalam beradaptasi dan bekerja sama sangat baik."
+                ];
+
+                const motivations = [
+                    "Teruslah belajar dan berusaha menjadi versi terbaik dari dirimu.",
+                    "Ibu/Bapak Guru yakin Ananda bisa meraih semua cita-cita.",
+                    "Jangan pernah ragu untuk bertanya dan terus kembangkan potensimu.",
+                    "Pertahankan semangat yang membara ini hingga akhir semester."
+                ];
+                
+                const randomPraise = praises[Math.floor(Math.random() * praises.length)];
+                const randomMotivation = motivations[Math.floor(Math.random() * motivations.length)];
+                const studentNickname = student.panggilan || student.name.split(' ')[0];
+                
+                let note = '';
+                if (bestSubjectText) {
+                    note = `${studentNickname} menunjukkan pencapaian yang sangat baik, terutama dalam mata pelajaran ${bestSubjectText}. ${randomPraise} ${randomMotivation} Pertahankan terus prestasi dan semangat belajarmu, ya!`;
+                } else {
+                    note = `${studentNickname} adalah siswa yang rajin dan bersemangat. ${randomPraise} ${randomMotivation} Tingkatkan terus prestasimu di semester depan agar lebih gemilang!`;
+                }
+
+                this.state.teacherNotes[student.id] = note;
+            });
+
+            this.renderTeacherNotes();
+            alert('Catatan preset berhasil dibuat untuk semua siswa!');
         },
 
         updateGradeAverage(studentId) {
@@ -3547,14 +4056,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         createReportCardHTML(student, grades) {
             const { settings, extracurricularGrades, attendance, p5Notes, teacherNotes } = this.state;
-            const reportDateStr = settings.reportDate ? new Date(settings.reportDate + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '..............................';
-            const getPredicate = (score) => {
-                if (score == null) return '-';
-                score = parseInt(score, 10);
-                const { A, B, C } = settings.gradeRanges;
-                if (score >= A) return 'A'; if (score >= B) return 'B'; if (score >= C) return 'C';
-                return 'D';
-            };
+            const reportDateStr = settings.reportDate || '..............................';
 
             const religionSubjectRegex = /^Pendidikan Agama dan Budi Pekerti \(/;
 
@@ -3588,7 +4090,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isCombinedReligion = subject.name === 'Pendidikan Agama dan Budi Pekerti';
                 const scoreObject = isCombinedReligion ? studentReligionScoreObject : grades[subject.name];
                 const finalScore = this.getFinalScore(scoreObject);
-                const predicate = getPredicate(finalScore);
+                const predicate = this.getPredicate(finalScore);
                 
                 let description = '';
                 if(predicate !== '-' && predicate !== 'D' && subject.deskripsi && subject.capaian){
@@ -3636,7 +4138,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
 
-            <div class="mt-12 flex justify-between text-sm"><div class="text-center"><p>Mengetahui,</p><p>Orang Tua/Wali Murid</p><div class="h-20"></div><p class="border-b border-black w-48">(..............................)</p></div><div class="text-center"><p>${settings.schoolAddress.split(',').pop().trim() || 'Kota'}, ${reportDateStr}</p><p>Wali Kelas</p><div class="h-20"></div><p class="font-bold underline w-48">${settings.teacherName || '..............................'}</p>${settings.teacherNip ? `<p>NIP. ${settings.teacherNip}</p>`:'' }</div></div><div class="mt-8 flex justify-center text-center text-sm"><div><p>Mengetahui,</p><p>Kepala Sekolah</p><div class="h-20"></div><p class="font-bold underline w-48">${settings.headmasterName || '..............................'}</p>${settings.headmasterNip ? `<p>NIP. ${settings.headmasterNip}</p>` : ''}</div></div></main></div>`;
+            <div class="mt-12 flex justify-between text-sm"><div class="text-center"><p>Mengetahui,</p><p>Orang Tua/Wali Murid</p><div class="h-20"></div><p class="border-b border-black w-48">(..............................)</p></div><div class="text-center"><p>${reportDateStr}</p><p>Wali Kelas</p><div class="h-20"></div><p class="font-bold underline w-48">${settings.teacherName || '..............................'}</p>${settings.teacherNip ? `<p>NIP. ${settings.teacherNip}</p>`:'' }</div></div><div class="mt-8 flex justify-center text-center text-sm"><div><p>Mengetahui,</p><p>Kepala Sekolah</p><div class="h-20"></div><p class="font-bold underline w-48">${settings.headmasterName || '..............................'}</p>${settings.headmasterNip ? `<p>NIP. ${settings.headmasterNip}</p>` : ''}</div></div></main></div>`;
         }
     };
 
