@@ -198,7 +198,7 @@
             <section id="view-p5" class="view">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-bold">Manajemen Projek P5</h2>
-                    <a href="#settings" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Kelola Proyek P5</a>
+                    <a href="#settings" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="App.navigateTo('#settings'); setTimeout(() => document.getElementById('p5-config-section').scrollIntoView({ behavior: 'smooth' }), 100);">Kelola Proyek P5</a>
                 </div>
 
                 <div class="bg-white p-6 rounded-lg shadow-md">
@@ -1420,7 +1420,15 @@ document.addEventListener('DOMContentLoaded', () => {
         loadState() {
             const savedState = localStorage.getItem(this.STORAGE_KEY);
             if (savedState) {
-                this.state = JSON.parse(savedState);
+                try {
+                    // FIX: Wrap parsing in a try-catch block to prevent fatal error on corrupted data
+                    this.state = JSON.parse(savedState);
+                } catch (error) {
+                    console.error("Could not parse state from localStorage, it might be corrupted.", error);
+                    // If parsing fails, clear the corrupted state and proceed with default state
+                    localStorage.removeItem(this.STORAGE_KEY);
+                    this.state = {}; // Reset state to be populated by defaults later
+                }
                 
                 const defaultSettings = this.getDefaultSettings();
                 this.state.settings = { ...defaultSettings, ...this.state.settings };
@@ -1440,7 +1448,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
                 // Migration logic for old data structure
-                if (this.state.settings.subjects.length > 0) {
+                if (this.state.settings.subjects && this.state.settings.subjects.length > 0) {
                     this.state.settings.subjects = this.state.settings.subjects.map(subject => {
                         const newSubject = { ...subject };
                         // Migrate capaian from string to array
@@ -1475,14 +1483,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 delete this.state.settings.deletedSubjects;
 
                 // Ensure all subjects have isDeleted flag for consistent logic
-                this.state.settings.subjects.forEach(subject => {
-                    if (subject.isDeleted === undefined) {
-                        subject.isDeleted = false;
-                    }
-                });
+                if (this.state.settings.subjects) {
+                    this.state.settings.subjects.forEach(subject => {
+                        if (subject.isDeleted === undefined) {
+                            subject.isDeleted = false;
+                        }
+                    });
+                }
 
                 const emptyStudent = this.getEmptyStudent();
-                this.state.students = this.state.students.map(student => ({ ...emptyStudent, ...student }));
+                this.state.students = (this.state.students || []).map(student => ({ ...emptyStudent, ...student }));
                 
                 // Migration for grades data structure
                 if (this.state.grades) {
@@ -2838,7 +2848,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (projects.length === 0) {
                 tabsContainer.innerHTML = '';
                 document.getElementById('p5-project-content-container').innerHTML = `
-                    <p class="text-center text-gray-500 py-8">Belum ada proyek P5 yang dibuat. Silakan klik "Kelola Proyek P5" untuk memulai.</p>`;
+                    <p class="text-center text-gray-500 py-8">Belum ada proyek P5 yang dibuat. Silakan kelola proyek di menu Pengaturan.</p>`;
                 return;
             }
 
@@ -4471,22 +4481,40 @@ document.addEventListener('DOMContentLoaded', () => {
             let p5ReportHTML = '';
             (settings.p5Projects || []).forEach(project => {
                 const studentP5Grades = this.state.p5Grades[student.id]?.[project.id] || {};
-                const dimensionReports = project.dimensions.map(dim => {
-                    const achievedTargets = dim.subElements.flatMap(sub => sub.targets)
-                        .filter(target => (studentP5Grades[target.id] === 'BSH' || studentP5Grades[target.id] === 'SB'))
-                        .map(target => target.description)
-                        .join(' ');
+                const hasGradesForProject = Object.keys(studentP5Grades).length > 0;
+
+                let projectReport = `<div class="p-2 border mt-2"><h4 class="font-bold text-sm">${project.name}</h4><div class="text-xs text-justify space-y-1">`;
+
+                if (hasGradesForProject) {
+                    const dimensionReports = project.dimensions.map(dim => {
+                        const allTargetIdsInDim = dim.subElements.flatMap(sub => sub.targets.map(t => t.id));
+                        const allGradesInDim = allTargetIdsInDim.map(id => studentP5Grades[id]).filter(Boolean);
+
+                        if (allGradesInDim.length > 0) {
+                            // Find the most frequent "highest" grade
+                            const gradeOrder = { 'SB': 4, 'BSH': 3, 'MB': 2, 'BB': 1 };
+                            const highestGrade = allGradesInDim.reduce((highest, current) => {
+                                return gradeOrder[current] > gradeOrder[highest] ? current : highest;
+                            }, 'BB');
+                            
+                            return `<p>Dalam dimensi <strong>${dim.name}</strong>, Ananda ${studentNickname} menunjukkan pencapaian pada fase <strong>${p5Levels[highestGrade]}</strong>.</p>`;
+                        }
+                        return '';
+                    }).filter(Boolean).join('');
                     
-                    if(achievedTargets) {
-                        return `<p>Dalam dimensi <strong>${dim.name}</strong>, Ananda ${studentNickname} menunjukkan kemampuan dalam hal ${achievedTargets}</p>`;
+                    if (dimensionReports) {
+                        projectReport += dimensionReports;
+                    } else {
+                        projectReport += `<p>Penilaian untuk proyek ini masih dalam proses.</p>`;
                     }
-                    return '';
-                }).filter(Boolean).join('');
-                
-                if (dimensionReports) {
-                     p5ReportHTML += `<div class="p-2 border mt-2"><h4 class="font-bold text-sm">${project.name}</h4><div class="text-xs text-justify space-y-1">${dimensionReports}</div></div>`;
+                } else {
+                    projectReport += `<p>Siswa belum dinilai untuk proyek ini.</p>`;
                 }
+
+                projectReport += `</div></div>`;
+                p5ReportHTML += projectReport;
             });
+
 
             return `<div class="bg-white p-8 mx-auto my-4 max-w-4xl shadow-lg border rounded-md font-serif report-card print-area">
                 <header class="text-center mb-6">
