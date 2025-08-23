@@ -64,7 +64,7 @@
                 <li><a href="#students" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Siswa</a></li>
                 <li><a href="#grades" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Nilai</a></li>
                 <li><a href="#extracurricular" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Ekstrakurikuler</a></li>
-                <li><a href="#p5" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Projek P5</a></li>
+                <li><a href="#p5" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Proyek P5</a></li>
                 <li><a href="#attendance" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Data Absensi</a></li>
                 <li><a href="#notes" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Catatan Wali Kelas</a></li>
                 <li><a href="#print" class="sidebar-item flex items-center p-3 rounded-lg hover:bg-blue-700 transition-colors">Print Rapor</a></li>
@@ -197,7 +197,7 @@
             <!-- P5 View -->
             <section id="view-p5" class="view">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Manajemen Projek P5</h2>
+                    <h2 class="text-3xl font-bold">Manajemen Proyek P5</h2>
                     <a href="#settings" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700" onclick="App.navigateTo('#settings'); setTimeout(() => document.getElementById('p5-config-section').scrollIntoView({ behavior: 'smooth' }), 100);">Kelola Proyek P5</a>
                 </div>
 
@@ -420,10 +420,10 @@
                         </form>
                     </fieldset>
 
-                    <!-- Konfigurasi Projek P5 -->
+                    <!-- Konfigurasi Proyek P5 -->
                     <fieldset id="p5-config-section" class="bg-white p-6 rounded-lg shadow-md">
                         <div class="border-b border-gray-200 pb-3 mb-4 flex justify-between items-center">
-                           <h3 class="text-xl font-semibold text-gray-900">Konfigurasi Projek P5</h3>
+                           <h3 class="text-xl font-semibold text-gray-900">Konfigurasi Proyek P5</h3>
                            <button id="add-p5-project-btn" data-action="add-project" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Tambah Proyek Baru</button>
                         </div>
                         <div id="p5-editor-container" class="space-y-4">
@@ -1365,7 +1365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     {
                         id: 'p5-proj-1',
                         name: 'Hidup Sehat di Mulai dari Makanan',
-                        description: 'Projek ini adalah projek pertama di kelas 6. Projek ini diharapkan membangun dua dimensi Profil Pelajar Pancasila, yakni mandiri dan kreatif. Adapun tujuan dari projek ini adalah menumbuhkan kemandirian dan kreativitas peserta didik dengan memotivasi peserta didik untuk makan makanan sehat setiap hari. Melalui edukasi tentang makanan sehat, peserta didik diharapkan mampu menunjukkan inisiatif dan bekerja secara mandiri, serta mengembangkan gagasan/ide yang dimiliki untuk membuat kombinasi hal yang baru dan imajinatif.',
+                        description: 'Proyek ini adalah proyek pertama di kelas 6. Proyek ini diharapkan membangun dua dimensi Profil Pelajar Pancasila, yakni mandiri dan kreatif. Adapun tujuan dari proyek ini adalah menumbuhkan kemandirian dan kreativitas peserta didik dengan memotivasi peserta didik untuk makan makanan sehat setiap hari. Melalui edukasi tentang makanan sehat, peserta didik diharapkan mampu menunjukkan inisiatif dan bekerja secara mandiri, serta mengembangkan gagasan/ide yang dimiliki untuk membuat kombinasi hal yang baru dan imajinatif.',
                         dimensions: [
                             {
                                 id: 'dim1', name: 'Mandiri',
@@ -1421,19 +1421,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedState = localStorage.getItem(this.STORAGE_KEY);
             if (savedState) {
                 try {
-                    // FIX: Wrap parsing in a try-catch block to prevent fatal error on corrupted data
                     this.state = JSON.parse(savedState);
                 } catch (error) {
                     console.error("Could not parse state from localStorage, it might be corrupted.", error);
-                    // If parsing fails, clear the corrupted state and proceed with default state
                     localStorage.removeItem(this.STORAGE_KEY);
-                    this.state = {}; // Reset state to be populated by defaults later
+                    this.state = {}; 
                 }
                 
                 const defaultSettings = this.getDefaultSettings();
                 this.state.settings = { ...defaultSettings, ...this.state.settings };
                 
-                // Ensure new state properties exist
                 this.state.extracurricularGrades = this.state.extracurricularGrades || {};
                 this.state.attendance = this.state.attendance || {};
                 this.state.p5Grades = this.state.p5Grades || {};
@@ -1441,21 +1438,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.state.settings.extracurriculars = this.state.settings.extracurriculars || defaultSettings.extracurriculars;
                 this.state.settings.p5Projects = this.state.settings.p5Projects || defaultSettings.p5Projects;
 
-                // Remove old character/p5notes data if it exists
                 delete this.state.characterGrades;
                 delete this.state.settings.characters;
                 delete this.state.p5Notes;
 
-
-                // Migration logic for old data structure
                 if (this.state.settings.subjects && this.state.settings.subjects.length > 0) {
                     this.state.settings.subjects = this.state.settings.subjects.map(subject => {
                         const newSubject = { ...subject };
-                        // Migrate capaian from string to array
                         if (typeof newSubject.capaian === 'string') {
                             newSubject.capaian = newSubject.capaian ? [newSubject.capaian] : [];
                         }
-                        // Migrate deskripsi from string to object
                         if (typeof newSubject.deskripsi === 'string') {
                             const oldDeskripsi = newSubject.deskripsi;
                             newSubject.deskripsi = { A: oldDeskripsi, B: oldDeskripsi, C: oldDeskripsi };
@@ -1471,7 +1463,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.state.settings.passingGrade = this.state.settings.gradeRanges.C;
                 }
 
-                // Migration from old deletedSubjects array to isDeleted flag on subject items
                 if (this.state.settings.deletedSubjects && Array.isArray(this.state.settings.deletedSubjects)) {
                     this.state.settings.deletedSubjects.forEach(deletedSub => {
                         const existingSubject = this.state.settings.subjects.find(s => s.name === deletedSub.name);
@@ -1482,7 +1473,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 delete this.state.settings.deletedSubjects;
 
-                // Ensure all subjects have isDeleted flag for consistent logic
                 if (this.state.settings.subjects) {
                     this.state.settings.subjects.forEach(subject => {
                         if (subject.isDeleted === undefined) {
@@ -1494,19 +1484,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const emptyStudent = this.getEmptyStudent();
                 this.state.students = (this.state.students || []).map(student => ({ ...emptyStudent, ...student }));
                 
-                // Migration for grades data structure
                 if (this.state.grades) {
                     Object.keys(this.state.grades).forEach(studentId => {
                         const studentGrades = this.state.grades[studentId];
                         Object.keys(studentGrades).forEach(subject => {
                             let currentGrade = studentGrades[subject];
                             
-                            // Old migration: number to array
                             if (typeof currentGrade === 'number' || currentGrade === null) {
                                 currentGrade = currentGrade !== null ? [currentGrade] : [];
                             }
                             
-                            // New migration: array to object {cp, pts, pas}
                             if (Array.isArray(currentGrade)) {
                                 studentGrades[subject] = {
                                     cp: currentGrade,
@@ -1547,7 +1534,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState() {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
             if (isLoggedIn) {
-                this.syncWithGoogleSheets(false); // false means save, not fetch
+                this.syncWithGoogleSheets(false); 
             }
         },
         
@@ -1637,18 +1624,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const newState = {};
                     const reconstructedSettings = {};
-                    if (settingsData.length > 1) { // has headers
+                    if (settingsData.length > 1) { 
                         settingsData.slice(1).forEach(row => {
                             if (!row || row.length < 2 || !row[0]) return;
                             const key = row[0];
                             let value = row[1];
                             
-                            // Logic to handle both old JSON and new key-value format
                              try {
                                 const parsedValue = JSON.parse(value);
                                 reconstructedSettings[key] = parsedValue;
                             } catch (e) {
-                                // Not a JSON string, treat as regular value
                                 if (key.startsWith('gradeRanges.')) {
                                     const subKey = key.split('.')[1];
                                     if (!reconstructedSettings.gradeRanges) reconstructedSettings.gradeRanges = {};
@@ -1662,7 +1647,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
                         newState.settings = reconstructedSettings;
-                    } else if (settingsData.length === 1 && settingsData[0].length === 1) { // Old format check
+                    } else if (settingsData.length === 1 && settingsData[0].length === 1) { 
                          try { newState.settings = JSON.parse(settingsData[0][0]); } 
                          catch(e) { console.warn("Failed to parse old settings format"); }
                     }
@@ -1738,7 +1723,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     const data = [];
-                    // New settings format
                     const settingsValues = [];
                     const settings = this.state.settings;
                     Object.keys(settings).forEach(key => {
@@ -1799,16 +1783,14 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         updateSyncStatus(status, text) {
-            // Sidebar update
             const sidebarIndicator = document.getElementById('sync-status-indicator');
             const sidebarStatusText = document.getElementById('sync-status-text');
-            sidebarIndicator.className = 'sync-status-indicator'; // reset
+            sidebarIndicator.className = 'sync-status-indicator'; 
             if (status === 'synced') sidebarIndicator.classList.add('synced');
             else if (status === 'syncing') sidebarIndicator.classList.add('syncing');
             else if (status === 'error') sidebarIndicator.classList.add('error');
             sidebarStatusText.textContent = text;
             
-            // Dashboard header update
             const dashboardStatusContainer = document.getElementById('dashboard-sync-status');
             if (dashboardStatusContainer) {
                 let indicatorClass = 'bg-gray-400';
@@ -1836,7 +1818,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             bgColorClass = 'bg-red-100';
                             statusMessage = 'Gagal sinkronisasi. Periksa koneksi Anda.';
                             break;
-                        default: // disconnected state while logged in
+                        default: 
                              indicatorClass = 'bg-gray-400';
                              textColorClass = 'text-gray-600';
                              bgColorClass = 'bg-gray-200';
@@ -1927,13 +1909,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
 
-            // Google Auth
             document.getElementById('authorize_button').onclick = handleAuthClick;
             document.getElementById('signout_button').onclick = handleSignoutClick;
             document.getElementById('google-sync-save-btn').onclick = () => this.saveState();
 
-
-            // Settings
             document.getElementById('save-settings-btn').addEventListener('click', this.handleSaveSettings.bind(this));
             document.getElementById('cancel-settings-btn').addEventListener('click', this.renderSettings.bind(this));
             document.getElementById('add-subject-form').addEventListener('submit', this.handleAddSubject.bind(this));
@@ -1952,7 +1931,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // New settings listeners
             document.getElementById('add-extracurricular-form').addEventListener('submit', this.handleAddExtracurricular.bind(this));
             document.getElementById('extracurricular-config-list').addEventListener('click', this.handleDeleteExtracurricular.bind(this));
             
@@ -1962,14 +1940,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 p5ConfigSection.addEventListener('input', this.handleP5ManagementInput.bind(this));
             }
 
-
-            // Students View Buttons
             document.getElementById('add-student-btn').addEventListener('click', () => this.showStudentModal());
             document.getElementById('download-template-btn').addEventListener('click', this.handleDownloadTemplate.bind(this));
             document.getElementById('upload-students-input').addEventListener('change', this.handleUploadStudents.bind(this));
             document.getElementById('students-table-body').addEventListener('click', this.handleStudentActions.bind(this));
             
-            // Grades
             document.querySelector('#view-grades').addEventListener('click', (e) => {
                 if(e.target.matches('.grades-tab-btn')) {
                     this.handleGradesTabClick(e);
@@ -1979,11 +1954,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('download-grades-btn').addEventListener('click', this.showDownloadGradesModal.bind(this));
             document.getElementById('upload-grades-input').addEventListener('change', this.handleUploadGrades.bind(this));
         
-            // Print
             document.getElementById('generate-all-reports-btn').addEventListener('click', this.renderAllReportCards.bind(this));
             document.getElementById('print-all-reports-btn').addEventListener('click', () => window.print());
 
-            // Modal
             document.getElementById('app-modal').addEventListener('click', (e) => {
                 if (e.target.id === 'app-modal' || e.target.classList.contains('modal-close-btn')) {
                     this.closeModal();
@@ -2005,7 +1978,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeView) activeView.classList.add('active');
             if (activeLink) activeLink.classList.add('active');
 
-            // Force rerender on navigation to ensure data is fresh
             const renderMap = {
                 '#dashboard': this.renderDashboard,
                 '#settings': this.renderSettings,
@@ -2131,7 +2103,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        // --- RENDER FUNCTIONS ---
         renderDashboard() {
             const { settings, students, grades } = this.state;
             document.getElementById('dashboard-teacher-name').textContent = settings.teacherName || 'Guru';
@@ -2140,7 +2111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dashboard-school-year').textContent = settings.schoolYear || '-';
             document.getElementById('dashboard-semester').textContent = settings.semester || '-';
 
-            // Initial sync status render on dashboard load
             this.updateSyncStatus(
                 isLoggedIn ? 'synced' : 'disconnected', 
                 isLoggedIn ? 'Terhubung ke Google' : 'Sinkronisasi Google'
@@ -2240,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             container.innerHTML = projects.map(project => `
-                <details class="bg-white rounded-lg shadow-sm" open>
+                <details class="bg-white rounded-lg shadow-sm">
                     <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-lg border">
                         <span>${project.name || 'Proyek Baru'}</span>
                         <div class="flex items-center gap-2">
@@ -2329,7 +2299,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             this.renderSubjectDetails(this.selectedSubjectName);
 
-            // Render deleted subjects list
             const deletedContainer = document.getElementById('deleted-subjects-container');
             const deletedListEl = document.getElementById('deleted-subjects-list');
             const deletedSubjects = this.state.settings.subjects.filter(s => s.isDeleted).sort((a, b) => a.name.localeCompare(b.name));
@@ -2447,7 +2416,6 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         renderGrades() {
-            // Set default tab
             document.querySelector('.grades-tab-btn[data-tab="list"]').classList.add('active');
             document.querySelector('.grades-tab-btn[data-tab="input"]').classList.remove('active');
             document.getElementById('grades-content-list').classList.remove('hidden');
@@ -2464,14 +2432,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
             const { students, grades, settings } = this.state;
         
-            // Define column structure with custom order
             const subjectColumns = [
                 'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
                 'Ilmu Pengetahuan Alam dan Sosial (IPAS)', 'Seni Budaya', 
                 'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)', 'Bahasa Inggris', 'Muatan Lokal'
             ];
         
-            // Pre-process student data with scores, total, average
             let studentData = students.map((student, index) => {
                 const studentGrades = grades[student.id] || {};
                 const finalScores = Object.values(studentGrades)
@@ -2482,7 +2448,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return { student, index, total, average };
             });
         
-            // Calculate ranks based on total score
             studentData.sort((a, b) => b.total - a.total);
             let rank = 1;
             for (let i = 0; i < studentData.length; i++) {
@@ -2492,19 +2457,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 studentData[i].rank = rank;
             }
         
-            // Sort data for display
             if (sortBy === 'absen') {
                 studentData.sort((a, b) => a.index - b.index);
-            } // 'rank' is already sorted
+            }
         
-            // Helper to get the correct grade for a student and a column header
             const getGradeForColumn = (student, header) => {
                 const studentGrades = grades[student.id] || {};
                 let prefix = '';
                 if (header.startsWith('Pendidikan Agama')) prefix = 'Pendidikan Agama';
                 else if (header.startsWith('Seni Budaya')) prefix = 'Seni Budaya';
                 else if (header.startsWith('Muatan Lokal')) prefix = 'Muatan Lokal';
-                else { // Direct match for other subjects
+                else { 
                     return this.getFinalScore(studentGrades[header]) ?? '-';
                 }
         
@@ -2516,7 +2479,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return this.getFinalScore(studentGrades[subjectName]) ?? '-';
                             }
                         } else {
-                            // For SB and Mulok, return the first one found that has a score
                             const finalScore = this.getFinalScore(studentGrades[subjectName]);
                             if (finalScore !== null) return finalScore;
                         }
@@ -2875,7 +2837,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const project = this.state.settings.p5Projects.find(p => p.id === projectId);
 
             if (!project) {
-                container.innerHTML = `<p class="text-center text-red-500 py-8">Projek tidak ditemukan.</p>`;
+                container.innerHTML = `<p class="text-center text-red-500 py-8">Proyek tidak ditemukan.</p>`;
                 return;
             }
             
@@ -2933,7 +2895,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
                 <div class="flex justify-end mt-6">
-                    <button id="save-p5-grades-btn" data-project-id="${projectId}" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Penilaian Projek Ini</button>
+                    <button id="save-p5-grades-btn" data-project-id="${projectId}" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Penilaian Proyek Ini</button>
                 </div>
             `;
             
@@ -3012,7 +2974,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('print-all-reports-btn').classList.remove('hidden');
         },
 
-        // --- EVENT HANDLERS ---
         handleSaveSettings() {
             const settings = this.state.settings;
             settings.schoolName = document.getElementById('setting-schoolName').value;
@@ -3061,7 +3022,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target.tagName === 'BUTTON') {
                 const extraId = e.target.dataset.id;
                 this.state.settings.extracurriculars = this.state.settings.extracurriculars.filter(ex => ex.id !== extraId);
-                // Also remove grades associated with this extracurricular
                 Object.keys(this.state.extracurricularGrades).forEach(studentId => {
                     this.state.extracurricularGrades[studentId] = this.state.extracurricularGrades[studentId].filter(ex => ex.id !== extraId);
                 });
@@ -3096,15 +3056,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const { students, settings, extracurricularGrades } = this.state;
             const MAX_EXTRAS = 5;
 
-            // 1. Create metadata
             const metadata = [
                 ['Nama Kelas', settings.className],
                 ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
                 ['Daftar Ekstrakurikuler Tersedia', settings.extracurriculars.map(e => e.name).join(', ')],
-                [] // Empty row
+                [] 
             ];
 
-            // 2. Create headers
             const headers = ['No. Absen', 'NISN', 'Nama Siswa'];
             for (let i = 0; i < MAX_EXTRAS; i++) {
                 headers.push(`Ekstra ${i + 1} - Nama`);
@@ -3112,7 +3070,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers.push(`Ekstra ${i + 1} - Deskripsi`);
             }
 
-            // 3. Create student data rows
             const studentRows = students.map((student, index) => {
                 const row = [
                     index + 1,
@@ -3139,13 +3096,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return row;
             });
             
-            // 4. Combine data
             const finalSheetData = [...metadata, headers, ...studentRows];
 
-            // 5. Create worksheet and workbook
             const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
             
-            // 6. Adjust column widths
             ws['!cols'] = headers.map((header, i) => {
                 const defaultWidth = String(header).length;
                 const maxLength = Math.max(
@@ -3572,7 +3526,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!subject) return;
 
             const inputs = form.querySelectorAll(`input[type="number"][data-studentid]`);
-            const studentScores = {}; // { studentId: { cp: [...], pts: null, pas: null } }
+            const studentScores = {}; 
 
             inputs.forEach(input => {
                 const studentId = input.dataset.studentid;
@@ -3628,7 +3582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const metadata = [
                 ['Nama Kelas', settings.className],
                 ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
-                [] // Empty row
+                [] 
             ];
 
             const headers = ['No. Absen', 'NISN', 'Nama Siswa', 'Sakit', 'Izin', 'Alfa'];
@@ -3674,7 +3628,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const ws = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(ws, { range: 3 }); // Skip metadata
+                    const jsonData = XLSX.utils.sheet_to_json(ws, { range: 3 }); 
 
                     const previewData = { validChanges: [], errors: [], warnings: [] };
                     const appStudentsByNisn = new Map(this.state.students.map(s => [String(s.nisn || '').trim(), s]));
@@ -3906,8 +3860,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsArrayBuffer(file);
         },
         
-        // --- NEW GRADE MANAGEMENT HANDLERS ---
-        
         showEditStudentGradesModal(studentId = null) {
              if (this.state.students.length === 0) {
                 alert('Tidak ada data siswa untuk diedit.');
@@ -3916,7 +3868,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const modalContent = document.getElementById('modal-content-wrapper');
             modalContent.className = 'relative mx-auto bg-white w-full max-w-4xl rounded-lg shadow-xl';
             
-            // If called from student list, studentId is provided.
             if (studentId) {
                 modalContent.innerHTML = `
                     <div class="max-h-[85vh] overflow-y-auto">
@@ -3926,7 +3877,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div id="student-grade-editor-container" class="p-6"></div>
                     </div>`;
                 this.renderStudentGradeEditorForm(studentId);
-            } else { // Called from "Manajemen Data Nilai"
+            } else { 
                 modalContent.innerHTML = `
                     <div class="max-h-[85vh] overflow-y-auto">
                         <div class="sticky top-0 bg-white p-4 border-b z-10">
@@ -3960,7 +3911,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Also update the select dropdown if it exists (for the "Manajemen Data Nilai" flow)
             const select = document.getElementById('student-grade-edit-select');
             if(select) select.value = studentId;
 
@@ -4105,7 +4055,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ['Nama Kelas', settings.className],
                     ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
                     ['Mata Pelajaran', subjectName],
-                    [] // Empty row
+                    [] 
                 ];
                 
                 const headers = ['No. Absen', 'NISN', 'Nama Siswa'];
@@ -4132,7 +4082,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const finalSheetData = [...metadata, headers, ...studentRows];
                 const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
 
-                // Set column widths
                 ws['!cols'] = headers.map((header, i) => {
                     const defaultWidth = String(header).length;
                     const maxLength = Math.max(
@@ -4142,7 +4091,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     return { wch: Math.min(maxLength + 2, 60) };
                 });
 
-                // Shorten sheet name if too long
                 const safeSheetName = subjectName.replace(/[\\/:*?"<>|]/g, "").substring(0, 31);
                 XLSX.utils.book_append_sheet(wb, ws, safeSheetName);
             });
@@ -4168,7 +4116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const ws = workbook.Sheets[sheetName];
                         const sheetJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
                         
-                        if (sheetJson.length < 5) return; // Not a valid grade sheet
+                        if (sheetJson.length < 5) return; 
                         
                         const subjectName = sheetJson[2]?.[1];
                         if (!subjectName || !this.state.settings.subjects.find(s => s.name === subjectName)) {
@@ -4272,7 +4220,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Data nilai berhasil diimpor!');
             this.closeModal();
             
-            // Re-render if on grades view
             if (window.location.hash === '#grades') {
                 this.renderGrades();
             }
@@ -4301,10 +4248,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             this.saveState();
-            alert('Penilaian projek berhasil disimpan!');
+            alert('Penilaian proyek berhasil disimpan!');
         },
-
-        // --- MODAL & UI HELPERS ---
 
         showStudentModal(studentId = null) {
             const student = studentId ? this.state.students.find(s => s.id === studentId) : this.getEmptyStudent();
@@ -4402,7 +4347,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let academicRows = '';
             
-            // Group subjects for reporting
             const subjectGroups = {
                 'Kelompok A': ['Pendidikan Agama', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)'],
                 'Kelompok B': ['Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)'],
@@ -4433,7 +4377,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         .filter(s => !s.isDeleted && s.name.startsWith(prefix) && !processedSubjects.has(s.name))
                         .forEach(subject => {
                             let shouldRender = true;
-                            // Special handling for religion
                             if (prefix === 'Pendidikan Agama') {
                                 const religionInSubject = subject.name.match(/\(([^)]+)\)/)?.[1];
                                 if (!student.agama || !religionInSubject || student.agama.toLowerCase() !== religionInSubject.toLowerCase()) {
@@ -4461,7 +4404,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            // Extracurriculars
             const studentExtras = this.state.extracurricularGrades[student.id] || [];
             const extracurricularRows = studentExtras.map((extra, i) => {
                 const extraConfig = settings.extracurriculars.find(e => e.id === extra.id);
@@ -4473,48 +4415,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 </tr>`
             }).join('') || `<tr><td colspan="4" class="border p-2 text-center">-</td></tr>`;
             
-            // Attendance
             const attendance = this.state.attendance[student.id] || { s:0, i:0, a:0 };
             
-            // P5 Report
             const p5Levels = { BB: 'Belum Berkembang', MB: 'Mulai Berkembang', BSH: 'Berkembang Sesuai Harapan', SB: 'Sangat Berkembang' };
             let p5ReportHTML = '';
             (settings.p5Projects || []).forEach(project => {
                 const studentP5Grades = this.state.p5Grades[student.id]?.[project.id] || {};
-                const hasGradesForProject = Object.keys(studentP5Grades).length > 0;
+                let hasAnyGradeForProject = Object.keys(studentP5Grades).length > 0;
 
-                let projectReport = `<div class="p-2 border mt-2"><h4 class="font-bold text-sm">${project.name}</h4><div class="text-xs text-justify space-y-1">`;
+                const dimensionReports = project.dimensions.map(dim => {
+                    const gradeMapping = { 'SB': 4, 'BSH': 3, 'MB': 2, 'BB': 1 };
+                    let highestAchievement = null;
+                    let highestGrade = 0;
 
-                if (hasGradesForProject) {
-                    const dimensionReports = project.dimensions.map(dim => {
-                        const allTargetIdsInDim = dim.subElements.flatMap(sub => sub.targets.map(t => t.id));
-                        const allGradesInDim = allTargetIdsInDim.map(id => studentP5Grades[id]).filter(Boolean);
-
-                        if (allGradesInDim.length > 0) {
-                            // Find the most frequent "highest" grade
-                            const gradeOrder = { 'SB': 4, 'BSH': 3, 'MB': 2, 'BB': 1 };
-                            const highestGrade = allGradesInDim.reduce((highest, current) => {
-                                return gradeOrder[current] > gradeOrder[highest] ? current : highest;
-                            }, 'BB');
-                            
-                            return `<p>Dalam dimensi <strong>${dim.name}</strong>, Ananda ${studentNickname} menunjukkan pencapaian pada fase <strong>${p5Levels[highestGrade]}</strong>.</p>`;
+                    dim.subElements.flatMap(s => s.targets).forEach(target => {
+                        const grade = studentP5Grades[target.id];
+                        if (grade && gradeMapping[grade] > highestGrade) {
+                            highestGrade = gradeMapping[grade];
+                            highestAchievement = target.description;
                         }
-                        return '';
-                    }).filter(Boolean).join('');
+                    });
                     
-                    if (dimensionReports) {
-                        projectReport += dimensionReports;
-                    } else {
-                        projectReport += `<p>Penilaian untuk proyek ini masih dalam proses.</p>`;
+                    if (highestAchievement) {
+                        return `<p>Dalam dimensi <strong>${dim.name}</strong>, Ananda ${studentNickname} menunjukkan pencapaian: ${highestAchievement}</p>`;
                     }
-                } else {
-                    projectReport += `<p>Siswa belum dinilai untuk proyek ini.</p>`;
+                    return '';
+                }).filter(Boolean).join('');
+                
+                if (hasAnyGradeForProject && dimensionReports) {
+                     p5ReportHTML += `<div class="p-2 border mt-2"><h4 class="font-bold text-sm">${project.name}</h4><div class="text-xs text-justify space-y-1">${dimensionReports}</div></div>`;
                 }
-
-                projectReport += `</div></div>`;
-                p5ReportHTML += projectReport;
             });
-
 
             return `<div class="bg-white p-8 mx-auto my-4 max-w-4xl shadow-lg border rounded-md font-serif report-card print-area">
                 <header class="text-center mb-6">
@@ -4591,7 +4522,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                     
-                    <h3 class="font-bold text-md mt-4 mb-1">F. LAPORAN PROJEK PENGUATAN PROFIL PELAJAR PANCASILA</h3>
+                    <h3 class="font-bold text-md mt-4 mb-1">F. LAPORAN PROYEK PENGUATAN PROFIL PELAJAR PANCASILA</h3>
                     <div class="border p-2 text-sm">${p5ReportHTML || '<p class="text-center">-</p>'}</div>
                     
                     <div class="text-sm mt-6 flex justify-between">
