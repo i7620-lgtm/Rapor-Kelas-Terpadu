@@ -447,8 +447,8 @@
 
 // --- Google API Integration ---
 // GANTI DENGAN KREDENSIAL ANDA DARI GOOGLE CLOUD CONSOLE
-const API_KEY = 'GANTI_DENGAN_API_KEY_ANDA';
-const CLIENT_ID = 'GANTI_DENGAN_CLIENT_ID_ANDA.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCnWlB1fBkuFysAy81ui35FUFCKa1rn6F4';
+const CLIENT_ID = '584511730006-665o1b5cgqp6bam2mdribmgk6j6ia7vt.apps.googleusercontent.com';
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest", "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest", "https://www.googleapis.com/discovery/v1/apis/oauth2/v2/rest"];
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
@@ -3043,7 +3043,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            const allSubElements = [];
             const findSubElement = (subElementId) => {
                 for (const dim of this.p5ProfileData.dimensions) {
                     for (const el of dim.elements) {
@@ -3053,23 +3052,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 return null;
             };
+            
+            const dimensionsWithTargets = project.dimensions.filter(d => d.subElementIds && d.subElementIds.length > 0);
+            
+            if (dimensionsWithTargets.length === 0) {
+                 container.innerHTML = `
+                    <div class="border-b pb-4 mb-4">
+                        <h3 class="text-xl font-bold text-blue-800">${project.name}</h3>
+                        <p class="text-sm text-gray-600 mt-1">${project.description}</p>
+                    </div>
+                    <p class="text-center text-gray-500 py-8">Proyek ini belum memiliki target capaian. Silakan tambahkan dimensi dan target di menu Pengaturan.</p>`;
+                return;
+            }
 
-            project.dimensions.forEach(dimData => {
+            const allSubElements = [];
+            dimensionsWithTargets.forEach(dimData => {
                  dimData.subElementIds.forEach(subId => {
                     const subData = findSubElement(subId);
                     if (subData) allSubElements.push(subData);
                 });
             });
 
-
-            const headerHTML = project.dimensions.map(dimData => {
+            const headerHTML = dimensionsWithTargets.map(dimData => {
                 const dimension = this.p5ProfileData.dimensions.find(d => d.id === dimData.dimensionId);
                 return `<th colspan="${dimData.subElementIds.length}" class="p-2 border border-gray-300 text-center bg-gray-100">${dimension.name}</th>`;
             }).join('');
             
-            const subHeaderHTML = project.dimensions.flatMap(dimData => 
+            const subHeaderHTML = dimensionsWithTargets.flatMap(dimData => 
                 dimData.subElementIds.map(subId => {
                     const subData = findSubElement(subId);
+                    if (!subData) return '';
                     return `<th class="p-2 border border-gray-300 text-center text-xs font-normal align-bottom" title="${subData.faseB}">${subData.name}</th>`
                 })
             ).join('');
@@ -4125,7 +4137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { label: 'Alamat Orang Tua', id: 'alamatOrtu', type: 'text', span: 'md:col-span-2' },
                 { label: 'Telepon Orang Tua', id: 'teleponOrtu', type: 'tel' },
                 { label: 'Nama Wali', id: 'namaWali', type: 'text' },
-                { label: 'Pekerjaan Wali', id: 'pekerjaanWali', type: 'text' },
+                                { label: 'Pekerjaan Wali', id: 'pekerjaanWali', type: 'text' },
                 { label: 'Alamat Wali', id: 'alamatWali', type: 'text', span: 'md:col-span-2' },
                 { label: 'Telepon Wali', id: 'teleponWali', type: 'tel' }
             ];
@@ -4608,14 +4620,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<tr><td class="${tableCellStyle} text-center">${index + 1}</td><td class="${tableCellStyle}">${extraInfo.name}</td><td class="${tableCellStyle}">${ex.description}</td></tr>`;
             }).join('') || `<tr><td class="${tableCellStyle} text-center" colspan="3">Tidak mengikuti kegiatan ekstrakurikuler.</td></tr>`;
 
-                        // Attendance
+            // Attendance
             const attendance = this.state.attendance[student.id] || { s: 0, i: 0, a: 0 };
 
             // P5 Projects
             const p5GradesForStudent = this.state.p5Grades[student.id] || {};
             const p5ReportsHTML = settings.p5Projects.map(project => {
-                const projectGrades = p5GradesForStudent[project.id];
-                if (!projectGrades) return '';
+                const projectGrades = p5GradesForStudent[project.id] || {};
+                const dimensionsWithTargets = project.dimensions.filter(d => d.subElementIds && d.subElementIds.length > 0);
+                
+                // Only render the project in the report if it's fully configured with targets.
+                if (dimensionsWithTargets.length === 0) return '';
 
                 const p5Levels = { BB: 'Belum Berkembang', MB: 'Mulai Berkembang', BSH: 'Berkembang Sesuai Harapan', SB: 'Sangat Berkembang' };
                 const findSubElement = (subId) => {
@@ -4657,7 +4672,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </tr>
                             </thead>
                             <tbody>
-                               ${project.dimensions.map(dimData => {
+                               ${dimensionsWithTargets.map(dimData => {
                                     const dimension = this.p5ProfileData.dimensions.find(d => d.id === dimData.dimensionId);
                                     let hasGrade = false;
                                     let maxGrade = 'BB';
@@ -4670,10 +4685,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                             }
                                         }
                                     });
-                                    if (!hasGrade) return '';
+                                    // Always show the row if targets are configured, even if no grade is entered yet.
                                     return `<tr>
                                         <td class="${tableCellStyle}">${dimension.name}</td>
-                                        ${Object.keys(p5Levels).map(level => `<td class="${tableCellStyle} text-center">${maxGrade === level ? '✔' : ''}</td>`).join('')}
+                                        ${Object.keys(p5Levels).map(level => `<td class="${tableCellStyle} text-center">${hasGrade && maxGrade === level ? '✔' : ''}</td>`).join('')}
                                     </tr>`
                                 }).join('')}
                             </tbody>
