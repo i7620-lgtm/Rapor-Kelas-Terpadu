@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -50,7 +49,7 @@
         .sync-status-indicator.error { background-color: #ef4444; /* red-500 */ }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100  text-gray-800">
 
     <div class="flex h-screen">
         <!-- Sidebar -->
@@ -448,11 +447,11 @@
 
 // --- Google API Integration ---
 // GANTI DENGAN KREDENSIAL ANDA DARI GOOGLE CLOUD CONSOLE
-const API_KEY = 'AIzaSyCnWlB1fBkuFysAy81ui35FUFCKa1rn6F4';
-const CLIENT_ID = '584511730006-665o1b5cgqp6bam2mdribmgk6j6ia7vt.apps.googleusercontent.com';
+const API_KEY = 'GANTI_DENGAN_API_KEY_ANDA';
+const CLIENT_ID = 'GANTI_DENGAN_CLIENT_ID_ANDA.apps.googleusercontent.com';
 
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest", "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/drive.file";
+const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/sheets/v4/rest", "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest", "https://www.googleapis.com/discovery/v1/apis/oauth2/v2/rest"];
+const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
 
 let tokenClient;
 let gapiInited = false;
@@ -495,14 +494,19 @@ function handleAuthClick() {
         }
         isLoggedIn = true;
         updateUIOnLogin();
-        await App.syncWithGoogleSheets(true); // Sync on login (fetch only)
-
-        // Ambil info profil pengguna
+        
+        // Fetch user profile info
         try {
-            const profile = await gapi.client.oauth2.userinfo.get();
-            document.getElementById('user-profile').textContent = `Login sebagai: ${profile.result.email}`;
+            const response = await gapi.client.oauth2.userinfo.get();
+            const profile = response.result;
+            document.getElementById('user-profile').textContent = `Login sebagai: ${profile.email}`;
             document.getElementById('user-profile').classList.remove('hidden');
-        } catch(e) { console.error("Error fetching user profile", e); }
+        } catch (err) {
+            console.error("Error fetching user profile", err);
+        } finally {
+            // Sync on login (fetch only)
+            await App.syncWithGoogleSheets(true);
+        }
     };
 
     if (gapi.client.getToken() === null) {
@@ -1271,6 +1275,121 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         },
 
+        p5ProfileData: {
+            dimensions: [
+                {
+                    id: 'dim-1', name: 'Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia',
+                    elements: [
+                        { id: 'el-1-1', name: 'Akhlak Beragama', subElements: [
+                            { id: 'sub-1-1-1', name: 'Mengenal dan Mencintai Tuhan YME', faseB: 'Memahami sifat-sifat Tuhan utama lainnya dan mengaitkan sifat-sifat tersebut dengan konsep dirinya dan ciptaan-Nya.' },
+                            { id: 'sub-1-1-2', name: 'Pemahaman Agama/Kepercayaan', faseB: 'Memahami unsur-unsur utama agama/kepercayaan (seperti: simbol-simbol, kitab suci, dan sejarahnya).' },
+                            { id: 'sub-1-1-3', name: 'Pelaksanaan Ritual Ibadah', faseB: 'Melaksanakan ibadah secara rutin dan mandiri sesuai tuntunan agama/kepercayaan serta menyadari arti penting ibadah tersebut.' }
+                        ]},
+                        { id: 'el-1-2', name: 'Akhlak Pribadi', subElements: [
+                            { id: 'sub-1-2-1', name: 'Integritas', faseB: 'Membiasakan bersikap jujur terhadap diri sendiri dan orang lain dan berani menyampaikan kebenaran atau fakta.' },
+                            { id: 'sub-1-2-2', name: 'Merawat Diri secara Fisik, Mental, dan Spiritual', faseB: 'Mengidentifikasi pentingnya menjaga keseimbangan kesehatan jasmani, mental, dan rohani serta berupaya menyeimbangkan ketiganya dalam beraktivitas.' }
+                        ]},
+                        { id: 'el-1-3', name: 'Akhlak kepada Manusia', subElements: [
+                            { id: 'sub-1-3-1', name: 'Mengutamakan persamaan dengan orang lain dan menghargai perbedaan', faseB: 'Mengidentifikasi kesamaan dengan orang lain sebagai perekat hubungan sosial dan mewujudkannya dalam aktivitas kelompok.' },
+                            { id: 'sub-1-3-2', name: 'Berempati kepada orang lain', faseB: 'Mengidentifikasi emosi, minat, dan kebutuhan orang-orang terdekat dan meresponnya secara positif.' }
+                        ]},
+                        { id: 'el-1-4', name: 'Akhlak kepada Alam', subElements: [
+                            { id: 'sub-1-4-1', name: 'Memahami Keterhubungan Ekosistem Bumi', faseB: 'Memahami keterhubungan antara satu ciptaan dengan ciptaan Tuhan yang lainnya.' },
+                            { id: 'sub-1-4-2', name: 'Menjaga Lingkungan Alam Sekitar', faseB: 'Mewujudkan rasa syukur dengan berinisiatif untuk menyelesaikan permasalahan lingkungan alam sekitarnya dengan mengajukan alternatif solusi dan mulai menerapkan solusi tersebut.' }
+                        ]},
+                        { id: 'el-1-5', name: 'Akhlak Bernegara', subElements: [
+                            { id: 'sub-1-5-1', name: 'Melaksanakan Hak dan Kewajiban sebagai Warga Negara Indonesia', faseB: 'Mengidentifikasi hak dan tanggung jawabnya sebagai anak di rumah, sekolah, serta kaitannya dengan keimanan dan kepercayaannya.' }
+                        ]}
+                    ]
+                },
+                {
+                    id: 'dim-2', name: 'Berkebinekaan Global',
+                    elements: [
+                        { id: 'el-2-1', name: 'Mengenal dan menghargai budaya', subElements: [
+                            { id: 'sub-2-1-1', name: 'Mendalami budaya dan identitas budaya', faseB: 'Mengidentifikasi dan mendeskripsikan keragaman budaya di sekitarnya; serta menjelaskan peran budaya dan Bahasa dalam membentuk identitas dirinya.' },
+                            { id: 'sub-2-1-2', name: 'Mengeksplorasi dan membandingkan pengetahuan budaya, kepercayaan, serta praktiknya', faseB: 'Mendeskripsikan dan membandingkan pengetahuan, keterampilan, dan sikap yang dimiliki oleh berbagai kelompok budaya.' },
+                            { id: 'sub-2-1-3', name: 'Menumbuhkan rasa menghormati terhadap keanekaragaman budaya', faseB: 'Memahami bahwa kemajemukan dapat memberikan kesempatan untuk mendapatkan pengalaman dan pemahaman yang baru.' }
+                        ]},
+                        { id: 'el-2-2', name: 'Komunikasi dan interaksi antar budaya', subElements: [
+                            { id: 'sub-2-2-1', name: 'Berkomunikasi antar budaya', faseB: 'Memahami adanya potensi perbedaan cara berkomunikasi dan berinteraksi antar budaya.' },
+                            { id: 'sub-2-2-2', name: 'Mempertimbangkan dan menumbuhkan berbagai perspektif', faseB: 'Menjelaskan apa yang dipikirkan, dirasakan, dan dilakukan oleh orang lain, serta mengakui adanya kemungkinan orang lain memiliki perspektif yang berbeda.' }
+                        ]},
+                        { id: 'el-2-3', name: 'Refleksi dan tanggung jawab terhadap pengalaman kebinekaan', subElements: [
+                            { id: 'sub-2-3-1', name: 'Refleksi terhadap pengalaman kebinekaan', faseB: 'Menyebutkan apa yang telah dipelajari tentang orang atau kelompok lain dari interaksi dan pengalaman yang telah dialami.' },
+                            { id: 'sub-2-3-2', name: 'Menghilangkan stereotip dan prasangka', faseB: 'Mengidentifikasi dan membandingkan berbagai stereotip dan prasangka yang ada tentang individu atau kelompok serta mencari alternatif cara pandang yang lebih adil.' },
+                            { id: 'sub-2-3-3', name: 'Menyelaraskan perbedaan budaya', faseB: 'Menyebutkan contoh tindakan, kebiasaan, atau kepercayaan yang berbeda dari lingkungan budayanya.' }
+                        ]},
+                        { id: 'el-2-4', name: 'Berkeadilan Sosial', subElements: [
+                            { id: 'sub-2-4-1', name: 'Berpartisipasi dalam proses pengambilan keputusan bersama', faseB: 'Menyebutkan contoh-contoh tindakan dan perilaku yang menjaga serta yang merusak keharmonisan dalam lingkungan sekitarnya.' }
+                        ]}
+                    ]
+                },
+                {
+                    id: 'dim-3', name: 'Gotong Royong',
+                    elements: [
+                        { id: 'el-3-1', name: 'Kolaborasi', subElements: [
+                            { id: 'sub-3-1-1', name: 'Kerja sama', faseB: 'Menerima dan melaksanakan tugas serta peran yang diberikan kelompok dalam sebuah kegiatan bersama.' },
+                            { id: 'sub-3-1-2', name: 'Komunikasi untuk mencapai tujuan bersama', faseB: 'Memahami informasi sederhana dari orang lain dan menyampaikan informasi sederhana kepada orang lain menggunakan kata-katanya sendiri.' },
+                            { id: 'sub-3-1-3', name: 'Saling-ketergantungan positif', faseB: 'Menyadari bahwa setiap orang membutuhkan orang lain dalam memenuhi kebutuhannya dan bagaimana mereka dapat saling membantu.' },
+                            { id: 'sub-3-1-4', name: 'Koordinasi Sosial', faseB: 'Melaksanakan aktivitas kelompok sesuai dengan kesepakatan.' }
+                        ]},
+                        { id: 'el-3-2', name: 'Kepedulian', subElements: [
+                            { id: 'sub-3-2-1', name: 'Tanggap terhadap lingkungan Sosial', faseB: 'Peka dan mengapresiasi orang-orang di lingkungan sekitar, kemudian melakukan tindakan sederhana untuk mengungkapkannya.' },
+                            { id: 'sub-3-2-2', name: 'Persepsi sosial', faseB: 'Mengenali dan mengekspresikan emosi diri sendiri serta mengenali emosi orang lain.' }
+                        ]},
+                        { id: 'el-3-3', name: 'Berbagi', subElements: [
+                            { id: 'sub-3-3-1', name: 'Berbagi', faseB: 'Memberi dan menerima hal yang dianggap berharga dan penting kepada/dari orang-orang di lingkungan sekitar.' }
+                        ]}
+                    ]
+                },
+                {
+                    id: 'dim-4', name: 'Mandiri',
+                    elements: [
+                        { id: 'el-4-1', name: 'Pemahaman diri dan situasi yang dihadapi', subElements: [
+                            { id: 'sub-4-1-1', name: 'Mengenali kualitas dan minat diri serta tantangan yang dihadapi', faseB: 'Mengidentifikasi kemampuan, prestasi, dan ketertarikannya serta tantangan yang dihadapinya berdasarkan kejadian-kejadian yang dialaminya dalam kehidupan sehari-hari.' },
+                            { id: 'sub-4-1-2', name: 'Mengembangkan refleksi diri', faseB: 'Melakukan refleksi untuk mengidentifikasi kekuatan, kelemahan, dan prestasi dirinya, serta situasi yang dapat mendukung dan menghambat pembelajaran dan pengembangannya.' }
+                        ]},
+                        { id: 'el-4-2', name: 'Regulasi Diri', subElements: [
+                            { id: 'sub-4-2-1', name: 'Regulasi emosi', faseB: 'Mengidentifikasi perbedaan emosi yang dirasakannya dan situasi-situasi yang menyebabkannya; serta mengekspresikan emosi secara wajar.' },
+                            { id: 'sub-4-2-2', name: 'Menetapkan tujuan dan rencana strategis pengembangan diri dan prestasi', faseB: 'Mengidentifikasi target belajar yang realistis untuk dicapai dan menyusun rencana sederhana dengan bantuan orang dewasa.' },
+                            { id: 'sub-4-2-3', name: 'Menunjukkan inisiatif dan bekerja secara mandiri', faseB: 'Berinisiatif untuk mengerjakan tugas-tugas rutin secara mandiri di bawah pengawasan dan dukungan orang dewasa.' },
+                            { id: 'sub-4-2-4', name: 'Mengembangkan pengendalian dan disiplin diri', faseB: 'Mengendalikan dorongan-dorongan yang bersifat segera atau instan dalam mengerjakan aktivitas.' },
+                            { id: 'sub-4-2-5', name: 'Percaya diri, tangguh (resilient), dan adaptif', faseB: 'Meminta bantuan kepada teman dan orang dewasa ketika menghadapi tantangan dalam belajar.' }
+                        ]}
+                    ]
+                },
+                {
+                    id: 'dim-5', name: 'Bernalar Kritis',
+                    elements: [
+                        { id: 'el-5-1', name: 'Memperoleh dan memproses informasi dan gagasan', subElements: [
+                            { id: 'sub-5-1-1', name: 'Mengajukan pertanyaan', faseB: 'Mengajukan pertanyaan untuk mengidentifikasi suatu permasalahan dan mengkonfirmasi pemahaman terhadap suatu permasalahan mengenai dirinya dan lingkungan sekitarnya.' },
+                            { id: 'sub-5-1-2', name: 'Mengidentifikasi, mengklarifikasi, dan mengolah informasi dan gagasan', faseB: 'Mengumpulkan, mengklasifikasikan, membandingkan, dan memilih informasi dari berbagai sumber, serta menyampaikan kembali dengan bahasanya sendiri.' }
+                        ]},
+                        { id: 'el-5-2', name: 'Menganalisis dan mengevaluasi penalaran dan prosedurnya', subElements: [
+                            { id: 'sub-5-2-1', name: 'Menjelaskan alasan yang relevan dalam penyelesaian masalah dan pengambilan keputusan', faseB: 'Menjelaskan alasan yang relevan dalam menyimpulkan atau mengambil keputusan.' }
+                        ]},
+                        { id: 'el-5-3', name: 'Merefleksi dan mengevaluasi pemikirannya sendiri', subElements: [
+                            { id: 'sub-5-3-1', name: 'Merefleksi dan mengevaluasi pemikirannya sendiri', faseB: 'Menyampaikan apa yang sedang dipikirkan secara terperinci.' }
+                        ]}
+                    ]
+                },
+                {
+                    id: 'dim-6', name: 'Kreatif',
+                    elements: [
+                        { id: 'el-6-1', name: 'Menghasilkan gagasan yang orisinal', subElements: [
+                            { id: 'sub-6-1-1', name: 'Menggabungkan beberapa gagasan menjadi ide atau gagasan imajinatif yang bermakna untuk mengekspresikan pikiran dan/atau perasaannya.', faseB: 'Memunculkan gagasan imajinatif baru yang bermakna dari beberapa gagasan yang berbeda sebagai ekspresi pikiran dan/atau perasaannya.' }
+                        ]},
+                        { id: 'el-6-2', name: 'Menghasilkan karya dan tindakan yang orisinal', subElements: [
+                            { id: 'sub-6-2-1', name: 'Mengeksplorasi dan mengekspresikan pikiran dan/atau perasaannya dalam bentuk karya dan/atau tindakan, serta mengevaluasinya dan mempertimbangkan dampaknya bagi orang lain.', faseB: 'Mengeksplorasi dan mengekspresikan pikiran dan/atau perasaannya sesuai dengan minat dan kesukaannya dalam bentuk karya dan/atau tindakan serta mengapresiasi karya dan tindakan yang dihasilkan.' }
+                        ]},
+                        { id: 'el-6-3', name: 'Memiliki keluwesan berpikir dalam mencari alternatif solusi permasalahan', subElements: [
+                            { id: 'sub-6-3-1', name: 'Mengidentifikasi gagasan-gagasan kreatif untuk menghadapi situasi dan permasalahan.', faseB: 'Membandingkan gagasan-gagasan kreatif untuk menghadapi situasi dan permasalahan.' }
+                        ]}
+                    ]
+                }
+            ]
+        },
+
         // --- STATE MANAGEMENT ---
         state: {
             settings: {},
@@ -1278,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', () => {
             grades: {},
             extracurricularGrades: {}, // { studentId: [{ id: 'extraId', grade: 'A', description: '...' }] }
             attendance: {}, // { studentId: { s: 0, i: 0, a: 0 } }
-            p5Grades: {}, // { studentId: { projectId: { targetId: 'BB' | 'MB' | 'BSH' | 'SB' } } }
+            p5Grades: {}, // { studentId: { projectId: { subElementId: 'BB' | 'MB' | 'BSH' | 'SB' } } }
             teacherNotes: {}, // { studentId: '...' }
         },
         
@@ -1364,31 +1483,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 p5Projects: [
                     {
                         id: 'p5-proj-1',
-                        name: 'Hidup Sehat di Mulai dari Makanan',
-                        description: 'Proyek ini adalah proyek pertama di kelas 6. Proyek ini diharapkan membangun dua dimensi Profil Pelajar Pancasila, yakni mandiri dan kreatif. Adapun tujuan dari proyek ini adalah menumbuhkan kemandirian dan kreativitas peserta didik dengan memotivasi peserta didik untuk makan makanan sehat setiap hari. Melalui edukasi tentang makanan sehat, peserta didik diharapkan mampu menunjukkan inisiatif dan bekerja secara mandiri, serta mengembangkan gagasan/ide yang dimiliki untuk membuat kombinasi hal yang baru dan imajinatif.',
+                        name: 'Gaya Hidup Berkelanjutan',
+                        description: 'Proyek ini bertujuan untuk membangun kesadaran siswa tentang pentingnya menjaga lingkungan dan menerapkan gaya hidup berkelanjutan dalam kehidupan sehari-hari melalui kegiatan pengelolaan sampah dan penghematan energi.',
                         dimensions: [
-                            {
-                                id: 'dim1', name: 'Mandiri',
-                                subElements: [
-                                    { 
-                                        id: 'sub1-1', name: 'Menunjukkan inisiatif dan bekerja secara mandiri',
-                                        targets: [
-                                            { id: 't1-1-1', description: 'Memahami arti penting bekerja secara mandiri serta inisiatif untuk melakukannya dalam menunjang pembelajaran dan pengembangan dirinya.' },
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                id: 'dim2', name: 'Kreatif',
-                                subElements: [
-                                    { 
-                                        id: 'sub2-1', name: 'Menghasilkan gagasan yang orisinal',
-                                        targets: [
-                                            { id: 't2-1-1', description: 'Mengembangkan gagasan yang ia miliki untuk membuat kombinasi hal yang baru dan imajinatif untuk mengekspresikan pikiran dan/atau perasaannya.' },
-                                        ]
-                                    }
-                                ]
-                            }
+                            { dimensionId: 'dim-1', subElementIds: ['sub-1-4-2'] },
+                            { dimensionId: 'dim-3', subElementIds: ['sub-3-1-1', 'sub-3-2-1'] },
+                            { dimensionId: 'dim-6', subElementIds: ['sub-6-2-1'] }
                         ]
                     }
                 ],
@@ -1437,6 +1537,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.state.teacherNotes = this.state.teacherNotes || {};
                 this.state.settings.extracurriculars = this.state.settings.extracurriculars || defaultSettings.extracurriculars;
                 this.state.settings.p5Projects = this.state.settings.p5Projects || defaultSettings.p5Projects;
+                 if (this.state.settings.p5Projects.length > 0 && this.state.settings.p5Projects[0].dimensions[0].targets) {
+                    this.state.settings.p5Projects = defaultSettings.p5Projects;
+                 }
+
 
                 delete this.state.characterGrades;
                 delete this.state.settings.characters;
@@ -1795,7 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dashboardStatusContainer) {
                 let indicatorClass = 'bg-gray-400';
                 let textColorClass = 'text-gray-600';
-                let statusMessage = 'Sinkronisasi Otomatis Nonaktif (Login untuk mengaktifkan).';
+                let statusMessage = 'Sinkronisasi Google tidak aktif.';
                 let bgColorClass = 'bg-gray-200';
 
                 if(isLoggedIn) {
@@ -1900,6 +2004,16 @@ document.addEventListener('DOMContentLoaded', () => {
             this.navigateTo(window.location.hash || '#dashboard');
         },
         
+        openModal() {
+            document.getElementById('app-modal').classList.remove('hidden');
+        },
+
+        closeModal() {
+            const modal = document.getElementById('app-modal');
+            modal.classList.add('hidden');
+            modal.querySelector('#modal-content-wrapper').innerHTML = ''; // Clear content
+        },
+
         setupEventListeners() {
             window.addEventListener('hashchange', () => this.navigateTo(window.location.hash));
             document.querySelectorAll('.sidebar-item').forEach(link => {
@@ -1951,7 +2065,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             document.getElementById('edit-grades-btn').addEventListener('click', this.showEditStudentGradesModal.bind(this));
-            document.getElementById('download-grades-btn').addEventListener('click', this.showDownloadGradesModal.bind(this));
+            document.getElementById('download-grades-btn').addEventListener('click', this.handleDownloadGrades.bind(this));
             document.getElementById('upload-grades-input').addEventListener('change', this.handleUploadGrades.bind(this));
         
             document.getElementById('generate-all-reports-btn').addEventListener('click', this.renderAllReportCards.bind(this));
@@ -2000,7 +2114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const { target } = e;
             if(!target.dataset.field) return; 
 
-            const { field, projectId, dimensionId, subelementId, targetId } = target.dataset;
+            const { field, projectId } = target.dataset;
 
             const project = this.state.settings.p5Projects.find(p => p.id === projectId);
             if (!project) return;
@@ -2014,18 +2128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'description':
                     project.description = target.value;
                     break;
-                case 'dimension-name':
-                    project.dimensions.find(d => d.id === dimensionId).name = target.value;
-                    break;
-                case 'subelement-name':
-                    project.dimensions.find(d => d.id === dimensionId)
-                        .subElements.find(s => s.id === subelementId).name = target.value;
-                    break;
-                case 'target-description':
-                    project.dimensions.find(d => d.id === dimensionId)
-                        .subElements.find(s => s.id === subelementId)
-                        .targets.find(t => t.id === targetId).description = target.value;
-                    break;
             }
             this.saveState();
         },
@@ -2036,15 +2138,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const { action, projectId, dimensionId, subelementId } = button.dataset;
             let project;
-            let dimension;
-            let subElement;
             
             if (projectId) project = this.state.settings.p5Projects.find(p => p.id === projectId);
-            if (project && dimensionId) dimension = project.dimensions.find(d => d.id === dimensionId);
-            if (dimension && subelementId) subElement = dimension.subElements.find(s => s.id === subelementId);
 
             const reRenderEditor = () => {
                 this.renderP5ProjectEditor();
+                this.saveState();
             };
 
             switch(action) {
@@ -2067,40 +2166,134 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     break;
                 case 'add-dimension':
-                    project.dimensions.push({ id: 'dim-' + Date.now(), name: 'Dimensi Baru', subElements: [] });
-                    reRenderEditor();
+                    this.showP5DimensionSelectorModal(projectId);
                     break;
                 case 'delete-dimension':
-                     if (confirm(`Hapus dimensi "${dimension.name}"?`)) {
-                        project.dimensions = project.dimensions.filter(d => d.id !== dimensionId);
+                     if (confirm(`Hapus dimensi ini dari proyek?`)) {
+                        project.dimensions = project.dimensions.filter(d => d.dimensionId !== dimensionId);
                         reRenderEditor();
                     }
                     break;
                 case 'add-subelement':
-                    dimension.subElements.push({ id: 'sub-' + Date.now(), name: 'Sub Elemen Baru', targets: [] });
-                    reRenderEditor();
+                    this.showP5SubElementSelectorModal(projectId, dimensionId);
                     break;
                 case 'delete-subelement':
-                    dimension.subElements = dimension.subElements.filter(s => s.id !== button.dataset.subelementId);
+                    const dim = project.dimensions.find(d => d.dimensionId === dimensionId);
+                    if(dim) {
+                        dim.subElementIds = dim.subElementIds.filter(id => id !== subelementId);
+                    }
                     reRenderEditor();
                     break;
-                case 'add-target':
-                    subElement.targets.push({ id: 'target-' + Date.now(), description: '' });
-                    reRenderEditor();
-                    break;
-                case 'delete-target':
-                    project.dimensions.forEach(d => {
-                        d.subElements.forEach(s => {
-                            s.targets = s.targets.filter(t => t.id !== button.dataset.targetId);
-                        });
+            }
+        },
+
+        showP5DimensionSelectorModal(projectId) {
+            const project = this.state.settings.p5Projects.find(p => p.id === projectId);
+            if (!project) return;
+
+            const existingDimIds = project.dimensions.map(d => d.dimensionId);
+            const availableDimensions = this.p5ProfileData.dimensions.filter(d => !existingDimIds.includes(d.id));
+
+            if (availableDimensions.length === 0) {
+                alert('Semua dimensi sudah ditambahkan ke proyek ini.');
+                return;
+            }
+
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-lg';
+            modalContent.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-4">Pilih Dimensi Profil Pelajar Pancasila</h3>
+                    <div class="space-y-2">
+                        ${availableDimensions.map(dim => `
+                            <div class="flex items-center">
+                                <input type="radio" id="dim-radio-${dim.id}" name="p5-dimension" value="${dim.id}" class="h-4 w-4 text-blue-600 border-gray-300">
+                                <label for="dim-radio-${dim.id}" class="ml-3 block text-sm font-medium text-gray-700">${dim.name}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
+                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
+                        <button id="confirm-add-dimension" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Tambah Dimensi</button>
+                    </div>
+                </div>
+            `;
+            this.openModal();
+
+            document.getElementById('confirm-add-dimension').onclick = () => {
+                const selectedRadio = document.querySelector('input[name="p5-dimension"]:checked');
+                if (selectedRadio) {
+                    const dimensionId = selectedRadio.value;
+                    project.dimensions.push({
+                        dimensionId: dimensionId,
+                        subElementIds: []
                     });
-                    reRenderEditor();
-                    break;
-            }
+                    this.saveState();
+                    this.renderP5ProjectEditor();
+                    this.closeModal();
+                    this.showP5SubElementSelectorModal(projectId, dimensionId);
+                } else {
+                    alert('Silakan pilih salah satu dimensi.');
+                }
+            };
+        },
+
+        showP5SubElementSelectorModal(projectId, dimensionId) {
+            const project = this.state.settings.p5Projects.find(p => p.id === projectId);
+            const dimensionData = this.p5ProfileData.dimensions.find(d => d.id === dimensionId);
+            if (!project || !dimensionData) return;
             
-            if (action.includes('delete') || action.includes('add')) {
+            const projectDimension = project.dimensions.find(d => d.dimensionId === dimensionId);
+            const existingSubElementIds = projectDimension ? projectDimension.subElementIds : [];
+
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl';
+            modalContent.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">Pilih Target Capaian untuk Dimensi:</h3>
+                    <p class="font-bold text-blue-800 mb-4">${dimensionData.name}</p>
+                    <div class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        ${dimensionData.elements.map(element => `
+                            <div>
+                                <h4 class="font-semibold bg-gray-100 p-2 rounded-t-md border-b">${element.name}</h4>
+                                <div class="space-y-2 p-3 border border-t-0 rounded-b-md">
+                                    ${element.subElements.map(sub => `
+                                        <div class="flex items-start">
+                                            <input type="checkbox" id="sub-check-${sub.id}" name="p5-subelement" value="${sub.id}" class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded" ${existingSubElementIds.includes(sub.id) ? 'checked' : ''}>
+                                            <label for="sub-check-${sub.id}" class="ml-3 block text-sm text-gray-700">
+                                                <span class="font-medium">${sub.name}</span>
+                                                <p class="text-xs text-gray-500 italic mt-1"><strong>Target Fase B:</strong> ${sub.faseB}</p>
+                                            </label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
+                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
+                        <button id="confirm-add-subelements" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Simpan Pilihan</button>
+                    </div>
+                </div>
+            `;
+
+            this.openModal();
+
+            document.getElementById('confirm-add-subelements').onclick = () => {
+                const selectedCheckboxes = document.querySelectorAll('input[name="p5-subelement"]:checked');
+                const selectedSubElementIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+                let projDim = project.dimensions.find(d => d.dimensionId === dimensionId);
+                if (projDim) {
+                    projDim.subElementIds = selectedSubElementIds;
+                } else {
+                    project.dimensions.push({ dimensionId, subElementIds: selectedSubElementIds });
+                }
+                
                 this.saveState();
-            }
+                this.renderP5ProjectEditor();
+                this.closeModal();
+            };
         },
 
         renderDashboard() {
@@ -2112,28 +2305,23 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dashboard-semester').textContent = settings.semester || '-';
 
             this.updateSyncStatus(
-                isLoggedIn ? 'synced' : 'disconnected', 
+                isLoggedIn ? (this.spreadsheetId ? 'synced' : 'syncing') : 'disconnected', 
                 isLoggedIn ? 'Terhubung ke Google' : 'Sinkronisasi Google'
             );
 
             const analysisContainer = document.getElementById('dashboard-analysis-content');
             analysisContainer.innerHTML = ''; 
 
-            if (!isLoggedIn) {
-                 analysisContainer.innerHTML = `<p class="text-center text-gray-500 py-4">Silakan login dengan akun Google Anda untuk memulai sinkronisasi data.</p>`;
-                 return;
-            }
-
             if (!settings.className.trim()) {
-                analysisContainer.innerHTML = `<p class="text-center text-gray-500 py-4">Silakan tentukan nama kelas di menu <a href="#settings" class="text-blue-600 hover:underline" onclick="document.querySelector('a[href=\\'#settings\\']').click()">Pengaturan</a>.</p>`;
+                analysisContainer.innerHTML = `<p class="text-center text-gray-500 py-4">Silakan tentukan nama kelas di menu <a href="#settings" class="text-blue-600 hover:underline" onclick="App.navigateTo('#settings')">Pengaturan</a>.</p>`;
                 return;
             }
             if (students.length === 0) {
-                analysisContainer.innerHTML = `<p class="text-center text-gray-500 py-4">Belum ada data siswa. Silakan tambahkan siswa di menu <a href="#students" class="text-blue-600 hover:underline" onclick="document.querySelector('a[href=\\'#students\\']').click()">Data Siswa</a>.</p>`;
+                analysisContainer.innerHTML = `<p class="text-center text-gray-500 py-4">Belum ada data siswa. Silakan tambahkan siswa di menu <a href="#students" class="text-blue-600 hover:underline" onclick="App.navigateTo('#students')">Data Siswa</a>.</p>`;
                 return;
             }
 
-            const passingGrade = settings.passingGrade || 70;
+            const passingGrade = settings.gradeRanges.C || 70;
             const lowScorers = students.map(student => {
                 const studentGrades = grades[student.id] || {};
                 const lowScores = Object.entries(studentGrades)
@@ -2143,10 +2331,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }).filter(s => s.scores.length > 0);
 
             if (lowScorers.length > 0) {
-                analysisContainer.innerHTML = `<h4 class="font-semibold text-red-600 mb-3">Siswa dengan Nilai di Bawah KKM (${passingGrade})</h4><ul class="space-y-3">${lowScorers.map(student => `<li class="p-3 bg-red-50 border border-red-200 rounded-md"><p class="font-bold">${student.name} (NISN: ${student.nisn})</p><ul class="list-disc list-inside text-sm mt-1">${student.scores.map(s => `<li>${s.subject}: <span class="font-semibold">${s.score}</span></li>`).join('')}</ul></li>`).join('')}</ul>`;
+                analysisContainer.innerHTML = `<h4 class="font-semibold text-red-600 mb-3">Siswa dengan Nilai di Bawah KKM (${passingGrade})</h4><ul class="space-y-3">${lowScorers.map(student => `<li class="p-3 bg-red-50 border border-red-200 rounded-md"><p class="font-bold">${student.name} (NISN: ${student.nisn || '-'})</p><ul class="list-disc list-inside text-sm mt-1">${student.scores.map(s => `<li>${s.subject}: <span class="font-semibold">${s.score}</span></li>`).join('')}</ul></li>`).join('')}</ul>`;
             } else {
                 const subjectStats = {};
-                settings.subjects.forEach(subject => {
+                settings.subjects.filter(s => !s.isDeleted).forEach(subject => {
                     const finalScores = students.map(s => this.getFinalScore((grades[s.id] || {})[subject.name])).filter(score => score != null);
                     if (finalScores.length > 0) {
                         subjectStats[subject.name] = { avg: (finalScores.reduce((a, b) => a + b, 0) / finalScores.length).toFixed(1), min: Math.min(...finalScores), max: Math.max(...finalScores), count: finalScores.length };
@@ -2208,16 +2396,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 container.innerHTML = '<p class="text-center text-gray-500 py-10">Belum ada proyek. Klik "Tambah Proyek Baru" untuk memulai.</p>';
                 return;
             }
+            
+            const findSubElement = (subElementId) => {
+                for (const dim of this.p5ProfileData.dimensions) {
+                    for (const el of dim.elements) {
+                        const sub = el.subElements.find(s => s.id === subElementId);
+                        if (sub) return { ...sub, dimension: dim, element: el };
+                    }
+                }
+                return null;
+            };
 
             container.innerHTML = projects.map(project => `
-                <details class="bg-white rounded-lg shadow-sm">
-                    <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-lg border">
+                <details class="bg-white rounded-lg shadow-sm border" open>
+                    <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-lg">
                         <span>${project.name || 'Proyek Baru'}</span>
                         <div class="flex items-center gap-2">
                             <button data-action="delete-project" data-project-id="${project.id}" class="text-red-500 hover:text-red-700 text-sm font-medium">Hapus Proyek</button>
                         </div>
                     </summary>
-                    <div class="p-4 border border-t-0 rounded-b-lg">
+                    <div class="p-4 border-t rounded-b-lg">
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Proyek</label>
@@ -2234,32 +2432,36 @@ document.addEventListener('DOMContentLoaded', () => {
                                    <button data-action="add-dimension" data-project-id="${project.id}" class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-md hover:bg-blue-200">+ Tambah Dimensi</button>
                                 </div>
                                 <div class="space-y-3">
-                                ${project.dimensions.map(dim => `
+                                ${project.dimensions.map(dimData => {
+                                    const dimension = this.p5ProfileData.dimensions.find(d => d.id === dimData.dimensionId);
+                                    if (!dimension) return '';
+                                    return `
                                     <div class="bg-gray-50 p-3 rounded-md border">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <input type="text" data-field="dimension-name" data-project-id="${project.id}" data-dimension-id="${dim.id}" value="${dim.name}" class="form-input flex-grow rounded-md border-gray-300 text-sm" placeholder="Nama Dimensi">
-                                            <button data-action="delete-dimension" data-project-id="${project.id}" data-dimension-id="${dim.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                        <div class="flex justify-between items-center gap-2 mb-2">
+                                            <h5 class="font-bold text-blue-800">${dimension.name}</h5>
+                                            <button data-action="delete-dimension" data-project-id="${project.id}" data-dimension-id="${dimension.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                                         </div>
-                                        ${dim.subElements.map(sub => `
-                                            <div class="pl-4 border-l-2 ml-2 mb-2">
-                                                <div class="flex items-center gap-2 mb-1">
-                                                    <input type="text" data-field="subelement-name" data-project-id="${project.id}" data-dimension-id="${dim.id}" data-subelement-id="${sub.id}" value="${sub.name}" class="form-input flex-grow rounded-md border-gray-300 text-xs" placeholder="Nama Sub Elemen">
-                                                    <button data-action="delete-subelement" data-project-id="${project.id}" data-dimension-id="${dim.id}" data-subelement-id="${sub.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                                        ${dimData.subElementIds.map(subId => {
+                                            const subElementData = findSubElement(subId);
+                                            if (!subElementData) return '';
+                                            return `
+                                            <div class="pl-4 border-l-2 ml-2 mb-2 pb-2">
+                                                <div class="flex justify-between items-start gap-2 mb-1">
+                                                    <div>
+                                                        <p class="text-sm font-semibold">${subElementData.element.name}</p>
+                                                        <p class="text-xs text-gray-600">${subElementData.name}</p>
+                                                    </div>
+                                                    <button data-action="delete-subelement" data-project-id="${project.id}" data-dimension-id="${dimension.id}" data-subelement-id="${subId}" class="text-red-500 hover:text-red-700 p-1 rounded-full flex-shrink-0"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                                                 </div>
-                                                <div class="pl-4 space-y-1">
-                                                    ${sub.targets.map(target => `
-                                                        <div class="flex items-center gap-2">
-                                                            <textarea data-field="target-description" data-project-id="${project.id}" data-dimension-id="${dim.id}" data-subelement-id="${sub.id}" data-target-id="${target.id}" class="form-textarea flex-grow rounded-md border-gray-300 text-xs" rows="1">${target.description}</textarea>
-                                                            <button data-action="delete-target" data-project-id="${project.id}" data-target-id="${target.id}" class="text-red-500 hover:text-red-700 p-1 rounded-full"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                                                        </div>
-                                                    `).join('')}
-                                                    <button data-action="add-target" data-project-id="${project.id}" data-dimension-id="${dim.id}" data-subelement-id="${sub.id}" class="text-gray-500 text-xs font-bold hover:text-blue-600">+ Target Pencapaian</button>
+                                                <div class="pl-4 mt-1">
+                                                    <p class="text-xs italic bg-blue-50 border-l-2 border-blue-300 p-2 rounded-r-md"><strong>Target (Fase B):</strong> ${subElementData.faseB}</p>
                                                 </div>
                                             </div>
-                                        `).join('')}
-                                        <button data-action="add-subelement" data-project-id="${project.id}" data-dimension-id="${dim.id}" class="text-blue-600 text-xs font-bold ml-2 mt-2 hover:text-blue-800">+ Sub Elemen</button>
+                                            `
+                                        }).join('')}
+                                        <button data-action="add-subelement" data-project-id="${project.id}" data-dimension-id="${dimension.id}" class="text-blue-600 text-xs font-bold ml-2 mt-2 hover:text-blue-800">+ Tambah Sub Elemen / Target</button>
                                     </div>
-                                `).join('') || '<p class="text-sm text-center text-gray-500 py-4">Belum ada dimensi.</p>'}
+                                `}).join('') || '<p class="text-sm text-center text-gray-500 py-4">Belum ada dimensi.</p>'}
                                 </div>
                             </div>
                         </div>
@@ -2841,17 +3043,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            const allTargets = project.dimensions.flatMap(d => d.subElements.flatMap(s => s.targets));
+            const allSubElements = [];
+            const findSubElement = (subElementId) => {
+                for (const dim of this.p5ProfileData.dimensions) {
+                    for (const el of dim.elements) {
+                        const sub = el.subElements.find(s => s.id === subElementId);
+                        if (sub) return { ...sub, dimension: dim, element: el };
+                    }
+                }
+                return null;
+            };
 
-            const headerHTML = project.dimensions.map(dim => {
-                const targetCount = dim.subElements.flatMap(s => s.targets).length;
-                return `<th colspan="${targetCount}" class="p-2 border border-gray-300 text-center bg-gray-100">${dim.name}</th>`;
+            project.dimensions.forEach(dimData => {
+                 dimData.subElementIds.forEach(subId => {
+                    const subData = findSubElement(subId);
+                    if (subData) allSubElements.push(subData);
+                });
+            });
+
+
+            const headerHTML = project.dimensions.map(dimData => {
+                const dimension = this.p5ProfileData.dimensions.find(d => d.id === dimData.dimensionId);
+                return `<th colspan="${dimData.subElementIds.length}" class="p-2 border border-gray-300 text-center bg-gray-100">${dimension.name}</th>`;
             }).join('');
             
-            const subHeaderHTML = project.dimensions.flatMap(dim => 
-                dim.subElements.flatMap(sub => 
-                    sub.targets.map(target => `<th class="p-2 border border-gray-300 text-center text-xs font-normal align-bottom" title="${target.description}">${sub.name}</th>`)
-                )
+            const subHeaderHTML = project.dimensions.flatMap(dimData => 
+                dimData.subElementIds.map(subId => {
+                    const subData = findSubElement(subId);
+                    return `<th class="p-2 border border-gray-300 text-center text-xs font-normal align-bottom" title="${subData.faseB}">${subData.name}</th>`
+                })
             ).join('');
 
             const p5Levels = {
@@ -2864,9 +3084,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const studentRowsHTML = this.state.students.map((student, index) => {
                 const studentGrades = this.state.p5Grades[student.id]?.[projectId] || {};
-                const gradeCells = allTargets.map(target => {
-                    const grade = studentGrades[target.id] || '';
-                    return `<td class="p-1 border border-gray-300"><select data-student-id="${student.id}" data-target-id="${target.id}" class="form-select w-full text-xs p-1 rounded-md border-gray-300 bg-gray-50">${levelOptions.replace(`value="${grade}"`, `value="${grade}" selected`)}</select></td>`;
+                const gradeCells = allSubElements.map(subEl => {
+                    const grade = studentGrades[subEl.id] || '';
+                    return `<td class="p-1 border border-gray-300"><select data-student-id="${student.id}" data-subelement-id="${subEl.id}" class="form-select w-full text-xs p-1 rounded-md border-gray-300 bg-gray-50">${levelOptions.replace(`value="${grade}"`, `value="${grade}" selected`)}</select></td>`;
                 }).join('');
                 return `<tr><td class="p-2 border border-gray-300 text-center">${index+1}</td><td class="p-2 border border-gray-300">${student.name}</td>${gradeCells}</tr>`;
             }).join('');
@@ -3815,503 +4035,137 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         handleDownloadTemplate() {
-            let exportData;
-            if (this.state.students.length > 0) {
-                 exportData = this.state.students.map((student, index) => ({
-                    'No. Absen': index + 1, 'NIS': student.nis, 'NISN': student.nisn, 'Nama Siswa': student.name, 'Panggilan': student.panggilan, 'Tempat, Tanggal Lahir': student.ttl, 'Jenis Kelamin': student.jenisKelamin, 'Agama': student.agama, 'Kewarganegaraan': student.kewarganegaraan, 'Status dalam Keluarga': student.statusKeluarga, 'Anak ke': student.anakKe, 'Asal TK': student.asalTk, 'Alamat Siswa': student.alamat, 'Nama Ayah': student.namaAyah, 'Nama Ibu': student.namaIbu, 'Pekerjaan Ayah': student.pekerjaanAyah, 'Pekerjaan Ibu': student.pekerjaanIbu, 'Alamat Orang Tua': student.alamatOrtu, 'Telepon Orang Tua': student.teleponOrtu, 'Kelurahan/Desa': student.kelurahan, 'Kecamatan': student.kecamatan, 'Kabupaten/Kota': student.kabupaten, 'Provinsi': student.provinsi, 'Nama Wali': student.namaWali, 'Pekerjaan Wali': student.pekerjaanWali, 'Alamat Wali': student.alamatWali, 'Telepon Wali': student.teleponWali
-                }));
-            } else {
-                exportData = [{
-                    'No. Absen': 1, 'NIS': '12345', 'NISN': '0012345678', 'Nama Siswa': 'Siswa Contoh', 'Panggilan': 'Contoh', 'Tempat, Tanggal Lahir': 'Jakarta, 1 Januari 2015', 'Jenis Kelamin': 'L/P', 'Agama': 'Islam', 'Kewarganegaraan': 'WNI', 'Status dalam Keluarga': 'Anak Kandung', 'Anak ke': 1, 'Asal TK': 'TK Tunas Bangsa', 'Alamat Siswa': 'Jl. Pendidikan No. 1', 'Nama Ayah': 'Bapak Contoh', 'Nama Ibu': 'Ibu Contoh', 'Pekerjaan Ayah': 'Wiraswasta', 'Pekerjaan Ibu': 'Ibu Rumah Tangga', 'Alamat Orang Tua': 'Jl. Pendidikan No. 1', 'Telepon Orang Tua': '081234567890', 'Kelurahan/Desa': 'Cipedak', 'Kecamatan': 'Jagakarsa', 'Kabupaten/Kota': 'Jakarta Selatan', 'Provinsi': 'DKI Jakarta', 'Nama Wali': '-', 'Pekerjaan Wali': '-', 'Alamat Wali': '-', 'Telepon Wali': '-'
-                }];
-            }
+            const emptyStudent = this.getEmptyStudent();
+            const headers = Object.keys(emptyStudent);
             
-            const ws = XLSX.utils.json_to_sheet(exportData);
+            const studentData = this.state.students.map(student => {
+                const row = {};
+                headers.forEach(header => {
+                    row[header] = student[header] !== undefined ? student[header] : '';
+                });
+                return row;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(studentData, { header: headers });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Data Siswa");
-            const filename = this.state.students.length > 0 ? "data_siswa.xlsx" : "template_data_siswa.xlsx";
-            XLSX.writeFile(wb, filename);
+            XLSX.writeFile(wb, "template_data_siswa.xlsx");
         },
 
         handleUploadStudents(event) {
             const file = event.target.files[0];
             if (!file) return;
-            if (!confirm('Mengunggah file ini akan MENGGANTIKAN semua data siswa yang ada. Lanjutkan?')) {
-                event.target.value = ''; return;
-            }
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet);
-                    if (json.length > 0 && 'NIS' in json[0] && 'NISN' in json[0] && 'Nama Siswa' in json[0]) {
-                        this.state.students = json.map((row, i) => ({
-                            id: 's' + Date.now() + i,
-                            nis: String(row['NIS'] || '').trim(), nisn: String(row['NISN'] || '').trim(), name: String(row['Nama Siswa'] || '').trim(), panggilan: String(row['Panggilan'] || '').trim(), ttl: String(row['Tempat, Tanggal Lahir'] || '').trim(), jenisKelamin: String(row['Jenis Kelamin'] || '').trim(), agama: String(row['Agama'] || '').trim(), kewarganegaraan: String(row['Kewarganegaraan'] || '').trim(), statusKeluarga: String(row['Status dalam Keluarga'] || '').trim(), anakKe: String(row['Anak ke'] || '').trim(), asalTk: String(row['Asal TK'] || '').trim(), alamat: String(row['Alamat Siswa'] || '').trim(), namaAyah: String(row['Nama Ayah'] || '').trim(), namaIbu: String(row['Nama Ibu'] || '').trim(), pekerjaanAyah: String(row['Pekerjaan Ayah'] || '').trim(), pekerjaanIbu: String(row['Pekerjaan Ibu'] || '').trim(), alamatOrtu: String(row['Alamat Orang Tua'] || '').trim(), teleponOrtu: String(row['Telepon Orang Tua'] || '').trim(), kelurahan: String(row['Kelurahan/Desa'] || '').trim(), kecamatan: String(row['Kecamatan'] || '').trim(), kabupaten: String(row['Kabupaten/Kota'] || '').trim(), provinsi: String(row['Provinsi'] || '').trim(), namaWali: String(row['Nama Wali'] || '').trim(), pekerjaanWali: String(row['Pekerjaan Wali'] || '').trim(), alamatWali: String(row['Alamat Wali'] || '').trim(), teleponWali: String(row['Telepon Wali'] || '').trim()
-                        }));
-                        this.state.grades = {}; this.saveState(); this.renderStudents(); alert(`${this.state.students.length} siswa berhasil diimpor.`);
-                    } else { alert('Format file tidak sesuai. Pastikan file Excel memiliki kolom "NIS", "NISN", dan "Nama Siswa".'); }
-                } catch (error) { console.error("Error processing Excel file:", error); alert("Terjadi kesalahan saat memproses file. Pastikan formatnya benar."); } 
-                finally { event.target.value = ''; }
-            };
-            reader.readAsArrayBuffer(file);
-        },
-        
-        showEditStudentGradesModal(studentId = null) {
-             if (this.state.students.length === 0) {
-                alert('Tidak ada data siswa untuk diedit.');
-                return;
-            }
-            const modalContent = document.getElementById('modal-content-wrapper');
-            modalContent.className = 'relative mx-auto bg-white w-full max-w-4xl rounded-lg shadow-xl';
-            
-            if (studentId) {
-                modalContent.innerHTML = `
-                    <div class="max-h-[85vh] overflow-y-auto">
-                         <div class="sticky top-0 bg-white p-4 border-b z-10">
-                            <h3 class="text-2xl font-semibold">Edit Nilai Siswa</h3>
-                         </div>
-                        <div id="student-grade-editor-container" class="p-6"></div>
-                    </div>`;
-                this.renderStudentGradeEditorForm(studentId);
-            } else { 
-                modalContent.innerHTML = `
-                    <div class="max-h-[85vh] overflow-y-auto">
-                        <div class="sticky top-0 bg-white p-4 border-b z-10">
-                            <h3 class="text-2xl font-semibold">Edit Nilai Siswa</h3>
-                            <div class="mt-4">
-                                <label for="student-grade-edit-select" class="block mb-1 font-medium text-sm">Pilih Siswa:</label>
-                                <select id="student-grade-edit-select" class="form-select w-full md:w-1/2 rounded-md border-gray-300" onchange="App.renderStudentGradeEditorForm(this.value)">
-                                    <option value="">-- Pilih Siswa --</option>
-                                    ${this.state.students.map(s => `<option value="${s.id}">${s.name} (NISN: ${s.nisn})</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        <div id="student-grade-editor-container" class="p-6">
-                            <p class="text-center text-gray-500 py-8">Silakan pilih siswa untuk menampilkan form nilai.</p>
-                        </div>
-                    </div>`;
-            }
-            this.openModal();
-        },
-        
-        renderStudentGradeEditorForm(studentId) {
-            const container = document.getElementById('student-grade-editor-container');
-            if (!studentId) {
-                container.innerHTML = `<p class="text-center text-gray-500 py-8">Silakan pilih siswa untuk menampilkan form nilai.</p>`;
-                return;
-            }
-            
-            const student = this.state.students.find(s => s.id === studentId);
-            if (!student) {
-                container.innerHTML = `<p class="text-center text-red-500 py-8">Siswa tidak ditemukan.</p>`;
-                return;
-            }
-            
-            const select = document.getElementById('student-grade-edit-select');
-            if(select) select.value = studentId;
+                    const ws = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws);
+                    
+                    const emptyStudent = this.getEmptyStudent();
+                    const requiredHeaders = ['name', 'nisn', 'nis'];
+                    const fileHeaders = Object.keys(jsonData[0] || {});
+                    const missingHeaders = requiredHeaders.filter(h => !fileHeaders.includes(h));
 
-            const studentGrades = this.state.grades[student.id] || {};
-            const inputClass = "form-input w-full text-center rounded-md border-gray-300 bg-gray-100 hover:bg-gray-200 focus:bg-white focus:ring-1 focus:ring-blue-500 transition-colors text-sm p-1";
-
-            const subjectsHtml = this.state.settings.subjects
-                .filter(subject => {
-                    if (!subject.isDeleted) {
-                        const religionMatch = subject.name.match(/Pendidikan Agama dan Budi Pekerti \(([^)]+)\)/);
-                        if (religionMatch) {
-                            return student.agama && student.agama.toLowerCase() === religionMatch[1].toLowerCase();
-                        }
-                        return true;
+                    if (missingHeaders.length > 0) {
+                        alert(`File tidak valid. Kolom yang wajib ada: ${missingHeaders.join(', ')}`);
+                        return;
                     }
-                    return false;
-                })
-                .map(subject => {
-                    const gradeData = studentGrades[subject.name] || { cp: [], pts: null, pas: null };
-                    const cpScores = gradeData.cp || [];
-                    const ptsScore = gradeData.pts ?? '';
-                    const pasScore = gradeData.pas ?? '';
-
-                    const cpInputs = subject.capaian.map((cp, index) => `
-                        <div>
-                            <label class="block text-xs mb-1 text-center" title="${cp}">CP ${index + 1}</label>
-                            <input type="number" min="0" max="100" class="${inputClass}" value="${cpScores[index] ?? ''}" data-subject="${subject.name}" data-cp-index="${index}">
-                        </div>`).join('');
-
-                    return `
-                    <details class="border rounded-md" open>
-                        <summary class="font-semibold cursor-pointer p-3 bg-gray-50 rounded-t-md">${subject.name}</summary>
-                        <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border-t">
-                            ${cpInputs}
-                            <div>
-                                <label class="block text-xs mb-1 text-center font-bold">PTS</label>
-                                <input type="number" min="0" max="100" class="${inputClass}" value="${ptsScore}" data-subject="${subject.name}" data-score-type="pts">
-                            </div>
-                            <div>
-                                <label class="block text-xs mb-1 text-center font-bold">PAS</label>
-                                <input type="number" min="0" max="100" class="${inputClass}" value="${pasScore}" data-subject="${subject.name}" data-score-type="pas">
-                            </div>
-                        </div>
-                    </details>`;
-                }).join('');
-
-            container.innerHTML = `
-                <form id="student-all-grades-form" class="space-y-4">
-                    <p class="font-bold text-lg mb-4">Menampilkan nilai untuk: ${student.name}</p>
-                    ${subjectsHtml}
-                    <div class="flex justify-end gap-3 pt-4 sticky bottom-0 bg-white py-4 border-t -mx-6 px-6">
-                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Simpan Semua Nilai</button>
-                    </div>
-                </form>
-            `;
-            
-            document.getElementById('student-all-grades-form').onsubmit = (e) => {
-                e.preventDefault();
-                this.handleSaveStudentAllGrades(studentId, e.target);
-            };
-        },
-        
-        handleSaveStudentAllGrades(studentId, form) {
-            if (!this.state.grades[studentId]) {
-                this.state.grades[studentId] = {};
-            }
-            
-            const inputs = form.querySelectorAll('input[type="number"]');
-            inputs.forEach(input => {
-                const subjectName = input.dataset.subject;
-                const subjectSettings = this.state.settings.subjects.find(s => s.name === subjectName);
-                if (!subjectSettings) return;
-
-                if (!this.state.grades[studentId][subjectName]) {
-                    this.state.grades[studentId][subjectName] = { cp: new Array(subjectSettings.capaian.length).fill(null), pts: null, pas: null };
-                }
-                
-                const value = input.value.trim() === '' ? null : parseInt(input.value, 10);
-
-                if (input.dataset.cpIndex) {
-                    const cpIndex = parseInt(input.dataset.cpIndex, 10);
-                    this.state.grades[studentId][subjectName].cp[cpIndex] = value;
-                } else if (input.dataset.scoreType === 'pts') {
-                    this.state.grades[studentId][subjectName].pts = value;
-                } else if (input.dataset.scoreType === 'pas') {
-                    this.state.grades[studentId][subjectName].pas = value;
-                }
-            });
-            
-            this.saveState();
-            alert('Semua nilai untuk siswa berhasil disimpan!');
-            this.closeModal();
-            this.renderOverallGradesTable();
-        },
-        
-        showDownloadGradesModal() {
-            const modalContent = document.getElementById('modal-content-wrapper');
-            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-lg';
-            
-            const subjectsHtml = this.state.settings.subjects
-                .filter(s => !s.isDeleted)
-                .map(s => `
-                    <div class="flex items-center">
-                        <input id="sub-check-${s.name.replace(/\W/g, '_')}" type="checkbox" name="selectedSubjects" value="${s.name}" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="sub-check-${s.name.replace(/\W/g, '_')}" class="ml-3 block text-sm font-medium text-gray-700">${s.name}</label>
-                    </div>
-                `).join('');
-
-            modalContent.innerHTML = `
-                <div class="p-4">
-                    <h3 class="text-2xl font-semibold mb-4">Unduh Template Nilai</h3>
-                    <p class="text-sm text-gray-600 mb-4">Pilih mata pelajaran yang ingin diunduh. Setiap mata pelajaran akan menjadi sheet terpisah dalam satu file Excel.</p>
-                    <div class="space-y-2 max-h-64 overflow-y-auto border p-3 rounded-md">
-                        ${subjectsHtml}
-                    </div>
-                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
-                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
-                        <button id="perform-grade-download-btn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Unduh Template</button>
-                    </div>
-                </div>`;
-            
-            document.getElementById('perform-grade-download-btn').onclick = this.handlePerformGradeDownload.bind(this);
-            this.openModal();
-        },
-
-        handlePerformGradeDownload() {
-            const selectedSubjects = Array.from(document.querySelectorAll('input[name="selectedSubjects"]:checked')).map(cb => cb.value);
-            if (selectedSubjects.length === 0) {
-                alert('Pilih setidaknya satu mata pelajaran.');
-                return;
-            }
-
-            const wb = XLSX.utils.book_new();
-            const { settings, students, grades } = this.state;
-            
-            selectedSubjects.forEach(subjectName => {
-                const subject = settings.subjects.find(s => s.name === subjectName);
-                if (!subject || !subject.capaian) return;
-
-                const metadata = [
-                    ['Nama Kelas', settings.className],
-                    ['Tahun Ajaran / Semester', `${settings.schoolYear} / ${settings.semester}`],
-                    ['Mata Pelajaran', subjectName],
-                    [] 
-                ];
-                
-                const headers = ['No. Absen', 'NISN', 'Nama Siswa'];
-                subject.capaian.forEach((cp, index) => headers.push(`CP ${index + 1}`));
-                headers.push('PTS', 'PAS');
-                
-                let studentsForSheet = [...students];
-                const religionMatch = subjectName.match(/Pendidikan Agama dan Budi Pekerti \(([^)]+)\)/);
-                if (religionMatch) {
-                    studentsForSheet = students.filter(s => s.agama && s.agama.toLowerCase() === religionMatch[1].toLowerCase());
-                }
-
-                const studentRows = studentsForSheet.map((student, index) => {
-                    const gradeData = grades[student.id]?.[subjectName] || { cp: [], pts: null, pas: null };
-                    const row = [index + 1, student.nisn || '', student.name];
-                    subject.capaian.forEach((_, cpIndex) => {
-                        row.push(gradeData.cp[cpIndex] ?? '');
-                    });
-                    row.push(gradeData.pts ?? '');
-                    row.push(gradeData.pas ?? '');
-                    return row;
-                });
-                
-                const finalSheetData = [...metadata, headers, ...studentRows];
-                const ws = XLSX.utils.aoa_to_sheet(finalSheetData);
-
-                ws['!cols'] = headers.map((header, i) => {
-                    const defaultWidth = String(header).length;
-                    const maxLength = Math.max(
-                        defaultWidth,
-                        ...finalSheetData.map(row => (row[i] ? String(row[i]).length : 0))
-                    );
-                    return { wch: Math.min(maxLength + 2, 60) };
-                });
-
-                const safeSheetName = subjectName.replace(/[\\/:*?"<>|]/g, "").substring(0, 31);
-                XLSX.utils.book_append_sheet(wb, ws, safeSheetName);
-            });
-
-            XLSX.writeFile(wb, "template_nilai.xlsx");
-            this.closeModal();
-        },
-        
-        handleUploadGrades(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
                     
-                    const previewData = { validChanges: [], errors: [], warnings: [] };
-                    const appStudentsByNisn = new Map(this.state.students.map(s => [String(s.nisn || '').trim(), s]));
-
-                    workbook.SheetNames.forEach(sheetName => {
-                        const ws = workbook.Sheets[sheetName];
-                        const sheetJson = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                        
-                        if (sheetJson.length < 5) return; 
-                        
-                        const subjectName = sheetJson[2]?.[1];
-                        if (!subjectName || !this.state.settings.subjects.find(s => s.name === subjectName)) {
-                            previewData.warnings.push({ message: `Sheet "${sheetName}" diabaikan karena nama mata pelajaran tidak valid atau tidak ditemukan.` });
-                            return;
-                        }
-
-                        const subject = this.state.settings.subjects.find(s => s.name === subjectName);
-                        const dataRows = sheetJson.slice(4);
-
-                        dataRows.forEach((row, rowIndex) => {
-                            const nisn = String(row[1] || '').trim();
-                            if (!nisn) return;
-                            
-                            const student = appStudentsByNisn.get(nisn);
-                            if (!student) {
-                                previewData.warnings.push({ message: `Di sheet "${sheetName}", siswa dengan NISN "${nisn}" (${row[2]}) tidak ditemukan. Data diabaikan.` });
-                                return;
-                            }
-                            
-                            const cpScores = subject.capaian.map((_, index) => {
-                                const score = row[3 + index];
-                                return (score === null || score === undefined || score === '') ? null : parseInt(score, 10);
-                            });
-                            const ptsScore = row[3 + subject.capaian.length];
-                            const pasScore = row[3 + subject.capaian.length + 1];
-                            
-                            const newGradeData = {
-                                cp: cpScores,
-                                pts: (ptsScore === null || ptsScore === undefined || ptsScore === '') ? null : parseInt(ptsScore, 10),
-                                pas: (pasScore === null || pasScore === undefined || pasScore === '') ? null : parseInt(pasScore, 10)
-                            };
-
-                            previewData.validChanges.push({
-                                studentId: student.id, studentName: student.name, subject: subjectName, newGrade: newGradeData
-                            });
-                        });
+                    const newStudents = jsonData.map(row => {
+                         const student = { ...emptyStudent };
+                         Object.keys(emptyStudent).forEach(key => {
+                             if (row[key] !== undefined) {
+                                student[key] = String(row[key]);
+                             }
+                         });
+                         return student;
                     });
-                    
-                    this.showUploadGradesPreviewModal(previewData);
+
+                    this.state.students = newStudents.map((s, index) => ({ ...s, id: s.id || `s${Date.now() + index}`}));
+                    this.saveState();
+                    this.renderStudents();
+                    alert(`${newStudents.length} data siswa berhasil diimpor dan menimpa data lama.`);
 
                 } catch (error) {
                     console.error("Error processing Excel file:", error);
-                    alert("Terjadi kesalahan saat memproses file. Pastikan formatnya benar.");
+                    alert("Terjadi kesalahan saat memproses file. Pastikan format kolom sudah benar sesuai template.");
                 } finally {
-                    event.target.value = '';
+                    event.target.value = ''; 
                 }
             };
             reader.readAsArrayBuffer(file);
-        },
-        
-        showUploadGradesPreviewModal(previewData) {
-            this.pendingGradeImport = previewData.validChanges;
-            const modalContent = document.getElementById('modal-content-wrapper');
-            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl';
-
-            const warningsHtml = previewData.warnings.length > 0 ? `
-                <div class="mb-4"><h4 class="font-bold text-yellow-600">Peringatan (Data Bermasalah Akan Diabaikan):</h4>
-                <ul class="list-disc list-inside text-sm text-yellow-700">${previewData.warnings.map(w => `<li>${w.message}</li>`).join('')}</ul></div>` : '';
-            
-            const changesByStudent = this.pendingGradeImport.reduce((acc, change) => {
-                if (!acc[change.studentName]) acc[change.studentName] = [];
-                acc[change.studentName].push(change.subject);
-                return acc;
-            }, {});
-            
-            const changesHtml = Object.keys(changesByStudent).length > 0 ? `
-                <div class="mb-4"><h4 class="font-bold text-blue-600">Nilai yang akan Diimpor:</h4>
-                <ul class="list-disc list-inside text-sm text-blue-700 max-h-40 overflow-y-auto">${Object.entries(changesByStudent).map(([name, subjects]) => `<li><b>${name}:</b> ${subjects.join(', ')}</li>`).join('')}</ul></div>` : '<p class="text-gray-500">Tidak ada nilai baru yang akan diimpor.</p>';
-
-            modalContent.innerHTML = `
-                <div class="p-4">
-                    <h3 class="text-2xl font-semibold mb-4">Pratinjau Unggah Nilai</h3>
-                    <div class="max-h-80 overflow-y-auto pr-2">
-                        ${warningsHtml}
-                        ${changesHtml}
-                    </div>
-                    <p class="text-xs text-gray-500 mt-4">Mengimpor data ini akan MENIMPA nilai yang ada untuk siswa dan mata pelajaran yang terpengaruh.</p>
-                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
-                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Batal</button>
-                        <button id="confirm-grade-import-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${this.pendingGradeImport.length === 0 ? 'hidden' : ''}">Konfirmasi Import</button>
-                    </div>
-                </div>`;
-            
-            document.getElementById('confirm-grade-import-btn').onclick = this.applyGradeImport.bind(this);
-            this.openModal();
-        },
-        
-        applyGradeImport() {
-            if (!this.pendingGradeImport) return;
-            
-            this.pendingGradeImport.forEach(change => {
-                if (!this.state.grades[change.studentId]) {
-                    this.state.grades[change.studentId] = {};
-                }
-                this.state.grades[change.studentId][change.subject] = change.newGrade;
-            });
-            
-            this.saveState();
-            this.pendingGradeImport = null;
-            alert('Data nilai berhasil diimpor!');
-            this.closeModal();
-            
-            if (window.location.hash === '#grades') {
-                this.renderGrades();
-            }
-        },
-
-        handleSaveP5Grades(e) {
-            const projectId = e.target.dataset.projectId;
-            const selects = document.querySelectorAll(`#p5-project-content-container select[data-student-id]`);
-            selects.forEach(select => {
-                const studentId = select.dataset.studentId;
-                const targetId = select.dataset.targetId;
-                const value = select.value;
-
-                if (!this.state.p5Grades[studentId]) {
-                    this.state.p5Grades[studentId] = {};
-                }
-                if (!this.state.p5Grades[studentId][projectId]) {
-                    this.state.p5Grades[studentId][projectId] = {};
-                }
-
-                if (value) {
-                    this.state.p5Grades[studentId][projectId][targetId] = value;
-                } else {
-                    delete this.state.p5Grades[studentId][projectId][targetId];
-                }
-            });
-            
-            this.saveState();
-            alert('Penilaian proyek berhasil disimpan!');
         },
 
         showStudentModal(studentId = null) {
             const student = studentId ? this.state.students.find(s => s.id === studentId) : this.getEmptyStudent();
+            const title = studentId ? 'Edit Data Siswa' : 'Tambah Siswa Baru';
             const modalContent = document.getElementById('modal-content-wrapper');
-            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-3xl';
+            modalContent.className = 'relative mx-auto p-2 border shadow-lg rounded-md bg-white w-full max-w-4xl';
 
             const formFields = [
-                { id: 'name', label: 'Nama Lengkap', required: true, type: 'text', span: 'col-span-2' },
-                { id: 'panggilan', label: 'Nama Panggilan', required: false, type: 'text' },
-                { id: 'nis', label: 'NIS', required: false, type: 'text' },
-                { id: 'nisn', label: 'NISN', required: true, type: 'text' },
-                { id: 'ttl', label: 'Tempat, Tanggal Lahir', required: false, type: 'text' },
-                { id: 'jenisKelamin', label: 'Jenis Kelamin', required: false, type: 'text' },
-                { id: 'agama', label: 'Agama', required: false, type: 'text' },
-                { id: 'kewarganegaraan', label: 'Kewarganegaraan', required: false, type: 'text' },
-                { id: 'statusKeluarga', label: 'Status dalam Keluarga', required: false, type: 'text' },
-                { id: 'anakKe', label: 'Anak ke', required: false, type: 'number' },
-                { id: 'asalTk', label: 'Asal TK', required: false, type: 'text' },
-                { id: 'alamat', label: 'Alamat Siswa', required: false, type: 'textarea', span: 'col-span-2' },
-                { id: 'namaAyah', label: 'Nama Ayah', required: false, type: 'text' },
-                { id: 'pekerjaanAyah', label: 'Pekerjaan Ayah', required: false, type: 'text' },
-                { id: 'namaIbu', label: 'Nama Ibu', required: false, type: 'text' },
-                { id: 'pekerjaanIbu', label: 'Pekerjaan Ibu', required: false, type: 'text' },
-                { id: 'alamatOrtu', label: 'Alamat Orang Tua', required: false, type: 'textarea', span: 'col-span-2' },
-                { id: 'teleponOrtu', label: 'Telepon Orang Tua', required: false, type: 'tel' },
-                { id: 'namaWali', label: 'Nama Wali', required: false, type: 'text' },
-                { id: 'pekerjaanWali', label: 'Pekerjaan Wali', required: false, type: 'text' },
-                { id: 'alamatWali', label: 'Alamat Wali', required: false, type: 'textarea', span: 'col-span-2' },
-                { id: 'teleponWali', label: 'Telepon Wali', required: false, type: 'tel' }
+                { label: 'Nama Lengkap', id: 'name', type: 'text', required: true, span: 'md:col-span-2' },
+                { label: 'Nama Panggilan', id: 'panggilan', type: 'text' },
+                { label: 'NIS', id: 'nis', type: 'text' },
+                { label: 'NISN', id: 'nisn', type: 'text' },
+                { label: 'Tempat, Tanggal Lahir', id: 'ttl', type: 'text', placeholder: 'e.g., Jakarta, 01 Januari 2015' },
+                { label: 'Jenis Kelamin', id: 'jenisKelamin', type: 'select', options: ['Laki-laki', 'Perempuan'] },
+                { label: 'Agama', id: 'agama', type: 'select', options: ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Khonghucu'] },
+                { label: 'Kewarganegaraan', id: 'kewarganegaraan', type: 'text' },
+                { label: 'Status Keluarga', id: 'statusKeluarga', type: 'text' },
+                { label: 'Anak Ke-', id: 'anakKe', type: 'number' },
+                { label: 'Asal TK', id: 'asalTk', type: 'text' },
+                { label: 'Alamat Siswa', id: 'alamat', type: 'text', span: 'md:col-span-2' },
+                { label: 'Nama Ayah', id: 'namaAyah', type: 'text' },
+                { label: 'Nama Ibu', id: 'namaIbu', type: 'text' },
+                { label: 'Pekerjaan Ayah', id: 'pekerjaanAyah', type: 'text' },
+                { label: 'Pekerjaan Ibu', id: 'pekerjaanIbu', type: 'text' },
+                { label: 'Alamat Orang Tua', id: 'alamatOrtu', type: 'text', span: 'md:col-span-2' },
+                { label: 'Telepon Orang Tua', id: 'teleponOrtu', type: 'tel' },
+                { label: 'Nama Wali', id: 'namaWali', type: 'text' },
+                { label: 'Pekerjaan Wali', id: 'pekerjaanWali', type: 'text' },
+                { label: 'Alamat Wali', id: 'alamatWali', type: 'text', span: 'md:col-span-2' },
+                { label: 'Telepon Wali', id: 'teleponWali', type: 'tel' }
             ];
-            
-            const fieldHTML = formFields.map(f => {
-                const inputType = f.type === 'textarea' ? `<textarea id="student-${f.id}" rows="2" class="form-textarea w-full rounded-md border-gray-300 bg-gray-50"></textarea>` : `<input type="${f.type}" id="student-${f.id}" class="form-input w-full rounded-md border-gray-300 bg-gray-50">`;
-                return `<div class="${f.span || ''}"><label for="student-${f.id}" class="block text-sm font-medium text-gray-700 mb-1">${f.label}${f.required ? '<span class="text-red-500">*</span>' : ''}</label>${inputType}</div>`;
-            }).join('');
+
+            const createInput = (field) => {
+                const value = student[field.id] || '';
+                if (field.type === 'select') {
+                    return `<select id="modal-${field.id}" class="form-select w-full rounded-md border-gray-300 bg-gray-50">${field.options.map(opt => `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`).join('')}</select>`;
+                }
+                return `<input type="${field.type}" id="modal-${field.id}" value="${value}" placeholder="${field.placeholder || ''}" ${field.required ? 'required' : ''} class="form-input w-full rounded-md border-gray-300 bg-gray-50">`;
+            };
 
             modalContent.innerHTML = `
-                <div class="max-h-[85vh] overflow-y-auto">
-                    <form id="student-form">
-                        <div class="p-6">
-                            <h3 class="text-2xl font-semibold mb-4">${studentId ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${fieldHTML}</div>
-                        </div>
-                        <div class="flex justify-end gap-3 p-4 bg-gray-50 border-t rounded-b-md sticky bottom-0">
-                            <button type="button" class="modal-close-btn px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-100">Batal</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Simpan</button>
-                        </div>
-                    </form>
-                </div>`;
+                <form id="student-form" class="p-4">
+                    <h3 class="text-xl font-bold mb-4">${title}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto pr-2 pb-4">
+                        ${formFields.map(field => `
+                            <div class="${field.span || ''}">
+                                <label for="modal-${field.id}" class="block text-sm font-medium mb-1">${field.label}${field.required ? ' *' : ''}</label>
+                                ${createInput(field)}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-end gap-3 pt-4 border-t mt-4">
+                        <button type="button" class="modal-close-btn bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300">Batal</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Simpan</button>
+                    </div>
+                </form>
+            `;
 
-            formFields.forEach(f => {
-                document.getElementById(`student-${f.id}`).value = student[f.id] || '';
-            });
-
-            document.getElementById('student-form').onsubmit = (e) => {
+            document.getElementById('student-form').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const newStudentData = {};
-                formFields.forEach(f => newStudentData[f.id] = document.getElementById(`student-${f.id}`).value.trim());
-                
+                const newStudentData = { ...student };
+                formFields.forEach(field => {
+                    newStudentData[field.id] = document.getElementById(`modal-${field.id}`).value;
+                });
+
                 if (studentId) {
-                    const studentIndex = this.state.students.findIndex(s => s.id === studentId);
-                    this.state.students[studentIndex] = { ...this.state.students[studentIndex], ...newStudentData };
+                    const index = this.state.students.findIndex(s => s.id === studentId);
+                    this.state.students[index] = newStudentData;
                 } else {
                     newStudentData.id = 's' + Date.now();
                     this.state.students.push(newStudentData);
@@ -4319,252 +4173,596 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.saveState();
                 this.renderStudents();
                 this.closeModal();
-            };
+            });
+
             this.openModal();
         },
-        
+
         showPrintModalForStudent(studentId) {
-            const student = this.state.students.find(s => s.id === studentId);
-            const studentGrades = this.state.grades[studentId] || {};
-            const modalContent = document.getElementById('modal-content-wrapper');
-            modalContent.className = 'relative mx-auto border shadow-lg rounded-md bg-white w-full max-w-4xl';
-            
-            modalContent.innerHTML = `
-                <div class="p-4 flex justify-between items-center no-print">
-                    <h3 class="text-lg font-bold">Pratinjau Rapor: ${student.name}</h3>
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded-md" onclick="window.print()">Cetak</button>
+             const student = this.state.students.find(s => s.id === studentId);
+             const studentGrades = this.state.grades[student.id] || {};
+             const modalContent = document.getElementById('modal-content-wrapper');
+             modalContent.className = 'relative mx-auto p-0 border shadow-lg rounded-md bg-white w-full max-w-5xl';
+             modalContent.innerHTML = `
+                <div class="p-4 bg-gray-100 flex justify-between items-center no-print rounded-t-md">
+                    <h3 class="text-xl font-semibold">Pratinjau Rapor - ${student.name}</h3>
+                    <div>
+                        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">Cetak</button>
+                        <button class="modal-close-btn ml-2 bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300">Tutup</button>
+                    </div>
                 </div>
-                <div class="print-area">
+                <div class="print-area max-h-[80vh] overflow-y-auto">
                     ${this.createReportCardHTML(student, studentGrades)}
                 </div>
             `;
             this.openModal();
         },
+        
+        showEditStudentGradesModal(studentId = null) {
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-4xl';
+        
+            const studentOptions = this.state.students.map(s => 
+                `<option value="${s.id}" ${studentId === s.id ? 'selected' : ''}>${s.name}</option>`
+            ).join('');
+        
+            modalContent.innerHTML = `
+                <div class="p-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-semibold">Edit Nilai Siswa</h3>
+                        <button type="button" class="modal-close-btn bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300">Tutup</button>
+                    </div>
+                    <div class="mb-4">
+                        <label for="student-grade-selector" class="block font-medium mb-1">Pilih Siswa:</label>
+                        <select id="student-grade-selector" class="form-select w-full md:w-1/2 rounded-md border-gray-300 bg-gray-50">
+                            <option value="">-- Pilih Siswa --</option>
+                            ${studentOptions}
+                        </select>
+                    </div>
+                    <div id="student-grades-editor-container" class="max-h-[60vh] overflow-y-auto pr-2"></div>
+                </div>
+            `;
+        
+            const selector = document.getElementById('student-grade-selector');
+            selector.addEventListener('change', (e) => this.renderStudentGradesEditor(e.target.value));
+        
+            if (studentId) {
+                this.renderStudentGradesEditor(studentId);
+            } else {
+                document.getElementById('student-grades-editor-container').innerHTML = 
+                    `<p class="text-center text-gray-500 py-8">Pilih siswa untuk melihat dan mengedit nilai.</p>`;
+            }
+        
+            this.openModal();
+        },
+        
+        renderStudentGradesEditor(studentId) {
+            const container = document.getElementById('student-grades-editor-container');
+            if (!studentId) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-8">Pilih siswa untuk melihat dan mengedit nilai.</p>`;
+                return;
+            }
+            
+            const student = this.state.students.find(s => s.id === studentId);
+            
+            const tableRows = this.state.settings.subjects.filter(s => !s.isDeleted).map(subject => {
+                const gradeData = this.state.grades[studentId]?.[subject.name] || { cp: [], pts: null, pas: null };
+                const finalScore = this.getFinalScore(gradeData);
+                const inputFields = subject.capaian.map((cp, index) => 
+                    `<input type="number" data-cp-index="${index}" value="${gradeData.cp[index] ?? ''}" class="grade-input" placeholder="-" title="${cp}">`
+                ).join('');
+        
+                return `
+                    <tr class="border-b">
+                        <td class="p-2 align-top">${subject.name}</td>
+                        <td class="p-2 align-top"><div class="flex gap-1">${inputFields}</div></td>
+                        <td class="p-2 align-top"><input type="number" data-score-type="pts" value="${gradeData.pts ?? ''}" class="grade-input" placeholder="-"></td>
+                        <td class="p-2 align-top"><input type="number" data-score-type="pas" value="${gradeData.pas ?? ''}" class="grade-input" placeholder="-"></td>
+                        <td class="p-2 align-top text-center font-bold" data-final-score-cell="true">${finalScore ?? '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        
+            container.innerHTML = `
+                <style>.grade-input { width: 50px; text-align: center; border-radius: 4px; border: 1px solid #ccc; padding: 4px; }</style>
+                <form id="single-student-grade-form" data-studentid="${studentId}">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 text-left">Mata Pelajaran</th>
+                                <th class="p-2 text-left">Nilai Formatif (CP)</th>
+                                <th class="p-2">PTS</th>
+                                <th class="p-2">PAS</th>
+                                <th class="p-2">Rata-rata</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    <div class="text-right mt-4">
+                        <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Simpan Nilai ${student.name}</button>
+                    </div>
+                </form>
+            `;
+        
+            const form = document.getElementById('single-student-grade-form');
+            form.addEventListener('submit', this.handleSaveSingleStudentGrades.bind(this));
+            form.addEventListener('input', this.handleSingleStudentGradeInputChange.bind(this));
+        },
+        
+        handleSingleStudentGradeInputChange(e) {
+            if (e.target.classList.contains('grade-input')) {
+                const row = e.target.closest('tr');
+                const cpInputs = Array.from(row.querySelectorAll('input[data-cp-index]'));
+                const ptsInput = row.querySelector('input[data-score-type="pts"]');
+                const pasInput = row.querySelector('input[data-score-type="pas"]');
+                const finalScoreCell = row.querySelector('td[data-final-score-cell]');
+        
+                const scoreData = {
+                    cp: cpInputs.map(input => input.value.trim() === '' ? null : Number(input.value)),
+                    pts: ptsInput.value.trim() === '' ? null : Number(ptsInput.value),
+                    pas: pasInput.value.trim() === '' ? null : Number(pasInput.value),
+                };
+        
+                const finalScore = this.getFinalScore(scoreData);
+                finalScoreCell.textContent = finalScore ?? '-';
+            }
+        },
+        
+        handleSaveSingleStudentGrades(e) {
+            e.preventDefault();
+            const form = e.target;
+            const studentId = form.dataset.studentid;
+            const rows = form.querySelectorAll('tbody tr');
+            
+            if (!this.state.grades[studentId]) this.state.grades[studentId] = {};
+        
+            rows.forEach(row => {
+                const subjectName = row.cells[0].textContent;
+                const subject = this.state.settings.subjects.find(s => s.name === subjectName);
+                if (!subject) return;
+        
+                const cpInputs = row.querySelectorAll('input[data-cp-index]');
+                const ptsInput = row.querySelector('input[data-score-type="pts"]');
+                const pasInput = row.querySelector('input[data-score-type="pas"]');
+        
+                const newGradeData = {
+                    cp: Array.from(cpInputs).map(input => input.value.trim() === '' ? null : parseInt(input.value, 10)),
+                    pts: ptsInput.value.trim() === '' ? null : parseInt(ptsInput.value, 10),
+                    pas: pasInput.value.trim() === '' ? null : parseInt(pasInput.value, 10),
+                };
+                
+                this.state.grades[studentId][subjectName] = newGradeData;
+            });
+        
+            this.saveState();
+            alert(`Nilai untuk siswa ini berhasil disimpan!`);
+            this.closeModal();
+            if(window.location.hash === '#grades') this.renderOverallGradesTable();
+        },
+        
+        handleDownloadGrades() {
+            const { students, grades, settings } = this.state;
+            const subjects = settings.subjects.filter(s => !s.isDeleted);
+            
+            let maxCps = 0;
+            subjects.forEach(s => {
+                maxCps = Math.max(maxCps, s.capaian.length);
+            });
+            
+            const headers = ['No. Absen', 'NISN', 'Nama Siswa'];
+            subjects.forEach(s => {
+                for (let i = 1; i <= maxCps; i++) {
+                    headers.push(`${s.name} - CP${i}`);
+                }
+                headers.push(`${s.name} - PTS`);
+                headers.push(`${s.name} - PAS`);
+            });
+
+            const data = students.map((student, index) => {
+                const studentRow = [index + 1, student.nisn, student.name];
+                subjects.forEach(s => {
+                    const gradeData = grades[student.id]?.[s.name] || { cp: [], pts: null, pas: null };
+                    for (let i = 0; i < maxCps; i++) {
+                        studentRow.push(gradeData.cp[i] ?? '');
+                    }
+                    studentRow.push(gradeData.pts ?? '');
+                    studentRow.push(gradeData.pas ?? '');
+                });
+                return studentRow;
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Data Nilai');
+            XLSX.writeFile(wb, 'data_nilai.xlsx');
+        },
+        
+        handleUploadGrades(event) {
+             const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const ws = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws);
+                    
+                    const previewData = { validChanges: {}, errors: [], warnings: [] };
+                    const appStudentsByNisn = new Map(this.state.students.map(s => [String(s.nisn || '').trim(), s]));
+                    const fileHeaders = Object.keys(jsonData[0] || {});
+                    
+                    jsonData.forEach((row, rowIndex) => {
+                        const nisn = String(row['NISN'] || '').trim();
+                        if (!nisn) {
+                             previewData.warnings.push({ message: `Baris ${rowIndex + 2}: Ditemukan data tanpa NISN. Baris diabaikan.`});
+                             return;
+                        }
+
+                        const student = appStudentsByNisn.get(nisn);
+                        if (!student) {
+                             previewData.warnings.push({ message: `Siswa NISN "${nisn}" tidak ditemukan. Data diabaikan.`});
+                             return;
+                        }
+
+                        if (!previewData.validChanges[student.id]) {
+                            previewData.validChanges[student.id] = { studentName: student.name, grades: {} };
+                        }
+
+                        this.state.settings.subjects.filter(s => !s.isDeleted).forEach(subject => {
+                            const gradeData = { cp: [], pts: null, pas: null };
+                            let hasData = false;
+                            
+                            for (const header of fileHeaders) {
+                                if (header.startsWith(subject.name)) {
+                                    const value = row[header];
+                                    if(value !== undefined && value !== null && value !== '') {
+                                        hasData = true;
+                                        const numValue = parseInt(value, 10);
+                                        if (header.includes(' - CP')) {
+                                            const cpIndex = parseInt(header.split('CP')[1], 10) - 1;
+                                            gradeData.cp[cpIndex] = numValue;
+                                        } else if (header.includes(' - PTS')) {
+                                            gradeData.pts = numValue;
+                                        } else if (header.includes(' - PAS')) {
+                                            gradeData.pas = numValue;
+                                        }
+                                    }
+                                }
+                            }
+                            if (hasData) {
+                                previewData.validChanges[student.id].grades[subject.name] = gradeData;
+                            }
+                        });
+                    });
+                    
+                    this.showUploadGradesPreviewModal(previewData);
+
+                } catch (error) {
+                    console.error("Error processing grades Excel file:", error);
+                    alert("Terjadi kesalahan saat memproses file. Pastikan formatnya benar.");
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+
+        showUploadGradesPreviewModal(previewData) {
+            this.pendingGradeImport = previewData.validChanges;
+            const modalContent = document.getElementById('modal-content-wrapper');
+            modalContent.className = 'relative mx-auto p-5 border shadow-lg rounded-md bg-white w-full max-w-2xl';
+
+            const warningsHtml = previewData.warnings.length > 0 ? `<div class="mb-4"><h4 class="font-bold text-yellow-600">Peringatan:</h4><ul class="list-disc list-inside text-sm text-yellow-700">${previewData.warnings.map(w => `<li>${w.message}</li>`).join('')}</ul></div>` : '';
+            
+            const changes = Object.values(this.pendingGradeImport);
+            const changesHtml = changes.length > 0 ? `
+                <div class="mb-4"><h4 class="font-bold text-blue-600">Nilai yang akan Diimpor (${changes.length} siswa):</h4>
+                <ul class="list-disc list-inside text-sm text-blue-700 max-h-40 overflow-y-auto">${changes.map(c => `<li><b>${c.studentName}:</b> ${Object.keys(c.grades).length} mata pelajaran.</li>`).join('')}</ul></div>` : '<p class="text-gray-500">Tidak ada data nilai baru yang akan diimpor.</p>';
+
+            modalContent.innerHTML = `
+                <div class="p-4">
+                    <h3 class="text-2xl font-semibold mb-4">Pratinjau Unggah Nilai</h3>
+                    ${warningsHtml}
+                    ${changesHtml}
+                    <p class="text-xs text-gray-500 mt-4">Mengimpor data ini akan MENIMPA semua data nilai yang ada untuk siswa yang terpengaruh.</p>
+                    <div class="flex justify-end gap-3 pt-4 mt-4 border-t">
+                        <button type="button" class="modal-close-btn px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Tutup</button>
+                        <button id="confirm-grade-import-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${changes.length === 0 ? 'hidden' : ''}">Konfirmasi Import</button>
+                    </div>
+                </div>`;
+            
+            document.getElementById('confirm-grade-import-btn').onclick = this.applyGradeImport.bind(this);
+            this.openModal();
+        },
+
+        applyGradeImport() {
+            if (!this.pendingGradeImport) return;
+            
+            Object.entries(this.pendingGradeImport).forEach(([studentId, change]) => {
+                if (!this.state.grades[studentId]) this.state.grades[studentId] = {};
+                Object.assign(this.state.grades[studentId], change.grades);
+            });
+            
+            this.saveState();
+            this.pendingGradeImport = null;
+            alert('Data nilai berhasil diimpor!');
+            this.closeModal();
+            this.renderGrades();
+        },
+
+        handleSaveP5Grades(e) {
+            const projectId = e.target.dataset.projectId;
+            const selects = document.querySelectorAll(`#p5-project-content-container select[data-student-id]`);
+            
+            selects.forEach(select => {
+                const { studentId, subelementId } = select.dataset;
+                const value = select.value;
+                
+                if (!this.state.p5Grades[studentId]) this.state.p5Grades[studentId] = {};
+                if (!this.state.p5Grades[studentId][projectId]) this.state.p5Grades[studentId][projectId] = {};
+
+                if (value) {
+                    this.state.p5Grades[studentId][projectId][subelementId] = value;
+                } else {
+                    delete this.state.p5Grades[studentId][projectId][subelementId];
+                }
+            });
+            
+            this.saveState();
+            alert('Penilaian Proyek P5 berhasil disimpan!');
+        },
+
+        generateGradeDescription(student, subjectName, gradeData) {
+            const subject = this.state.settings.subjects.find(s => s.name === subjectName);
+            if (!subject || !gradeData) return "Belum ada capaian yang tuntas.";
+
+            const finalScore = this.getFinalScore(gradeData);
+            if (finalScore === null) return "Belum ada capaian yang tuntas.";
+
+            const predicate = this.getPredicate(finalScore);
+            let descriptionTemplate = '';
+            if (predicate === 'A') descriptionTemplate = subject.deskripsi.A;
+            else if (predicate === 'B') descriptionTemplate = subject.deskripsi.B;
+            else descriptionTemplate = subject.deskripsi.C;
+
+            if (!descriptionTemplate) return "Deskripsi belum diatur.";
+            
+            const studentNickname = student.panggilan || student.name.split(' ')[0];
+            const capaianScores = (gradeData.cp || []).map((score, index) => ({ score, index }))
+                                                  .filter(item => item.score !== null);
+
+            if (capaianScores.length === 0) return "Belum ada capaian yang tuntas.";
+            
+            capaianScores.sort((a, b) => b.score - a.score);
+
+            const bestCp = subject.capaian[capaianScores[0].index];
+            const worstCp = subject.capaian[capaianScores[capaianScores.length - 1].index];
+            
+            let combinedCpText = `Ananda sangat baik dalam ${bestCp}`;
+            if (capaianScores.length > 1 && bestCp !== worstCp) {
+                combinedCpText += `, namun perlu bimbingan dalam ${worstCp}`;
+            }
+            
+            const capaianText = subject.capaian.join(', ');
+
+            return descriptionTemplate
+                .replace(/\[nama\]/gi, studentNickname)
+                .replace(/\[cp\]/gi, capaianText)
+                .replace(/\[cp_terbaik\]/gi, bestCp)
+                .replace(/\[cp_terendah\]/gi, worstCp)
+                .replace(/\[cp_kombinasi\]/gi, combinedCpText);
+        },
 
         createReportCardHTML(student, studentGrades) {
             const { settings } = this.state;
-            const studentNickname = student.panggilan || student.name.split(' ')[0];
+            const tableCellStyle = 'border border-black p-2';
             
-            let academicRows = '';
-            
-            const subjectGroups = {
-                'Kelompok A': ['Pendidikan Agama', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)'],
-                'Kelompok B': ['Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)'],
-                'Muatan Lokal': ['Muatan Lokal']
-            };
-
-            const getSubjectDescription = (subjectName, finalScore) => {
-                const subjectConfig = settings.subjects.find(s => s.name === subjectName);
-                if (!subjectConfig) return 'Deskripsi tidak tersedia.';
-                
-                const predicate = this.getPredicate(finalScore);
-                const descTemplate = subjectConfig.deskripsi[predicate] || '';
-                const capaianText = subjectConfig.capaian.join(', ');
-                
-                return descTemplate
-                    .replace(/\[nama\]/gi, studentNickname)
-                    .replace(/\[cp\]/gi, capaianText);
-            };
-            
-            const processedSubjects = new Set();
-
-            Object.entries(subjectGroups).forEach(([groupName, prefixes]) => {
-                let groupRows = '';
-                let subjectCounter = 1;
-
-                prefixes.forEach(prefix => {
-                    settings.subjects
-                        .filter(s => !s.isDeleted && s.name.startsWith(prefix) && !processedSubjects.has(s.name))
-                        .forEach(subject => {
-                            let shouldRender = true;
-                            if (prefix === 'Pendidikan Agama') {
-                                const religionInSubject = subject.name.match(/\(([^)]+)\)/)?.[1];
-                                if (!student.agama || !religionInSubject || student.agama.toLowerCase() !== religionInSubject.toLowerCase()) {
-                                    shouldRender = false;
-                                }
-                            }
-                            
-                            if (shouldRender) {
-                                const finalScore = this.getFinalScore(studentGrades[subject.name]);
-                                groupRows += `
-                                    <tr>
-                                        <td class="border p-2 text-center">${subjectCounter++}</td>
-                                        <td class="border p-2">${subject.name}</td>
-                                        <td class="border p-2 text-center">${finalScore ?? '-'}</td>
-                                        <td class="border p-2 text-justify text-xs">${finalScore !== null ? getSubjectDescription(subject.name, finalScore) : ''}</td>
-                                    </tr>
-                                `;
-                                processedSubjects.add(subject.name);
-                            }
-                        });
+            // Academic Grades Table
+            const subjectsForReport = this.state.settings.subjects
+                .filter(s => !s.isDeleted)
+                .filter(s => {
+                    if (s.name.startsWith('Pendidikan Agama')) {
+                        const religionInSubject = s.name.match(/\(([^)]+)\)/)?.[1];
+                        return religionInSubject && student.agama && student.agama.toLowerCase() === religionInSubject.toLowerCase();
+                    }
+                    return studentGrades[s.name] && this.getFinalScore(studentGrades[s.name]) !== null;
                 });
                 
-                if (groupRows) {
-                     academicRows += `<tr class="bg-gray-100 font-bold"><td colspan="4" class="border p-2">${groupName}</td></tr>${groupRows}`;
-                }
-            });
+            let academicRows = '';
+            let groupA_count = 0;
+            const renderRowsForGroup = (groupName) => {
+                const groupSubjects = subjectsForReport.filter(s => s.name.startsWith(groupName));
+                return groupSubjects.map((subject, idx) => {
+                    const gradeData = studentGrades[subject.name];
+                    const finalScore = this.getFinalScore(gradeData);
+                    const predicate = this.getPredicate(finalScore);
+                    const description = this.generateGradeDescription(student, subject.name, gradeData);
+                    groupA_count++;
+                    return `<tr><td class="${tableCellStyle} text-center">${idx + 1}</td><td class="${tableCellStyle}">${subject.name}</td><td class="${tableCellStyle} text-center">${finalScore}</td><td class="${tableCellStyle}">${description}</td></tr>`;
+                }).join('');
+            };
             
-            const studentExtras = this.state.extracurricularGrades[student.id] || [];
-            const extracurricularRows = studentExtras.map((extra, i) => {
-                const extraConfig = settings.extracurriculars.find(e => e.id === extra.id);
-                return `<tr>
-                    <td class="border p-2 text-center">${i+1}</td>
-                    <td class="border p-2">${extraConfig?.name || 'Tidak Diketahui'}</td>
-                    <td class="border p-2">${extra.grade || '-'}</td>
-                    <td class="border p-2 text-justify text-xs">${extra.description || ''}</td>
-                </tr>`
-            }).join('') || `<tr><td colspan="4" class="border p-2 text-center">-</td></tr>`;
+            academicRows += `<tr><td class="${tableCellStyle}" colspan="4"><b>Kelompok A</b></td></tr>`;
+            academicRows += renderRowsForGroup('Pendidikan Agama');
+            academicRows += renderRowsForGroup('Pendidikan Pancasila');
+            academicRows += renderRowsForGroup('Bahasa Indonesia');
+            academicRows += renderRowsForGroup('Matematika');
+            academicRows += renderRowsForGroup('Ilmu Pengetahuan Alam dan Sosial');
             
-            const attendance = this.state.attendance[student.id] || { s:0, i:0, a:0 };
-            
-            const p5Levels = { BB: 'Belum Berkembang', MB: 'Mulai Berkembang', BSH: 'Berkembang Sesuai Harapan', SB: 'Sangat Berkembang' };
-            let p5ReportHTML = '';
-            (settings.p5Projects || []).forEach(project => {
-                const studentP5Grades = this.state.p5Grades[student.id]?.[project.id] || {};
-                let hasAnyGradeForProject = Object.keys(studentP5Grades).length > 0;
+            academicRows += `<tr><td class="${tableCellStyle}" colspan="4"><b>Kelompok B</b></td></tr>`;
+            academicRows += subjectsForReport.filter(s => !s.name.startsWith('Pendidikan') && !s.name.startsWith('Bahasa I') && !s.name.startsWith('Mate') && !s.name.startsWith('Ilmu Pengetahuan'))
+                .map((subject, idx) => {
+                     const gradeData = studentGrades[subject.name];
+                     const finalScore = this.getFinalScore(gradeData);
+                     const description = this.generateGradeDescription(student, subject.name, gradeData);
+                     return `<tr><td class="${tableCellStyle} text-center">${idx + 1}</td><td class="${tableCellStyle}">${subject.name}</td><td class="${tableCellStyle} text-center">${finalScore}</td><td class="${tableCellStyle}">${description}</td></tr>`;
+                 }).join('');
 
-                const dimensionReports = project.dimensions.map(dim => {
-                    const gradeMapping = { 'SB': 4, 'BSH': 3, 'MB': 2, 'BB': 1 };
-                    let highestAchievement = null;
-                    let highestGrade = 0;
+            // Extracurriculars
+            const extraGrades = this.state.extracurricularGrades[student.id] || [];
+            const extraRows = extraGrades.map((ex, index) => {
+                const extraInfo = settings.extracurriculars.find(e => e.id === ex.id);
+                return `<tr><td class="${tableCellStyle} text-center">${index + 1}</td><td class="${tableCellStyle}">${extraInfo.name}</td><td class="${tableCellStyle}">${ex.description}</td></tr>`;
+            }).join('') || `<tr><td class="${tableCellStyle} text-center" colspan="3">Tidak mengikuti kegiatan ekstrakurikuler.</td></tr>`;
 
-                    dim.subElements.flatMap(s => s.targets).forEach(target => {
-                        const grade = studentP5Grades[target.id];
-                        if (grade && gradeMapping[grade] > highestGrade) {
-                            highestGrade = gradeMapping[grade];
-                            highestAchievement = target.description;
-                        }
-                    });
-                    
-                    if (highestAchievement) {
-                        return `<p>Dalam dimensi <strong>${dim.name}</strong>, Ananda ${studentNickname} menunjukkan pencapaian: ${highestAchievement}</p>`;
+                        // Attendance
+            const attendance = this.state.attendance[student.id] || { s: 0, i: 0, a: 0 };
+
+            // P5 Projects
+            const p5GradesForStudent = this.state.p5Grades[student.id] || {};
+            const p5ReportsHTML = settings.p5Projects.map(project => {
+                const projectGrades = p5GradesForStudent[project.id];
+                if (!projectGrades) return '';
+
+                const p5Levels = { BB: 'Belum Berkembang', MB: 'Mulai Berkembang', BSH: 'Berkembang Sesuai Harapan', SB: 'Sangat Berkembang' };
+                const findSubElement = (subId) => {
+                     for (const dim of this.p5ProfileData.dimensions) for (const el of dim.elements) {
+                         const sub = el.subElements.find(s => s.id === subId); if (sub) return sub;
+                     } return null;
+                };
+
+                const narrativeParts = [];
+                Object.entries(projectGrades).forEach(([subId, grade]) => {
+                    const subData = findSubElement(subId);
+                    if (subData && (grade === 'BSH' || grade === 'SB')) {
+                        narrativeParts.push(subData.name.toLowerCase());
                     }
-                    return '';
-                }).filter(Boolean).join('');
+                });
+
+                let narrative = `${student.panggilan || student.name} telah menunjukkan perkembangan yang baik dalam proyek ini. Ananda sudah mampu ${narrativeParts.join(', ')}. Perlu bimbingan lebih lanjut untuk meningkatkan kemampuan lainnya.`;
+                if(narrativeParts.length === 0) narrative = `${student.panggilan || student.name} sudah berpartisipasi aktif dalam proyek ini, namun masih perlu bimbingan untuk mencapai target capaian.`;
                 
-                if (hasAnyGradeForProject && dimensionReports) {
-                     p5ReportHTML += `<div class="p-2 border mt-2"><h4 class="font-bold text-sm">${project.name}</h4><div class="text-xs text-justify space-y-1">${dimensionReports}</div></div>`;
-                }
-            });
-
-            return `<div class="bg-white p-8 mx-auto my-4 max-w-4xl shadow-lg border rounded-md font-serif report-card print-area">
-                <header class="text-center mb-6">
-                    <div class="flex items-center justify-center gap-4">
-                        ${settings.schoolLogo ? `<img src="${settings.schoolLogo}" alt="Logo Sekolah" class="h-20 w-20 object-contain">` : ''}
-                        <div>
-                            <h1 class="text-xl font-bold uppercase">${settings.schoolName}</h1>
-                            <p class="text-sm">${settings.schoolAddress}, ${settings.postalCode}</p>
-                            <p class="text-sm">Telp: ${settings.schoolPhone} | Email: ${settings.schoolEmail}</p>
+                return `
+                    <div class="report-card p-8 bg-white shadow-lg mx-auto" style="width: 210mm; min-height: 297mm; font-size: 11pt;">
+                        <h3 class="font-bold text-center text-lg mb-4">LAPORAN PROJEK PENGUATAN PROFIL PELAJAR PANCASILA</h3>
+                        <div class="mb-4">
+                            <p><b>Nama Proyek:</b> ${project.name}</p>
+                            <p class="text-justify mt-1"><b>Deskripsi:</b> ${project.description}</p>
+                        </div>
+                        <div class="border border-black p-4">
+                            <b>Catatan Proses:</b><br>
+                            <p class="mt-2 text-justify">${narrative}</p>
+                        </div>
+                        <table class="w-full border-collapse border border-black mt-4">
+                            <thead>
+                                <tr>
+                                    <th class="${tableCellStyle} w-1/2">Dimensi</th>
+                                    <th class="${tableCellStyle} text-center">BB</th>
+                                    <th class="${tableCellStyle} text-center">MB</th>
+                                    <th class="${tableCellStyle} text-center">BSH</th>
+                                    <th class="${tableCellStyle} text-center">SB</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                               ${project.dimensions.map(dimData => {
+                                    const dimension = this.p5ProfileData.dimensions.find(d => d.id === dimData.dimensionId);
+                                    let hasGrade = false;
+                                    let maxGrade = 'BB';
+                                    const gradeValues = { 'BB': 1, 'MB': 2, 'BSH': 3, 'SB': 4 };
+                                    dimData.subElementIds.forEach(subId => {
+                                        if (projectGrades[subId]) {
+                                            hasGrade = true;
+                                            if (gradeValues[projectGrades[subId]] > gradeValues[maxGrade]) {
+                                                maxGrade = projectGrades[subId];
+                                            }
+                                        }
+                                    });
+                                    if (!hasGrade) return '';
+                                    return `<tr>
+                                        <td class="${tableCellStyle}">${dimension.name}</td>
+                                        ${Object.keys(p5Levels).map(level => `<td class="${tableCellStyle} text-center">${maxGrade === level ? '✔' : ''}</td>`).join('')}
+                                    </tr>`
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        <div class="text-xs mt-2">
+                            <b>Keterangan:</b> BB: Belum Berkembang; MB: Mulai Berkembang; BSH: Berkembang Sesuai Harapan; SB: Sangat Berkembang.
                         </div>
                     </div>
-                     <hr class="my-3 border-t-2 border-black">
-                    <h2 class="text-lg font-bold">LAPORAN HASIL BELAJAR</h2>
-                </header>
-                <main>
-                    <table class="w-full text-sm mb-4">
+                `;
+            }).join('');
+            
+            const teacherNote = this.state.teacherNotes[student.id] || '';
+
+            return `
+            <div class="report-card p-8 bg-white shadow-lg mx-auto" style="width: 210mm; min-height: 297mm; font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5;">
+                <!-- Header -->
+                <h3 class="font-bold text-center text-lg mb-4">LAPORAN HASIL BELAJAR</h3>
+                
+                <!-- Student Info -->
+                <table class="w-full text-left mb-4">
+                    <tr>
+                        <td class="w-1/4">Nama Sekolah</td><td class="w-1/2">: ${settings.schoolName}</td>
+                        <td class="w-1/4">Kelas</td><td>: ${settings.className}</td>
+                    </tr>
+                    <tr><td>Alamat</td><td>: ${settings.schoolAddress}</td><td>Semester</td><td>: ${settings.semester}</td></tr>
+                    <tr><td>Nama Peserta Didik</td><td>: ${student.name}</td><td>Tahun Ajaran</td><td>: ${settings.schoolYear}</td></tr>
+                    <tr><td>Nomor Induk/NISN</td><td>: ${student.nis} / ${student.nisn}</td><td></td><td></td></tr>
+                </table>
+
+                <!-- Academic Section -->
+                <h4 class="font-bold">A. Capaian Akademik</h4>
+                <table class="w-full border-collapse border border-black mt-2">
+                    <thead>
                         <tr>
-                            <td class="w-1/4">Nama Peserta Didik</td><td class="w-1/2">: ${student.name}</td>
-                            <td class="w-1/4">Kelas</td><td>: ${settings.className}</td>
+                            <th class="${tableCellStyle} w-8">No</th>
+                            <th class="${tableCellStyle} w-1/4">Mata Pelajaran</th>
+                            <th class="${tableCellStyle} w-20">Nilai Akhir</th>
+                            <th class="${tableCellStyle}">Capaian Kompetensi</th>
                         </tr>
+                    </thead>
+                    <tbody>${academicRows}</tbody>
+                </table>
+                
+                <!-- Extracurricular Section -->
+                <h4 class="font-bold mt-4">B. Ekstrakurikuler</h4>
+                 <table class="w-full border-collapse border border-black mt-2">
+                    <thead>
                         <tr>
-                            <td>NIS/NISN</td><td>: ${student.nis} / ${student.nisn}</td>
-                            <td>Semester</td><td>: ${settings.semester}</td>
+                            <th class="${tableCellStyle} w-8">No</th>
+                            <th class="${tableCellStyle} w-1/3">Kegiatan Ekstrakurikuler</th>
+                            <th class="${tableCellStyle}">Keterangan</th>
                         </tr>
-                        <tr>
-                            <td>Nama Sekolah</td><td>: ${settings.schoolName}</td>
-                            <td>Tahun Pelajaran</td><td>: ${settings.schoolYear}</td>
-                        </tr>
-                    </table>
-
-                    <h3 class="font-bold text-md mt-4 mb-1">A. SIKAP</h3>
-                    <div class="border p-2 text-justify text-sm">
-                        Selama semester ini, Ananda ${studentNickname} menunjukkan sikap yang baik, disiplin, dan bertanggung jawab.
+                    </thead>
+                    <tbody>${extraRows}</tbody>
+                </table>
+                
+                 <!-- Attendance & Notes -->
+                 <div class="flex mt-4 gap-4">
+                    <div class="w-1/3">
+                        <h4 class="font-bold">C. Ketidakhadiran</h4>
+                        <table class="w-full border-collapse border border-black mt-2">
+                             <tr><td class="border border-black p-1 w-2/3">Sakit</td><td class="border border-black p-1 text-center">${attendance.s} hari</td></tr>
+                             <tr><td class="border border-black p-1 w-2/3">Izin</td><td class="border border-black p-1 text-center">${attendance.i} hari</td></tr>
+                             <tr><td class="border border-black p-1 w-2/3">Tanpa Keterangan</td><td class="border border-black p-1 text-center">${attendance.a} hari</td></tr>
+                        </table>
                     </div>
-
-                    <h3 class="font-bold text-md mt-4 mb-1">B. AKADEMIK</h3>
-                    <table class="w-full text-sm border-collapse">
-                        <thead class="bg-gray-100 font-bold">
-                            <tr>
-                                <th class="border p-2 w-10">No</th>
-                                <th class="border p-2 text-left">Mata Pelajaran</th>
-                                <th class="border p-2 w-20">Nilai Akhir</th>
-                                <th class="border p-2 text-left">Capaian Kompetensi</th>
-                            </tr>
-                        </thead>
-                        <tbody>${academicRows}</tbody>
-                    </table>
-
-                    <h3 class="font-bold text-md mt-4 mb-1">C. EKSTRAKURIKULER</h3>
-                    <table class="w-full text-sm border-collapse">
-                        <thead class="bg-gray-100 font-bold">
-                            <tr>
-                                <th class="border p-2 w-10">No</th>
-                                <th class="border p-2 text-left">Kegiatan Ekstrakurikuler</th>
-                                <th class="border p-2 w-20">Predikat</th>
-                                <th class="border p-2 text-left">Keterangan</th>
-                            </tr>
-                        </thead>
-                        <tbody>${extracurricularRows}</tbody>
-                    </table>
-                    
-                    <div class="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                            <h3 class="font-bold text-md mb-1">D. KETIDAKHADIRAN</h3>
-                            <table class="w-full text-sm border-collapse">
-                                <tr><td class="border p-2 w-2/3">Sakit</td><td class="border p-2 text-center">${attendance.s} hari</td></tr>
-                                <tr><td class="border p-2">Izin</td><td class="border p-2 text-center">${attendance.i} hari</td></tr>
-                                <tr><td class="border p-2">Tanpa Keterangan</td><td class="border p-2 text-center">${attendance.a} hari</td></tr>
-                            </table>
-                        </div>
-                         <div>
-                            <h3 class="font-bold text-md mb-1">E. CATATAN WALI KELAS</h3>
-                            <div class="border p-2 text-justify text-sm h-full">${this.state.teacherNotes[student.id] || ''}</div>
-                        </div>
+                    <div class="w-2/3">
+                        <h4 class="font-bold">D. Catatan Wali Kelas</h4>
+                        <div class="border border-black p-2 mt-2 h-24">${teacherNote}</div>
                     </div>
-                    
-                    <h3 class="font-bold text-md mt-4 mb-1">F. LAPORAN PROYEK PENGUATAN PROFIL PELAJAR PANCASILA</h3>
-                    <div class="border p-2 text-sm">${p5ReportHTML || '<p class="text-center">-</p>'}</div>
-                    
-                    <div class="text-sm mt-6 flex justify-between">
-                        <div class="text-center">
-                            <p>Mengetahui,</p>
-                            <p>Orang Tua/Wali</p>
-                            <br><br><br>
-                            <p class="font-bold">.........................</p>
-                        </div>
-                        <div class="text-center">
-                            <p>${settings.reportDate}</p>
-                            <p>Wali Kelas</p>
-                            <br><br><br>
-                            <p class="font-bold underline">${settings.teacherName}</p>
-                            <p>NIP. ${settings.teacherNip}</p>
-                        </div>
-                    </div>
-                    <div class="text-center mt-6">
-                        <p>Kepala Sekolah</p>
-                        <br><br><br>
-                        <p class="font-bold underline">${settings.headmasterName}</p>
-                        <p>NIP. ${settings.headmasterNip}</p>
-                    </div>
-                </main>
-            </div>`;
-        },
+                 </div>
 
-        openModal() {
-            document.getElementById('app-modal').classList.remove('hidden');
-        },
-
-        closeModal() {
-            const modal = document.getElementById('app-modal');
-            modal.classList.add('hidden');
-            modal.querySelector('#modal-content-wrapper').innerHTML = '';
+                 <!-- Signatures -->
+                 <div class="flex justify-between mt-8">
+                     <div class="text-center">Mengetahui,<br>Orang Tua/Wali<br><br><br><br>.........................</div>
+                     <div class="text-center">${settings.reportDate}<br>Wali Kelas<br><br><br><br><b>${settings.teacherName}</b><br>NIP. ${settings.teacherNip}</div>
+                 </div>
+                 <div class="flex justify-center mt-6">
+                    <div class="text-center">Mengetahui,<br>Kepala Sekolah<br><br><br><br><b>${settings.headmasterName}</b><br>NIP. ${settings.headmasterNip}</div>
+                 </div>
+            </div>
+            ${p5ReportsHTML}
+            `;
         }
     };
 
-    window.App = App;
+    window.App = App; // Make it globally accessible for inline event handlers
     App.init();
 });
-
 </script>
 </body>
 </html>
