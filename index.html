@@ -17,10 +17,7 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
 
     // FETCH DATA
     if (fetchOnly) {
-      const response = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Sheet1!A:B"
-      });
+      await App.syncWithGoogleSheets(true);
 
       const rows = response.result.values || [];
       if (rows.length > 0) {
@@ -47,12 +44,7 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
       range: "Sheet1!A:B"
     });
 
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: "Sheet1!A1",
-      valueInputOption: "RAW",
-      resource: { values }
-    });
+    await App.syncWithGoogleSheets();
 
     App.updateSyncStatus("synced", "Data berhasil disinkronkan ke Google Sheets");
   } catch (err) {
