@@ -7,6 +7,41 @@
     <title>Rapor Kelas Terpadu</title>
     <script src="https://cdn.tailwindcss.com">
 // ========== Fungsi Sinkronisasi Google Sheets ==========
+
+App.findOrCreateSpreadsheet = async function() {
+  if (!(typeof gapi !== 'undefined' && gapi.client && gapiInited && isLoggedIn)) {
+    console.error("Google Drive API belum siap.");
+    throw new Error("Google Drive API belum siap. Silakan login terlebih dahulu.");
+  }
+
+  let spreadsheetId = App.settings?.googleSpreadsheetId;
+  if (spreadsheetId) {
+    return spreadsheetId;
+  }
+
+  try {
+    // Buat spreadsheet baru di Google Drive
+    const response = await gapi.client.sheets.spreadsheets.create({
+      properties: {
+        title: "Rapor Kelas Terpadu - Data"
+      },
+      sheets: [{ properties: { title: "Sheet1" } }]
+    });
+
+    spreadsheetId = response.result.spreadsheetId;
+    if (!App.settings) App.settings = {};
+    App.settings.googleSpreadsheetId = spreadsheetId;
+
+    console.log("Spreadsheet baru berhasil dibuat:", spreadsheetId);
+    App.updateSyncStatus("synced", "Spreadsheet baru berhasil dibuat");
+    return spreadsheetId;
+  } catch (err) {
+    console.error("Gagal membuat spreadsheet baru:", err);
+    throw new Error("Tidak bisa membuat spreadsheet baru. Coba periksa izin Google Drive.");
+  }
+};
+
+
 App.syncWithGoogleSheets = async function (fetchOnly = false) {
   // Pastikan Google API siap sebelum sinkronisasi
   if (!(typeof gapi !== 'undefined' && gapi.client && gapiInited && isLoggedIn)) {
