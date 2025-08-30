@@ -8,6 +8,12 @@
     <script src="https://cdn.tailwindcss.com">
 // ========== Fungsi Sinkronisasi Google Sheets ==========
 App.syncWithGoogleSheets = async function (fetchOnly = false) {
+  // Pastikan Google API siap sebelum sinkronisasi
+  if (!(typeof gapi !== 'undefined' && gapi.client && gapiInited && isLoggedIn)) {
+    console.error("Google API belum siap atau belum login.");
+    alert("Google API belum siap. Silakan login Google terlebih dahulu sebelum sinkronisasi.");
+    return;
+  }
   try {
     const spreadsheetId = App.settings?.googleSpreadsheetId;
     if (!spreadsheetId) {
@@ -601,7 +607,7 @@ function handleAuthClick() {
             } finally {
                 // Sync on login (fetch only)
                 try {
-                    await App.syncWithGoogleSheets(true);
+                    if (gapiInited) { await App.syncWithGoogleSheets(true); }
                 } catch (err) {
                     console.error('Gagal melakukan sinkronisasi setelah login', err);
                 }
