@@ -16,32 +16,30 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
     }
 
     // FETCH DATA
-    // FETCH DATA
-if (fetchOnly) {
-  const response = await gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId,
-    range: "Sheet1!A:B"
-  });
+    if (fetchOnly) {
+      const response = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "Sheet1!A:B"
+      });
 
-  const rows = response.result.values || [];
-  if (rows.length > 0) {
-    // Urutkan berdasarkan PART-XX lalu gabungkan
-    const chunks = rows
-      .sort((a, b) => {
-        const getNum = str => parseInt((str[0] || "").replace("PART-", ""), 10);
-        return getNum(a) - getNum(b);
-      })
-      .map(r => r[1] || "");
+      const rows = response.result.values || [];
+      if (rows.length > 0) {
+        const chunks = rows
+          .sort((a, b) => {
+            const getNum = str => parseInt((str[0] || "").replace("PART-", ""), 10);
+            return getNum(a) - getNum(b);
+          })
+          .map(r => r[1] || "");
 
-    const fullString = chunks.join("");
-    const data = JSON.parse(fullString);
+        const fullString = chunks.join("");
+        const data = JSON.parse(fullString);
 
-    App.data = data;
-    App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
-  }
-  return;
-}
-
+        App.data = data;
+        App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
+      }
+      return;
+    }
+    }
 
     // SIMPAN DATA
     const dataString = JSON.stringify(App.data || {});
@@ -75,7 +73,12 @@ if (fetchOnly) {
 </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google API Scripts -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script>
+  function gapiLoaded() {
+    gapi.load("client", initializeGapiClient);
+  }
+</script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     <style>
         @media print {
@@ -555,6 +558,11 @@ function maybeEnableButtons() {
 }
 
 function handleAuthClick() {
+    if (!tokenClient) {
+        alert("Google Identity belum siap. Coba lagi dalam beberapa detik.");
+        return;
+    }
+
     tokenClient.callback = async (resp) => {
         if (resp.error !== undefined) {
             throw (resp);
@@ -562,7 +570,6 @@ function handleAuthClick() {
         isLoggedIn = true;
         updateUIOnLogin();
         
-        // Fetch user profile info
         try {
             const response = await gapi.client.oauth2.userinfo.get();
             const profile = response.result;
@@ -571,7 +578,6 @@ function handleAuthClick() {
         } catch (err) {
             console.error("Error fetching user profile", err);
         } finally {
-            // Sync on login (fetch only)
             await App.syncWithGoogleSheets(true);
         }
     };
