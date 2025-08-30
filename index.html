@@ -4859,5 +4859,28 @@ function gisLoaded() {
 }
 </script>
 
+
+<script>
+  // Tambahan perbaikan agar tidak error "gapiLoaded/gisLoaded is not defined"
+  if (typeof gapiLoaded !== 'function') {
+    function gapiLoaded() {
+      if (typeof gapi !== 'undefined' && gapi.load) {
+        gapi.load('client:auth2', initClient);
+      }
+    }
+  }
+  if (typeof gisLoaded !== 'function') {
+    function gisLoaded() {
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: typeof CLIENT_ID !== 'undefined' ? CLIENT_ID : '',
+          scope: typeof SCOPES !== 'undefined' ? SCOPES : '',
+          callback: '', // akan di-set saat requestAccessToken
+        });
+      }
+    }
+  }
+</script>
+
 </body>
 </html>
