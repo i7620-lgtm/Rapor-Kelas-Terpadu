@@ -4837,5 +4837,27 @@ document.addEventListener('DOMContentLoaded', () => {
     App.init();
 });
 </script>
+
+<script>
+function gapiLoaded() {
+  gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+  await gapi.client.init({
+    apiKey: API_KEY,
+    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+  });
+}
+
+function gisLoaded() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: '' // akan diisi saat login
+  });
+}
+</script>
+
 </body>
 </html>
