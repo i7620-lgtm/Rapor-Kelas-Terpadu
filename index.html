@@ -16,20 +16,32 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
     }
 
     // FETCH DATA
-    if (fetchOnly) {
-      await App.syncWithGoogleSheets(true);
+    // FETCH DATA
+if (fetchOnly) {
+  const response = await gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: "Sheet1!A:B"
+  });
 
-      const rows = response.result.values || [];
-      if (rows.length > 0) {
-        const chunks = rows.map(r => r[1]);
-        const fullString = chunks.join("");
-        const data = JSON.parse(fullString);
+  const rows = response.result.values || [];
+  if (rows.length > 0) {
+    // Urutkan berdasarkan PART-XX lalu gabungkan
+    const chunks = rows
+      .sort((a, b) => {
+        const getNum = str => parseInt((str[0] || "").replace("PART-", ""), 10);
+        return getNum(a) - getNum(b);
+      })
+      .map(r => r[1] || "");
 
-        App.data = data;
-        App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
-      }
-      return;
-    }
+    const fullString = chunks.join("");
+    const data = JSON.parse(fullString);
+
+    App.data = data;
+    App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
+  }
+  return;
+}
+
 
     // SIMPAN DATA
     const dataString = JSON.stringify(App.data || {});
@@ -44,7 +56,12 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
       range: "Sheet1!A:B"
     });
 
-    await App.syncWithGoogleSheets();
+    await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "Sheet1!A1",
+      valueInputOption: "RAW",
+      resource: { values }
+    });
 
     App.updateSyncStatus("synced", "Data berhasil disinkronkan ke Google Sheets");
   } catch (err) {
