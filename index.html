@@ -5,7 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Aplikasi rapor kelas yang berjalan sepenuhnya offline di browser. Semua data dapat diimpor dan diekspor melalui file Excel untuk portabilitas." />
     <title>Rapor Kelas Terpadu</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+// ========== Fungsi Sinkronisasi Google Sheets ==========
+App.syncWithGoogleSheets = async function (fetchOnly = false) {
+  try {
+    const spreadsheetId = App.settings?.googleSpreadsheetId;
+    if (!spreadsheetId) {
+      console.error("Spreadsheet ID belum diset di pengaturan.");
+      return;
+    }
+
+    // FETCH DATA
+    if (fetchOnly) {
+      const response = await gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: "Sheet1!A:B"
+      });
+
+      const rows = response.result.values || [];
+      if (rows.length > 0) {
+        const chunks = rows.map(r => r[1]);
+        const fullString = chunks.join("");
+        const data = JSON.parse(fullString);
+
+        App.data = data;
+        App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
+      }
+      return;
+    }
+
+    // SIMPAN DATA
+    const dataString = JSON.stringify(App.data || {});
+    const chunks = [];
+    for (let i = 0; i < dataString.length; i += 49000) {
+      chunks.push(dataString.substring(i, i + 49000));
+    }
+    const values = chunks.map((chunk, i) => [`PART-${i+1}`, chunk]);
+
+    await gapi.client.sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: "Sheet1!A:B"
+    });
+
+    await gapi.client.sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: "Sheet1!A1",
+      valueInputOption: "RAW",
+      resource: { values }
+    });
+
+    App.updateSyncStatus("synced", "Data berhasil disinkronkan ke Google Sheets");
+  } catch (err) {
+    console.error("Sinkronisasi gagal:", err);
+    App.updateSyncStatus("error", "Terjadi kesalahan saat sinkronisasi");
+    alert("Terjadi kesalahan saat sinkronisasi: " + err.message);
+  }
+};
+// =======================================================
+
+</script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google API Scripts -->
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
@@ -1422,62 +1480,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         getEmptyStudent() {
             return { id: '', nis: '', nisn: '', name: '', panggilan: '', ttl: '', jenisKelamin: '', agama: '', kewarganegaraan: '', statusKeluarga: '', anakKe: '', asalTk: '', alamat: '', namaAyah: '', namaIbu: '', pekerjaanAyah: '', pekerjaanIbu: '', alamatOrtu: '', teleponOrtu: '', kelurahan: '', kecamatan: '', kabupaten: '', provinsi: '', namaWali: '', pekerjaanWali: '', alamatWali: '', teleponWali: '' };
-            // Tambahkan di bawah penutup App
-App.syncWithGoogleSheets = async function (fetchOnly = false) {
-  try {
-    const spreadsheetId = App.settings?.googleSpreadsheetId;
-    if (!spreadsheetId) {
-      console.error("Spreadsheet ID belum diset di pengaturan.");
-      return;
-    }
-
-    // FETCH
-    if (fetchOnly) {
-      const response = await gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range: "Sheet1!A:B"
-      });
-
-      const rows = response.result.values || [];
-      if (rows.length > 0) {
-        const chunks = rows.map(r => r[1]); 
-        const fullString = chunks.join("");
-        const data = JSON.parse(fullString);
-
-        App.data = data;
-        App.updateSyncStatus("synced", "Data berhasil dimuat dari Google Sheets");
-      }
-      return;
-    }
-
-    // SAVE
-    const dataString = JSON.stringify(App.data || {});
-    const chunks = [];
-    for (let i = 0; i < dataString.length; i += 49000) {
-      chunks.push(dataString.substring(i, i + 49000));
-    }
-    const values = chunks.map((chunk, i) => [`PART-${i+1}`, chunk]);
-
-    await gapi.client.sheets.spreadsheets.values.clear({
-      spreadsheetId,
-      range: "Sheet1!A:B"
-    });
-
-    await gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: "Sheet1!A1",
-      valueInputOption: "RAW",
-      resource: { values }
-    });
-
-    App.updateSyncStatus("synced", "Data berhasil disinkronkan ke Google Sheets");
-  } catch (err) {
-    console.error("Sinkronisasi gagal:", err);
-    App.updateSyncStatus("error", "Terjadi kesalahan saat sinkronisasi");
-    alert("Terjadi kesalahan saat sinkronisasi: " + err.message);
-  }
-};
-
         },
 
         getDefaultSettings() {
