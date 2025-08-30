@@ -63,28 +63,6 @@ App.syncWithGoogleSheets = async function (fetchOnly = false) {
 };
 // =======================================================
 
-
-// ---------- VALIDATION FOR GOOGLE SHEETS ----------
-function validateSheetData(rows) {
-  for (let r = 0; r < rows.length; r++) {
-    for (let c = 0; c < rows[r].length; c++) {
-      const cell = rows[r][c] ? rows[r][c].toString() : '';
-      if (cell.length > 50000) {
-        alert(
-          `⚠️ Data terlalu panjang!
-
-` +
-          `Baris ${r+1}, Kolom ${c+1} memiliki ${cell.length} karakter.
-` +
-          `Batas Google Sheets hanya 50.000 karakter per sel.`
-        );
-        return false; // hentikan sync
-      }
-    }
-  }
-  return true; // aman
-}
-
 </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Google API Scripts -->
@@ -569,23 +547,71 @@ function maybeEnableButtons() {
 
 function handleAuthClick() {
     tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-            throw (resp);
-        }
-        isLoggedIn = true;
-        updateUIOnLogin();
-        
-        // Fetch user profile info
         try {
-            const response = await gapi.client.oauth2.userinfo.get();
-            const profile = response.result;
-            document.getElementById('user-profile').textContent = `Login sebagai: ${profile.email}`;
-            document.getElementById('user-profile').classList.remove('hidden');
-        } catch (err) {
-            console.error("Error fetching user profile", err);
-        } finally {
-            // Sync on login (fetch only)
-            await App.syncWithGoogleSheets(true);
+            if (resp.error !== undefined) {
+                throw (resp);
+            }
+
+            // If access token returned, set it on gapi.client so subsequent gapi.client calls use it.
+            if (resp.access_token) {
+                try {
+                    if (gapi && gapi.client && typeof gapi.client.setToken === 'function') {
+                        gapi.client.setToken({ access_token: resp.access_token });
+                    } else {
+                        // If gapi.client not ready yet, store token to set later
+                        (window.__pendingGapiToken = window.__pendingGapiToken || {}).access_token = resp.access_token;
+                    }
+                } catch (e) {
+                    console.warn('Gagal meng-set token ke gapi.client (sementara).', e);
+                    (window.__pendingGapiToken = window.__pendingGapiToken || {}).access_token = resp.access_token;
+                }
+            }
+
+            isLoggedIn = true;
+            updateUIOnLogin();
+
+            // Wait for gapi client initialization to complete (safeguard against race conditions)
+            await (async function waitForGapiInit(timeout = 5000) {
+                const start = Date.now();
+                while (!(typeof gapi !== 'undefined' && gapi.client && gapiInited)) {
+                    if (Date.now() - start > timeout) return;
+                    await new Promise(r => setTimeout(r, 150));
+                }
+            })();
+
+            // If there was a pending token because gapi wasn't ready earlier, set it now.
+            if (window.__pendingGapiToken && gapi && gapi.client && typeof gapi.client.setToken === 'function') {
+                try { gapi.client.setToken(window.__pendingGapiToken); window.__pendingGapiToken = null; } catch(e){console.warn(e)}
+            }
+
+            // Fetch user profile info if available
+            try {
+                if (gapi && gapi.client && gapi.client.oauth2 && gapi.client.oauth2.userinfo && typeof gapi.client.oauth2.userinfo.get === 'function') {
+                    const response = await gapi.client.oauth2.userinfo.get();
+                    const profile = response.result;
+                    if (profile && profile.email) {
+                        document.getElementById('user-profile').textContent = `Login sebagai: ${profile.email}`;
+                        document.getElementById('user-profile').classList.remove('hidden');
+                    }
+                } else {
+                    console.warn('API userinfo tidak tersedia saat ini. Melewatkan pengambilan profil.');
+                }
+            } catch (err) {
+                console.error('Error fetching user profile', err);
+            } finally {
+                // Sync on login (fetch only)
+                try {
+                    await App.syncWithGoogleSheets(true);
+                } catch (err) {
+                    console.error('Gagal melakukan sinkronisasi setelah login', err);
+                }
+            }
+        } catch (e) {
+            console.error('tokenClient callback error', e);
+            // show logout UI if something fatal happened
+            try {
+                gapi && gapi.client && gapi.client.setToken && gapi.client.setToken('');
+            } catch(_) {}
         }
     };
 
@@ -1727,6 +1753,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const fileName = 'Rapor Kelas Terpadu Data';
             try {
+                await (async function waitForGapiInit(timeout = 5000) {
+
+                    const start = Date.now();
+
+                    while (!(typeof gapi !== 'undefined' && gapi.client && gapiInited)) {
+
+                        if (Date.now() - start > timeout) break;
+
+                        await new Promise(r => setTimeout(r, 150));
+
+                    }
+
+                })();
+
+
+                if (!(gapi && gapi.client && gapi.client.drive && gapi.client.drive.files && typeof gapi.client.drive.files.list === 'function')) {
+
+                    throw new Error('Google Drive API belum siap.');
+
+                }
+
+
                 const response = await gapi.client.drive.files.list({
                     q: `name='${fileName}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`,
                     fields: 'files(id, name)',
