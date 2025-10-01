@@ -1,7 +1,7 @@
 
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Student, StudentNotes } from '../types.ts';
+import { Student, StudentNotes } from '../types.js';
 
 declare const XLSX: any;
 
