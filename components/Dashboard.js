@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student } from '../types.ts';
+import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student } from '../types.js';
 
 // Define StatCard component inside Dashboard file scope as it's only used here
 const StatCard: React.FC<StatCardProps> = ({ title, value, description, actionText, onActionClick }) => (
