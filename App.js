@@ -279,6 +279,14 @@ const App: React.FC = () => {
       localStorage.setItem('appP5Assessments', JSON.stringify(p5ProjectAssessments));
   }, [p5ProjectAssessments]);
 
+  useEffect(() => {
+    // Hide the loader once the App component has mounted
+    const loader = document.getElementById('loader-wrapper');
+    if (loader) {
+        loader.classList.add('hidden');
+    }
+  }, []);
+
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
   };
