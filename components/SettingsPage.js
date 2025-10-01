@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { AppSettings } from '../types.ts';
+import { AppSettings } from '../types.js';
 
 interface FormFieldProps {
     label: string;
