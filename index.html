@@ -10,63 +10,46 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#ffffff" />
     
-    <!-- SystemJS and Babel Plugin for in-browser module loading and transpilation -->
+    <!-- SystemJS for in-browser module loading -->
     <script src="https://unpkg.com/systemjs@6.14.3/dist/s.min.js"></script>
-    <script src="https://unpkg.com/systemjs-plugin-babel@0.0.25/plugin-babel.js"></script>
-    <script src="https://unpkg.com/systemjs-babel@0.0.25/dist/systemjs-babel.js"></script>
 
+    <!-- 
+      SystemJS Configuration via Import Map.
+      This is the modern way to configure SystemJS (v1+).
+      It defines where to find modules and how to load them.
+    -->
     <script type="systemjs-importmap">
     {
       "imports": {
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-        "react/": "https://aistudiocdn.com/react@^19.1.1/",
         "react": "https://aistudiocdn.com/react@^19.1.1",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0"
+        "react-dom/client": "https://aistudiocdn.com/react-dom@^19.1.1/client",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+        
+        "plugin-babel": "https://unpkg.com/@systemjs/plugin-babel@0.2.1/dist/plugin-babel.min.js",
+        "babel": "https://unpkg.com/@babel/standalone@7.12.4/babel.min.js"
+      },
+      "meta": {
+        "*.js": {
+          "babelOptions": {
+            "react": true,
+            "typescript": true
+          },
+          "loader": "plugin-babel"
+        },
+        "https://aistudiocdn.com/*": {
+          "loader": false
+        }
       }
     }
     </script>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
-  }
-}
-</script>
 </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <!-- Configure and start the application via SystemJS -->
+    <!-- Start the application -->
     <script>
-      System.config({
-        transpiler: 'plugin-babel',
-        babelOptions: {
-          react: true,
-          typescript: true
-        },
-        map: {
-          'plugin-babel': 'https://unpkg.com/systemjs-plugin-babel@0.0.25/plugin-babel.js',
-          'systemjs-babel-build': 'https://unpkg.com/systemjs-babel@0.0.25/dist/systemjs-babel.js',
-          'app': '/' // Map our app package to the root directory
-        },
-        packages: {
-          'app': { // Configure our application package
-            main: 'index.js', // The entry point
-            defaultExtension: 'js',
-            meta: {
-              '*.js': { // Apply babel to all JS files within this package
-                loader: 'plugin-babel'
-              }
-            }
-          }
-        }
-      });
-      // Import the main application file to start the app
-      System.import('app').catch(function(err) { console.error(err); });
+      System.import('/index.js').catch(function(err) { console.error(err); });
     </script>
   </body>
 </html>
