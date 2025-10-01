@@ -1,7 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Student, Extracurricular, StudentExtracurricular } from '../types.js';
-import { GoogleGenAI } from "@google/genai";
 
 declare const XLSX: any;
 
@@ -169,7 +168,6 @@ const DeskripsiView: React.FC<DeskripsiViewProps> = ({ students, extracurricular
     const [selectedEkstra, setSelectedEkstra] = useState<string>('');
     const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
 
-    const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
     const activeEkstras = useMemo(() => extracurriculars.filter(e => e.active), [extracurriculars]);
 
     const studentsInEkstra = useMemo(() => {
@@ -199,16 +197,25 @@ const DeskripsiView: React.FC<DeskripsiViewProps> = ({ students, extracurricular
             const ekstraName = extracurriculars.find(e => e.id === activityId)?.name;
             const prompt = `Buatkan deskripsi singkat untuk kegiatan ekstrakurikuler ${ekstraName} yang diikuti oleh siswa bernama ${student.namaLengkap}. Deskripsi harus positif, menyoroti partisipasi dan perkembangan siswa, serta memberikan kalimat motivasi. Tulis dalam satu paragraf Bahasa Indonesia.`;
             
-            // FIX: Access the generated text directly from the `text` property of the response.
-            const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-            handleDescriptionChange(student.id, activityId, response.text.trim());
+            const apiResponse = await fetch('/api/generate-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+
+            if (!apiResponse.ok) {
+                throw new Error('Gagal menghubungi server AI.');
+            }
+            
+            const data = await apiResponse.json();
+            handleDescriptionChange(student.id, activityId, data.text.trim());
         } catch (error) {
             console.error("Error generating description:", error);
             alert("Gagal menghasilkan deskripsi.");
         } finally {
             setIsLoading(prev => ({ ...prev, [student.id]: false }));
         }
-    }, [selectedEkstra, extracurriculars, ai.models, onUpdateStudentExtracurriculars]);
+    }, [selectedEkstra, extracurriculars, onUpdateStudentExtracurriculars]);
 
 
     return (
