@@ -10,49 +10,6 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#ffffff" />
     
-    <style>
-        #loader-wrapper {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            background-color: rgba(248, 250, 252, 0.8);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            transition: opacity 0.5s ease;
-        }
-        #loader-wrapper.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .loader {
-            border: 4px solid #e2e8f0; border-top: 4px solid #4f46e5;
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        .loader-text { margin-top: 16px; color: #475569; font-weight: 500; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #offline-indicator {
-            position: fixed;
-            bottom: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #475569;
-            color: white;
-            padding: 0.75rem 1.25rem;
-            border-radius: 9999px;
-            font-weight: 500;
-            z-index: 10001;
-            transition: bottom 0.5s ease-in-out;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        #offline-indicator.show {
-            bottom: 20px;
-        }
-    </style>
-
     <!-- Script loading order is critical for on-the-fly transpilation -->
 
     <!-- 1. Babel for transpilation (must be loaded before the fetch hook) -->
@@ -90,7 +47,7 @@
     </script>
 
     <!-- 3. ES Module Shims for importmap and fetch hook support -->
-    <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+    <script src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
     
     <!-- 4. Import Map for module resolution (must be after the shims script) -->
     <script type="importmap">
@@ -98,26 +55,16 @@
   "imports": {
     "react": "https://esm.sh/react@18.2.0",
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai"
+    "@google/genai": "https://esm.sh/@google/genai",
+    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.3.24",
+    "@vercel/postgres": "https://aistudiocdn.com/@vercel/postgres@^0.10.0"
   }
 }
 </script>
 
   </head>
   <body class="bg-slate-50 flex flex-col min-h-screen">
-    <div id="loader-wrapper">
-        <div class="loader"></div>
-        <p class="loader-text">Memuat Aplikasi...</p>
-    </div>
-
     <div id="root" class="flex-grow"></div>
-
-    <div id="offline-indicator">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-        </svg>
-        <span>Anda sedang offline.</span>
-    </div>
 
     <footer class="text-center py-4 px-4 text-xs text-slate-500">
         Dibuat dengan ❤️ untuk para pendidik | 
@@ -146,20 +93,5 @@
       );
     </script>
 
-    <!-- 6. PWA Helper Scripts -->
-    <script>
-      const offlineIndicator = document.getElementById('offline-indicator');
-      const updateOnlineStatus = () => {
-        if (navigator.onLine) {
-          offlineIndicator.classList.remove('show');
-        } else {
-          offlineIndicator.classList.add('show');
-        }
-      };
-
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-      updateOnlineStatus(); // Check status on initial load
-    </script>
   </body>
 </html>
