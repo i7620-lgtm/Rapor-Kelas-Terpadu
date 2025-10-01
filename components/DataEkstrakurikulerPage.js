@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { Student, Extracurricular, StudentExtracurricular } from '../types.ts';
+import { Student, Extracurricular, StudentExtracurricular } from '../types.js';
 import { GoogleGenAI } from "@google/genai";
 
 declare const XLSX: any;
