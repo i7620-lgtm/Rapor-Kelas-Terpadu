@@ -1,0 +1,80 @@
+{
+  "learningObjectives": {
+    "Pendidikan Pancasila": [
+      "Menjelaskan keterkaitan sila-sila dalam Pancasila sebagai satu kesatuan yang utuh",
+      "Memahami pengamalan nilai-nilai Pancasila dalam kehidupan sehari-hari dengan menyenangkan",
+      "Mengidentifikasi dan mempraktikkan sikap yang sesuai dengan nilai-nilai Pancasila sebagai dasar negara, pandangan hidup bangsa, dan ideologi negara",
+      "Mengidentifikasi bentuk-bentuk norma, hak, dan kewajiban warga negara dan menunjukkan contoh-contohnya",
+      "Mampu mempraktikkan kegiatan musyawarah yang ada di lingkungan masyarakat"
+    ],
+    "Bahasa Indonesia": [
+      "Memahami dan menggunakan informasi dari berbagai jenis teks",
+      "Menulis beragam jenis teks untuk menyampaikan gagasan dan informasi",
+      "Berbicara dengan lancar dan jelas untuk berpartisipasi dalam diskusi",
+      "Membaca dan memahami teks sastra untuk memperkaya pengalaman",
+      "Menyajikan gagasan secara lisan dengan efektif dan santun"
+    ],
+    "Matematika": [
+      "Memahami dan menggunakan konsep bilangan cacah dan operasinya",
+      "Mengenal dan mendeskripsikan berbagai bentuk bangun datar dan bangun ruang",
+      "Mengukur dan membandingkan panjang, berat, dan waktu",
+      "Mengumpulkan, menyajikan, dan menganalisis data sederhana",
+      "Menyelesaikan masalah matematika yang berkaitan dengan kehidupan sehari-hari"
+    ],
+    "Ilmu Pengetahuan Alam dan Sosial": [
+        "Mengidentifikasi bagian-bagian tubuh dan fungsinya",
+        "Memahami siklus hidup makhluk hidup di lingkungan sekitar",
+        "Mengenal berbagai sumber energi dan manfaatnya",
+        "Memahami peristiwa penting dalam sejarah keluarga dan lingkungan sekitar",
+        "Mengidentifikasi keragaman sosial dan budaya di lingkungan sekitar"
+    ]
+  },
+  "extracurriculars": [
+    { "id": "CATUR", "name": "Catur", "active": true },
+    { "id": "IPA", "name": "IPA", "active": true },
+    { "id": "KARATE", "name": "Karate", "active": true },
+    { "id": "KEWIRAUSAHAAN", "name": "Kewirausahaan", "active": false },
+    { "id": "KODING", "name": "Koding", "active": false },
+    { "id": "MADING", "name": "Mading", "active": false },
+    { "id": "MATEMATIKA", "name": "Matematika", "active": false },
+    { "id": "MENGGAMBAR", "name": "Menggambar", "active": true },
+    { "id": "MENARI", "name": "Menari", "active": false },
+    { "id": "NYURAT_AKSARA_BALI", "name": "Nyurat Aksara Bali", "active": false },
+    { "id": "PRAMUKA", "name": "Pramuka", "active": true },
+    { "id": "SILAT", "name": "Silat", "active": true },
+    { "id": "VOLI", "name": "Voli", "active": true },
+    { "id": "XIANGQI", "name": "Xiangqi", "active": true }
+  ],
+  "studentNotesTemplates": [
+    {
+      "title": "Perkembangan Akademik Positif",
+      "content": "Ananda [Nama Siswa] menunjukkan perkembangan yang sangat baik dalam kemampuan [Sebutkan Kemampuan, misal: literasi dan numerasi]. Ia juga sangat aktif dalam kegiatan kelompok dan menunjukkan sikap [Sebutkan Sikap Positif, misal: kepemimpinan]. Perlu terus didukung untuk meningkatkan [Sebutkan Area Peningkatan, misal: kepercayaan dirinya saat tampil di depan kelas]."
+    },
+    {
+      "title": "Sikap dan Perilaku Baik",
+      "content": "Ananda [Nama Siswa] menunjukkan sikap yang sangat santun dan bertanggung jawab. Ia selalu menyelesaikan tugas tepat waktu dan aktif membantu teman-temannya yang mengalami kesulitan. Pertahankan terus sikap positif ini."
+    },
+    {
+      "title": "Perlu Peningkatan Fokus",
+      "content": "Ananda [Nama Siswa] memiliki potensi yang baik dalam bidang [Sebutkan Bidang]. Namun, perlu meningkatkan fokus dan konsentrasi saat pembelajaran di kelas. Dengan bimbingan dan dukungan, kami yakin Ananda dapat mencapai hasil yang lebih optimal."
+    },
+    {
+      "title": "Aktif di Kelas",
+      "content": "Ananda [Nama Siswa] sangat antusias dan aktif bertanya selama kegiatan belajar mengajar. Keberaniannya untuk berpendapat patut diapresiasi dan menjadi contoh bagi teman-temannya. Teruslah menjadi siswa yang kritis dan kreatif."
+    }
+  ],
+  "p5Projects": [
+    {
+      "id": "P5_BHINNEKA",
+      "title": "Bhinneka Tunggal Ika",
+      "description": "Proyek yang bertujuan untuk mengenal dan merayakan keragaman budaya di Indonesia melalui kegiatan seperti pameran budaya, pentas seni, dan kuliner tradisional.",
+      "dimensions": ["Beriman, bertakwa kepada Tuhan YME, dan berakhlak mulia", "Berkebinekaan global", "Gotong royong"]
+    },
+    {
+      "id": "P5_KEWIRAUSAHAAN",
+      "title": "Kewirausahaan",
+      "description": "Proyek untuk menumbuhkan jiwa kewirausahaan siswa melalui pembuatan dan penjualan produk kreatif hasil karya sendiri.",
+      "dimensions": ["Mandiri", "Kreatif", "Gotong royong"]
+    }
+  ]
+}
