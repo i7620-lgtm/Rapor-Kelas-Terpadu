@@ -10,10 +10,13 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#ffffff" />
     
-    <!-- Babel Standalone for in-browser transpilation -->
-    <script src="https://unpkg.com/@babel/standalone@7.12.4/babel.min.js"></script>
+    <!-- 1. ES Module Shims for importmap and fetch hook support -->
+    <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+    
+    <!-- 2. Babel for transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Import Map for module resolution -->
+    <!-- 3. Import Map for module resolution -->
     <script type="importmap">
 {
   "imports": {
@@ -24,13 +27,44 @@
   }
 }
 </script>
-</head>
+    
+    <!-- 4. Correct Fetch hook using es-module-shims -->
+    <script type="module-shim">
+      // This is the correct way to create a fetch hook for es-module-shims
+      // It does not modify the global window.fetch
+      importShim.fetch = async function (url) {
+        const response = await fetch(url);
+        // Only transpile local .js files that are not from a CDN
+        if (url.href.endsWith('.js') && !url.href.startsWith('https://')) {
+            if (!response.ok) return response;
+            const code = await response.text();
+            try {
+              // Ensure Babel is loaded
+              if (!window.Babel) {
+                  throw new Error("Babel is not loaded!");
+              }
+              const transformedCode = Babel.transform(code, {
+                presets: ['react', 'typescript'],
+                filename: url.href 
+              }).code;
+              return new Response(new Blob([transformedCode], { type: 'application/javascript' }));
+            } catch(e) {
+              console.error(`Babel Error in ${url.href}:`, e);
+              // Return original code to see the syntax error in devtools
+              return new Response(new Blob([code], { type: 'application/javascript' }));
+            }
+        }
+        return response;
+      };
+    </script>
+
+  </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <!-- Application Entry Point (inlined and transpiled by Babel) -->
-    <script type="text/babel" data-presets="react,typescript" data-type="module">
+    <!-- 5. Application Entry Point (now a module-shim) -->
+    <script type="module-shim">
       import React from 'react';
       import ReactDOM from 'react-dom/client';
       import App from './App.js';
