@@ -29,9 +29,11 @@
 </script>
     
     <!-- 4. Correct Fetch hook using es-module-shims -->
-    <script type="module-shim">
-      // This is the correct way to create a fetch hook for es-module-shims
-      // It does not modify the global window.fetch
+    <script>
+      // This is the correct way to create a fetch hook for es-module-shims.
+      // It does not modify the global window.fetch.
+      // By using a standard script tag, we ensure this hook is defined before any module-shims are executed.
+      window.importShim = window.importShim || {};
       importShim.fetch = async function (url) {
         const response = await fetch(url);
         // Only transpile local .js files that are not from a CDN by checking the origin
