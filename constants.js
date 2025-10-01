@@ -1,6 +1,6 @@
 
 
-import { NavItem, DataAction, Student } from './types.ts';
+import { NavItem, DataAction, Student } from './types.js';
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'DASHBOARD', label: 'Dashboard' },
