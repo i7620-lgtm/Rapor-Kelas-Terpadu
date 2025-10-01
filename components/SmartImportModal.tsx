@@ -1,8 +1,8 @@
 
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Student } from '../types';
-import { studentFieldDefinitions } from '../constants';
+import { Student } from '../types.ts';
+import { studentFieldDefinitions } from '../constants.tsx';
 import { GoogleGenAI, Type } from '@google/genai';
 
 declare const XLSX: any;
