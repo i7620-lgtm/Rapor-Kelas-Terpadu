@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from '../types.js';
 import { studentFieldDefinitions } from '../constants.js';
-import { GoogleGenAI, Type } from '@google/genai';
 
 declare const XLSX: any;
 
@@ -33,7 +32,6 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
     const targetFields = useMemo(() => studentFieldDefinitions.filter(f => f.key !== 'no'), []);
 
     useEffect(() => {
@@ -85,28 +83,34 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
 
             const properties: Record<string, any> = {};
             targetFields.forEach(field => {
-                // FIX: Ensure field.key is treated as a string when used as an object key or in a template literal.
-                properties[String(field.key)] = { type: Type.STRING, description: `The header from the user file that maps to ${String(field.key)}. Should be one of [${headers.join(', ')}] or null.` };
+                properties[String(field.key)] = { type: 'STRING', description: `The header from the user file that maps to ${String(field.key)}. Should be one of [${headers.join(', ')}] or null.` };
             });
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: { mapping: { type: Type.OBJECT, properties } },
-                        required: ['mapping']
-                    },
-                },
+            const apiResponse = await fetch('/api/generate-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: 'OBJECT',
+                            properties: { mapping: { type: 'OBJECT', properties } },
+                            required: ['mapping']
+                        },
+                    }
+                })
             });
-            
-            const aiMapping = JSON.parse(response.text).mapping;
+
+            if (!apiResponse.ok) {
+                throw new Error('Gagal menghubungi server AI untuk pemetaan.');
+            }
+
+            const responseData = await apiResponse.json();
+            const aiMapping = JSON.parse(responseData.text).mapping;
             
             // Validate AI mapping to ensure it only suggests headers that actually exist in the file
             const validatedMapping: Mapping = {};
-            // FIX: Use `Object.keys` to iterate over keys as strings, preventing potential type issues with symbols.
             for (const key of Object.keys(aiMapping)) {
                 if (headers.includes(aiMapping[key]) && Object.keys(emptyStudent).includes(key)) {
                     validatedMapping[key as keyof Omit<Student, 'id'>] = aiMapping[key];
