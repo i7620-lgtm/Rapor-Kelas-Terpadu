@@ -1,9 +1,9 @@
 
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Student } from '../types';
-import { studentFieldDefinitions } from '../constants';
-import SmartImportModal from './SmartImportModal';
+import { Student } from '../types.ts';
+import { studentFieldDefinitions } from '../constants.tsx';
+import SmartImportModal from './SmartImportModal.tsx';
 
 declare const XLSX: any;
 
