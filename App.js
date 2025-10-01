@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 // FIX: Correctly import all necessary types from the `types` module.
 import { Page, AppSettings, Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, defaultSubjects, StudentAttendance, Extracurricular, StudentExtracurricular, StudentNotes, NoteTemplate, P5Project, P5ProjectAssessment, P5AssessmentLevel } from './types.js';
 import { NAV_ITEMS } from './constants.js';
@@ -79,213 +79,106 @@ const initialStudentNotes: StudentNotes = {
 const App: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('DASHBOARD');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    try {
-        const saved = localStorage.getItem('appSettings');
-        return saved ? JSON.parse(saved) : initialSettings;
-    } catch (e) {
-        return initialSettings;
-    }
-  });
-  const [students, setStudents] = useState<Student[]>(() => {
-    try {
-        const saved = localStorage.getItem('appStudents');
-        return saved ? JSON.parse(saved) : initialStudents;
-    } catch (e) {
-        return initialStudents;
-    }
-  });
-  const [grades, setGrades] = useState<StudentGrade[]>(() => {
-    try {
-        const saved = localStorage.getItem('appGrades');
-        const parsed = saved ? JSON.parse(saved) : initialGrades;
-        return parsed.map((g: StudentGrade) => ({ ...g, detailedGrades: g.detailedGrades || {}, finalGrades: g.finalGrades || {} }));
-    } catch (e) {
-        return initialGrades;
-    }
-  });
-  const [attendance, setAttendance] = useState<StudentAttendance[]>(() => {
-    try {
-        const saved = localStorage.getItem('appAttendance');
-        return saved ? JSON.parse(saved) : initialAttendance;
-    } catch (e) {
-        return initialAttendance;
-    }
-  });
-  const [learningObjectives, setLearningObjectives] = useState<LearningObjectives>(() => {
-    try {
-        const saved = localStorage.getItem('appLearningObjectives');
-        return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-        return {};
-    }
-  });
-  const [studentDescriptions, setStudentDescriptions] = useState<StudentDescriptions>(() => {
-    try {
-        const saved = localStorage.getItem('appStudentDescriptions');
-        return saved ? JSON.parse(saved) : initialStudentDescriptions;
-    } catch (e) {
-        return initialStudentDescriptions;
-    }
-  });
-  const [subjects, setSubjects] = useState<Subject[]>(() => {
-    try {
-        const saved = localStorage.getItem('appSubjectsConfig');
-        return saved ? JSON.parse(saved) : defaultSubjects;
-    } catch (e) {
-        return defaultSubjects;
-    }
-  });
-  const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>(() => {
-    try {
-        const saved = localStorage.getItem('appExtracurriculars');
-        return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-        return [];
-    }
-  });
-  const [studentExtracurriculars, setStudentExtracurriculars] = useState<StudentExtracurricular[]>(() => {
-    try {
-        const saved = localStorage.getItem('appStudentExtracurriculars');
-        return saved ? JSON.parse(saved) : initialStudentExtracurriculars;
-    } catch (e) {
-        return initialStudentExtracurriculars;
-    }
-  });
-  const [studentNotes, setStudentNotes] = useState<StudentNotes>(() => {
-    try {
-        const saved = localStorage.getItem('appStudentNotes');
-        return saved ? JSON.parse(saved) : initialStudentNotes;
-    } catch (e) {
-        return initialStudentNotes;
-    }
-  });
+  const [settings, setSettings] = useState<AppSettings>(initialSettings);
+  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [grades, setGrades] = useState<StudentGrade[]>(initialGrades);
+  const [attendance, setAttendance] = useState<StudentAttendance[]>(initialAttendance);
+  const [learningObjectives, setLearningObjectives] = useState<LearningObjectives>({});
+  const [studentDescriptions, setStudentDescriptions] = useState<StudentDescriptions>(initialStudentDescriptions);
+  const [subjects, setSubjects] = useState<Subject[]>(defaultSubjects);
+  const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>([]);
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState<StudentExtracurricular[]>(initialStudentExtracurriculars);
+  const [studentNotes, setStudentNotes] = useState<StudentNotes>(initialStudentNotes);
+  const [noteTemplates, setNoteTemplates] = useState<NoteTemplate[]>([]);
+  const [p5Projects, setP5Projects] = useState<P5Project[]>([]);
+  const [p5ProjectAssessments, setP5ProjectAssessments] = useState<P5ProjectAssessment[]>([]);
   
-  const [noteTemplates, setNoteTemplates] = useState<NoteTemplate[]>(() => {
-    try {
-        const saved = localStorage.getItem('appNoteTemplates');
-        return saved ? JSON.parse(saved) : [];
-    } catch {
-        return [];
-    }
-  });
+  const isInitialFetch = useRef(true);
 
-  const [p5Projects, setP5Projects] = useState<P5Project[]>(() => {
-      try {
-          const saved = localStorage.getItem('appP5Projects');
-          return saved ? JSON.parse(saved) : [];
-      } catch {
-          return [];
-      }
-  });
-
-    const [p5ProjectAssessments, setP5ProjectAssessments] = useState<P5ProjectAssessment[]>(() => {
-      try {
-          const saved = localStorage.getItem('appP5Assessments');
-          return saved ? JSON.parse(saved) : [];
-      } catch {
-          return [];
-      }
-  });
-
-  // Effect to load presets from presets.json if not already in localStorage
+  // Effect to fetch all data from the server on initial load
   useEffect(() => {
-    const loadPresets = async () => {
-        try {
-            const response = await fetch('/presets.json');
-            if (!response.ok) {
-                throw new Error('Failed to load presets file.');
-            }
-            const presets = await response.json();
-
-            if (localStorage.getItem('appLearningObjectives') === null && presets.learningObjectives) {
-                setLearningObjectives(presets.learningObjectives);
-            }
-            
-            if (presets.extracurriculars) {
-                setExtracurriculars(prev => {
-                    const existingIds = new Set(prev.map(e => e.id));
-                    const newExtracurriculars = presets.extracurriculars.filter((e: Extracurricular) => !existingIds.has(e.id));
-                    return [...prev, ...newExtracurriculars];
-                });
-            }
-
-            if (localStorage.getItem('appNoteTemplates') === null && presets.studentNotesTemplates) {
-                setNoteTemplates(presets.studentNotesTemplates);
-            }
-            if (localStorage.getItem('appP5Projects') === null && presets.p5Projects) {
-                setP5Projects(presets.p5Projects);
-            }
-
-        } catch (error) {
-            console.error("Error loading presets:", error);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/data');
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data dari server');
         }
+        const data = await response.json();
+        
+        // Load presets if they are not in the fetched data
+        const presetsResponse = await fetch('/presets.json');
+        const presets = await presetsResponse.json();
+
+        setSettings(data.settings || initialSettings);
+        setStudents(data.students || initialStudents);
+        setGrades(data.grades || initialGrades);
+        setAttendance(data.attendance || initialAttendance);
+        setLearningObjectives(data.learningObjectives || presets.learningObjectives || {});
+        setStudentDescriptions(data.studentDescriptions || initialStudentDescriptions);
+        setSubjects(data.subjects || defaultSubjects);
+        setExtracurriculars(data.extracurriculars || presets.extracurriculars || []);
+        setStudentExtracurriculars(data.studentExtracurriculars || initialStudentExtracurriculars);
+        setStudentNotes(data.studentNotes || initialStudentNotes);
+        setNoteTemplates(data.noteTemplates || presets.studentNotesTemplates || []);
+        setP5Projects(data.p5Projects || presets.p5Projects || []);
+        setP5ProjectAssessments(data.p5ProjectAssessments || []);
+        
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        showToast('Gagal memuat data dari server. Bekerja dengan data awal.', 'error');
+      } finally {
+        setIsLoading(false);
+        isInitialFetch.current = false;
+      }
     };
-
-    loadPresets();
+    fetchData();
   }, []);
 
-
+  // Effect to save all data to the server when any state changes
   useEffect(() => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-  }, [settings]);
-
-  useEffect(() => {
-    localStorage.setItem('appStudents', JSON.stringify(students));
-  }, [students]);
-
-  useEffect(() => {
-    localStorage.setItem('appGrades', JSON.stringify(grades));
-  }, [grades]);
-  
-  useEffect(() => {
-    localStorage.setItem('appAttendance', JSON.stringify(attendance));
-  }, [attendance]);
-  
-  useEffect(() => {
-    localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives));
-  }, [learningObjectives]);
-
-  useEffect(() => {
-    localStorage.setItem('appStudentDescriptions', JSON.stringify(studentDescriptions));
-    }, [studentDescriptions]);
-    
-  useEffect(() => {
-    localStorage.setItem('appSubjectsConfig', JSON.stringify(subjects));
-  }, [subjects]);
-  
-  useEffect(() => {
-    localStorage.setItem('appExtracurriculars', JSON.stringify(extracurriculars));
-  }, [extracurriculars]);
-
-  useEffect(() => {
-    localStorage.setItem('appStudentExtracurriculars', JSON.stringify(studentExtracurriculars));
-  }, [studentExtracurriculars]);
-
-  useEffect(() => {
-    localStorage.setItem('appStudentNotes', JSON.stringify(studentNotes));
-  }, [studentNotes]);
-  
-  useEffect(() => {
-    localStorage.setItem('appNoteTemplates', JSON.stringify(noteTemplates));
-  }, [noteTemplates]);
-
-  useEffect(() => {
-      localStorage.setItem('appP5Projects', JSON.stringify(p5Projects));
-  }, [p5Projects]);
-
-  useEffect(() => {
-      localStorage.setItem('appP5Assessments', JSON.stringify(p5ProjectAssessments));
-  }, [p5ProjectAssessments]);
-
-  useEffect(() => {
-    // Hide the loader once the App component has mounted
-    const loader = document.getElementById('loader-wrapper');
-    if (loader) {
-        loader.classList.add('hidden');
+    // Prevent saving on the initial fetch
+    if (isInitialFetch.current) {
+      return;
     }
-  }, []);
+
+    const handler = setTimeout(() => {
+        const saveData = async () => {
+            setIsSaving(true);
+            try {
+                const allData = {
+                    settings, students, grades, attendance, learningObjectives,
+                    studentDescriptions, subjects, extracurriculars, studentExtracurriculars,
+                    studentNotes, noteTemplates, p5Projects, p5ProjectAssessments
+                };
+                const response = await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(allData)
+                });
+                if (!response.ok) {
+                    throw new Error('Gagal menyimpan data ke server');
+                }
+            } catch (error) {
+                console.error("Error saving data:", error);
+                showToast('Gagal menyimpan data ke server.', 'error');
+            } finally {
+                setIsSaving(false);
+            }
+        };
+        saveData();
+    }, 1000); // Debounce saves by 1 second
+
+    return () => {
+        clearTimeout(handler);
+    };
+  }, [
+    settings, students, grades, attendance, learningObjectives,
+    studentDescriptions, subjects, extracurriculars, studentExtracurriculars,
+    studentNotes, noteTemplates, p5Projects, p5ProjectAssessments
+  ]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -681,6 +574,14 @@ const App: React.FC = () => {
     }
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-100">
+        <p className="text-lg font-medium text-slate-600">Memuat data dari server...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-slate-100 font-sans">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -692,6 +593,11 @@ const App: React.FC = () => {
       />
       <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
         {renderPage()}
+        {isSaving && (
+            <div className="fixed bottom-4 right-4 bg-slate-800 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                Menyimpan...
+            </div>
+        )}
       </main>
     </div>
   );
