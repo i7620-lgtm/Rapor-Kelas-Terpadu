@@ -1,18 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 // FIX: Correctly import all necessary types from the `types` module.
-import { Page, AppSettings, Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, defaultSubjects, StudentAttendance, Extracurricular, StudentExtracurricular, StudentNotes, NoteTemplate, P5Project, P5ProjectAssessment, P5AssessmentLevel } from './types.ts';
-import { NAV_ITEMS } from './constants.tsx';
-import Sidebar from './components/Sidebar.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import PlaceholderPage from './components/PlaceholderPage.tsx';
-import SettingsPage from './components/SettingsPage.tsx';
-import DataSiswaPage from './components/DataSiswaPage.tsx';
-import DataNilaiPage from './components/DataNilaiPage.tsx';
-import DataAbsensiPage from './components/DataAbsensiPage.tsx';
-import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.tsx';
-import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.tsx';
-import DataProyekP5Page from './components/DataProyekP5Page.tsx';
-import Toast from './components/Toast.tsx';
+import { Page, AppSettings, Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, defaultSubjects, StudentAttendance, Extracurricular, StudentExtracurricular, StudentNotes, NoteTemplate, P5Project, P5ProjectAssessment, P5AssessmentLevel } from './types.js';
+import { NAV_ITEMS } from './constants.js';
+import Sidebar from './components/Sidebar.js';
+import Dashboard from './components/Dashboard.js';
+import PlaceholderPage from './components/PlaceholderPage.js';
+import SettingsPage from './components/SettingsPage.js';
+import DataSiswaPage from './components/DataSiswaPage.js';
+import DataNilaiPage from './components/DataNilaiPage.js';
+import DataAbsensiPage from './components/DataAbsensiPage.js';
+import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
+import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
+import DataProyekP5Page from './components/DataProyekP5Page.js';
+import Toast from './components/Toast.js';
 
 declare const XLSX: any;
 
