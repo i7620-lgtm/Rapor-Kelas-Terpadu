@@ -14,34 +14,49 @@
     <script src="https://unpkg.com/systemjs@6.14.3/dist/s.min.js"></script>
 
     <!-- 
-      SystemJS Configuration via Import Map.
-      This is the modern way to configure SystemJS (v1+).
-      It defines where to find modules and how to load them.
+      SystemJS Configuration via a single, consolidated Import Map.
+      This defines all module locations and loading behavior.
     -->
     <script type="systemjs-importmap">
     {
       "imports": {
         "react": "https://aistudiocdn.com/react@^19.1.1",
+        "react/": "https://aistudiocdn.com/react@^19.1.1/",
         "react-dom/client": "https://aistudiocdn.com/react-dom@^19.1.1/client",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
         "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
         
         "plugin-babel": "https://unpkg.com/@systemjs/plugin-babel@0.2.1/dist/plugin-babel.min.js",
         "babel": "https://unpkg.com/@babel/standalone@7.12.4/babel.min.js"
       },
       "meta": {
-        "*.js": {
+        "./*.js": {
           "babelOptions": {
             "react": true,
             "typescript": true
           },
           "loader": "plugin-babel"
         },
-        "https://aistudiocdn.com/*": {
-          "loader": false
+        "./components/*.js": {
+          "babelOptions": {
+            "react": true,
+            "typescript": true
+          },
+          "loader": "plugin-babel"
         }
       }
     }
     </script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/"
+  }
+}
+</script>
 </head>
   <body class="bg-slate-50">
     <div id="root"></div>
@@ -49,7 +64,7 @@
     
     <!-- Start the application -->
     <script>
-      System.import('/index.js').catch(function(err) { console.error(err); });
+      System.import('./index.js').catch(function(err) { console.error(err); });
     </script>
   </body>
 </html>
