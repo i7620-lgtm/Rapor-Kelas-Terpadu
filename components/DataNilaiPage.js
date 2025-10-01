@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 // FIX: Import all necessary types from the `types` module.
 import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, AcademicSubject, academicSubjectsForObjectives, Subject, DetailedSubjectGrade } from '../types.js';
-import { GoogleGenAI } from "@google/genai";
 
 
 // Make sure XLSX is available on the window object
@@ -28,8 +27,6 @@ const DeskripsiNilaiView: React.FC<DeskripsiNilaiViewProps> = ({ students, grade
             setSelectedSubject('');
         }
     }, [activeSubjects, selectedSubject]);
-
-    const ai = useMemo(() => new GoogleGenAI({ apiKey: process.env.API_KEY }), []);
 
     const handleDescriptionChange = (studentId: number, subject: SubjectKey, text: string) => {
         onUpdateDescriptions({
@@ -58,14 +55,20 @@ const DeskripsiNilaiView: React.FC<DeskripsiNilaiViewProps> = ({ students, grade
             }
 
             const prompt = `Buatkan deskripsi penilaian rapor singkat dalam satu paragraf untuk siswa bernama ${student.namaLengkap} pada mata pelajaran ${subjectName}. Nilai yang diperoleh adalah ${grade}. Deskripsi harus positif, menyoroti pencapaian siswa, dan menyertakan kalimat motivasi untuk terus belajar. Tulis dalam Bahasa Indonesia.`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
             
-            // FIX: Access the generated text directly from the `text` property of the response.
-            const generatedText = response.text;
+            const apiResponse = await fetch('/api/generate-content', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+
+            if (!apiResponse.ok) {
+                throw new Error('Gagal menghubungi server AI.');
+            }
+
+            const data = await apiResponse.json();
+            const generatedText = data.text;
+
             onUpdateDescriptions({
                 ...descriptions,
                 [student.id]: {
@@ -80,7 +83,7 @@ const DeskripsiNilaiView: React.FC<DeskripsiNilaiViewProps> = ({ students, grade
         } finally {
             setIsLoading(prev => ({ ...prev, [student.id]: false }));
         }
-    }, [selectedSubject, grades, ai.models, descriptions, onUpdateDescriptions, activeSubjects]);
+    }, [selectedSubject, grades, descriptions, onUpdateDescriptions, activeSubjects]);
 
     const handleGenerateAll = useCallback(async () => {
         if (students.length === 0 || !selectedSubject) return;
