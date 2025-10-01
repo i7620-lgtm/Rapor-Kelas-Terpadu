@@ -1,18 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 // FIX: Correctly import all necessary types from the `types` module.
-import { Page, AppSettings, Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, defaultSubjects, StudentAttendance, Extracurricular, StudentExtracurricular, StudentNotes, NoteTemplate, P5Project, P5ProjectAssessment, P5AssessmentLevel } from './types';
-import { NAV_ITEMS } from './constants';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import PlaceholderPage from './components/PlaceholderPage';
-import SettingsPage from './components/SettingsPage';
-import DataSiswaPage from './components/DataSiswaPage';
-import DataNilaiPage from './components/DataNilaiPage';
-import DataAbsensiPage from './components/DataAbsensiPage';
-import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage';
-import CatatanWaliKelasPage from './components/CatatanWaliKelasPage';
-import DataProyekP5Page from './components/DataProyekP5Page';
-import Toast from './components/Toast';
+import { Page, AppSettings, Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, defaultSubjects, StudentAttendance, Extracurricular, StudentExtracurricular, StudentNotes, NoteTemplate, P5Project, P5ProjectAssessment, P5AssessmentLevel } from './types.ts';
+import { NAV_ITEMS } from './constants.tsx';
+import Sidebar from './components/Sidebar.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import PlaceholderPage from './components/PlaceholderPage.tsx';
+import SettingsPage from './components/SettingsPage.tsx';
+import DataSiswaPage from './components/DataSiswaPage.tsx';
+import DataNilaiPage from './components/DataNilaiPage.tsx';
+import DataAbsensiPage from './components/DataAbsensiPage.tsx';
+import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.tsx';
+import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.tsx';
+import DataProyekP5Page from './components/DataProyekP5Page.tsx';
+import Toast from './components/Toast.tsx';
 
 declare const XLSX: any;
 
