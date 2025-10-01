@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 // FIX: Import all necessary types from the `types` module.
-import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, AcademicSubject, academicSubjectsForObjectives, Subject, DetailedSubjectGrade } from '../types';
+import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, AcademicSubject, academicSubjectsForObjectives, Subject, DetailedSubjectGrade } from '../types.ts';
 import { GoogleGenAI } from "@google/genai";
 
 
