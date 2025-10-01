@@ -18,12 +18,12 @@
     <!-- 2. Fetch hook to transpile JSX/TS before modules are executed -->
     <script>
       // This hook must be defined before es-module-shims is loaded to prevent race conditions.
-      // It intercepts requests for local .js files and transpiles them using Babel.
+      // It intercepts requests for local files and transpiles them using Babel.
       window.importShim = window.importShim || {};
       importShim.fetch = async function (url) {
         const response = await fetch(url);
-        // Only transpile local .js files that are not from a CDN by checking the origin
-        if (url.href.endsWith('.js') && url.origin === window.location.origin) {
+        // Only transpile local .js and .tsx files
+        if ((url.href.endsWith('.js') || url.href.endsWith('.tsx')) && url.origin === window.location.origin) {
             if (!response.ok) return response;
             const code = await response.text();
             try {
@@ -57,7 +57,9 @@
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
     "@google/genai": "https://esm.sh/@google/genai",
     "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.3.24",
-    "@vercel/postgres": "https://aistudiocdn.com/@vercel/postgres@^0.10.0"
+    "@vercel/postgres": "https://aistudiocdn.com/@vercel/postgres@^0.10.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/"
   }
 }
 </script>
@@ -74,24 +76,8 @@
 
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     
-    <!-- 5. Application Entry Point (now a module-shim) -->
-    <script type="module-shim">
-      import React from 'react';
-      import ReactDOM from 'react-dom/client';
-      import App from './App.js';
-
-      const rootElement = document.getElementById('root');
-      if (!rootElement) {
-        throw new Error("Could not find root element to mount to");
-      }
-
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      );
-    </script>
+    <!-- 5. Application Entry Point (now a module-shim that points to an external file) -->
+    <script type="module-shim" src="./index.tsx"></script>
 
   </body>
 </html>
