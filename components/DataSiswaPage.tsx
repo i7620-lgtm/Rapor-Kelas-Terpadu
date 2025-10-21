@@ -1,9 +1,5 @@
-
-
-import React, { useState, useCallback, useEffect } from 'react';
-import { Student } from '../types.js';
-import { studentFieldDefinitions } from '../constants.js';
-import SmartImportModal from './SmartImportModal.js';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Student } from '../types';
 
 declare const XLSX: any;
 
@@ -26,7 +22,6 @@ interface StudentModalProps {
 const StudentModal: React.FC<StudentModalProps> = ({ isOpen, onClose, onSave, studentToEdit }) => {
     const [formData, setFormData] = useState(emptyStudent);
 
-    // FIX: Replaced `useState` with `useEffect` to correctly handle side-effects when props change.
     useEffect(() => {
         setFormData(studentToEdit ? { ...studentToEdit } : emptyStudent);
     }, [studentToEdit, isOpen]);
@@ -46,10 +41,8 @@ const StudentModal: React.FC<StudentModalProps> = ({ isOpen, onClose, onSave, st
 
     const FormField: React.FC<{name: keyof typeof emptyStudent, label: string, type?: string, required?: boolean}> = ({ name, label, type = 'text', required = false}) => (
         <div>
-            {/* FIX: Cast `name` to string for `htmlFor` attribute. */}
-            <label htmlFor={String(name)} className="block text-sm font-medium text-slate-700">{label}</label>
-            {/* FIX: Cast `name` to string for `name` and `id` attributes. */}
-            <input type={type} name={String(name)} id={String(name)} value={formData[name] || ''} onChange={handleChange} required={required} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+            <label htmlFor={name} className="block text-sm font-medium text-slate-700">{label}</label>
+            <input type={type} name={name} id={name} value={formData[name] || ''} onChange={handleChange} required={required} className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
         </div>
     );
 
@@ -134,18 +127,18 @@ interface DataSiswaPageProps {
     students: Student[];
     namaKelas: string;
     onSaveStudent: (student: Omit<Student, 'id'> & { id?: number }) => void;
-    onBulkAddStudents: (students: Omit<Student, 'id'>[]) => void;
+    onBulkSaveStudents: (students: Omit<Student, 'id'>[]) => void;
     onDeleteStudent: (studentId: number) => void;
     showToast: (message: string, type: 'success' | 'error') => void;
 }
 
 type DataSiswaView = 'DAFTAR_SISWA' | 'DATA_SISWA';
 
-const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSaveStudent, onBulkAddStudents, onDeleteStudent, showToast }) => {
+const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents, onDeleteStudent, showToast }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [studentToEdit, setStudentToEdit] = useState<(Omit<Student, 'id'> & { id?: number }) | null>(null);
     const [activeView, setActiveView] = useState<DataSiswaView>('DAFTAR_SISWA');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleAddNew = () => {
         setStudentToEdit(null);
@@ -160,39 +153,110 @@ const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSa
     const handleDelete = (student: Student) => {
         if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa bernama ${student.namaLengkap}?`)) {
             onDeleteStudent(student.id);
+            showToast(`Siswa ${student.namaLengkap} berhasil dihapus.`, 'success');
         }
     };
+    
+    const studentHeaderMapping: Array<[keyof Student | 'no', string]> = [
+        ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"],
+        ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"],
+        ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"],
+        ['kewarganegaraan', "Kewarganegaraan"], ['statusDalamKeluarga', "Status dalam Keluarga"],
+        ['anakKe', "Anak Ke-"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"],
+        ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"],
+        ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"],
+        ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"],
+        ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
+    ];
 
     const handleExport = useCallback(() => {
         if (typeof XLSX === 'undefined') {
-            alert('Pustaka ekspor (SheetJS) tidak termuat.');
+            showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
             return;
         }
 
         const formattedStudents = students.map((student, index) => {
             const newStudent: { [key: string]: any } = {};
-            studentFieldDefinitions.forEach(({ key, label }) => {
+            studentHeaderMapping.forEach(([key, header]) => {
                 if (key === 'no') {
-                    newStudent[label] = index + 1;
+                    newStudent[header] = index + 1;
                 } else {
-                    newStudent[label] = student[key as keyof Student];
+                    newStudent[header] = student[key as keyof Student];
                 }
             });
             return newStudent;
         });
 
         const worksheet = XLSX.utils.json_to_sheet(formattedStudents);
-        worksheet['!cols'] = studentFieldDefinitions.map(({ label }) => ({ wch: label.length < 15 ? 15 : label.length + 2 }));
+        worksheet['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
         
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data Siswa");
         XLSX.writeFile(workbook, "Data_Siswa.xlsx");
-    }, [students]);
+        showToast('Template data siswa berhasil diekspor.', 'success');
+    }, [students, studentHeaderMapping, showToast]);
 
-    const handleImport = (newStudents: Omit<Student, 'id'>[]) => {
-        onBulkAddStudents(newStudents);
-        setIsImportModalOpen(false);
-        showToast(`${newStudents.length} data siswa berhasil diimpor!`, 'success');
+    const triggerImport = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = event.target?.result;
+                const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                const headerToKeyMap = new Map<string, keyof Student>();
+                studentHeaderMapping.forEach(([key, header]) => {
+                    if (key !== 'no') {
+                        headerToKeyMap.set(header, key as keyof Student);
+                    }
+                });
+
+                const newStudents: Omit<Student, 'id'>[] = [];
+                json.forEach(row => {
+                    const newStudent: { [key: string]: any } = { ...emptyStudent };
+                    let hasData = false;
+                    for (const header in row) {
+                        if (headerToKeyMap.has(header)) {
+                            const key = headerToKeyMap.get(header)!;
+                             let value = row[header];
+                            if (key === 'tanggalLahir' && value instanceof Date) {
+                                value = value.toISOString().split('T')[0];
+                            }
+                            newStudent[key] = value;
+                            if (key === 'namaLengkap' && value) {
+                                hasData = true;
+                            }
+                        }
+                    }
+
+                    if (hasData) {
+                        newStudents.push(newStudent as Omit<Student, 'id'>);
+                    }
+                });
+
+                if (newStudents.length > 0) {
+                    onBulkSaveStudents(newStudents);
+                } else {
+                    showToast('Tidak ada data siswa yang valid untuk diimpor. Pastikan nama kolom di file Excel sesuai dengan template unduhan.', 'error');
+                }
+
+            } catch (error) {
+                console.error('Error processing Excel file:', error);
+                showToast('Terjadi kesalahan saat memproses file Excel.', 'error');
+            } finally {
+                if (e.target) e.target.value = '';
+            }
+        };
+        reader.readAsBinaryString(file);
     };
     
     const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition-colors";
@@ -241,8 +305,6 @@ const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSa
                                                     <td className="px-6 py-4">{student.nisn}</td>
                                                     <td className="px-6 py-4 text-center space-x-2">
                                                         <button onClick={() => handleEdit(student)} className="font-medium text-indigo-600 hover:underline">Edit</button>
-                                                        <button onClick={() => alert('Fitur Nilai akan datang!')} className="font-medium text-green-600 hover:underline">Nilai</button>
-                                                        <button onClick={() => alert('Fitur Print Rapor akan datang!')} className="font-medium text-blue-600 hover:underline">Print</button>
                                                         <button onClick={() => handleDelete(student)} className="font-medium text-red-600 hover:underline">Hapus</button>
                                                     </td>
                                                 </tr>
@@ -264,13 +326,13 @@ const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSa
                 return (
                     <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
                         <h3 className="text-xl font-bold text-slate-800">Unduh dan Unggah Data Siswa</h3>
-                        <p className="text-sm text-slate-500 mt-1">Unduh template data siswa dalam format Excel, atau unggah file Excel yang sudah diisi untuk mengimpor data siswa secara massal.</p>
-                        <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                            <button onClick={handleExport} className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center">
-                                Unduh Template Data
+                        <p className="text-sm text-slate-500 mt-1">Gunakan opsi di bawah ini untuk mengelola data siswa secara massal.</p>
+                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onClick={handleExport} className="w-full px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center">
+                                Unduh Template
                             </button>
-                            <button onClick={() => setIsImportModalOpen(true)} className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center">
-                                Unggah Data Siswa (Smart Import)
+                            <button onClick={triggerImport} className="w-full px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center">
+                                Unggah Template
                             </button>
                         </div>
                     </div>
@@ -286,13 +348,18 @@ const DataSiswaPage: React.FC<DataSiswaPageProps> = ({ students, namaKelas, onSa
                 onSave={onSaveStudent}
                 studentToEdit={studentToEdit}
             />
-            <SmartImportModal
-                isOpen={isImportModalOpen}
-                onClose={() => setIsImportModalOpen(false)}
-                onImport={handleImport}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelected}
+                style={{ display: 'none' }}
+                accept=".xlsx, .xls"
             />
             <div>
                 <h2 className="text-3xl font-bold text-slate-800">Data Siswa</h2>
+                <p className="mt-1 text-slate-600">
+                    Kelola data identitas siswa di kelas {namaKelas || '(Nama Kelas Belum Diatur)'}.
+                </p>
             </div>
              <div className="flex flex-wrap items-center gap-2">
                 <button
