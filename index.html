@@ -9,75 +9,94 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#ffffff" />
-    
-    <!-- Script loading order is critical for on-the-fly transpilation -->
-
-    <!-- 1. Babel for transpilation (must be loaded before the fetch hook) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- 2. Fetch hook to transpile JSX/TS before modules are executed -->
-    <script>
-      // This hook must be defined before es-module-shims is loaded to prevent race conditions.
-      // It intercepts requests for local files and transpiles them using Babel.
-      window.importShim = window.importShim || {};
-      importShim.fetch = async function (url) {
-        const response = await fetch(url);
-        // Only transpile local .js and .tsx files
-        if ((url.href.endsWith('.js') || url.href.endsWith('.tsx')) && url.origin === window.location.origin) {
-            if (!response.ok) return response;
-            const code = await response.text();
-            try {
-              // Ensure Babel is loaded
-              if (!window.Babel) {
-                  throw new Error("Babel is not loaded!");
-              }
-              const transformedCode = Babel.transform(code, {
-                presets: ['react', 'typescript'],
-                filename: url.href 
-              }).code;
-              return new Response(new Blob([transformedCode], { type: 'application/javascript' }));
-            } catch(e) {
-              console.error(`Babel Error in ${url.href}:`, e);
-              // Return original code to see the syntax error in devtools
-              return new Response(new Blob([code], { type: 'application/javascript' }));
-            }
-        }
-        return response;
-      };
-    </script>
-
-    <!-- 3. ES Module Shims for importmap and fetch hook support -->
-    <script src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
-    
-    <!-- 4. Import Map for module resolution (must be after the shims script) -->
-    <script type="importmap">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese:wght@400;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai",
-    "@vercel/node": "https://aistudiocdn.com/@vercel/node@^5.3.24",
-    "@vercel/postgres": "https://aistudiocdn.com/@vercel/postgres@^0.10.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.16.0"
   }
 }
 </script>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+  }
+  .font-aksara-bali {
+    font-family: 'Noto Sans Balinese', sans-serif;
+  }
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -20px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+  }
+  .animate-fade-in-down {
+    animation: fadeInDown 0.5s ease-out forwards;
+  }
+  /* Tooltip styles for Learning Objectives */
+  .tp-header {
+    /* position: relative; No longer needed */
+  }
 
-  </head>
-  <body class="bg-slate-50 flex flex-col min-h-screen">
-    <div id="root" class="flex-grow"></div>
+  .tp-header-button {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      cursor: help;
+      text-transform: uppercase;
+  }
 
-    <footer class="text-center py-4 px-4 text-xs text-slate-500">
-        Dibuat dengan ❤️ untuk para pendidik | 
-        <a href="./terms.html" target="_blank" rel="noopener noreferrer" class="font-medium text-indigo-600 hover:underline">Ketentuan Layanan</a> &
-        <a href="./privacy.html" target="_blank" rel="noopener noreferrer" class="font-medium text-indigo-600 hover:underline">Kebijakan Privasi</a>
-    </footer>
+  .tp-tooltip {
+    width: 250px;
+    background-color: #1f2937; /* slate-800 */
+    color: #fff;
+    text-align: left;
+    font-weight: normal;
+    text-transform: none;
+    white-space: normal;
+    border-radius: 6px;
+    padding: 8px;
+    z-index: 50; /* Increased z-index */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Positioning and visibility properties are now handled by inline styles in React */
+  }
 
+  @media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    .print-hidden {
+        display: none !important;
+    }
+    .report-page {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        page-break-after: always;
+    }
+    .report-page:last-of-type {
+      page-break-after: avoid;
+    }
+  }
+
+</style>
+</head>
+  <body class="bg-slate-50">
+    <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- 5. Application Entry Point (now a module-shim that points to an external file) -->
-    <script type="module-shim" src="./index.tsx"></script>
-
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
