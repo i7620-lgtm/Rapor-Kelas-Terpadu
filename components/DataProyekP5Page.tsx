@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Student, P5Project, P5ProjectAssessment, P5AssessmentLevel, P5ProjectDimension, P5ProjectSubElement } from '../types.js';
-import { P5_DATA } from './p5data.js';
+import { Student, P5Project, P5ProjectAssessment, P5AssessmentLevel, P5ProjectDimension, P5ProjectSubElement } from '../types.ts';
+import { P5_DATA } from './p5data.tsx';
 
 declare const XLSX: any;
 
