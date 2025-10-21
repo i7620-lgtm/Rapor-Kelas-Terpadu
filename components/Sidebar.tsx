@@ -21,7 +21,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, onExport, 
   };
   
   return (
-    <aside className="w-64 bg-white shadow-lg flex flex-col">
+    <aside className="w-64 bg-white shadow-lg flex flex-col print-hidden">
       <div className="flex items-center justify-center h-20 border-b px-4">
         <div className="text-center">
           <h1 className="text-3xl font-extrabold text-indigo-600 tracking-tight">RKT</h1>
