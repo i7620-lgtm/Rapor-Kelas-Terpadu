@@ -1,12 +1,30 @@
-
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 // FIX: Import all necessary types from the `types` module.
-import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, AcademicSubject, academicSubjectsForObjectives, Subject, DetailedSubjectGrade } from '../types.js';
+import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, DetailedSubjectGrade } from '../types.js';
 
 
 // Make sure XLSX is available on the window object
 declare const XLSX: any;
+
+// Helper function to extract grade number from class name strings like "Kelas 6" or "VI"
+const getGradeNumber = (str: string): number | null => {
+    if (!str) return null;
+    // Check for Arabic numerals (e.g., "6")
+    const match = str.match(/\d+/);
+    if (match) {
+        return parseInt(match[0], 10);
+    }
+    // Check for Roman numerals (e.g., "VI") - simple check for primary school levels
+    const upperStr = str.toUpperCase();
+    if (upperStr.includes('VI')) return 6;
+    if (upperStr.includes('V')) return 5;
+    if (upperStr.includes('IV')) return 4;
+    if (upperStr.includes('III')) return 3;
+    if (upperStr.includes('II')) return 2;
+    if (upperStr.includes('I')) return 1;
+
+    return null;
+};
 
 interface DeskripsiNilaiViewProps {
   students: Student[];
@@ -220,34 +238,63 @@ interface TujuanPembelajaranViewProps {
   objectives: LearningObjectives;
   onUpdate: (newObjectives: LearningObjectives) => void;
   activeSubjects: Subject[];
+  namaKelas: string;
 }
 
-const TujuanPembelajaranView: React.FC<TujuanPembelajaranViewProps> = ({ objectives, onUpdate, activeSubjects }) => {
-    // FIX: Filter active subjects to only include those that support learning objectives.
-    const subjectsForObjectives = useMemo(() =>
-        activeSubjects.filter(s =>
-            (academicSubjectsForObjectives as readonly string[]).includes(s.fullName)
-        ),
-    [activeSubjects]);
+const TujuanPembelajaranView: React.FC<TujuanPembelajaranViewProps> = ({ objectives, onUpdate, activeSubjects, namaKelas }) => {
+    const objectivesForCurrentClass = useMemo(() => {
+        const currentGradeNumber = getGradeNumber(namaKelas);
+        if (currentGradeNumber === null) {
+            return {};
+        }
 
-    // FIX: Initialize state with a valid AcademicSubject, if available, to prevent type errors.
-    const [selectedSubject, setSelectedSubject] = useState<AcademicSubject | ''>('');
+        // Find the matching grade key in the objectives object (e.g., "Kelas 6")
+        for (const key in objectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                return objectives[key];
+            }
+        }
+
+        return {};
+    }, [objectives, namaKelas]);
+
+    const [selectedSubject, setSelectedSubject] = useState<string>('');
 
     useEffect(() => {
-        // FIX: Update selected subject based on the filtered list to maintain type safety.
-        if (selectedSubject && !subjectsForObjectives.some(s => s.fullName === selectedSubject)) {
+        if (selectedSubject && !activeSubjects.some(s => s.fullName === selectedSubject)) {
             setSelectedSubject('');
         }
-    }, [subjectsForObjectives, selectedSubject]);
+    }, [activeSubjects, selectedSubject]);
 
-    const currentObjectives = selectedSubject ? (objectives[selectedSubject as AcademicSubject] || []) : [];
+    const currentObjectives = selectedSubject ? (objectivesForCurrentClass[selectedSubject] || []) : [];
+
+    const handleUpdateObjectivesForClass = (newObjectivesForClass: { [subject: string]: string[] }) => {
+        const currentGradeNumber = getGradeNumber(namaKelas);
+        if (currentGradeNumber === null) return;
+
+        let gradeKey = '';
+        for (const key in objectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                gradeKey = key;
+                break;
+            }
+        }
+        if (!gradeKey) {
+            gradeKey = `Kelas ${currentGradeNumber}`;
+        }
+
+        onUpdate({
+            ...objectives,
+            [gradeKey]: newObjectivesForClass,
+        });
+    };
 
     const handleObjectiveChange = (index: number, value: string) => {
         if (!selectedSubject) return;
         const newObjectivesForSubject = [...currentObjectives];
         newObjectivesForSubject[index] = value;
-        onUpdate({
-            ...objectives,
+        handleUpdateObjectivesForClass({
+            ...objectivesForCurrentClass,
             [selectedSubject]: newObjectivesForSubject,
         });
     };
@@ -255,8 +302,8 @@ const TujuanPembelajaranView: React.FC<TujuanPembelajaranViewProps> = ({ objecti
     const handleAddObjective = () => {
         if (!selectedSubject) return;
         const newObjectivesForSubject = [...currentObjectives, ''];
-        onUpdate({
-            ...objectives,
+        handleUpdateObjectivesForClass({
+            ...objectivesForCurrentClass,
             [selectedSubject]: newObjectivesForSubject,
         });
     };
@@ -265,42 +312,46 @@ const TujuanPembelajaranView: React.FC<TujuanPembelajaranViewProps> = ({ objecti
         if (!selectedSubject) return;
         if (!window.confirm("Apakah Anda yakin ingin menghapus tujuan pembelajaran ini?")) return;
         
-        // Create a mutable copy of the current objectives array
-        const newObjectivesForSubject = [...currentObjectives];
-        // Remove the item at the specified index
-        newObjectivesForSubject.splice(index, 1);
+        const newObjectivesForSubject = currentObjectives.filter((_, i) => i !== index);
         
-        // Update the state with the new array
-        onUpdate({
-            ...objectives,
+        handleUpdateObjectivesForClass({
+            ...objectivesForCurrentClass,
             [selectedSubject]: newObjectivesForSubject,
         });
     };
 
+    if (!namaKelas) {
+        return (
+            <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 text-center">
+                <p className="text-slate-600">Harap atur "Nama Kelas" di halaman Pengaturan terlebih dahulu untuk mengelola Tujuan Pembelajaran.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 space-y-6">
             <div>
-                <label htmlFor="subject-select-tp" className="block text-sm font-medium text-slate-700 mb-1">Pilih Mata Pelajaran</label>
+                <label htmlFor="subject-select-tp" className="block text-sm font-medium text-slate-700 mb-1">Pilih Mata Pelajaran untuk {namaKelas}</label>
                 <select
                     id="subject-select-tp"
                     value={selectedSubject}
-                    onChange={e => setSelectedSubject(e.target.value as AcademicSubject)}
+                    onChange={e => setSelectedSubject(e.target.value)}
                     className="w-full sm:w-72 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
-                    disabled={subjectsForObjectives.length === 0}
+                    disabled={activeSubjects.length === 0}
                 >
-                    {subjectsForObjectives.length > 0 ? (
+                    {activeSubjects.length > 0 ? (
                         <>
                             <option value="" disabled>Klik di sini untuk memilih mata pelajaran.</option>
-                            {subjectsForObjectives.map(subject => (
+                            {activeSubjects.map(subject => (
                                 <option key={subject.id} value={subject.fullName}>{subject.fullName}</option>
                             ))}
                         </>
-                    ) : <option>Tidak ada mapel yang mendukung TP</option>}
+                    ) : <option>Tidak ada mapel aktif</option>}
                 </select>
             </div>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 -mr-2">
-                {subjectsForObjectives.length > 0 && selectedSubject ? (
+                {selectedSubject ? (
                     currentObjectives.length > 0 ? (
                         currentObjectives.map((objective, index) => (
                             <div key={`${objective}-${index}`} className="flex items-center gap-2">
@@ -330,7 +381,7 @@ const TujuanPembelajaranView: React.FC<TujuanPembelajaranViewProps> = ({ objecti
                     )
                 ) : (
                     <div className="text-center py-10 text-slate-500">
-                        <p>Tidak ada mata pelajaran aktif yang mendukung Tujuan Pembelajaran. Aktifkan mata pelajaran akademik di tab 'Mapel'.</p>
+                        <p>Pilih mata pelajaran dari daftar di atas untuk melihat atau menambahkan tujuan pembelajaran.</p>
                     </div>
                 )}
             </div>
@@ -359,11 +410,49 @@ interface NilaiPerMapelViewProps {
     tpIndex?: number
   ) => void;
   activeSubjects: Subject[];
+  learningObjectives: LearningObjectives;
+  namaKelas: string;
 }
 
-const NilaiPerMapelView: React.FC<NilaiPerMapelViewProps> = ({ students, grades, onUpdateDetailedGrade, activeSubjects }) => {
+const NilaiPerMapelView: React.FC<NilaiPerMapelViewProps> = ({ students, grades, onUpdateDetailedGrade, activeSubjects, learningObjectives, namaKelas }) => {
     const [selectedSubject, setSelectedSubject] = useState<SubjectKey | null>(null);
-    const MAX_TPS = 5;
+    const [activeTooltip, setActiveTooltip] = useState<{ index: number; rect: DOMRect } | null>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+          const target = event.target as HTMLElement;
+          if (!target.closest('.tp-header-button')) {
+            setActiveTooltip(null);
+          }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+          document.removeEventListener('mousedown', handleClickOutside);
+        };
+      }, []);
+
+    const learningObjectivesForSelectedSubject = useMemo(() => {
+        if (!selectedSubject || !namaKelas) return [];
+
+        const currentGradeNumber = getGradeNumber(namaKelas);
+        if (currentGradeNumber === null) return [];
+
+        let gradeKey = '';
+        for (const key in learningObjectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                gradeKey = key;
+                break;
+            }
+        }
+        if (!gradeKey) return [];
+
+        const subjectFullName = activeSubjects.find(s => s.id === selectedSubject)?.fullName;
+        if (!subjectFullName) return [];
+
+        return learningObjectives[gradeKey]?.[subjectFullName] || [];
+    }, [selectedSubject, namaKelas, learningObjectives, activeSubjects]);
+    
+    const numberOfTps = learningObjectivesForSelectedSubject.length;
 
     const handleGradeChange = (studentId: number, type: 'tp' | 'sts' | 'sas', value: string, tpIndex?: number) => {
         if (!selectedSubject) return;
@@ -381,7 +470,8 @@ const NilaiPerMapelView: React.FC<NilaiPerMapelViewProps> = ({ students, grades,
 
         if (!detailedGrade) return '0';
 
-        const validTps = (detailedGrade.tp || []).filter(t => typeof t === 'number') as number[] || [];
+        const tpsToConsider = (detailedGrade.tp || []).slice(0, numberOfTps);
+        const validTps = tpsToConsider.filter(t => typeof t === 'number') as number[] || [];
         const averageTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
         const sts = detailedGrade.sts ?? 0;
         const sas = detailedGrade.sas ?? 0;
@@ -389,7 +479,7 @@ const NilaiPerMapelView: React.FC<NilaiPerMapelViewProps> = ({ students, grades,
         const finalGrade = (averageTp + sts + sas) / 3;
 
         return isNaN(finalGrade) ? '0' : Math.round(finalGrade).toString();
-    }, [grades, selectedSubject]);
+    }, [grades, selectedSubject, numberOfTps]);
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 space-y-6">
@@ -409,65 +499,108 @@ const NilaiPerMapelView: React.FC<NilaiPerMapelViewProps> = ({ students, grades,
             </div>
 
             {selectedSubject && (
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-slate-500">
-                        <thead className="text-xs text-slate-700 uppercase bg-slate-100">
-                            <tr>
-                                <th scope="col" className="px-3 py-3 w-10 text-center">No</th>
-                                <th scope="col" className="px-6 py-3 min-w-[200px]">Nama Siswa</th>
-                                {Array.from({ length: MAX_TPS }).map((_, i) => (
-                                    <th key={i} scope="col" className="px-2 py-3 w-20 text-center">{`TP ${i + 1}`}</th>
-                                ))}
-                                <th scope="col" className="px-2 py-3 w-20 text-center">STS</th>
-                                <th scope="col" className="px-2 py-3 w-20 text-center">SAS</th>
-                                <th scope="col" className="px-2 py-3 w-24 text-center">Nilai Akhir</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {students.map((student, index) => {
-                                const studentGrade = grades.find(g => g.studentId === student.id);
-                                const detailedGrade = studentGrade?.detailedGrades?.[selectedSubject];
-                                const finalGrade = calculateFinalGrade(student.id);
+                 <>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-slate-500">
+                            <thead className="text-xs text-slate-700 uppercase bg-slate-100">
+                                <tr>
+                                    <th scope="col" className="px-3 py-3 w-10 text-center">No</th>
+                                    <th scope="col" className="px-6 py-3 min-w-[200px]">Nama Siswa</th>
+                                    {Array.from({ length: numberOfTps }).map((_, i) => (
+                                        <th key={i} scope="col" className="px-2 py-3 w-20 text-center tp-header">
+                                            <button
+                                                type="button"
+                                                className="tp-header-button"
+                                                onClick={(e) => {
+                                                    if (activeTooltip?.index === i) {
+                                                        setActiveTooltip(null);
+                                                    } else {
+                                                        setActiveTooltip({ index: i, rect: e.currentTarget.getBoundingClientRect() });
+                                                    }
+                                                }}
+                                                aria-describedby={`tooltip-${i}`}
+                                            >
+                                                {`TP ${i + 1}`}
+                                            </button>
+                                        </th>
+                                    ))}
+                                    <th scope="col" className="px-2 py-3 w-20 text-center">STS</th>
+                                    <th scope="col" className="px-2 py-3 w-20 text-center">SAS</th>
+                                    <th scope="col" className="px-2 py-3 w-24 text-center">Nilai Akhir</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {students.map((student, index) => {
+                                    const studentGrade = grades.find(g => g.studentId === student.id);
+                                    const detailedGrade = studentGrade?.detailedGrades?.[selectedSubject];
+                                    const finalGrade = calculateFinalGrade(student.id);
 
-                                return (
-                                <tr key={student.id} className="bg-white border-b hover:bg-slate-50">
-                                    <td className="px-3 py-2 text-center font-medium">{index + 1}</td>
-                                    <th scope="row" className="px-6 py-2 font-medium text-slate-900 whitespace-nowrap">{student.namaLengkap}</th>
-                                    {Array.from({ length: MAX_TPS }).map((_, i) => (
-                                        <td key={i} className="px-2 py-1">
+                                    return (
+                                    <tr key={student.id} className="bg-white border-b hover:bg-slate-50">
+                                        <td className="px-3 py-2 text-center font-medium">{index + 1}</td>
+                                        <th scope="row" className="px-6 py-2 font-medium text-slate-900 whitespace-nowrap">{student.namaLengkap}</th>
+                                        {Array.from({ length: numberOfTps }).map((_, i) => (
+                                            <td key={i} className="px-2 py-1">
+                                                <input
+                                                    type="number" min="0" max="100"
+                                                    value={detailedGrade?.tp?.[i] ?? ''}
+                                                    onChange={(e) => handleGradeChange(student.id, 'tp', e.target.value, i)}
+                                                    className="w-16 p-2 text-center bg-slate-50 border border-slate-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                                    aria-label={`TP ${i+1} untuk ${student.namaLengkap}`}
+                                                />
+                                            </td>
+                                        ))}
+                                        <td className="px-2 py-1">
                                             <input
                                                 type="number" min="0" max="100"
-                                                value={detailedGrade?.tp?.[i] ?? ''}
-                                                onChange={(e) => handleGradeChange(student.id, 'tp', e.target.value, i)}
+                                                value={detailedGrade?.sts ?? ''}
+                                                onChange={(e) => handleGradeChange(student.id, 'sts', e.target.value)}
                                                 className="w-16 p-2 text-center bg-slate-50 border border-slate-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                                                aria-label={`TP ${i+1} untuk ${student.namaLengkap}`}
+                                                aria-label={`STS untuk ${student.namaLengkap}`}
                                             />
                                         </td>
-                                    ))}
-                                    <td className="px-2 py-1">
-                                        <input
-                                            type="number" min="0" max="100"
-                                            value={detailedGrade?.sts ?? ''}
-                                            onChange={(e) => handleGradeChange(student.id, 'sts', e.target.value)}
-                                            className="w-16 p-2 text-center bg-slate-50 border border-slate-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                                            aria-label={`STS untuk ${student.namaLengkap}`}
-                                        />
-                                    </td>
-                                    <td className="px-2 py-1">
-                                        <input
-                                            type="number" min="0" max="100"
-                                            value={detailedGrade?.sas ?? ''}
-                                            onChange={(e) => handleGradeChange(student.id, 'sas', e.target.value)}
-                                            className="w-16 p-2 text-center bg-slate-50 border border-slate-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                                            aria-label={`SAS untuk ${student.namaLengkap}`}
-                                        />
-                                    </td>
-                                    <td className="px-2 py-2 text-center font-semibold text-slate-800">{finalGrade}</td>
-                                </tr>
-                            )})}
-                        </tbody>
-                    </table>
-                 </div>
+                                        <td className="px-2 py-1">
+                                            <input
+                                                type="number" min="0" max="100"
+                                                value={detailedGrade?.sas ?? ''}
+                                                onChange={(e) => handleGradeChange(student.id, 'sas', e.target.value)}
+                                                className="w-16 p-2 text-center bg-slate-50 border border-slate-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                                aria-label={`SAS untuk ${student.namaLengkap}`}
+                                            />
+                                        </td>
+                                        <td className="px-2 py-2 text-center font-semibold text-slate-800">{finalGrade}</td>
+                                    </tr>
+                                )})}
+                            </tbody>
+                        </table>
+                    </div>
+                    {activeTooltip !== null && (
+                        <div
+                            role="tooltip"
+                            className="tp-tooltip"
+                            style={{
+                                position: 'fixed',
+                                top: `${activeTooltip.rect.top}px`,
+                                left: `${activeTooltip.rect.left + activeTooltip.rect.width / 2}px`,
+                                transform: 'translate(-50%, -100%) translateY(-8px)',
+                            }}
+                        >
+                            {learningObjectivesForSelectedSubject[activeTooltip.index] || 'Tujuan Pembelajaran tidak ditemukan.'}
+                            <div
+                                style={{
+                                    content: '""',
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: '50%',
+                                    marginLeft: '-5px',
+                                    borderWidth: '5px',
+                                    borderStyle: 'solid',
+                                    borderColor: '#1f2937 transparent transparent transparent'
+                                }}
+                            ></div>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );
@@ -599,6 +732,15 @@ interface DataNilaiPageProps {
   showToast: (message: string, type: 'success' | 'error') => void;
 }
 
+// FIX: Define a type for the processed student data to help TypeScript with inference.
+type ProcessedStudent = Student & {
+    no: number;
+    grades: Record<string, any>;
+    total: number;
+    average: number;
+    rank: number | string;
+};
+
 const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKelas, onUpdateDetailedGrade, onBulkUpdateGrades, learningObjectives, onUpdateLearningObjectives, studentDescriptions, onUpdateStudentDescriptions, subjects, onUpdateSubjects, showToast }) => {
   const [activeView, setActiveView] = useState<DataNilaiView>('NILAI_KESELURUHAN');
   const [sortBy, setSortBy] = useState<'no' | 'rank'>('no');
@@ -636,7 +778,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
         'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9
     };
 
-    finalDisplaySubjects.sort((a, b) => {
+    // FIX: Add explicit types for sort callback parameters to ensure correct type inference.
+    finalDisplaySubjects.sort((a: Subject, b: Subject) => {
         const orderA = sortOrder[a.id] || 99;
         const orderB = sortOrder[b.id] || 99;
         return orderA - orderB;
@@ -646,7 +789,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
   }, [activeSubjects]);
 
   const processedData = useMemo(() => {
-    const dataWithCalculations = students.map((student, index) => {
+    // FIX: Add explicit type for `student` to ensure properties like `id` are accessible.
+    const dataWithCalculations: Omit<ProcessedStudent, 'rank'>[] = students.map((student: Student, index) => {
       const studentGrades = grades.find(g => g.studentId === student.id) || { studentId: student.id, finalGrades: {} };
       
       const displayGrades: Record<string, any> = {};
@@ -685,28 +829,30 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
         grades: displayGrades,
         total,
         average,
-        rank: 0, 
       };
     });
 
     const sortedByTotal = [...dataWithCalculations].sort((a, b) => b.total - a.total);
-    const rankedData = sortedByTotal.map((student, index) => {
-      let rank;
-      if (index > 0 && student.total === sortedByTotal[index - 1].total) {
-        rank = sortedByTotal[index - 1].rank;
-      } else {
-        rank = index + 1;
-      }
-      return { ...student, rank: student.total > 0 ? rank : '-' };
-    });
+    // FIX: Correctly calculate rank by using reduce to access previously calculated ranks.
+    const rankedData = sortedByTotal.reduce<(Omit<ProcessedStudent, 'rank'> & { rank: string | number })[]>((acc, student: Omit<ProcessedStudent, 'rank'>, index) => {
+        let rank;
+        if (index > 0 && student.total === sortedByTotal[index - 1].total) {
+            rank = acc[index - 1].rank;
+        } else {
+            rank = index + 1;
+        }
+        acc.push({ ...student, rank: student.total > 0 ? rank : '-' });
+        return acc;
+    }, []);
 
-    const dataWithRanks = dataWithCalculations.map(d => {
+    const dataWithRanks: ProcessedStudent[] = dataWithCalculations.map((d: Omit<ProcessedStudent, 'rank'>) => {
       const studentWithRank = rankedData.find(s => s.id === d.id);
       return { ...d, rank: studentWithRank?.rank || '-' };
     });
 
+    // FIX: Add explicit types for sort callback parameters to ensure correct type inference.
     if (sortBy === 'rank') {
-      return dataWithRanks.sort((a, b) => {
+      return dataWithRanks.sort((a: ProcessedStudent, b: ProcessedStudent) => {
         if (a.rank === '-') return 1;
         if (b.rank === '-') return -1;
         if ((a.rank as number) < (b.rank as number)) return -1;
@@ -715,7 +861,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
       });
     }
     
-    return dataWithRanks.sort((a, b) => a.no - b.no);
+    // FIX: Add explicit types for sort callback parameters to ensure correct type inference.
+    return dataWithRanks.sort((a: ProcessedStudent, b: ProcessedStudent) => a.no - b.no);
   }, [students, grades, sortBy, activeSubjects, displaySubjects]);
   
   const handleExportTemplate = useCallback(() => {
@@ -758,7 +905,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
     XLSX.utils.book_append_sheet(wb, wsNilaiKeseluruhan, "Nilai Keseluruhan");
 
     // Sheet 2: Daftar Mapel (Reference)
-    const mapelData = subjects.map((subject, index) => ({
+// FIX: Explicitly type `subject` to resolve property access errors.
+    const mapelData = subjects.map((subject: Subject, index) => ({
         "No": index + 1,
         "Nama Mata Pelajaran": subject.fullName,
         "Singkatan (ID)": subject.id,
@@ -769,8 +917,10 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
     XLSX.utils.book_append_sheet(wb, wsMapel, "Daftar Mapel");
     
     // Sheet 3+: Nilai per Mapel (for Data Entry)
-    activeSubjects.forEach(subject => {
-        const perMapelData = students.map((student, index) => {
+// FIX: Explicitly type `subject` to resolve property access errors.
+    activeSubjects.forEach((subject: Subject) => {
+// FIX: Explicitly type `student` to resolve property access errors.
+        const perMapelData = students.map((student: Student, index) => {
             const gradeData = grades.find(g => g.studentId === student.id);
             const detailedGrade = gradeData?.detailedGrades?.[subject.id];
             const row: any = { "No": index + 1, "Nama Siswa": student.namaLengkap };
@@ -792,14 +942,24 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
     XLSX.utils.book_append_sheet(wb, wsRentang, "Rentang Nilai");
     
     // Sheet 5: Tujuan Pembelajaran
-    const subjectsForObjectives = activeSubjects.filter(s => (academicSubjectsForObjectives as readonly string[]).includes(s.fullName));
+    const currentGradeNumber = getGradeNumber(namaKelas);
+    let objectivesForCurrentClass: { [subject: string]: string[] } = {};
+    if (currentGradeNumber !== null) {
+        for (const key in learningObjectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                objectivesForCurrentClass = learningObjectives[key];
+                break;
+            }
+        }
+    }
+    const subjectsForObjectives = activeSubjects.filter(s => (objectivesForCurrentClass as any)[s.fullName]);
     const maxObjectives = subjectsForObjectives.reduce((max, subject) => {
-        const objectivesForSubject = learningObjectives[subject.fullName as AcademicSubject] || [];
+        const objectivesForSubject = objectivesForCurrentClass[subject.fullName] || [];
         return Math.max(max, objectivesForSubject.length);
     }, 5);
     const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
     const tpData = subjectsForObjectives.map((subject, index) => {
-        const objectivesForSubject = learningObjectives[subject.fullName as AcademicSubject] || [];
+        const objectivesForSubject = objectivesForCurrentClass[subject.fullName] || [];
         const rowData: (string | number)[] = [index + 1, subject.fullName];
         for (let i = 0; i < maxObjectives; i++) { rowData.push(objectivesForSubject[i] || ''); }
         return rowData;
@@ -809,10 +969,13 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
     XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
     
     // Sheet 6: Deskripsi Rapor
-    const deskripsiHeaders = ["No", "Nama Siswa", ...activeSubjects.map(s => `Deskripsi ${s.fullName}`)];
-    const deskripsiData = students.map((student, index) => {
+// FIX: Explicitly type `s` to resolve property access errors.
+    const deskripsiHeaders = ["No", "Nama Siswa", ...activeSubjects.map((s: Subject) => `Deskripsi ${s.fullName}`)];
+// FIX: Explicitly type `student` to resolve property access errors.
+    const deskripsiData = students.map((student: Student, index) => {
         const row: (string | number)[] = [index + 1, student.namaLengkap];
-        activeSubjects.forEach(subject => {
+// FIX: Explicitly type `subject` to resolve property access errors.
+        activeSubjects.forEach((subject: Subject) => {
             const description = studentDescriptions[student.id]?.[subject.id] || '';
             row.push(description);
         });
@@ -823,7 +986,7 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
     XLSX.utils.book_append_sheet(wb, wsDeskripsi, "Deskripsi Rapor");
 
     XLSX.writeFile(wb, "Template_Lengkap_RKT.xlsx");
-  }, [processedData, students, grades, subjects, activeSubjects, displaySubjects, predikats, learningObjectives, studentDescriptions]);
+  }, [processedData, students, grades, subjects, activeSubjects, displaySubjects, predikats, learningObjectives, studentDescriptions, namaKelas]);
 
   const handleUpdatePredikats = (newPredikats: { a: string; b: string; c: string }) => {
     setPredikats(newPredikats);
@@ -845,7 +1008,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
             const workbook = XLSX.read(data, { type: 'binary' });
             
             if (uploadType === 'nilai') {
-                const updatedGrades = JSON.parse(JSON.stringify(grades));
+// FIX: Explicitly type `updatedGrades` to avoid downstream type errors.
+                const updatedGrades: StudentGrade[] = JSON.parse(JSON.stringify(grades));
                 const studentMap = new Map(students.map(s => [s.namaLengkap.trim().toLowerCase(), s]));
                 const subjectMap = new Map(subjects.map(s => [s.label, s]));
                 let importedSheets = 0;
@@ -864,7 +1028,8 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
                         const worksheet = workbook.Sheets[sheetName];
                         const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                        json.forEach(row => {
+// FIX: Explicitly type `row` to avoid type errors on property access.
+                        json.forEach((row: any) => {
                             const studentName = row['Nama Siswa']?.trim().toLowerCase();
                             const student = studentMap.get(studentName);
                             if (!student) return;
@@ -1033,12 +1198,14 @@ const DataNilaiPage: React.FC<DataNilaiPageProps> = ({ students, grades, namaKel
                     grades={grades}
                     onUpdateDetailedGrade={onUpdateDetailedGrade}
                     activeSubjects={activeSubjects}
+                    learningObjectives={learningObjectives}
+                    namaKelas={namaKelas}
                 />;
       case 'RENTANG': {
         return <RentangView initialPredikats={predikats} onUpdate={handleUpdatePredikats} namaKelas={namaKelas} />;
       }
       case 'TUJUAN_PEMBELAJARAN':
-        return <TujuanPembelajaranView objectives={learningObjectives} onUpdate={onUpdateLearningObjectives} activeSubjects={activeSubjects} />;
+        return <TujuanPembelajaranView objectives={learningObjectives} onUpdate={onUpdateLearningObjectives} activeSubjects={activeSubjects} namaKelas={namaKelas} />;
       case 'DATA_NILAI':
         return (
           <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
