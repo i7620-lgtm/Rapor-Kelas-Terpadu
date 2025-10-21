@@ -19,12 +19,31 @@ export interface DataAction {
     label: string;
 }
 
+export interface KopElement {
+  id: string;
+  type: 'text' | 'image' | 'line';
+  content: string; // For text, this is the text itself. For images, it can be a key like 'logo_sekolah'. For lines, it's not used.
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  fontSize?: number;
+  fontWeight?: 'normal' | 'bold';
+  textAlign?: 'left' | 'center' | 'right';
+  fontFamily?: 'Poppins' | 'Noto Sans Balinese';
+  isLocked?: boolean; // To prevent moving/editing certain auto-filled elements
+}
+
+export type KopLayout = KopElement[];
+
 export interface AppSettings {
+  nama_dinas_pendidikan: string;
   nama_sekolah: string;
   npsn: string;
   alamat_sekolah: string;
   desa_kelurahan: string;
   kecamatan: string;
+  kota_kabupaten: string;
   provinsi: string;
   kode_pos: string;
   email_sekolah: string;
@@ -32,6 +51,7 @@ export interface AppSettings {
   website_sekolah: string;
   faksimile: string;
   logo_sekolah: File | null | string;
+  logo_dinas: File | null | string;
   nama_kelas: string;
   tahun_ajaran: string;
   semester: string;
@@ -40,6 +60,7 @@ export interface AppSettings {
   nip_kepala_sekolah: string;
   nama_wali_kelas: string;
   nip_wali_kelas: string;
+  kop_layout: KopLayout;
 }
 
 export interface Student {
@@ -99,22 +120,6 @@ export const defaultSubjects: Subject[] = [
     { id: 'BBali', fullName: 'Muatan Lokal (Bahasa Bali)', label: 'B. Bali', active: true },
 ];
 
-export const academicSubjectsForObjectives = [
-    "Pendidikan Agama dan Budi Pekerti (Islam)",
-    "Pendidikan Agama dan Budi Pekerti (Kristen)",
-    "Pendidikan Agama dan Budi Pekerti (Katolik)",
-    "Pendidikan Agama dan Budi Pekerti (Hindu)",
-    "Pendidikan Agama dan Budi Pekerti (Buddha)",
-    "Pendidikan Agama dan Budi Pekerti (Konghucu)",
-    "Pendidikan Pancasila",
-    "Bahasa Indonesia",
-    "Matematika",
-    "Ilmu Pengetahuan Alam dan Sosial",
-    "Bahasa Inggris"
-] as const;
-
-export type AcademicSubject = typeof academicSubjectsForObjectives[number];
-
 export interface DetailedSubjectGrade {
     tp: (number | null)[];
     sts: number | null;
@@ -133,7 +138,9 @@ export interface StudentGrade {
 }
 
 export interface LearningObjectives {
-    [subject: string]: string[];
+    [grade: string]: {
+        [subject: string]: string[];
+    };
 }
 
 export interface StudentDescriptions {
