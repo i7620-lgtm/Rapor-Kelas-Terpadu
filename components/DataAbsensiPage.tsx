@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useRef } from 'react';
 import { Student, StudentAttendance } from '../types.js';
 
@@ -34,7 +35,7 @@ const DataAbsensiPage: React.FC<DataAbsensiPageProps> = ({ students, attendance,
     
     const handleExport = useCallback(() => {
         if (typeof XLSX === 'undefined') {
-            alert('Pustaka ekspor (SheetJS) tidak termuat.');
+            showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
             return;
         }
 
@@ -59,7 +60,8 @@ const DataAbsensiPage: React.FC<DataAbsensiPageProps> = ({ students, attendance,
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data Absensi");
         XLSX.writeFile(workbook, "Template_Data_Absensi.xlsx");
-    }, [students, getAttendanceForStudent]);
+        showToast('Template berhasil diekspor!', 'success');
+    }, [students, getAttendanceForStudent, showToast]);
     
     const triggerImport = () => {
         fileInputRef.current?.click();
@@ -78,17 +80,19 @@ const DataAbsensiPage: React.FC<DataAbsensiPageProps> = ({ students, attendance,
                 const worksheet = workbook.Sheets[sheetName];
                 const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                const studentMap = new Map(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
+                // FIX: Explicitly type the Map to ensure studentId is inferred as a number.
+                const studentMap = new Map<string, number>(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
                 const newAttendanceData: StudentAttendance[] = [];
 
-                json.forEach(row => {
-                    const studentName = row["Nama Lengkap"]?.trim().toLowerCase();
+                // FIX: Explicitly type `row` to help TypeScript with type inference.
+                json.forEach((row: { [key: string]: string | number }) => {
+                    const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
                     const studentId = studentMap.get(studentName);
                     
                     if (studentId) {
-                        const sakit = parseInt(row["Sakit (S)"], 10) || 0;
-                        const izin = parseInt(row["Izin (I)"], 10) || 0;
-                        const alpa = parseInt(row["Alpa (A)"], 10) || 0;
+                        const sakit = parseInt(String(row["Sakit (S)"]), 10) || 0;
+                        const izin = parseInt(String(row["Izin (I)"]), 10) || 0;
+                        const alpa = parseInt(String(row["Alpa (A)"]), 10) || 0;
                         
                         newAttendanceData.push({ studentId, sakit, izin, alpa });
                     }
