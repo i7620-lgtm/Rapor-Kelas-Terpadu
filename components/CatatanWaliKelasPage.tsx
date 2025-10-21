@@ -1,7 +1,7 @@
 
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Student, StudentNotes } from '../types.js';
+import { Student, StudentNotes, NoteTemplate } from '../types';
 
 declare const XLSX: any;
 
@@ -11,12 +11,14 @@ interface CatatanWaliKelasPageProps {
     onUpdateNote: (studentId: number, note: string) => void;
     onBulkUpdateNotes: (newNotes: StudentNotes) => void;
     showToast: (message: string, type: 'success' | 'error') => void;
+    noteTemplates: NoteTemplate[];
 }
 
 type CatatanView = 'CATATAN_SISWA' | 'UNDUH_UNGGAH_DATA';
 
-const CatatanWaliKelasPage: React.FC<CatatanWaliKelasPageProps> = ({ students, notes, onUpdateNote, onBulkUpdateNotes, showToast }) => {
+const CatatanWaliKelasPage: React.FC<CatatanWaliKelasPageProps> = ({ students, notes, onUpdateNote, onBulkUpdateNotes, showToast, noteTemplates }) => {
     const [activeView, setActiveView] = useState<CatatanView>('CATATAN_SISWA');
+    const [templateDropdown, setTemplateDropdown] = useState<number | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleNoteChange = (studentId: number, note: string) => {
@@ -67,11 +69,11 @@ const CatatanWaliKelasPage: React.FC<CatatanWaliKelasPageProps> = ({ students, n
                 const newNotes: StudentNotes = {};
                 let count = 0;
 
-                json.forEach(row => {
-                    const studentName = row["Nama Lengkap"]?.trim().toLowerCase();
+                json.forEach((row: { [key: string]: string | number }) => {
+                    const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
                     const studentId = studentMap.get(studentName);
                     
-                    if (studentId) {
+                    if (typeof studentId === 'number') {
                         const note = row["Catatan Wali Kelas"] || '';
                         newNotes[studentId] = String(note);
                         count++;
@@ -128,6 +130,36 @@ const CatatanWaliKelasPage: React.FC<CatatanWaliKelasPageProps> = ({ students, n
                                                         rows={4}
                                                         aria-label={`Catatan wali kelas untuk ${student.namaLengkap}`}
                                                     />
+                                                    <div className="relative mt-2 text-right">
+                                                        <button
+                                                            onClick={() => setTemplateDropdown(templateDropdown === student.id ? null : student.id)}
+                                                            className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                                                        >
+                                                            Gunakan Template
+                                                        </button>
+                                                        {templateDropdown === student.id && (
+                                                            <div className="absolute right-0 mt-1 w-64 bg-white rounded-md shadow-lg z-10 border border-slate-200">
+                                                                <ul className="py-1">
+                                                                    {noteTemplates.map((template) => (
+                                                                        <li key={template.id}>
+                                                                            <a
+                                                                                href="#"
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    const newNote = template.content.replace(/\[Nama Siswa\]/g, student.namaLengkap);
+                                                                                    handleNoteChange(student.id, newNote);
+                                                                                    setTemplateDropdown(null);
+                                                                                }}
+                                                                                className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 text-left"
+                                                                            >
+                                                                                {template.title}
+                                                                            </a>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
