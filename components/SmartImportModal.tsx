@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from '../types.js';
 import { studentFieldDefinitions } from '../constants.js';
+import { Type } from "@google/genai";
 
 declare const XLSX: any;
 
@@ -10,6 +11,7 @@ interface SmartImportModalProps {
     isOpen: boolean;
     onClose: () => void;
     onImport: (newStudents: Omit<Student, 'id'>[]) => void;
+    showToast: (message: string, type: 'success' | 'error') => void;
 }
 
 type Mapping = Partial<Record<keyof Omit<Student, 'id'>, string | null>>;
@@ -23,7 +25,7 @@ const emptyStudent: Omit<Student, 'id'> = {
     alamatWali: '', teleponWali: '',
 };
 
-const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, onImport }) => {
+const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, onImport, showToast }) => {
     const [file, setFile] = useState<File | null>(null);
     const [fileHeaders, setFileHeaders] = useState<string[]>([]);
     const [fileRows, setFileRows] = useState<any[]>([]);
@@ -32,7 +34,9 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const targetFields = useMemo(() => studentFieldDefinitions.filter(f => f.key !== 'no'), []);
+    // FIX: Removed the redundant filter `f.key !== 'no'` which was causing a TypeScript comparison error
+    // because the type of `f.key` from `studentFieldDefinitions` never includes 'no'.
+    const targetFields = useMemo(() => studentFieldDefinitions, []);
 
     useEffect(() => {
         if (!isOpen) {
@@ -68,24 +72,35 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
                 return;
             }
 
-            const headers = json[0].map(String);
+            const headers = json[0].map(String).filter(h => h.trim() !== '');
             const rows = json.slice(1);
             setFileHeaders(headers);
             setFileRows(rows);
 
             // AI-assisted mapping
-            const prompt = `You are an expert data mapping assistant. Your task is to map column headers from a user's uploaded file to a predefined set of application fields. Provide the best possible mapping in JSON format.
+            const prompt = `You are an expert data mapping assistant for a school report application. Your task is to map column headers from a user's uploaded file to a predefined set of application fields. Provide the best possible mapping in JSON format.
             I have a file with the following column headers: ${headers.join(', ')}.
             Please map these headers to the following application fields, based on their descriptions:
             ${targetFields.map(f => `- ${f.key}: ${f.description}`).join('\n')}
             
-            Provide the mapping as a JSON object where the keys are the application field names and the values are the corresponding headers from my file. If you cannot find a suitable match for a field, use null as the value.`;
+            Provide the mapping as a JSON object where the keys are the application field names (like 'namaLengkap', 'nisn', etc.) and the values are the corresponding headers from my file. If you cannot find a suitable match for a field, use null as the value. Only use headers from the provided list.`;
 
             const properties: Record<string, any> = {};
             targetFields.forEach(field => {
-                properties[String(field.key)] = { type: 'STRING', description: `The header from the user file that maps to ${String(field.key)}. Should be one of [${headers.join(', ')}] or null.` };
+                properties[String(field.key)] = { type: Type.STRING, description: `The header from the user file that maps to ${String(field.key)}. Should be one of [${headers.join(', ')}] or null.` };
             });
 
+            const schema = {
+                type: Type.OBJECT,
+                properties: {
+                    mapping: {
+                        type: Type.OBJECT,
+                        properties
+                    }
+                },
+                required: ['mapping']
+            };
+            
             const apiResponse = await fetch('/api/generate-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -93,21 +108,18 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
                     prompt,
                     config: {
                         responseMimeType: "application/json",
-                        responseSchema: {
-                            type: 'OBJECT',
-                            properties: { mapping: { type: 'OBJECT', properties } },
-                            required: ['mapping']
-                        },
-                    }
-                })
+                        responseSchema: schema,
+                    },
+                }),
             });
 
             if (!apiResponse.ok) {
-                throw new Error('Gagal menghubungi server AI untuk pemetaan.');
+                throw new Error('Gagal menghubungi server AI.');
             }
-
-            const responseData = await apiResponse.json();
-            const aiMapping = JSON.parse(responseData.text).mapping;
+            
+            const responseJson = await apiResponse.json();
+            const responseData = JSON.parse(responseJson.text);
+            const aiMapping = responseData.mapping;
             
             // Validate AI mapping to ensure it only suggests headers that actually exist in the file
             const validatedMapping: Mapping = {};
@@ -149,25 +161,27 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
 
     const handleImportClick = () => {
         const newStudents: Omit<Student, 'id'>[] = [];
-        const keyToHeaderMap = new Map(Object.entries(mapping).map(([key, header]) => [key, header]));
         const headerToIndexMap = new Map(fileHeaders.map((header, index) => [header, index]));
 
-        fileRows.forEach(rowArray => {
+// FIX: Explicitly type `rowArray` as `any[]` to ensure TypeScript treats it as an array, resolving index access errors.
+        fileRows.forEach((rowArray: any[]) => {
             const newStudent: Omit<Student, 'id'> = { ...emptyStudent };
             let hasRequiredData = false;
             
-            keyToHeaderMap.forEach((header, key) => {
+            // FIX: Iterate over object entries and use explicit typing to avoid "unknown index" errors.
+            Object.entries(mapping).forEach(([key, header]) => {
+                const studentKey = key as keyof Omit<Student, 'id'>;
                 if (header && headerToIndexMap.has(header)) {
                     const index = headerToIndexMap.get(header)!;
                     let value = rowArray[index];
                     
-                    if (key === 'tanggalLahir' && value instanceof Date) {
+                    if (studentKey === 'tanggalLahir' && value instanceof Date) {
                        value = value.toISOString().split('T')[0];
                     }
+                    
+                    (newStudent as any)[studentKey] = String(value || '').trim();
 
-                    (newStudent as any)[key] = String(value || '').trim();
-
-                    if (key === 'namaLengkap' && newStudent.namaLengkap) {
+                    if (studentKey === 'namaLengkap' && newStudent.namaLengkap) {
                         hasRequiredData = true;
                     }
                 }
@@ -181,7 +195,7 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
         if (newStudents.length > 0) {
             onImport(newStudents);
         } else {
-            setError("Tidak ada data siswa yang valid untuk diimpor. Pastikan kolom 'Nama Lengkap' terpetakan dan memiliki data.");
+            showToast("Tidak ada data siswa yang valid untuk diimpor. Pastikan kolom 'Nama Lengkap' terpetakan dan memiliki data.", 'error');
         }
     };
 
@@ -233,14 +247,12 @@ const SmartImportModal: React.FC<SmartImportModalProps> = ({ isOpen, onClose, on
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-h-64 overflow-y-auto pr-2">
                 {targetFields.map(({ key, label }) => (
-                    // FIX: Ensure React key is a string.
                     <div key={String(key)}>
                         <label htmlFor={`map-${String(key)}`} className="block text-sm font-medium text-slate-700">
                             {label}
                             {mapping[key as keyof Student] && <span className="ml-2 text-xs text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full">✨ AI</span>}
                         </label>
                         <select
-                            // FIX: Ensure id is a string.
                             id={`map-${String(key)}`}
                             value={mapping[key as keyof Student] || '---'}
                             onChange={(e) => handleMappingChange(key as keyof Student, e.target.value)}
