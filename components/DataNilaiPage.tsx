@@ -1,6 +1,7 @@
 
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, DetailedSubjectGrade } from '../types';
+import { Student, StudentGrade, SubjectKey, LearningObjectives, StudentDescriptions, Subject, DetailedSubjectGrade } from '../types.ts';
 
 // Helper function to extract grade number from class name strings
 const getGradeNumber = (str: string): number | null => {
