@@ -1,5 +1,6 @@
+
 import React, { useMemo } from 'react';
-import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student, StudentGrade, Subject } from '../types.js';
+import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student, StudentGrade, Subject } from '../types';
 
 // Define StatCard component inside Dashboard file scope as it's only used here
 const StatCard: React.FC<StatCardProps> = ({ title, value, description, actionText, onActionClick }) => (
