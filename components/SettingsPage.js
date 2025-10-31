@@ -13,6 +13,7 @@ const generateInitialLayout = (appSettings) => {
     ];
 };
 
+const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
 const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
     const [elements, setElements] = useState([]);
@@ -213,7 +214,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             }, el.content)
                                         );
                                     } else if (el.type === 'image') {
-                                        const imageUrl = String(settings[el.content] || 'https://via.placeholder.com/100');
+                                        const imageUrl = String(settings[el.content] || placeholderSvg);
                                         elementRender = (
                                             React.createElement('image', {
                                                 href: imageUrl,
@@ -332,7 +333,7 @@ const KopSuratPreview = ({ settings }) => {
                             );
                         }
                         if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || 'https://via.placeholder.com/100');
+                            const imageUrl = String(settings[el.content] || placeholderSvg);
                             return (
                                 React.createElement('image', {
                                     key: el.id,
