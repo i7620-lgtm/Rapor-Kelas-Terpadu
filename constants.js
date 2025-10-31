@@ -1,7 +1,4 @@
-import React from 'react';
-import { Page, NavItem, DataAction, Student } from './types.ts';
-
-export const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'DATA_SISWA', label: 'Data Siswa' },
   { id: 'DATA_NILAI', label: 'Data Nilai' },
@@ -13,12 +10,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'PENGATURAN', label: 'Pengaturan' },
 ];
 
-export const DATA_ACTIONS: DataAction[] = [
+export const DATA_ACTIONS = [
   { id: 'EKSPORT', label: 'Unduh Semua Template' },
   { id: 'IMPORT', label: 'Unggah dari Template' },
 ];
 
-export const studentFieldDefinitions: { key: keyof Omit<Student, 'id' | 'no'>; label: string; description: string }[] = [
+export const studentFieldDefinitions = [
     { key: 'namaLengkap', label: 'Nama Lengkap', description: 'Nama lengkap siswa (wajib diisi).' },
     { key: 'namaPanggilan', label: 'Nama Panggilan', description: 'Nama panggilan siswa.' },
     { key: 'nis', label: 'NIS', description: 'Nomor Induk Siswa.' },
