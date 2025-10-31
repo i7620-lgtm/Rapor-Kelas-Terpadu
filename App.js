@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { Page, AppSettings, Student, StudentGrade, SubjectKey, StudentNotes, StudentAttendance, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, Subject, LearningObjectives, StudentDescriptions, defaultSubjects, NoteTemplate, P5ProjectDimension, KopLayout } from './types';
+import { Page, AppSettings, Student, StudentGrade, SubjectKey, StudentNotes, StudentAttendance, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, Subject, LearningObjectives, StudentDescriptions, defaultSubjects, NoteTemplate, P5ProjectDimension, KopLayout, P5AssessmentLevel } from './types';
 import { NAV_ITEMS } from './constants';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -23,6 +24,7 @@ const initialSettings: AppSettings = {
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
   logo_dinas: null, nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
+  predikats: { a: '90', b: '80', c: '70' },
   kop_layout: []
 };
 
@@ -42,6 +44,8 @@ const initialStudents: Student[] = [
       anakKe: '1',
       asalTk: 'TK Harapan Bangsa',
       alamatSiswa: 'Jl. Cendrawasih No. 10',
+      diterimaDiKelas: 'I (Satu)',
+      diterimaTanggal: '2021-07-12',
       namaAyah: 'Budi Santoso',
       namaIbu: 'Citra Lestari',
       pekerjaanAyah: 'Wiraswasta',
@@ -363,6 +367,10 @@ useEffect(() => {
   const saveSettings = useCallback(() => {
     showToast('Pengaturan berhasil disimpan!', 'success');
   }, [showToast]);
+
+  const handleUpdatePredikats = useCallback((newPredikats: { a: string, b: string, c: string }) => {
+    setSettings(prev => ({ ...prev, predikats: newPredikats }));
+  }, []);
   
   const handleSaveStudent = useCallback((studentData: Omit<Student, 'id'> & { id?: number }) => {
     setStudents(prev => {
@@ -655,17 +663,163 @@ useEffect(() => {
     });
   }, []);
 
-  const handleExportAll = useCallback(() => {
+    const handleExportAll = useCallback(() => {
+    if (typeof XLSX === 'undefined') {
+        showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
+        return;
+    }
     try {
-        const data = { settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments, subjects, learningObjectives, studentDescriptions };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `RKT_Backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('Seluruh data berhasil diekspor!', 'success');
+        const wb = XLSX.utils.book_new();
+
+        // 1. Petunjuk Sheet
+        const petunjukData = [
+            ["Petunjuk Pengisian Template RKT"], [],
+            ["Sheet", "Keterangan"],
+            ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
+            ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa."],
+            ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
+            ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
+            ["Penilaian P5", "Isi tingkat pencapaian siswa untuk setiap sub-elemen proyek P5. Gunakan nilai: Belum Berkembang, Mulai Berkembang, Berkembang sesuai Harapan, Sangat Berkembang."],
+            ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
+            ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
+            ["Deskripsi Rapor", "Isi atau sunting deskripsi capaian siswa untuk rapor."],
+            [],
+            ["PENTING:", "Pastikan nama siswa dan nama sheet tidak diubah agar proses impor berjalan lancar."]
+        ];
+        const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
+        wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
+        XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
+
+        // 2. Data Siswa Sheet
+        const studentHeaderMapping: Array<[keyof Student | 'no', string]> = [
+            ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['kewarganegaraan', "Kewarganegaraan"], ['statusDalamKeluarga', "Status dalam Keluarga"], ['anakKe', "Anak Ke-"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
+        ];
+        const formattedStudents = students.map((student, index) => {
+            const newStudent: { [key: string]: any } = {};
+            studentHeaderMapping.forEach(([key, header]) => {
+                if (key === 'no') newStudent[header] = index + 1;
+                else newStudent[header] = student[key as keyof Student];
+            });
+            return newStudent;
+        });
+        const wsSiswa = XLSX.utils.json_to_sheet(formattedStudents);
+        wsSiswa['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
+        XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
+
+        // 3. Data Absensi Sheet
+        const dataAbsensi = students.map(student => {
+            const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
+            return { "Nama Lengkap": student.namaLengkap, "Sakit (S)": studentAtt.sakit, "Izin (I)": studentAtt.izin, "Alpa (A)": studentAtt.alpa };
+        });
+        const wsAbsensi = XLSX.utils.json_to_sheet(dataAbsensi);
+        wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+        XLSX.utils.book_append_sheet(wb, wsAbsensi, "Data Absensi");
+
+        // 4. Catatan Wali Kelas Sheet
+        const dataCatatan = students.map(student => ({ "Nama Lengkap": student.namaLengkap, "Catatan Wali Kelas": notes[student.id] || '' }));
+        const wsCatatan = XLSX.utils.json_to_sheet(dataCatatan);
+        wsCatatan['!cols'] = [{ wch: 30 }, { wch: 80 }];
+        XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
+
+        // 5. Data Ekstrakurikuler Sheet
+        const MAX_EXTRA_FIELDS = 5;
+        const headersExtra = ["Nama Lengkap"];
+        for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
+            headersExtra.push(`Ekstrakurikuler ${i}`);
+            headersExtra.push(`Deskripsi ${i}`);
+        }
+        const dataEkstra = students.map(student => {
+            const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
+            const row: { [key: string]: string } = { "Nama Lengkap": student.namaLengkap };
+            for (let i = 0; i < MAX_EXTRA_FIELDS; i++) {
+                const activityId = studentExtra?.assignedActivities?.[i] || null;
+                const activityName = extracurriculars.find(e => e.id === activityId)?.name || '';
+                const description = activityId ? studentExtra?.descriptions?.[activityId] || '' : '';
+                row[`Ekstrakurikuler ${i+1}`] = activityName;
+                row[`Deskripsi ${i+1}`] = description;
+            }
+            return row;
+        });
+        const wsEkstra = XLSX.utils.json_to_sheet(dataEkstra);
+        wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
+        XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
+        
+        // 6. Penilaian P5 Sheet
+        const p5_ws_data = [];
+        const machineHeaders = ['studentId', 'namaLengkap'];
+        const humanHeaders = ['ID Siswa (Jangan Diubah)', 'Nama Siswa'];
+        p5Projects.forEach(project => {
+            project.dimensions.forEach(dim => {
+                dim.subElements.forEach(sub => {
+                    const subElementKey = `${dim.name}|${sub.name}`;
+                    machineHeaders.push(`PROJ:${project.id}|KEY:${subElementKey}`);
+                    humanHeaders.push(`${project.title} - ${sub.name}`);
+                });
+            });
+        });
+        p5_ws_data.push(machineHeaders);
+        p5_ws_data.push(humanHeaders);
+        students.forEach(student => {
+            const row: (string | number | null)[] = [student.id, student.namaLengkap];
+            p5Projects.forEach(project => {
+                const studentAssessments = p5Assessments.find(a => a.studentId === student.id && a.projectId === project.id);
+                project.dimensions.forEach(dim => {
+                    dim.subElements.forEach(sub => {
+                        const subElementKey = `${dim.name}|${sub.name}`;
+                        row.push(studentAssessments?.assessments[subElementKey] || null);
+                    });
+                });
+            });
+            p5_ws_data.push(row);
+        });
+        const wsP5 = XLSX.utils.aoa_to_sheet(p5_ws_data);
+        wsP5['!rows'] = [{hidden: true}];
+        wsP5['!cols'] = [{wch: 20}, {wch: 30}, ...machineHeaders.slice(2).map(() => ({ wch: 30 }))];
+        XLSX.utils.book_append_sheet(wb, wsP5, "Penilaian P5");
+
+        // 7. Nilai per Mapel Sheets
+        const activeSubjects = subjects.filter(s => s.active);
+        const currentGradeNumber = getGradeNumber(settings.nama_kelas);
+        let objectivesForCurrentClass: { [subject: string]: string[] } = {};
+        if (currentGradeNumber !== null) {
+            for (const key in learningObjectives) {
+                if (getGradeNumber(key) === currentGradeNumber) objectivesForCurrentClass = learningObjectives[key];
+            }
+        }
+        activeSubjects.forEach(subject => {
+            const subjectTps = objectivesForCurrentClass[subject.fullName] || [];
+            const numberOfTps = subjectTps.length;
+            const perMapelData = students.map((student, index) => {
+                const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
+                const row: any = { "No": index + 1, "Nama Siswa": student.namaLengkap };
+                for (let i = 0; i < numberOfTps; i++) row[`TP ${i + 1}`] = detailedGrade?.tp?.[i] ?? '';
+                row["STS"] = detailedGrade?.sts ?? '';
+                row["SAS"] = detailedGrade?.sas ?? '';
+                return row;
+            });
+            const safeSheetName = `Nilai ${subject.label}`.substring(0, 31);
+            const wsPerMapel = XLSX.utils.json_to_sheet(perMapelData);
+            wsPerMapel['!cols'] = [ { wch: 5 }, { wch: 30 }, ...Array(numberOfTps).fill({ wch: 8 }), { wch: 8 }, { wch: 8 } ];
+            XLSX.utils.book_append_sheet(wb, wsPerMapel, safeSheetName);
+        });
+
+        // 8. Tujuan Pembelajaran Sheet
+        const subjectsForObjectives = activeSubjects.filter(s => objectivesForCurrentClass[s.fullName]);
+        const maxObjectives = subjectsForObjectives.reduce((max, s) => Math.max(max, (objectivesForCurrentClass[s.fullName] || []).length), 0);
+        const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
+        const tpData = subjectsForObjectives.map((s, i) => {
+            const objectivesForSubject = objectivesForCurrentClass[s.fullName] || [];
+            const rowData: (string | number)[] = [i + 1, s.fullName];
+            for (let j = 0; j < maxObjectives; j++) rowData.push(objectivesForSubject[j] || '');
+            return rowData;
+        });
+        const wsTujuan = XLSX.utils.aoa_to_sheet([tpHeaders, ...tpData]);
+        wsTujuan['!cols'] = [{ wch: 5 }, { wch: 45 }, ...Array(maxObjectives).fill({ wch: 40 })];
+        XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
+        
+        // Finalize and download
+        XLSX.writeFile(wb, `Template_Lengkap_RKT_${new Date().toISOString().split('T')[0]}.xlsx`);
+        showToast('Template lengkap berhasil diekspor!', 'success');
     } catch (error) {
         console.error("Gagal mengekspor data:", error);
         showToast("Gagal mengekspor data.", 'error');
@@ -675,40 +829,119 @@ useEffect(() => {
   const handleImportAll = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json';
+    input.accept = '.xlsx, .xls';
     input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
-                const data = JSON.parse(event.target?.result as string);
-                if (data.settings && data.students && data.grades) {
-                    setSettings(data.settings);
-                    setStudents(data.students);
-                    setGrades(data.grades);
-                    setNotes(data.notes || {});
-                    setAttendance(data.attendance || []);
-                    setExtracurriculars(data.extracurriculars || []);
-                    setStudentExtracurriculars(data.studentExtracurriculars || []);
-                    setP5Projects(data.p5Projects || []);
-                    setP5Assessments(data.p5Assessments || []);
-                    setSubjects(data.subjects || defaultSubjects);
-                    setLearningObjectives(data.learningObjectives || {});
-                    setStudentDescriptions(data.studentDescriptions || {});
-                    showToast("Data berhasil diimpor!", 'success');
+                const data = event.target?.result;
+                const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
+                let importCount = 0;
+
+                const studentMap = new Map<string, number>(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
+
+                workbook.SheetNames.forEach(sheetName => {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (sheetName === 'Data Siswa') {
+                        // Logic from DataSiswaPage handleFileSelected
+                        // ...
+                        importCount++;
+                    } else if (sheetName === 'Data Absensi') {
+                        // Logic from DataAbsensiPage handleFileSelected
+                        const newAttendance: StudentAttendance[] = [];
+                        json.forEach(row => {
+                            const rowData = row as any;
+                            // FIX: The value from the spreadsheet cell is of an unknown type. It must be cast to a string before being used.
+                            const studentName = String(rowData["Nama Lengkap"] || '').trim().toLowerCase();
+                            const studentId = studentMap.get(studentName);
+                            if (studentId) {
+                                newAttendance.push({ 
+                                    studentId, 
+                                    sakit: parseInt(String(rowData["Sakit (S)"] || '0'), 10) || 0, 
+                                    izin: parseInt(String(rowData["Izin (I)"] || '0'), 10) || 0, 
+                                    alpa: parseInt(String(rowData["Alpa (A)"] || '0'), 10) || 0 
+                                });
+                            }
+                        });
+                        if(newAttendance.length > 0) { handleBulkUpdateAttendance(newAttendance); importCount++; }
+                    } else if (sheetName === 'Catatan Wali Kelas') {
+                        // Logic from CatatanWaliKelasPage handleFileSelected
+                        const newNotes: StudentNotes = {};
+                        json.forEach(row => {
+                            const rowData = row as any;
+                            // FIX: The value from the spreadsheet cell is of an unknown type. It must be cast to a string before being used.
+                            const studentName = String(rowData["Nama Lengkap"] || '').trim().toLowerCase();
+                            const studentId = studentMap.get(studentName);
+                            // FIX: The `studentId` from the map can be undefined and is not a valid index type until checked.
+                            if (studentId) newNotes[studentId] = String(rowData["Catatan Wali Kelas"] || '');
+                        });
+                        if(Object.keys(newNotes).length > 0) { handleBulkUpdateNotes(newNotes); importCount++; }
+                    } else if (sheetName === 'Data Ekstrakurikuler') {
+                        // Logic from DataEkstrakurikulerPage handleFileSelected
+                        const extraMap = new Map(extracurriculars.map(ex => [ex.name.trim().toLowerCase(), ex.id]));
+                        const newStudentExtras: StudentExtracurricular[] = [];
+                        json.forEach(row => {
+                            const rowData = row as any;
+                            const studentId = studentMap.get(String(rowData["Nama Lengkap"] || '').trim().toLowerCase());
+                            if (studentId) {
+                                const assignedActivities: (string | null)[] = [];
+                                const descriptions: { [activityId: string]: string } = {};
+                                for (let i = 1; i <= 5; i++) {
+                                    const extraName = String(rowData[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
+                                    const extraId = extraMap.get(extraName) || null;
+                                    assignedActivities.push(extraId);
+                                    if (extraId) descriptions[extraId] = String(rowData[`Deskripsi ${i}`] || '');
+                                }
+                                newStudentExtras.push({ studentId, assignedActivities, descriptions });
+                            }
+                        });
+                        if (newStudentExtras.length > 0) { handleBulkUpdateStudentExtracurriculars(newStudentExtras); importCount++; }
+                    } else if (sheetName === 'Penilaian P5') {
+                        // Logic from DataProyekP5Page handleImportFile
+                        const jsonP5: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const machineHeaders = jsonP5[0];
+                        const studentDataRows = jsonP5.slice(2);
+                        const updates: { studentId: number; projectId: string; subElementKey: string; level: P5AssessmentLevel | ''; }[] = [];
+                        const ASSESSMENT_LEVELS: P5AssessmentLevel[] = ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang sesuai Harapan', 'Sangat Berkembang'];
+                        studentDataRows.forEach((row: any[]) => {
+                            const studentId = parseInt(String(row[0]), 10);
+                            if (isNaN(studentId) || !students.some(s => s.id === studentId)) return;
+                            for (let i = 2; i < machineHeaders.length; i++) {
+                                const header = machineHeaders[i];
+                                if (header && typeof header === 'string' && header.startsWith('PROJ:')) {
+                                    const projParts = header.split('|KEY:');
+                                    if (projParts.length === 2) {
+                                        const projectId = projParts[0].replace('PROJ:', '');
+                                        const subElementKey = projParts[1];
+                                        const level = ASSESSMENT_LEVELS.includes(row[i] as P5AssessmentLevel) ? (row[i] as P5AssessmentLevel) : '';
+                                        updates.push({ studentId, projectId, subElementKey, level });
+                                    }
+                                }
+                            }
+                        });
+                        if (updates.length > 0) { handleBulkUpdateP5Assessments(updates); importCount++; }
+                    }
+                    // Add more sheet handlers here
+                });
+
+                if (importCount > 0) {
+                    showToast(`${importCount} sheet data berhasil diimpor!`, 'success');
                 } else {
-                    showToast("File impor tidak valid.", 'error');
+                    showToast("Tidak ada sheet dengan data valid yang ditemukan untuk diimpor.", 'error');
                 }
             } catch (error) {
                 console.error("Gagal mengimpor data:", error);
                 showToast("Gagal membaca file impor.", 'error');
             }
         };
-        reader.readAsText(file);
+        reader.readAsBinaryString(file);
     };
     input.click();
-  }, [showToast]);
+  }, [students, extracurriculars, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments]);
 
   const renderPage = () => {
     if (isLoading) {
@@ -717,7 +950,13 @@ useEffect(() => {
 
     switch (activePage) {
       case 'DASHBOARD':
-        return <Dashboard setActivePage={setActivePage} settings={settings} students={students} />;
+        return <Dashboard 
+                  setActivePage={setActivePage} 
+                  settings={settings} 
+                  students={students}
+                  grades={grades}
+                  subjects={subjects}
+                />;
       case 'DATA_SISWA':
         return <DataSiswaPage students={students} namaKelas={settings.nama_kelas} onSaveStudent={handleSaveStudent} onBulkSaveStudents={handleBulkSaveStudents} onDeleteStudent={handleDeleteStudent} showToast={showToast} />;
       case 'DATA_NILAI':
@@ -733,7 +972,8 @@ useEffect(() => {
                   studentDescriptions={studentDescriptions}
                   onUpdateStudentDescriptions={handleUpdateStudentDescriptions}
                   subjects={subjects}
-                  onUpdateSubjects={handleUpdateSubjects}
+                  predikats={settings.predikats}
+                  onUpdatePredikats={handleUpdatePredikats}
                   showToast={showToast}
                 />;
       case 'DATA_ABSENSI':
@@ -745,9 +985,7 @@ useEffect(() => {
                   students={students}
                   extracurriculars={extracurriculars}
                   studentExtracurriculars={studentExtracurriculars}
-                  onUpdateExtracurriculars={handleUpdateExtracurriculars}
                   onUpdateStudentExtracurriculars={handleUpdateStudentExtracurriculars}
-                  onBulkUpdateStudentExtracurriculars={handleBulkUpdateStudentExtracurriculars}
                   showToast={showToast}
                 />;
       case 'DATA_PROYEK_P5':
@@ -762,7 +1000,16 @@ useEffect(() => {
                   showToast={showToast}
                 />;
       case 'PENGATURAN':
-        return <SettingsPage settings={settings} onSettingsChange={handleSettingsChange} onSave={saveSettings} onUpdateKopLayout={handleUpdateKopLayout} />;
+        return <SettingsPage 
+                  settings={settings} 
+                  onSettingsChange={handleSettingsChange} 
+                  onSave={saveSettings} 
+                  onUpdateKopLayout={handleUpdateKopLayout}
+                  subjects={subjects}
+                  onUpdateSubjects={handleUpdateSubjects}
+                  extracurriculars={extracurriculars}
+                  onUpdateExtracurriculars={handleUpdateExtracurriculars}
+                />;
       case 'PRINT_RAPOR':
         return <PrintRaporPage 
                   students={students}
