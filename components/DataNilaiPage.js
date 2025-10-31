@@ -207,10 +207,11 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
 
         students.forEach(student => {
             const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-            const masteredTps = objectivesForSubject.filter((_, index) => (detailedGrade?.tp?.[index] ?? 0) >= kkm);
+            const studentTps = (detailedGrade && Array.isArray(detailedGrade.tp)) ? detailedGrade.tp : [];
+            const masteredTps = objectivesForSubject.filter((_, index) => (studentTps[index] ?? 0) >= kkm);
             const studentName = student.namaPanggilan || student.namaLengkap.split(' ')[0];
             let generatedText = "";
-            const hasGrades = detailedGrade?.tp?.some(t => t !== null && t !== undefined);
+            const hasGrades = studentTps.some(t => t !== null && t !== undefined);
 
             if (!hasGrades) generatedText = "Data nilai tujuan pembelajaran (formatif) belum diisi.";
             else if (masteredTps.length === totalTps && totalTps > 0) generatedText = `Ananda ${studentName} telah menguasai seluruh tujuan pembelajaran dengan sangat baik. Pertahankan prestasimu!`;
