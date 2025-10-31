@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Student, Extracurricular, StudentExtracurricular } from '../types';
+import { Student, Extracurricular, StudentExtracurricular } from '../types.ts';
 
 interface DataEkstrakurikulerPageProps {
     students: Student[];
