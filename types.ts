@@ -60,6 +60,11 @@ export interface AppSettings {
   nip_kepala_sekolah: string;
   nama_wali_kelas: string;
   nip_wali_kelas: string;
+  predikats: {
+    a: string;
+    b: string;
+    c: string;
+  };
   kop_layout: KopLayout;
 }
 
@@ -78,6 +83,8 @@ export interface Student {
     anakKe: string;
     asalTk: string;
     alamatSiswa: string;
+    diterimaDiKelas: string;
+    diterimaTanggal: string;
     namaAyah: string;
     namaIbu: string;
     pekerjaanAyah: string;
