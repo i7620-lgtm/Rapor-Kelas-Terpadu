@@ -946,7 +946,13 @@ useEffect(() => {
                   settings: settings, 
                   students: students,
                   grades: grades,
-                  subjects: subjects
+                  subjects: subjects,
+                  notes: notes,
+                  attendance: attendance,
+                  extracurriculars: extracurriculars,
+                  studentExtracurriculars: studentExtracurriculars,
+                  p5Projects: p5Projects,
+                  p5Assessments: p5Assessments,
                 });
       case 'DATA_SISWA':
         return React.createElement(DataSiswaPage, { students: students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
