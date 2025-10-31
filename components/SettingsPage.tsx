@@ -1,6 +1,7 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
-import { AppSettings, KopLayout, KopElement, Subject, Extracurricular } from '../types';
+import { AppSettings, KopLayout, KopElement, Subject, Extracurricular } from '../types.ts';
 import { GoogleGenAI } from '@google/genai';
 
 // Helper function moved outside to be accessible by both modal and preview
