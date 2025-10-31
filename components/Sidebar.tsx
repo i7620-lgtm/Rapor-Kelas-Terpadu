@@ -1,8 +1,8 @@
 
 
 import React from 'react';
-import { Page } from '../types.js';
-import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
+import { Page } from '../types';
+import { NAV_ITEMS, DATA_ACTIONS } from '../constants';
 
 interface SidebarProps {
   activePage: Page;
