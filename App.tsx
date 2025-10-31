@@ -1,19 +1,19 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Page, AppSettings, Student, StudentGrade, SubjectKey, StudentNotes, StudentAttendance, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, Subject, LearningObjectives, StudentDescriptions, defaultSubjects, NoteTemplate, P5ProjectDimension, KopLayout, P5AssessmentLevel } from './types';
-import { NAV_ITEMS } from './constants';
-import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import PlaceholderPage from './components/PlaceholderPage';
-import SettingsPage from './components/SettingsPage';
-import DataSiswaPage from './components/DataSiswaPage';
-import DataNilaiPage from './components/DataNilaiPage';
-import CatatanWaliKelasPage from './components/CatatanWaliKelasPage';
-import DataAbsensiPage from './components/DataAbsensiPage';
-import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage';
-import DataProyekP5Page from './components/DataProyekP5Page';
-import PrintRaporPage from './components/PrintRaporPage';
-import Toast from './components/Toast';
+import { Page, AppSettings, Student, StudentGrade, SubjectKey, StudentNotes, StudentAttendance, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, Subject, LearningObjectives, StudentDescriptions, defaultSubjects, NoteTemplate, P5ProjectDimension, KopLayout, P5AssessmentLevel } from './types.ts';
+import { NAV_ITEMS } from './constants.tsx';
+import Sidebar from './components/Sidebar.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import PlaceholderPage from './components/PlaceholderPage.tsx';
+import SettingsPage from './components/SettingsPage.tsx';
+import DataSiswaPage from './components/DataSiswaPage.tsx';
+import DataNilaiPage from './components/DataNilaiPage.tsx';
+import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.tsx';
+import DataAbsensiPage from './components/DataAbsensiPage.tsx';
+import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.tsx';
+import DataProyekP5Page from './components/DataProyekP5Page.tsx';
+import PrintRaporPage from './components/PrintRaporPage.tsx';
+import Toast from './components/Toast.tsx';
 
 
 declare const XLSX: any;
