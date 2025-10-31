@@ -1,5 +1,5 @@
 import React from 'react';
-import { Page, NavItem, DataAction, Student } from './types';
+import { Page, NavItem, DataAction, Student } from './types.ts';
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'DASHBOARD', label: 'Dashboard' },
