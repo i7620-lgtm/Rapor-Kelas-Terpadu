@@ -333,7 +333,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                 React.createElement('table', { className: "w-full text-sm text-left text-slate-500" }, React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" }, React.createElement('tr', null, React.createElement('th', { className: "px-3 py-3 w-10 text-center" }, sortBy === 'rank' ? 'Peringkat' : 'No'), React.createElement('th', { className: "px-6 py-3 min-w-[200px]" }, "Nama Siswa"), ...displaySubjects.map(s => React.createElement('th', { key: s.id, className: "px-2 py-3 w-20 text-center", title: s.fullName }, s.label)), React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "Jumlah"), React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "Rata-rata"))),
                 React.createElement('tbody', null,
                     processedData.map(data => {
-                        const predicateCValue = parseInt(predikats.c, 10);
+                        const predicateCValue = parseInt(predikats?.c, 10);
                         return (
                         React.createElement('tr', { key: data.id, className: "bg-white border-b hover:bg-slate-50" },
                             React.createElement('td', { className: "px-3 py-2 text-center font-medium" }, sortBy === 'rank' ? data.rank : data.no), React.createElement('th', { className: "px-6 py-2 font-medium text-slate-900 whitespace-nowrap" }, data.namaLengkap),
