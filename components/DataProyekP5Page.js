@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Student, P5Project, P5ProjectAssessment, P5AssessmentLevel, P5ProjectDimension, P5ProjectSubElement } from '../types.ts';
 import { P5_DATA } from './p5data.tsx';
 
-declare const XLSX: any;
-
 // Constants
 const ASSESSMENT_LEVELS: P5AssessmentLevel[] = [
   'Belum Berkembang',
@@ -11,8 +9,6 @@ const ASSESSMENT_LEVELS: P5AssessmentLevel[] = [
   'Berkembang sesuai Harapan',
   'Sangat Berkembang'
 ];
-
-type P5View = 'KELOLA_PROYEK' | 'UNDUH_UNGGAH';
 
 interface DataProyekP5PageProps {
     students: Student[];
@@ -35,10 +31,7 @@ const DataProyekP5Page: React.FC<DataProyekP5PageProps> = ({
     onBulkUpdateAssessments,
     showToast
 }) => {
-    const [activeView, setActiveView] = useState<P5View>('KELOLA_PROYEK');
     const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
 
     useEffect(() => {
         if (!activeProjectId && projects.length > 0) {
@@ -168,130 +161,6 @@ const DataProyekP5Page: React.FC<DataProyekP5PageProps> = ({
         }))
     ) || [];
 
-    const handleExportTemplate = useCallback(() => {
-        if (typeof XLSX === 'undefined') {
-            showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
-            return;
-        }
-        const wb = XLSX.utils.book_new();
-        const ws_data = [];
-    
-        // Create headers
-        const machineHeaders = ['studentId', 'namaLengkap'];
-        const humanHeaders = ['ID Siswa (Jangan Diubah)', 'Nama Siswa'];
-    
-        projects.forEach(project => {
-            project.dimensions.forEach(dim => {
-                dim.subElements.forEach(sub => {
-                    const subElementKey = `${dim.name}|${sub.name}`;
-                    const machineHeader = `PROJ:${project.id}|KEY:${subElementKey}`;
-                    const humanHeader = `${project.title} - ${sub.name}`;
-                    machineHeaders.push(machineHeader);
-                    humanHeaders.push(humanHeader);
-                });
-            });
-        });
-        
-        ws_data.push(machineHeaders);
-        ws_data.push(humanHeaders);
-    
-        // Create data rows
-        students.forEach(student => {
-            const row: (string | number | null)[] = [student.id, student.namaLengkap];
-            projects.forEach(project => {
-                const studentAssessments = assessments.find(a => a.studentId === student.id && a.projectId === project.id);
-                project.dimensions.forEach(dim => {
-                    dim.subElements.forEach(sub => {
-                        const subElementKey = `${dim.name}|${sub.name}`;
-                        const level = studentAssessments?.assessments[subElementKey] || null;
-                        row.push(level);
-                    });
-                });
-            });
-            ws_data.push(row);
-        });
-    
-        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-        ws['!rows'] = [{hidden: true}]; // Hide machine-readable headers
-        ws['!cols'] = [{wch: 20}, {wch: 30}, ...machineHeaders.slice(2).map(() => ({ wch: 30 }))];
-        XLSX.utils.book_append_sheet(wb, ws, "Penilaian P5");
-        XLSX.writeFile(wb, "Template_Penilaian_P5.xlsx");
-        showToast('Template berhasil diunduh.', 'success');
-    }, [projects, students, assessments, showToast]);
-
-    const handleTriggerImport = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-    
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const data = event.target?.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
-                const wsname = workbook.SheetNames[0];
-                const ws = workbook.Sheets[wsname];
-                const json: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
-                
-                if (json.length < 3) {
-                    showToast('File tidak valid. Setidaknya harus ada 2 baris header dan 1 baris data siswa.', 'error');
-                    return;
-                }
-    
-                const machineHeaders = json[0];
-                const studentDataRows = json.slice(2);
-                const updates: { studentId: number; projectId: string; subElementKey: string; level: P5AssessmentLevel | ''; }[] = [];
-    
-                studentDataRows.forEach(row => {
-                    const studentId = parseInt(row[0], 10);
-                    if (isNaN(studentId) || !students.some(s => s.id === studentId)) {
-                        return; // Skip if studentId is invalid or not found
-                    }
-    
-                    for (let i = 2; i < machineHeaders.length; i++) {
-                        const header = machineHeaders[i];
-                        const cellValue = row[i] || '';
-    
-                        if (header && typeof header === 'string' && header.startsWith('PROJ:')) {
-                            const parts = header.split('|');
-                            const projectId = parts[0].replace('PROJ:', '');
-                            const subElementKey = parts[1].replace('KEY:', '');
-                            
-                            const level = ASSESSMENT_LEVELS.includes(cellValue as P5AssessmentLevel) ? (cellValue as P5AssessmentLevel) : '';
-                            
-                            updates.push({
-                                studentId,
-                                projectId,
-                                subElementKey,
-                                level
-                            });
-                        }
-                    }
-                });
-    
-                if (updates.length > 0) {
-                    onBulkUpdateAssessments(updates);
-                    showToast(`${studentDataRows.length} baris data penilaian P5 berhasil diimpor.`, 'success');
-                } else {
-                    showToast('Tidak ada data penilaian valid yang ditemukan dalam file.', 'error');
-                }
-    
-            } catch (error) {
-                console.error('Error importing P5 data:', error);
-                showToast('Terjadi kesalahan saat memproses file.', 'error');
-            } finally {
-                if (e.target) e.target.value = '';
-            }
-        };
-        reader.readAsBinaryString(file);
-    };
-
-    const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition-colors";
-    const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-700 border border-indigo-700 rounded-lg shadow-sm";
-
     const renderKelolaProyek = () => {
         if (projects.length === 0) {
             return (
@@ -393,49 +262,14 @@ const DataProyekP5Page: React.FC<DataProyekP5PageProps> = ({
         );
     };
 
-    const renderUnduhUnggah = () => (
-        <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-800">Unduh dan Unggah Data</h3>
-            <p className="text-sm text-slate-500 mt-1">Unduh template data proyek P5 dalam format Excel yang sudah diisi untuk mengimpor data proyek P5 secara massal.</p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                <button 
-                    onClick={handleExportTemplate} 
-                    className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center"
-                    disabled={projects.length === 0}
-                >
-                    Unduh Template Data
-                </button>
-                <button 
-                    onClick={handleTriggerImport} 
-                    className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 text-center"
-                    disabled={projects.length === 0}
-                >
-                    Unggah Data Proyek P5
-                </button>
-            </div>
-            {projects.length === 0 && <p className="text-center text-red-600 mt-4 text-sm">Harap buat setidaknya satu proyek di tab 'Kelola Proyek' terlebih dahulu.</p>}
-        </div>
-    );
-
     return (
         <div className="space-y-6">
-            <input type="file" ref={fileInputRef} onChange={handleImportFile} style={{ display: 'none' }} accept=".xlsx, .xls" />
-            
             <div>
                 <h2 className="text-3xl font-bold text-slate-800">Data Proyek P5</h2>
                 <p className="mt-1 text-slate-600">Kelola proyek dan penilaian Profil Pelajar Pancasila.</p>
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => setActiveView('KELOLA_PROYEK')} className={activeView === 'KELOLA_PROYEK' ? activeButtonClass : inactiveButtonClass}>
-                    Kelola Proyek
-                </button>
-                <button onClick={() => setActiveView('UNDUH_UNGGAH')} className={activeView === 'UNDUH_UNGGAH' ? activeButtonClass : inactiveButtonClass}>
-                    Unduh/Unggah Data
-                </button>
-            </div>
             
-            {activeView === 'KELOLA_PROYEK' ? renderKelolaProyek() : renderUnduhUnggah()}
+            {renderKelolaProyek()}
         </div>
     );
 };
