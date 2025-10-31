@@ -1,7 +1,5 @@
-
-
-import React from 'react';
-import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student } from '../types.js';
+import React, { useMemo } from 'react';
+import { Page, StatCardProps, AnalysisItemProps, AppSettings, Student, StudentGrade, Subject } from '../types.js';
 
 // Define StatCard component inside Dashboard file scope as it's only used here
 const StatCard: React.FC<StatCardProps> = ({ title, value, description, actionText, onActionClick }) => (
@@ -50,9 +48,11 @@ interface DashboardProps {
   setActivePage: (page: Page) => void;
   settings: AppSettings;
   students: Student[];
+  grades: StudentGrade[];
+  subjects: Subject[];
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ setActivePage, settings, students }) => {
+const Dashboard: React.FC<DashboardProps> = ({ setActivePage, settings, students, grades, subjects }) => {
   const waliKelasName = settings.nama_wali_kelas || "Wali Kelas";
 
   const stats: StatCardProps[] = [
@@ -86,7 +86,47 @@ const Dashboard: React.FC<DashboardProps> = ({ setActivePage, settings, students
     },
   ];
   
-  const analysisItems: AnalysisItemProps[] = [];
+  const analysisItems: AnalysisItemProps[] = useMemo(() => {
+    const items: AnalysisItemProps[] = [];
+    const minGrade = parseInt(settings.predikats?.c || '70', 10);
+    const activeSubjects = subjects.filter(s => s.active);
+
+    // Check for incomplete settings first
+    if (!settings.nama_sekolah || !settings.nama_wali_kelas || !settings.tahun_ajaran || !settings.nama_kelas) {
+        items.push({
+            title: 'Pengaturan Dasar',
+            description: 'Lengkapi informasi sekolah, wali kelas, kelas, dan tahun ajaran di halaman Pengaturan.',
+            status: 'incomplete'
+        });
+    }
+
+    if (isNaN(minGrade) || students.length === 0 || activeSubjects.length === 0) {
+        return items;
+    }
+    
+    students.forEach(student => {
+        const studentGrade = grades.find(g => g.studentId === student.id);
+        if (!studentGrade) return;
+
+        const failingSubjects: string[] = [];
+        activeSubjects.forEach(subject => {
+            const grade = studentGrade.finalGrades[subject.id];
+            if (typeof grade === 'number' && grade < minGrade) {
+                failingSubjects.push(`${subject.label} (${grade})`);
+            }
+        });
+
+        if (failingSubjects.length > 0) {
+            items.push({
+                title: student.namaLengkap,
+                description: `Nilai di bawah KKM: ${failingSubjects.join(', ')}`,
+                status: 'attention'
+            });
+        }
+    });
+
+    return items;
+  }, [students, grades, subjects, settings]);
 
   return (
     <div className="space-y-8">
@@ -109,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActivePage, settings, students
             </div>
           ) : (
             <div className="bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center">
-              <p className="text-slate-500">Tidak ada data analisis yang tersedia untuk ditampilkan.</p>
+              <p className="text-slate-500">Semua data terlihat baik! Tidak ada item yang memerlukan perhatian khusus saat ini.</p>
             </div>
           )}
         </div>
