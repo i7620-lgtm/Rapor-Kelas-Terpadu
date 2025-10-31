@@ -1,6 +1,7 @@
 
+
 import React, { useState, useCallback, useRef } from 'react';
-import { Student, StudentAttendance } from '../types';
+import { Student, StudentAttendance } from '../types.ts';
 
 interface DataAbsensiPageProps {
     students: Student[];
