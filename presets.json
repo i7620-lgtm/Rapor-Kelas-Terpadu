@@ -42,13 +42,13 @@
       "id": "P5_BHINNEKA",
       "title": "Bhinneka Tunggal Ika",
       "description": "Proyek yang bertujuan untuk mengenal dan merayakan keragaman budaya di Indonesia melalui kegiatan seperti pameran budaya, pentas seni, dan kuliner tradisional.",
-      "dimensions": ["Beriman, bertakwa kepada Tuhan YME, dan berakhlak mulia", "Berkebinekaan global", "Gotong royoyong"]
+      "dimensions": ["Beriman, bertakwa kepada Tuhan YME, dan berakhlak mulia", "Berkebinekaan global", "Bergotong-royong"]
     },
     {
       "id": "P5_KEWIRAUSAHAAN",
       "title": "Kewirausahaan",
       "description": "Proyek untuk menumbuhkan jiwa kewirausahaan siswa melalui pembuatan dan penjualan produk kreatif hasil karya sendiri.",
-      "dimensions": ["Mandiri", "Kreatif", "Gotong royong"]
+      "dimensions": ["Mandiri", "Kreatif", "Bergotong-royong"]
     }
   ]
 }
