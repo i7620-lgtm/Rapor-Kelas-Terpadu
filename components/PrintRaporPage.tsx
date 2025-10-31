@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AppSettings, Student, StudentGrade, StudentAttendance, StudentNotes, Subject, StudentDescriptions, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, KopLayout, KopElement } from '../types';
+import { AppSettings, Student, StudentGrade, StudentAttendance, StudentNotes, Subject, StudentDescriptions, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, KopLayout, KopElement } from '../types.ts';
 
 declare const html2canvas: any;
 declare const jspdf: any;
