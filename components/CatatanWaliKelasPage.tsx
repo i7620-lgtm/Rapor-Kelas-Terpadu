@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Student, StudentNotes, NoteTemplate } from '../types';
+import { Student, StudentNotes, NoteTemplate } from '../types.ts';
 
 interface CatatanWaliKelasPageProps {
     students: Student[];
