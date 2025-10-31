@@ -14,8 +14,8 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const DATA_ACTIONS: DataAction[] = [
-  { id: 'EKSPORT', label: 'Ekspor Seluruh Data' },
-  { id: 'IMPORT', label: 'Impor Seluruh Data' },
+  { id: 'EKSPORT', label: 'Unduh Semua Template' },
+  { id: 'IMPORT', label: 'Unggah dari Template' },
 ];
 
 export const studentFieldDefinitions: { key: keyof Omit<Student, 'id' | 'no'>; label: string; description: string }[] = [
@@ -32,6 +32,8 @@ export const studentFieldDefinitions: { key: keyof Omit<Student, 'id' | 'no'>; l
     { key: 'anakKe', label: 'Anak Ke-', description: 'Urutan kelahiran siswa (e.g., 1, 2).' },
     { key: 'asalTk', label: 'Asal TK', description: 'Nama TK atau PAUD asal siswa.' },
     { key: 'alamatSiswa', label: 'Alamat Siswa', description: 'Alamat tempat tinggal siswa.' },
+    { key: 'diterimaDiKelas', label: 'Diterima di Kelas', description: 'Siswa diterima di kelas ini (misal: I, II).' },
+    { key: 'diterimaTanggal', label: 'Diterima Tanggal', description: 'Tanggal siswa diterima di sekolah ini.' },
     { key: 'namaAyah', label: 'Nama Ayah', description: 'Nama lengkap ayah siswa.' },
     { key: 'namaIbu', label: 'Nama Ibu', description: 'Nama lengkap ibu siswa.' },
     { key: 'pekerjaanAyah', label: 'Pekerjaan Ayah', description: 'Pekerjaan ayah siswa.' },
