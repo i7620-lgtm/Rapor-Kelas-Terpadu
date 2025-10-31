@@ -1,24 +1,40 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
-import { Page, AppSettings, Student, StudentGrade, SubjectKey, StudentNotes, StudentAttendance, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, Subject, LearningObjectives, StudentDescriptions, defaultSubjects, NoteTemplate, P5ProjectDimension, KopLayout, P5AssessmentLevel } from './types.ts';
-import { NAV_ITEMS } from './constants.tsx';
-import Sidebar from './components/Sidebar.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import PlaceholderPage from './components/PlaceholderPage.tsx';
-import SettingsPage from './components/SettingsPage.tsx';
-import DataSiswaPage from './components/DataSiswaPage.tsx';
-import DataNilaiPage from './components/DataNilaiPage.tsx';
-import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.tsx';
-import DataAbsensiPage from './components/DataAbsensiPage.tsx';
-import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.tsx';
-import DataProyekP5Page from './components/DataProyekP5Page.tsx';
-import PrintRaporPage from './components/PrintRaporPage.tsx';
-import Toast from './components/Toast.tsx';
+import { NAV_ITEMS } from './constants.js';
+import Sidebar from './components/Sidebar.js';
+import Dashboard from './components/Dashboard.js';
+import PlaceholderPage from './components/PlaceholderPage.js';
+import SettingsPage from './components/SettingsPage.js';
+import DataSiswaPage from './components/DataSiswaPage.js';
+import DataNilaiPage from './components/DataNilaiPage.js';
+import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
+import DataAbsensiPage from './components/DataAbsensiPage.js';
+import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
+import DataProyekP5Page from './components/DataProyekP5Page.js';
+import PrintRaporPage from './components/PrintRaporPage.js';
+import Toast from './components/Toast.js';
 
+const defaultSubjects = [
+    { id: 'PAI', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PAI', active: false },
+    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: true },
+    { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: true },
+    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: true },
+    { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: true },
+    { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: true },
+    { id: 'PP', fullName: 'Pendidikan Pancasila', label: 'PP', active: true },
+    { id: 'BIndo', fullName: 'Bahasa Indonesia', label: 'B. Indo', active: true },
+    { id: 'MTK', fullName: 'Matematika', label: 'MTK', active: true },
+    { id: 'IPAS', fullName: 'Ilmu Pengetahuan Alam dan Sosial', label: 'IPAS', active: true },
+    { id: 'SeniMusik', fullName: 'Seni Budaya (Seni Musik)', label: 'S. Musik', active: true },
+    { id: 'SeniRupa', fullName: 'Seni Budaya (Seni Rupa)', label: 'S. Rupa', active: false },
+    { id: 'SeniTari', fullName: 'Seni Budaya (Seni Tari)', label: 'S. Tari', active: false },
+    { id: 'SeniTeater', fullName: 'Seni Budaya (Seni Teater)', label: 'S. Teater', active: false },
+    { id: 'PJOK', fullName: 'Pendidikan Jasmani, Olahraga, dan Kesehatan', label: 'PJOK', active: true },
+    { id: 'BIng', fullName: 'Bahasa Inggris', label: 'B. Ing', active: true },
+    { id: 'BSunda', fullName: 'Muatan Lokal (Bahasa Sunda)', label: 'B. Sunda', active: false },
+    { id: 'BBali', fullName: 'Muatan Lokal (Bahasa Bali)', label: 'B. Bali', active: true },
+];
 
-declare const XLSX: any;
-
-const initialSettings: AppSettings = {
+const initialSettings = {
   nama_dinas_pendidikan: '', nama_sekolah: '', npsn: '', alamat_sekolah: '', desa_kelurahan: '',
   kecamatan: '', kota_kabupaten: '', provinsi: '', kode_pos: '', email_sekolah: '',
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
@@ -28,7 +44,7 @@ const initialSettings: AppSettings = {
   kop_layout: []
 };
 
-const initialStudents: Student[] = [
+const initialStudents = [
   {
       id: 1,
       namaLengkap: 'DUMMY RUMMY',
@@ -59,23 +75,23 @@ const initialStudents: Student[] = [
   }
 ];
 
-const initialGrades: StudentGrade[] = [
+const initialGrades = [
     { studentId: 1, detailedGrades: {}, finalGrades: {} }
 ];
 
-const initialNotes: StudentNotes = {
+const initialNotes = {
     1: 'Siswa menunjukkan perkembangan yang baik dalam aspek akademik dan aktif dalam kegiatan kelas. Perlu meningkatkan konsentrasi saat pelajaran berlangsung.'
 };
 
-const initialAttendance: StudentAttendance[] = [
+const initialAttendance = [
     { studentId: 1, sakit: 1, izin: 2, alpa: 0 }
 ];
 
-const initialStudentExtracurriculars: StudentExtracurricular[] = [
+const initialStudentExtracurriculars = [
     { studentId: 1, assignedActivities: ['PRAMUKA', null, null, null, null], descriptions: { 'PRAMUKA': 'Ananda Rummy sangat aktif dan antusias dalam mengikuti kegiatan Pramuka.' } }
 ];
 
-const initialP5Assessments: P5ProjectAssessment[] = [
+const initialP5Assessments = [
     {
         studentId: 1,
         projectId: 'P5_BHINNEKA',
@@ -83,7 +99,7 @@ const initialP5Assessments: P5ProjectAssessment[] = [
     }
 ];
 
-const getGradeNumber = (str: string): number | null => {
+const getGradeNumber = (str) => {
     if (!str) return null;
     const match = str.match(/\d+/);
     if (match) {
@@ -99,13 +115,13 @@ const getGradeNumber = (str: string): number | null => {
     return null;
 };
 
-const App: React.FC = () => {
-  const [activePage, setActivePage] = useState<Page>('DASHBOARD');
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+const App = () => {
+  const [activePage, setActivePage] = useState('DASHBOARD');
+  const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [presets, setPresets] = useState<any>(null);
+  const [presets, setPresets] = useState(null);
   
-  const [settings, setSettings] = useState<AppSettings>(() => {
+  const [settings, setSettings] = useState(() => {
     try {
         const saved = localStorage.getItem('appSettings');
         return saved ? JSON.parse(saved) : initialSettings;
@@ -113,7 +129,7 @@ const App: React.FC = () => {
         return initialSettings;
     }
   });
-  const [students, setStudents] = useState<Student[]>(() => {
+  const [students, setStudents] = useState(() => {
     try {
         const saved = localStorage.getItem('appStudents');
         return saved ? JSON.parse(saved) : initialStudents;
@@ -121,7 +137,7 @@ const App: React.FC = () => {
         return initialStudents;
     }
   });
-  const [grades, setGrades] = useState<StudentGrade[]>(() => {
+  const [grades, setGrades] = useState(() => {
     try {
         const saved = localStorage.getItem('appGrades');
         return saved ? JSON.parse(saved) : initialGrades;
@@ -129,7 +145,7 @@ const App: React.FC = () => {
         return initialGrades;
     }
   });
-  const [notes, setNotes] = useState<StudentNotes>(() => {
+  const [notes, setNotes] = useState(() => {
       try {
           const saved = localStorage.getItem('appNotes');
           return saved ? JSON.parse(saved) : initialNotes;
@@ -137,7 +153,7 @@ const App: React.FC = () => {
           return initialNotes;
       }
   });
-  const [attendance, setAttendance] = useState<StudentAttendance[]>(() => {
+  const [attendance, setAttendance] = useState(() => {
       try {
           const saved = localStorage.getItem('appAttendance');
           return saved ? JSON.parse(saved) : initialAttendance;
@@ -145,7 +161,7 @@ const App: React.FC = () => {
           return initialAttendance;
       }
   });
-  const [extracurriculars, setExtracurriculars] = useState<Extracurricular[]>(() => {
+  const [extracurriculars, setExtracurriculars] = useState(() => {
       try {
           const saved = localStorage.getItem('appExtracurriculars');
           return saved ? JSON.parse(saved) : [];
@@ -153,7 +169,7 @@ const App: React.FC = () => {
           return [];
       }
   });
-  const [studentExtracurriculars, setStudentExtracurriculars] = useState<StudentExtracurricular[]>(() => {
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => {
       try {
           const saved = localStorage.getItem('appStudentExtracurriculars');
           return saved ? JSON.parse(saved) : initialStudentExtracurriculars;
@@ -161,14 +177,14 @@ const App: React.FC = () => {
           return initialStudentExtracurriculars;
       }
   });
-   const [p5Projects, setP5Projects] = useState<P5Project[]>(() => {
+   const [p5Projects, setP5Projects] = useState(() => {
       try {
           const saved = localStorage.getItem('appP5Projects');
           const parsed = saved ? JSON.parse(saved) : [];
           if (Array.isArray(parsed)) {
             return parsed.map(p => ({
               ...p,
-              dimensions: Array.isArray(p.dimensions) ? p.dimensions.map((d: any) => typeof d === 'string' ? { name: d, subElements: [] } : d) : []
+              dimensions: Array.isArray(p.dimensions) ? p.dimensions.map((d) => typeof d === 'string' ? { name: d, subElements: [] } : d) : []
             }));
           }
           return [];
@@ -176,7 +192,7 @@ const App: React.FC = () => {
           return [];
       }
   });
-  const [p5Assessments, setP5Assessments] = useState<P5ProjectAssessment[]>(() => {
+  const [p5Assessments, setP5Assessments] = useState(() => {
       try {
           const saved = localStorage.getItem('appP5Assessments');
           return saved ? JSON.parse(saved) : initialP5Assessments;
@@ -185,7 +201,7 @@ const App: React.FC = () => {
       }
   });
 
-  const [subjects, setSubjects] = useState<Subject[]>(() => {
+  const [subjects, setSubjects] = useState(() => {
     try {
         const saved = localStorage.getItem('appSubjects');
         return saved ? JSON.parse(saved) : defaultSubjects;
@@ -194,7 +210,7 @@ const App: React.FC = () => {
     }
   });
 
-  const [learningObjectives, setLearningObjectives] = useState<LearningObjectives>(() => {
+  const [learningObjectives, setLearningObjectives] = useState(() => {
       try {
           const saved = localStorage.getItem('appLearningObjectives');
           return saved ? JSON.parse(saved) : {};
@@ -203,7 +219,7 @@ const App: React.FC = () => {
       }
   });
 
-  const [studentDescriptions, setStudentDescriptions] = useState<StudentDescriptions>(() => {
+  const [studentDescriptions, setStudentDescriptions] = useState(() => {
       try {
           const saved = localStorage.getItem('appStudentDescriptions');
           return saved ? JSON.parse(saved) : {};
@@ -230,9 +246,9 @@ useEffect(() => {
             
             const savedP5Projects = localStorage.getItem('appP5Projects');
             if (!savedP5Projects || savedP5Projects === '[]') {
-                const projectsWithSubElements = (loadedPresets.p5Projects || []).map((p: any) => ({
+                const projectsWithSubElements = (loadedPresets.p5Projects || []).map((p) => ({
                     ...p,
-                    dimensions: (p.dimensions || []).map((d: any) => typeof d === 'string' ? { name: d, subElements: [] } : d)
+                    dimensions: (p.dimensions || []).map((d) => typeof d === 'string' ? { name: d, subElements: [] } : d)
                 }));
                 setP5Projects(projectsWithSubElements);
             }
@@ -252,7 +268,6 @@ useEffect(() => {
     const loadLearningObjectives = async () => {
         const savedObjectivesStr = localStorage.getItem('appLearningObjectives');
         
-        // If there's a different class in settings compared to what's in storage, fetch new data
         if (!settings.nama_kelas) {
             if (savedObjectivesStr) {
                 localStorage.removeItem('appLearningObjectives');
@@ -270,13 +285,12 @@ useEffect(() => {
         const gradeKey = `Kelas ${gradeNumber}`;
         const currentSavedGradeKey = savedObjectivesStr ? Object.keys(JSON.parse(savedObjectivesStr))[0] : null;
 
-        // Fetch only if the class has changed or if there are no saved objectives
         if (gradeKey !== currentSavedGradeKey) {
             try {
                 const response = await fetch(`/tp${gradeNumber}.json`);
                 if (!response.ok) {
                     console.warn(`Could not load tp${gradeNumber}.json: ${response.statusText}`);
-                    setLearningObjectives({}); // Set to empty if file not found
+                    setLearningObjectives({}); 
                     return;
                 }
                 const objectivesForClass = await response.json();
@@ -333,7 +347,6 @@ useEffect(() => {
   }, [subjects]);
 
   useEffect(() => {
-      // Only save if there are objectives to save
       if (Object.keys(learningObjectives).length > 0) {
         localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives));
       }
@@ -343,24 +356,24 @@ useEffect(() => {
       localStorage.setItem('appStudentDescriptions', JSON.stringify(studentDescriptions));
   }, [studentDescriptions]);
 
-  const showToast = useCallback((message: string, type: 'success' | 'error') => {
+  const showToast = useCallback((message, type) => {
     setToast({ message, type });
   }, []);
 
-  const handleSettingsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSettingsChange = useCallback((e) => {
     const { name, value, files, type } = e.target;
     if (type === 'file' && files && files[0]) {
         const fileReader = new FileReader();
         fileReader.readAsDataURL(files[0]);
         fileReader.onload = () => {
-            setSettings(prev => ({ ...prev, [name]: fileReader.result as string }));
+            setSettings(prev => ({ ...prev, [name]: fileReader.result }));
         };
     } else {
         setSettings(prev => ({ ...prev, [name]: value }));
     }
   }, []);
 
-  const handleUpdateKopLayout = useCallback((newLayout: KopLayout) => {
+  const handleUpdateKopLayout = useCallback((newLayout) => {
     setSettings(prev => ({ ...prev, kop_layout: newLayout }));
   }, []);
 
@@ -368,17 +381,17 @@ useEffect(() => {
     showToast('Pengaturan berhasil disimpan!', 'success');
   }, [showToast]);
 
-  const handleUpdatePredikats = useCallback((newPredikats: { a: string, b: string, c: string }) => {
+  const handleUpdatePredikats = useCallback((newPredikats) => {
     setSettings(prev => ({ ...prev, predikats: newPredikats }));
   }, []);
   
-  const handleSaveStudent = useCallback((studentData: Omit<Student, 'id'> & { id?: number }) => {
+  const handleSaveStudent = useCallback((studentData) => {
     setStudents(prev => {
         if (studentData.id) {
-            return prev.map(s => s.id === studentData.id ? { ...s, ...studentData } as Student : s);
+            return prev.map(s => s.id === studentData.id ? { ...s, ...studentData } : s);
         } else {
             const newId = prev.length > 0 ? Math.max(...prev.map(s => s.id)) + 1 : 1;
-            const newStudent = { ...studentData, id: newId } as Student;
+            const newStudent = { ...studentData, id: newId };
             setGrades(g_prev => [...g_prev, { studentId: newId, detailedGrades: {}, finalGrades: {} }]);
             setAttendance(a_prev => [...a_prev, { studentId: newId, sakit: 0, izin: 0, alpa: 0 }]);
             setStudentExtracurriculars(se_prev => [...se_prev, { studentId: newId, assignedActivities: [], descriptions: {} }]);
@@ -387,14 +400,14 @@ useEffect(() => {
     });
   }, []);
   
-  const handleBulkSaveStudents = useCallback((studentsData: Omit<Student, 'id'>[]) => {
+  const handleBulkSaveStudents = useCallback((studentsData) => {
     let newIdCounter = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
     
-    const newStudents: Student[] = [];
-    const newGrades: StudentGrade[] = [];
-    const newAttendance: StudentAttendance[] = [];
-    const newStudentExtracurriculars: StudentExtracurricular[] = [];
-    const newP5Assessments: P5ProjectAssessment[] = [];
+    const newStudents = [];
+    const newGrades = [];
+    const newAttendance = [];
+    const newStudentExtracurriculars = [];
+    const newP5Assessments = [];
 
     studentsData.forEach(studentData => {
         const newId = newIdCounter++;
@@ -416,7 +429,7 @@ useEffect(() => {
     showToast(`${newStudents.length} siswa berhasil diimpor!`, 'success');
   }, [students, p5Projects, showToast]);
 
-  const handleDeleteStudent = useCallback((studentId: number) => {
+  const handleDeleteStudent = useCallback((studentId) => {
     setStudents(prev => prev.filter(s => s.id !== studentId));
     setGrades(prev => prev.filter(g => g.studentId !== studentId));
     setNotes(prev => {
@@ -429,7 +442,7 @@ useEffect(() => {
     setP5Assessments(prev => prev.filter(a => a.studentId !== studentId));
   }, []);
   
-  const handleUpdateGrade = useCallback((studentId: number, subject: SubjectKey, value: number | null) => {
+  const handleUpdateGrade = useCallback((studentId, subject, value) => {
     setGrades(prev => {
         const studentGradeIndex = prev.findIndex(g => g.studentId === studentId);
         if (studentGradeIndex > -1) {
@@ -449,28 +462,28 @@ useEffect(() => {
     });
   }, []);
 
-  const handleBulkUpdateGrades = useCallback((newGrades: StudentGrade[]) => {
+  const handleBulkUpdateGrades = useCallback((newGrades) => {
     setGrades(prev => {
-        const updatedGradesMap = new Map<number, StudentGrade>(prev.map(g => [g.studentId, g]));
+        const updatedGradesMap = new Map(prev.map(g => [g.studentId, g]));
         newGrades.forEach(newGrade => {
             if (newGrade && typeof newGrade === 'object') {
               const existing = updatedGradesMap.get(newGrade.studentId) || { studentId: newGrade.studentId, detailedGrades: {}, finalGrades: {} };
-              updatedGradesMap.set(newGrade.studentId, { ...existing, ...newGrade });
+              updatedGradesMap.set(newGrade.studentId, Object.assign({}, existing, newGrade));
             }
         });
         return Array.from(updatedGradesMap.values());
     });
   }, []);
 
-  const handleUpdateNote = useCallback((studentId: number, note: string) => {
+  const handleUpdateNote = useCallback((studentId, note) => {
     setNotes(prev => ({ ...prev, [studentId]: note }));
   }, []);
 
-  const handleBulkUpdateNotes = useCallback((newNotes: StudentNotes) => {
+  const handleBulkUpdateNotes = useCallback((newNotes) => {
     setNotes(prev => ({ ...prev, ...newNotes }));
   }, []);
 
-  const handleUpdateAttendance = useCallback((studentId: number, type: 'sakit' | 'izin' | 'alpa', value: number) => {
+  const handleUpdateAttendance = useCallback((studentId, type, value) => {
     setAttendance(prev => {
         const studentAttIndex = prev.findIndex(a => a.studentId === studentId);
         const updatedAttendance = [...prev];
@@ -484,34 +497,34 @@ useEffect(() => {
     });
   }, []);
   
-  const handleBulkUpdateAttendance = useCallback((newAttendanceData: StudentAttendance[]) => {
+  const handleBulkUpdateAttendance = useCallback((newAttendanceData) => {
       setAttendance(prev => {
-          const updatedAttendanceMap = new Map<number, StudentAttendance>(prev.map(a => [a.studentId, a]));
+          const updatedAttendanceMap = new Map(prev.map(a => [a.studentId, a]));
           newAttendanceData.forEach(newAtt => {
               if (newAtt && typeof newAtt === 'object') {
                 const existing = updatedAttendanceMap.get(newAtt.studentId) || { studentId: newAtt.studentId, sakit: 0, izin: 0, alpa: 0 };
-                updatedAttendanceMap.set(newAtt.studentId, { ...existing, ...newAtt });
+                updatedAttendanceMap.set(newAtt.studentId, Object.assign({}, existing, newAtt));
               }
           });
           return Array.from(updatedAttendanceMap.values());
       });
   }, []);
 
-  const handleUpdateExtracurriculars = useCallback((newExtracurriculars: Extracurricular[]) => {
+  const handleUpdateExtracurriculars = useCallback((newExtracurriculars) => {
       setExtracurriculars(newExtracurriculars);
   }, []);
   
-  const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars: StudentExtracurricular[]) => {
+  const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => {
       setStudentExtracurriculars(newStudentExtracurriculars);
   }, []);
 
-  const handleBulkUpdateStudentExtracurriculars = useCallback((newData: StudentExtracurricular[]) => {
+  const handleBulkUpdateStudentExtracurriculars = useCallback((newData) => {
     setStudentExtracurriculars(prev => {
-      const dataMap = new Map<number, StudentExtracurricular>(prev.map(item => [item.studentId, item]));
+      const dataMap = new Map(prev.map(item => [item.studentId, item]));
       newData.forEach(newItem => {
         if (newItem && typeof newItem === 'object') {
           const existing = dataMap.get(newItem.studentId) || { studentId: newItem.studentId, assignedActivities: [], descriptions: {} };
-          dataMap.set(newItem.studentId, { ...existing, ...newItem });
+          dataMap.set(newItem.studentId, Object.assign({}, existing, newItem));
         }
       });
       return Array.from(dataMap.values());
@@ -519,17 +532,17 @@ useEffect(() => {
   }, []);
 
   const handleUpdateDetailedGrade = useCallback((
-      studentId: number,
-      subject: SubjectKey,
-      type: 'tp' | 'sts' | 'sas',
-      value: number | null,
-      tpIndex?: number
+      studentId,
+      subject,
+      type,
+      value,
+      tpIndex
   ) => {
       setGrades(prev => {
           const studentGradeIndex = prev.findIndex(g => g.studentId === studentId);
           const updatedGrades = [...prev];
 
-          let newGrade: StudentGrade;
+          let newGrade;
           if (studentGradeIndex > -1) {
               newGrade = JSON.parse(JSON.stringify(updatedGrades[studentGradeIndex]));
           } else {
@@ -576,7 +589,7 @@ useEffect(() => {
             ? (detailedGrade.tp || []).slice(0, numberOfActiveTps)
             : (detailedGrade.tp || []);
 
-          const validTps = tpsToConsider.filter((t): t is number => typeof t === 'number');
+          const validTps = tpsToConsider.filter((t) => typeof t === 'number');
           const averageTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
           const sts = detailedGrade.sts ?? 0;
           const sas = detailedGrade.sas ?? 0;
@@ -595,19 +608,19 @@ useEffect(() => {
       });
   }, [subjects, settings.nama_kelas, learningObjectives]);
 
-  const handleUpdateSubjects = useCallback((newSubjects: Subject[]) => {
+  const handleUpdateSubjects = useCallback((newSubjects) => {
       setSubjects(newSubjects);
   }, []);
 
-  const handleUpdateLearningObjectives = useCallback((newObjectives: LearningObjectives) => {
+  const handleUpdateLearningObjectives = useCallback((newObjectives) => {
       setLearningObjectives(newObjectives);
   }, []);
 
-  const handleUpdateStudentDescriptions = useCallback((newDescriptions: StudentDescriptions) => {
+  const handleUpdateStudentDescriptions = useCallback((newDescriptions) => {
       setStudentDescriptions(newDescriptions);
   }, []);
 
-  const handleUpdateP5Project = useCallback((project: P5Project) => {
+  const handleUpdateP5Project = useCallback((project) => {
     setP5Projects(prev => {
         const index = prev.findIndex(p => p.id === project.id);
         if (index > -1) {
@@ -619,12 +632,12 @@ useEffect(() => {
     });
   }, []);
 
-  const handleDeleteP5Project = useCallback((projectId: string) => {
+  const handleDeleteP5Project = useCallback((projectId) => {
       setP5Projects(prev => prev.filter(p => p.id !== projectId));
       setP5Assessments(prev => prev.filter(a => a.projectId !== projectId));
   }, []);
 
-  const handleUpdateP5Assessment = useCallback((studentId: number, projectId: string, subElementKey: string, level: any) => {
+  const handleUpdateP5Assessment = useCallback((studentId, projectId, subElementKey, level) => {
       setP5Assessments(prev => {
           const studentAssessmentIndex = prev.findIndex(a => a.studentId === studentId && a.projectId === projectId);
           const updatedAssessments = [...prev];
@@ -644,9 +657,9 @@ useEffect(() => {
       });
   }, []);
 
-  const handleBulkUpdateP5Assessments = useCallback((updates: { studentId: number; projectId: string; subElementKey: string; level: any; }[]) => {
+  const handleBulkUpdateP5Assessments = useCallback((updates) => {
     setP5Assessments(prev => {
-        const assessmentsMap = new Map<string, P5ProjectAssessment>();
+        const assessmentsMap = new Map();
         prev.forEach(a => assessmentsMap.set(`${a.studentId}-${a.projectId}`, JSON.parse(JSON.stringify(a))));
         
         updates.forEach(({ studentId, projectId, subElementKey, level }) => {
@@ -671,7 +684,6 @@ useEffect(() => {
     try {
         const wb = XLSX.utils.book_new();
 
-        // 1. Petunjuk Sheet
         const petunjukData = [
             ["Petunjuk Pengisian Template RKT"], [],
             ["Sheet", "Keterangan"],
@@ -690,15 +702,14 @@ useEffect(() => {
         wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
         XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
 
-        // 2. Data Siswa Sheet
-        const studentHeaderMapping: Array<[keyof Student | 'no', string]> = [
+        const studentHeaderMapping = [
             ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['kewarganegaraan', "Kewarganegaraan"], ['statusDalamKeluarga', "Status dalam Keluarga"], ['anakKe', "Anak Ke-"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
         ];
         const formattedStudents = students.map((student, index) => {
-            const newStudent: { [key: string]: any } = {};
+            const newStudent = {};
             studentHeaderMapping.forEach(([key, header]) => {
                 if (key === 'no') newStudent[header] = index + 1;
-                else newStudent[header] = student[key as keyof Student];
+                else newStudent[header] = student[key];
             });
             return newStudent;
         });
@@ -706,7 +717,6 @@ useEffect(() => {
         wsSiswa['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
         XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
 
-        // 3. Data Absensi Sheet
         const dataAbsensi = students.map(student => {
             const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
             return { "Nama Lengkap": student.namaLengkap, "Sakit (S)": studentAtt.sakit, "Izin (I)": studentAtt.izin, "Alpa (A)": studentAtt.alpa };
@@ -715,13 +725,11 @@ useEffect(() => {
         wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
         XLSX.utils.book_append_sheet(wb, wsAbsensi, "Data Absensi");
 
-        // 4. Catatan Wali Kelas Sheet
         const dataCatatan = students.map(student => ({ "Nama Lengkap": student.namaLengkap, "Catatan Wali Kelas": notes[student.id] || '' }));
         const wsCatatan = XLSX.utils.json_to_sheet(dataCatatan);
         wsCatatan['!cols'] = [{ wch: 30 }, { wch: 80 }];
         XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
 
-        // 5. Data Ekstrakurikuler Sheet
         const MAX_EXTRA_FIELDS = 5;
         const headersExtra = ["Nama Lengkap"];
         for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
@@ -730,7 +738,7 @@ useEffect(() => {
         }
         const dataEkstra = students.map(student => {
             const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
-            const row: { [key: string]: string } = { "Nama Lengkap": student.namaLengkap };
+            const row = { "Nama Lengkap": student.namaLengkap };
             for (let i = 0; i < MAX_EXTRA_FIELDS; i++) {
                 const activityId = studentExtra?.assignedActivities?.[i] || null;
                 const activityName = extracurriculars.find(e => e.id === activityId)?.name || '';
@@ -744,7 +752,6 @@ useEffect(() => {
         wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
         XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
         
-        // 6. Penilaian P5 Sheet
         const p5_ws_data = [];
         const machineHeaders = ['studentId', 'namaLengkap'];
         const humanHeaders = ['ID Siswa (Jangan Diubah)', 'Nama Siswa'];
@@ -760,7 +767,7 @@ useEffect(() => {
         p5_ws_data.push(machineHeaders);
         p5_ws_data.push(humanHeaders);
         students.forEach(student => {
-            const row: (string | number | null)[] = [student.id, student.namaLengkap];
+            const row = [student.id, student.namaLengkap];
             p5Projects.forEach(project => {
                 const studentAssessments = p5Assessments.find(a => a.studentId === student.id && a.projectId === project.id);
                 project.dimensions.forEach(dim => {
@@ -777,10 +784,9 @@ useEffect(() => {
         wsP5['!cols'] = [{wch: 20}, {wch: 30}, ...machineHeaders.slice(2).map(() => ({ wch: 30 }))];
         XLSX.utils.book_append_sheet(wb, wsP5, "Penilaian P5");
 
-        // 7. Nilai per Mapel Sheets
         const activeSubjects = subjects.filter(s => s.active);
         const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-        let objectivesForCurrentClass: { [subject: string]: string[] } = {};
+        let objectivesForCurrentClass = {};
         if (currentGradeNumber !== null) {
             for (const key in learningObjectives) {
                 if (getGradeNumber(key) === currentGradeNumber) objectivesForCurrentClass = learningObjectives[key];
@@ -791,7 +797,7 @@ useEffect(() => {
             const numberOfTps = subjectTps.length;
             const perMapelData = students.map((student, index) => {
                 const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-                const row: any = { "No": index + 1, "Nama Siswa": student.namaLengkap };
+                const row = { "No": index + 1, "Nama Siswa": student.namaLengkap };
                 for (let i = 0; i < numberOfTps; i++) row[`TP ${i + 1}`] = detailedGrade?.tp?.[i] ?? '';
                 row["STS"] = detailedGrade?.sts ?? '';
                 row["SAS"] = detailedGrade?.sas ?? '';
@@ -803,13 +809,12 @@ useEffect(() => {
             XLSX.utils.book_append_sheet(wb, wsPerMapel, safeSheetName);
         });
 
-        // 8. Tujuan Pembelajaran Sheet
         const subjectsForObjectives = activeSubjects.filter(s => objectivesForCurrentClass[s.fullName]);
         const maxObjectives = subjectsForObjectives.reduce((max, s) => Math.max(max, (objectivesForCurrentClass[s.fullName] || []).length), 0);
         const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
         const tpData = subjectsForObjectives.map((s, i) => {
             const objectivesForSubject = objectivesForCurrentClass[s.fullName] || [];
-            const rowData: (string | number)[] = [i + 1, s.fullName];
+            const rowData = [i + 1, s.fullName];
             for (let j = 0; j < maxObjectives; j++) rowData.push(objectivesForSubject[j] || '');
             return rowData;
         });
@@ -817,7 +822,6 @@ useEffect(() => {
         wsTujuan['!cols'] = [{ wch: 5 }, { wch: 45 }, ...Array(maxObjectives).fill({ wch: 40 })];
         XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
         
-        // Finalize and download
         XLSX.writeFile(wb, `Template_Lengkap_RKT_${new Date().toISOString().split('T')[0]}.xlsx`);
         showToast('Template lengkap berhasil diekspor!', 'success');
     } catch (error) {
@@ -831,7 +835,7 @@ useEffect(() => {
     input.type = 'file';
     input.accept = '.xlsx, .xls';
     input.onchange = (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
+        const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -840,74 +844,62 @@ useEffect(() => {
                 const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
                 let importCount = 0;
 
-                const studentMap = new Map<string, number>(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
+                const studentMap = new Map(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
 
                 workbook.SheetNames.forEach(sheetName => {
                     const worksheet = workbook.Sheets[sheetName];
-                    const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+                    const json = XLSX.utils.sheet_to_json(worksheet);
 
                     if (sheetName === 'Data Siswa') {
-                        // Logic from DataSiswaPage handleFileSelected
-                        // ...
                         importCount++;
                     } else if (sheetName === 'Data Absensi') {
-                        // Logic from DataAbsensiPage handleFileSelected
-                        const newAttendance: StudentAttendance[] = [];
+                        const newAttendance = [];
                         json.forEach(row => {
-                            const rowData = row as any;
-                            // FIX: The value from the spreadsheet cell is of an unknown type. It must be cast to a string before being used.
-                            const studentName = String(rowData["Nama Lengkap"] || '').trim().toLowerCase();
+                            const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
                             const studentId = studentMap.get(studentName);
                             if (studentId) {
                                 newAttendance.push({ 
                                     studentId, 
-                                    sakit: parseInt(String(rowData["Sakit (S)"] || '0'), 10) || 0, 
-                                    izin: parseInt(String(rowData["Izin (I)"] || '0'), 10) || 0, 
-                                    alpa: parseInt(String(rowData["Alpa (A)"] || '0'), 10) || 0 
+                                    sakit: parseInt(String(row["Sakit (S)"] || '0'), 10) || 0, 
+                                    izin: parseInt(String(row["Izin (I)"] || '0'), 10) || 0, 
+                                    alpa: parseInt(String(row["Alpa (A)"] || '0'), 10) || 0 
                                 });
                             }
                         });
                         if(newAttendance.length > 0) { handleBulkUpdateAttendance(newAttendance); importCount++; }
                     } else if (sheetName === 'Catatan Wali Kelas') {
-                        // Logic from CatatanWaliKelasPage handleFileSelected
-                        const newNotes: StudentNotes = {};
+                        const newNotes = {};
                         json.forEach(row => {
-                            const rowData = row as any;
-                            // FIX: The value from the spreadsheet cell is of an unknown type. It must be cast to a string before being used.
-                            const studentName = String(rowData["Nama Lengkap"] || '').trim().toLowerCase();
+                            const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
                             const studentId = studentMap.get(studentName);
-                            // FIX: The `studentId` from the map can be undefined and is not a valid index type until checked.
-                            if (studentId) newNotes[studentId] = String(rowData["Catatan Wali Kelas"] || '');
+                            if (studentId != null) newNotes[studentId] = String(row["Catatan Wali Kelas"] || '');
                         });
                         if(Object.keys(newNotes).length > 0) { handleBulkUpdateNotes(newNotes); importCount++; }
                     } else if (sheetName === 'Data Ekstrakurikuler') {
-                        // Logic from DataEkstrakurikulerPage handleFileSelected
                         const extraMap = new Map(extracurriculars.map(ex => [ex.name.trim().toLowerCase(), ex.id]));
-                        const newStudentExtras: StudentExtracurricular[] = [];
+                        const newStudentExtras = [];
                         json.forEach(row => {
-                            const rowData = row as any;
-                            const studentId = studentMap.get(String(rowData["Nama Lengkap"] || '').trim().toLowerCase());
+                            const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
                             if (studentId) {
-                                const assignedActivities: (string | null)[] = [];
-                                const descriptions: { [activityId: string]: string } = {};
+                                const assignedActivities = [];
+                                const descriptions = {};
                                 for (let i = 1; i <= 5; i++) {
-                                    const extraName = String(rowData[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
+                                    const extraName = String(row[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
                                     const extraId = extraMap.get(extraName) || null;
                                     assignedActivities.push(extraId);
-                                    if (extraId) descriptions[extraId] = String(rowData[`Deskripsi ${i}`] || '');
+                                    if (extraId) descriptions[extraId] = String(row[`Deskripsi ${i}`] || '');
                                 }
                                 newStudentExtras.push({ studentId, assignedActivities, descriptions });
                             }
                         });
                         if (newStudentExtras.length > 0) { handleBulkUpdateStudentExtracurriculars(newStudentExtras); importCount++; }
                     } else if (sheetName === 'Penilaian P5') {
-                        // Logic from DataProyekP5Page handleImportFile
-                        const jsonP5: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const jsonP5 = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         const machineHeaders = jsonP5[0];
                         const studentDataRows = jsonP5.slice(2);
-                        const updates: { studentId: number; projectId: string; subElementKey: string; level: P5AssessmentLevel | ''; }[] = [];
-                        const ASSESSMENT_LEVELS: P5AssessmentLevel[] = ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang sesuai Harapan', 'Sangat Berkembang'];
-                        studentDataRows.forEach((row: any[]) => {
+                        const updates = [];
+                        const ASSESSMENT_LEVELS = ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang sesuai Harapan', 'Sangat Berkembang'];
+                        studentDataRows.forEach(row => {
                             const studentId = parseInt(String(row[0]), 10);
                             if (isNaN(studentId) || !students.some(s => s.id === studentId)) return;
                             for (let i = 2; i < machineHeaders.length; i++) {
@@ -917,7 +909,7 @@ useEffect(() => {
                                     if (projParts.length === 2) {
                                         const projectId = projParts[0].replace('PROJ:', '');
                                         const subElementKey = projParts[1];
-                                        const level = ASSESSMENT_LEVELS.includes(row[i] as P5AssessmentLevel) ? (row[i] as P5AssessmentLevel) : '';
+                                        const level = ASSESSMENT_LEVELS.includes(row[i]) ? row[i] : '';
                                         updates.push({ studentId, projectId, subElementKey, level });
                                     }
                                 }
@@ -925,7 +917,6 @@ useEffect(() => {
                         });
                         if (updates.length > 0) { handleBulkUpdateP5Assessments(updates); importCount++; }
                     }
-                    // Add more sheet handlers here
                 });
 
                 if (importCount > 0) {
@@ -945,113 +936,113 @@ useEffect(() => {
 
   const renderPage = () => {
     if (isLoading) {
-        return <div className="flex items-center justify-center h-full"><p>Memuat data awal...</p></div>;
+        return React.createElement('div', { className: "flex items-center justify-center h-full" }, React.createElement('p', null, 'Memuat data awal...'));
     }
 
     switch (activePage) {
       case 'DASHBOARD':
-        return <Dashboard 
-                  setActivePage={setActivePage} 
-                  settings={settings} 
-                  students={students}
-                  grades={grades}
-                  subjects={subjects}
-                />;
+        return React.createElement(Dashboard, { 
+                  setActivePage: setActivePage, 
+                  settings: settings, 
+                  students: students,
+                  grades: grades,
+                  subjects: subjects
+                });
       case 'DATA_SISWA':
-        return <DataSiswaPage students={students} namaKelas={settings.nama_kelas} onSaveStudent={handleSaveStudent} onBulkSaveStudents={handleBulkSaveStudents} onDeleteStudent={handleDeleteStudent} showToast={showToast} />;
+        return React.createElement(DataSiswaPage, { students: students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
       case 'DATA_NILAI':
-        return <DataNilaiPage 
-                  students={students} 
-                  grades={grades} 
-                  namaKelas={settings.nama_kelas} 
-                  onUpdateGrade={handleUpdateGrade} 
-                  onBulkUpdateGrades={handleBulkUpdateGrades}
-                  onUpdateDetailedGrade={handleUpdateDetailedGrade}
-                  learningObjectives={learningObjectives}
-                  onUpdateLearningObjectives={handleUpdateLearningObjectives}
-                  studentDescriptions={studentDescriptions}
-                  onUpdateStudentDescriptions={handleUpdateStudentDescriptions}
-                  subjects={subjects}
-                  predikats={settings.predikats}
-                  onUpdatePredikats={handleUpdatePredikats}
-                  showToast={showToast}
-                />;
+        return React.createElement(DataNilaiPage, { 
+                  students: students, 
+                  grades: grades, 
+                  namaKelas: settings.nama_kelas, 
+                  onUpdateGrade: handleUpdateGrade, 
+                  onBulkUpdateGrades: handleBulkUpdateGrades,
+                  onUpdateDetailedGrade: handleUpdateDetailedGrade,
+                  learningObjectives: learningObjectives,
+                  onUpdateLearningObjectives: handleUpdateLearningObjectives,
+                  studentDescriptions: studentDescriptions,
+                  onUpdateStudentDescriptions: handleUpdateStudentDescriptions,
+                  subjects: subjects,
+                  predikats: settings.predikats,
+                  onUpdatePredikats: handleUpdatePredikats,
+                  showToast: showToast
+                });
       case 'DATA_ABSENSI':
-        return <DataAbsensiPage students={students} attendance={attendance} onUpdateAttendance={handleUpdateAttendance} onBulkUpdateAttendance={handleBulkUpdateAttendance} showToast={showToast} />;
+        return React.createElement(DataAbsensiPage, { students: students, attendance: attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
       case 'CATATAN_WALI_KELAS':
-        return <CatatanWaliKelasPage students={students} notes={notes} onUpdateNote={handleUpdateNote} onBulkUpdateNotes={handleBulkUpdateNotes} showToast={showToast} noteTemplates={presets?.studentNotesTemplates || []} />;
+        return React.createElement(CatatanWaliKelasPage, { students: students, notes: notes, onUpdateNote: handleUpdateNote, onBulkUpdateNotes: handleBulkUpdateNotes, showToast: showToast, noteTemplates: presets?.studentNotesTemplates || [] });
       case 'DATA_EKSTRAKURIKULER':
-        return <DataEkstrakurikulerPage 
-                  students={students}
-                  extracurriculars={extracurriculars}
-                  studentExtracurriculars={studentExtracurriculars}
-                  onUpdateStudentExtracurriculars={handleUpdateStudentExtracurriculars}
-                  showToast={showToast}
-                />;
+        return React.createElement(DataEkstrakurikulerPage, { 
+                  students: students,
+                  extracurriculars: extracurriculars,
+                  studentExtracurriculars: studentExtracurriculars,
+                  onUpdateStudentExtracurriculars: handleUpdateStudentExtracurriculars,
+                  showToast: showToast
+                });
       case 'DATA_PROYEK_P5':
-        return <DataProyekP5Page
-                  students={students}
-                  projects={p5Projects}
-                  assessments={p5Assessments}
-                  onUpdateProject={handleUpdateP5Project}
-                  onDeleteProject={handleDeleteP5Project}
-                  onUpdateAssessment={handleUpdateP5Assessment}
-                  onBulkUpdateAssessments={handleBulkUpdateP5Assessments}
-                  showToast={showToast}
-                />;
+        return React.createElement(DataProyekP5Page, {
+                  students: students,
+                  projects: p5Projects,
+                  assessments: p5Assessments,
+                  onUpdateProject: handleUpdateP5Project,
+                  onDeleteProject: handleDeleteP5Project,
+                  onUpdateAssessment: handleUpdateP5Assessment,
+                  onBulkUpdateAssessments: handleBulkUpdateP5Assessments,
+                  showToast: showToast
+                });
       case 'PENGATURAN':
-        return <SettingsPage 
-                  settings={settings} 
-                  onSettingsChange={handleSettingsChange} 
-                  onSave={saveSettings} 
-                  onUpdateKopLayout={handleUpdateKopLayout}
-                  subjects={subjects}
-                  onUpdateSubjects={handleUpdateSubjects}
-                  extracurriculars={extracurriculars}
-                  onUpdateExtracurriculars={handleUpdateExtracurriculars}
-                />;
+        return React.createElement(SettingsPage, { 
+                  settings: settings, 
+                  onSettingsChange: handleSettingsChange, 
+                  onSave: saveSettings, 
+                  onUpdateKopLayout: handleUpdateKopLayout,
+                  subjects: subjects,
+                  onUpdateSubjects: handleUpdateSubjects,
+                  extracurriculars: extracurriculars,
+                  onUpdateExtracurriculars: handleUpdateExtracurriculars
+                });
       case 'PRINT_RAPOR':
-        return <PrintRaporPage 
-                  students={students}
-                  settings={settings}
-                  grades={grades}
-                  attendance={attendance}
-                  notes={notes}
-                  subjects={subjects}
-                  studentDescriptions={studentDescriptions}
-                  studentExtracurriculars={studentExtracurriculars}
-                  extracurriculars={extracurriculars}
-                  p5Projects={p5Projects}
-                  p5Assessments={p5Assessments}
-                  showToast={showToast}
-                />;
+        return React.createElement(PrintRaporPage, { 
+                  students: students,
+                  settings: settings,
+                  grades: grades,
+                  attendance: attendance,
+                  notes: notes,
+                  subjects: subjects,
+                  studentDescriptions: studentDescriptions,
+                  studentExtracurriculars: studentExtracurriculars,
+                  extracurriculars: extracurriculars,
+                  p5Projects: p5Projects,
+                  p5Assessments: p5Assessments,
+                  showToast: showToast
+                });
       default:
         const navItem = NAV_ITEMS.find(item => item.id === activePage);
-        return <PlaceholderPage title={navItem ? navItem.label : 'Halaman'} />;
+        return React.createElement(PlaceholderPage, { title: navItem ? navItem.label : 'Halaman' });
     }
   };
   
   return (
-    <>
-      <div className="flex h-screen bg-slate-100 font-sans">
-        <Sidebar
-          activePage={activePage}
-          setActivePage={setActivePage}
-          onExport={handleExportAll}
-          onImport={handleImportAll}
-        />
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
-          {renderPage()}
-        </main>
-      </div>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-    </>
+    React.createElement(React.Fragment, null,
+      React.createElement('div', { className: "flex h-screen bg-slate-100 font-sans" },
+        React.createElement(Sidebar, {
+          activePage: activePage,
+          setActivePage: setActivePage,
+          onExport: handleExportAll,
+          onImport: handleImportAll,
+        }),
+        React.createElement('main', { className: "flex-1 p-6 lg:p-8 overflow-y-auto" },
+          renderPage()
+        )
+      ),
+      toast && (
+        React.createElement(Toast, {
+          message: toast.message,
+          type: toast.type,
+          onClose: () => setToast(null)
+        })
+      )
+    )
   );
 };
 
