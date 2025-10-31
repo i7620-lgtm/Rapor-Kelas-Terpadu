@@ -98,7 +98,7 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects }) => {
 
         const failingSubjects = [];
         activeSubjects.forEach(subject => {
-            const grade = studentGrade.finalGrades[subject.id];
+            const grade = studentGrade?.finalGrades?.[subject.id];
             if (typeof grade === 'number' && grade < minGrade) {
                 failingSubjects.push(`${subject.label} (${grade})`);
             }
