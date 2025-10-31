@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppSettings, Student, StudentGrade, StudentAttendance, StudentNotes, Subject, StudentDescriptions, Extracurricular, StudentExtracurricular, P5Project, P5ProjectAssessment, KopLayout, KopElement } from '../types';
 
+declare const html2canvas: any;
+declare const jspdf: any;
+
 // Helper to format date strings
 const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
@@ -12,7 +15,7 @@ const formatDate = (dateString: string | undefined) => {
         if (isNaN(date.getTime())) {
              // Try parsing YYYY-MM-DD
             const isoDate = new Date(dateString);
-            if(isNaN(isoDate.getTime())) return 'Invalid Date';
+            if(isNaN(isoDate.getTime())) return dateString; // Return original if still invalid
             return isoDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         };
         return date.toLocaleDateString('id-ID', {
@@ -21,17 +24,17 @@ const formatDate = (dateString: string | undefined) => {
             year: 'numeric',
         });
     } catch (e) {
-        return 'Invalid Date';
+        return dateString;
     }
 };
 
-const paperDimensions = {
+const paperDimensionsCss = {
     A4: { width: '21cm', height: '29.7cm', label: 'A4 (21 x 29.7 cm)' },
     F4: { width: '21.5cm', height: '33cm', label: 'F4 (21.5 × 33 cm)' },
     Letter: { width: '21.6cm', height: '27.9cm', label: 'Letter (21.6 × 27.9 cm)' },
     Legal: { width: '21.6cm', height: '35.6cm', label: 'Legal (21.6 × 35.6 cm)' },
 };
-type PaperSize = keyof typeof paperDimensions;
+type PaperSize = keyof typeof paperDimensionsCss;
 
 
 // Letterhead Header Component
@@ -127,7 +130,7 @@ const KopSuratHeader: React.FC<{ settings: AppSettings }> = ({ settings }) => {
 
 // A4 page container
 const ReportPage: React.FC<{ children: React.ReactNode, showHeader?: boolean, settings?: AppSettings, paperSize: PaperSize }> = ({ children, showHeader = false, settings, paperSize }) => (
-    <div className="report-page bg-white shadow-lg mx-auto my-4 border border-gray-300 text-black" style={{ width: paperDimensions[paperSize].width, height: paperDimensions[paperSize].height, boxSizing: 'border-box' }}>
+    <div className="report-page bg-white shadow-lg mx-auto my-4 border border-gray-300 text-black" style={{ width: paperDimensionsCss[paperSize].width, height: paperDimensionsCss[paperSize].height, boxSizing: 'border-box' }}>
          <div className="p-8 h-full w-full flex flex-col">
             {showHeader && settings && <KopSuratHeader settings={settings} />}
             <div className="flex-grow overflow-hidden">
@@ -181,8 +184,8 @@ const IdentityPage: React.FC<{ student: Student; settings: AppSettings, paperSiz
         { label: "Anak ke", value: student.anakKe },
         { label: "Alamat Peserta Didik", value: student.alamatSiswa },
         { label: "Diterima di sekolah ini", value: "" },
-        { label: "a. Di kelas", value: settings.nama_kelas, isSub: true },
-        { label: "b. Pada tanggal", value: formatDate(settings.tanggal_rapor), isSub: true },
+        { label: "a. Di kelas", value: student.diterimaDiKelas, isSub: true },
+        { label: "b. Pada tanggal", value: formatDate(student.diterimaTanggal), isSub: true },
         { label: "Orang Tua", value: "" },
         { label: "a. Ayah", value: student.namaAyah, isSub: true },
         { label: "b. Ibu", value: student.namaIbu, isSub: true },
@@ -195,7 +198,10 @@ const IdentityPage: React.FC<{ student: Student; settings: AppSettings, paperSiz
         { label: "b. Pekerjaan", value: student.pekerjaanWali || '-', isSub: true },
     ];
 
-    const [place, date] = (settings.tanggal_rapor || ',').split(',');
+    const rapportDateString = settings.tanggal_rapor || '';
+    const rapportDateParts = rapportDateString.split(',');
+    const place = rapportDateParts[0] || '';
+    const date = rapportDateParts.length > 1 ? rapportDateParts.slice(1).join(',').trim() : '';
 
     return (
         <ReportPage showHeader={true} settings={settings} paperSize={paperSize}>
@@ -219,7 +225,7 @@ const IdentityPage: React.FC<{ student: Student; settings: AppSettings, paperSiz
                     </div>
                 </div>
                 <div className="text-left">
-                    <p>{place}, {date}</p>
+                    <p>{place}{date ? `, ${date}` : ''}</p>
                     <p>Kepala Sekolah,</p>
                     <div className="h-20"></div>
                     <p className="font-bold underline">{settings.nama_kepala_sekolah || '................................'}</p>
@@ -233,7 +239,10 @@ const IdentityPage: React.FC<{ student: Student; settings: AppSettings, paperSiz
 // Main Report Page Component
 const MainReportPage: React.FC<{ student: Student, settings: AppSettings, gradeData: StudentGrade, attendanceData: StudentAttendance, noteData: string, activeSubjects: Subject[], studentDescriptions: StudentDescriptions, paperSize: PaperSize }> = ({ student, settings, gradeData, attendanceData, noteData, activeSubjects, studentDescriptions, paperSize }) => {
 
-    const [place, date] = (settings.tanggal_rapor || ',').split(',');
+    const rapportDateString = settings.tanggal_rapor || '';
+    const rapportDateParts = rapportDateString.split(',');
+    const place = rapportDateParts[0] || '';
+    const date = rapportDateParts.length > 1 ? rapportDateParts.slice(1).join(',').trim() : '';
 
     return (
         <>
@@ -359,6 +368,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = (props) => {
     const { students, showToast } = props;
     const [selectedStudentId, setSelectedStudentId] = useState<string>('all');
     const [paperSize, setPaperSize] = useState<PaperSize>('A4');
+    const [isGenerating, setIsGenerating] = useState(false);
     const [pagesToInclude, setPagesToInclude] = useState({
         sampul: true,
         identitas: true,
@@ -373,7 +383,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = (props) => {
             styleElement.id = styleId;
             document.head.appendChild(styleElement);
         }
-        const dimensions = paperDimensions[paperSize];
+        const dimensions = paperDimensionsCss[paperSize];
         styleElement.innerHTML = `
             @page {
                 size: ${dimensions.width} ${dimensions.height};
@@ -399,58 +409,66 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = (props) => {
         setPagesToInclude(prev => ({ ...prev, [name]: checked }));
     };
 
-    const handlePrint = () => {
+    const handleGeneratePdf = async () => {
         const printArea = document.getElementById('print-area');
-        if (!printArea) {
-            showToast('Area cetak tidak ditemukan.', 'error');
+        if (!printArea || typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+            showToast('Pustaka PDF tidak termuat. Coba muat ulang halaman.', 'error');
             return;
         }
 
-        const printContent = printArea.innerHTML;
-        const headContent = document.head.innerHTML;
+        setIsGenerating(true);
+        showToast('Memulai pembuatan PDF, mohon tunggu...', 'success');
 
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.setAttribute('title', 'Print Frame');
-        document.body.appendChild(iframe);
-
-        const iframeDoc = iframe.contentWindow?.document;
-        if (!iframeDoc) {
-            showToast('Gagal membuat frame cetak.', 'error');
-            document.body.removeChild(iframe);
-            return;
-        }
-        
-        iframeDoc.open();
-        iframeDoc.write(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                ${headContent}
-            </head>
-            <body class="bg-white">
-                ${printContent}
-            </body>
-            </html>
-        `);
-        iframeDoc.close();
-
-        iframe.onload = () => {
-            try {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            } catch (e) {
-                console.error("Gagal mencetak dari iframe:", e);
-                showToast('Gagal memulai pencetakan. Coba lagi.', 'error');
-            } finally {
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
+        try {
+            const { jsPDF } = jspdf;
+            const reportPages = printArea.querySelectorAll<HTMLElement>('.report-page');
+            if (reportPages.length === 0) {
+                showToast('Tidak ada halaman untuk dicetak.', 'error');
+                setIsGenerating(false);
+                return;
             }
-        };
+            
+            const paperDimensionsMm = {
+                A4: { width: 210, height: 297 },
+                F4: { width: 215, height: 330 },
+                Letter: { width: 216, height: 279 },
+                Legal: { width: 216, height: 356 },
+            };
+
+            const dimensions = paperDimensionsMm[paperSize];
+            const orientation = dimensions.width > dimensions.height ? 'l' : 'p';
+            const doc = new jsPDF({
+                orientation,
+                unit: 'mm',
+                format: [dimensions.width, dimensions.height]
+            });
+            
+            for (let i = 0; i < reportPages.length; i++) {
+                const page = reportPages[i];
+                const canvas = await html2canvas(page, {
+                    scale: 2, // Keep scale for quality
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff', // JPEGs don't support transparency
+                });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                
+                if (i > 0) {
+                    doc.addPage([dimensions.width, dimensions.height], orientation);
+                }
+                
+                doc.addImage(imgData, 'JPEG', 0, 0, dimensions.width, dimensions.height);
+            }
+            
+            const studentName = studentsToPrint.length === 1 ? studentsToPrint[0]?.namaLengkap : 'Semua_Siswa';
+            doc.save(`Rapor_${studentName}.pdf`);
+
+        } catch (error) {
+            console.error("PDF Generation Error: ", error);
+            showToast('Terjadi kesalahan saat membuat PDF.', 'error');
+        } finally {
+            setIsGenerating(false);
+        }
     };
     
     const sortedStudents = useMemo(() => {
@@ -488,7 +506,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = (props) => {
                             onChange={(e) => setPaperSize(e.target.value as PaperSize)}
                             className="w-full p-2 border border-slate-300 rounded-md"
                         >
-                           {Object.entries(paperDimensions).map(([key, { label }]) => (
+                           {Object.entries(paperDimensionsCss).map(([key, { label }]) => (
                                 <option key={key} value={key}>{label}</option>
                             ))}
                         </select>
@@ -502,9 +520,9 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = (props) => {
                         </div>
                     </div>
                     <div className="mt-auto">
-                        <button onClick={handlePrint} className="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                        <button onClick={handleGeneratePdf} disabled={isGenerating} className="w-full bg-indigo-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:bg-indigo-400 disabled:cursor-not-allowed">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v-2a1 1 0 011-1h8a1 1 0 011 1v2h1a2 2 0 002-2v-3a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" /></svg>
-                           Buat & Unduh PDF
+                           {isGenerating ? 'Membuat PDF...' : 'Buat & Unduh PDF'}
                         </button>
                     </div>
                 </div>
