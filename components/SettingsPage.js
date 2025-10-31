@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AppSettings, KopLayout, KopElement } from '../types.js';
+import { AppSettings, KopLayout, KopElement, Subject, Extracurricular } from '../types.js';
 import { GoogleGenAI } from '@google/genai';
 
 // Helper function moved outside to be accessible by both modal and preview
@@ -390,11 +390,12 @@ interface FormFieldProps {
     id: keyof AppSettings;
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBlur: () => void;
     type?: string;
     placeholder?: string;
 }
 
-const FormField: React.FC<FormFieldProps> = ({ label, id, type = 'text', placeholder, value, onChange }) => (
+const FormField: React.FC<FormFieldProps> = ({ label, id, type = 'text', placeholder, value, onChange, onBlur }) => (
     <div className="col-span-1">
         <label htmlFor={String(id)} className="block text-sm font-medium text-slate-700 mb-1">
             {label}
@@ -405,13 +406,20 @@ const FormField: React.FC<FormFieldProps> = ({ label, id, type = 'text', placeho
             name={String(id)}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 placeholder:text-slate-400"
             placeholder={placeholder}
         />
     </div>
 );
 
-const FileInputField: React.FC<{ label: string; id: keyof AppSettings; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; imagePreview?: string | null }> = ({ label, id, onChange, imagePreview }) => (
+const FileInputField: React.FC<{ label: string; id: keyof AppSettings; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; onSave: () => void; imagePreview?: string | null }> = ({ label, id, onChange, onSave, imagePreview }) => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e);
+        onSave();
+    };
+    
+    return (
      <div className="col-span-1">
         <label htmlFor={String(id)} className="block text-sm font-medium text-slate-700 mb-1">
             {label}
@@ -426,14 +434,204 @@ const FileInputField: React.FC<{ label: string; id: keyof AppSettings; onChange:
                 <div className="flex text-sm text-slate-600 justify-center">
                     <label htmlFor={String(id)} className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
                         <span>Unggah file</span>
-                        <input id={String(id)} name={String(id)} type="file" className="sr-only" onChange={onChange} accept="image/*" />
+                        <input id={String(id)} name={String(id)} type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
                     </label>
                 </div>
                  <p className="text-xs text-slate-500">PNG atau JPG</p>
             </div>
         </div>
     </div>
-);
+    );
+};
+
+// --- Start of PengaturanMapel ---
+interface PengaturanMapelProps {
+  subjects: Subject[];
+  onUpdateSubjects: (subjects: Subject[]) => void;
+}
+
+const PengaturanMapel: React.FC<PengaturanMapelProps> = ({ subjects, onUpdateSubjects }) => {
+    const [newSubjectName, setNewSubjectName] = useState('');
+    const [newSubjectLabel, setNewSubjectLabel] = useState('');
+
+    const activeSubjects = subjects.filter(s => s.active);
+    const inactiveSubjects = subjects.filter(s => !s.active);
+
+    const handleToggle = (subjectId: string) => {
+        onUpdateSubjects(subjects.map(s => s.id === subjectId ? { ...s, active: !s.active } : s));
+    };
+
+    const handleAddSubject = () => {
+        if (!newSubjectName.trim() || !newSubjectLabel.trim()) {
+            alert("Nama mata pelajaran dan singkatan tidak boleh kosong.");
+            return;
+        }
+        const newId = newSubjectLabel.trim().toUpperCase().replace(/\s+/g, '');
+        if (subjects.some(s => s.id === newId)) {
+            alert("Singkatan mata pelajaran sudah ada. Harap gunakan singkatan yang unik.");
+            return;
+        }
+
+        const newSubject: Subject = {
+            id: newId,
+            fullName: newSubjectName.trim(),
+            label: newSubjectLabel.trim(),
+            active: true
+        };
+
+        onUpdateSubjects([...subjects, newSubject]);
+        setNewSubjectName('');
+        setNewSubjectLabel('');
+    };
+
+    const SubjectItem: React.FC<{subject: Subject, isActive: boolean}> = ({ subject, isActive }) => (
+        <div 
+            onClick={() => handleToggle(subject.id)}
+            className={`p-3 border rounded-md shadow-sm cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-200 ${isActive ? 'bg-white border-slate-300' : 'bg-slate-100 border-slate-200'}`}
+            title={`Klik untuk memindahkan`}
+        >
+            <p className={`font-medium ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{subject.fullName}</p>
+            <p className="text-sm text-slate-500">Singkatan: {subject.label}</p>
+        </div>
+    );
+    
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h4 className="text-md font-semibold text-slate-700 mb-2">Aktif</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border">
+                        {activeSubjects.length > 0 ? activeSubjects.map(s => <SubjectItem key={s.id} subject={s} isActive={true} />) : <p className="text-slate-500 text-sm p-2">Tidak ada.</p>}
+                    </div>
+                </div>
+                <div>
+                     <h4 className="text-md font-semibold text-slate-700 mb-2">Tidak Aktif</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border">
+                        {inactiveSubjects.length > 0 ? inactiveSubjects.map(s => <SubjectItem key={s.id} subject={s} isActive={false} />) : <p className="text-slate-500 text-sm p-2">Tidak ada.</p>}
+                    </div>
+                </div>
+            </div>
+
+            <div className="pt-4 border-t">
+                <h4 className="text-md font-semibold text-slate-700 mb-2">Tambah Mata Pelajaran Baru</h4>
+                <div className="flex flex-col sm:flex-row items-end gap-4 p-4 bg-slate-50 rounded-lg border">
+                    <div className="flex-1 w-full">
+                        <label htmlFor="new-subject-name" className="block text-xs font-medium text-slate-700 mb-1">Nama Mata Pelajaran</label>
+                        <input
+                            type="text"
+                            id="new-subject-name"
+                            value={newSubjectName}
+                            onChange={e => setNewSubjectName(e.target.value)}
+                            placeholder="Contoh: Bahasa Sunda"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
+                        />
+                    </div>
+                    <div className="flex-1 w-full">
+                        <label htmlFor="new-subject-label" className="block text-xs font-medium text-slate-700 mb-1">Singkatan (ID Unik)</label>
+                        <input
+                            type="text"
+                            id="new-subject-label"
+                            value={newSubjectLabel}
+                            onChange={e => setNewSubjectLabel(e.target.value)}
+                            placeholder="Contoh: BSunda"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddSubject}
+                        className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700"
+                    >
+                        + Tambah
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+// --- End of PengaturanMapel ---
+
+// --- Start of PengaturanEkstra ---
+interface PengaturanEkstraProps {
+    extracurriculars: Extracurricular[];
+    onUpdateExtracurriculars: (extracurriculars: Extracurricular[]) => void;
+}
+
+const PengaturanEkstra: React.FC<PengaturanEkstraProps> = ({ extracurriculars, onUpdateExtracurriculars }) => {
+    const [newExtraName, setNewExtraName] = useState('');
+
+    const handleToggle = (id: string) => {
+        const updated = extracurriculars.map(ex => ex.id === id ? { ...ex, active: !ex.active } : ex);
+        onUpdateExtracurriculars(updated);
+    };
+
+    const handleAdd = () => {
+        if (!newExtraName.trim()) return;
+        const newId = newExtraName.trim().toUpperCase().replace(/\s+/g, '_');
+        if (extracurriculars.some(ex => ex.id === newId)) {
+            alert("Ekstrakurikuler dengan ID ini sudah ada.");
+            return;
+        }
+        const newExtra: Extracurricular = { id: newId, name: newExtraName.trim(), active: true };
+        onUpdateExtracurriculars([...extracurriculars, newExtra]);
+        setNewExtraName('');
+    };
+
+    const activeList = extracurriculars.filter(e => e.active);
+    const inactiveList = extracurriculars.filter(e => !e.active);
+    
+    const EkstraItem: React.FC<{extra: Extracurricular, isActive: boolean}> = ({ extra, isActive }) => (
+        <div 
+            key={extra.id} 
+            onClick={() => handleToggle(extra.id)} 
+            className={`p-3 border rounded-md cursor-pointer hover:bg-slate-50 transition-colors ${isActive ? 'bg-white border-slate-300' : 'bg-slate-100 border-slate-200'}`}
+        >
+            <p className={`font-medium ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>{extra.name}</p>
+        </div>
+    );
+
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h4 className="text-md font-semibold text-slate-700 mb-2">Aktif</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border">
+                        {activeList.map(ex => <EkstraItem key={ex.id} extra={ex} isActive={true} />)}
+                    </div>
+                </div>
+                <div>
+                    <h4 className="text-md font-semibold text-slate-700 mb-2">Tidak Aktif</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border">
+                         {inactiveList.map(ex => <EkstraItem key={ex.id} extra={ex} isActive={false} />)}
+                    </div>
+                </div>
+            </div>
+
+             <div className="pt-4 border-t">
+                <h4 className="text-md font-semibold text-slate-700 mb-2">Tambah Ekstrakurikuler Baru</h4>
+                <div className="flex items-end gap-4 p-4 bg-slate-50 rounded-lg border">
+                    <div className="flex-grow">
+                        <label htmlFor="new-extra-name" className="block text-xs font-medium text-slate-700 mb-1">Nama Ekstrakurikuler</label>
+                        <input
+                            type="text"
+                            id="new-extra-name"
+                            value={newExtraName}
+                            onChange={e => setNewExtraName(e.target.value)}
+                            placeholder="Contoh: Seni Lukis"
+                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAdd}
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700"
+                    >
+                        + Tambah
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+// --- End of PengaturanEkstra ---
 
 
 interface SettingsPageProps {
@@ -441,9 +639,13 @@ interface SettingsPageProps {
     onSettingsChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onSave: () => void;
     onUpdateKopLayout: (layout: KopLayout) => void;
+    subjects: Subject[];
+    onUpdateSubjects: (subjects: Subject[]) => void;
+    extracurriculars: Extracurricular[];
+    onUpdateExtracurriculars: (extracurriculars: Extracurricular[]) => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onSettingsChange, onSave, onUpdateKopLayout }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     return (
         <>
@@ -456,7 +658,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onSettingsChange,
             <div className="space-y-8">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-800">Pengaturan</h2>
-                    <p className="mt-2 text-slate-600">Kelola informasi sekolah, periode akademik, dan data penting lainnya.</p>
+                    <p className="mt-2 text-slate-600">Kelola informasi sekolah, periode akademik, dan data penting lainnya. Perubahan disimpan secara otomatis.</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
@@ -475,23 +677,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onSettingsChange,
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4">
                                 <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                    <div className="md:col-span-2"><FormField label="Nama Dinas Pendidikan" id="nama_dinas_pendidikan" value={settings.nama_dinas_pendidikan} onChange={onSettingsChange} /></div>
-                                    <FormField label="Nama Sekolah" id="nama_sekolah" value={settings.nama_sekolah} onChange={onSettingsChange} />
-                                    <FormField label="NPSN" id="npsn" value={settings.npsn} onChange={onSettingsChange} />
-                                    <div className="md:col-span-2"><FormField label="Alamat Sekolah" id="alamat_sekolah" value={settings.alamat_sekolah} onChange={onSettingsChange} /></div>
-                                    <FormField label="Desa / Kelurahan" id="desa_kelurahan" value={settings.desa_kelurahan} onChange={onSettingsChange} />
-                                    <FormField label="Kecamatan" id="kecamatan" value={settings.kecamatan} onChange={onSettingsChange} />
-                                    <FormField label="Kota/Kabupaten" id="kota_kabupaten" value={settings.kota_kabupaten} onChange={onSettingsChange} />
-                                    <FormField label="Provinsi" id="provinsi" value={settings.provinsi} onChange={onSettingsChange} />
-                                    <FormField label="Kode Pos" id="kode_pos" value={settings.kode_pos} onChange={onSettingsChange} />
-                                    <FormField label="Email Sekolah" id="email_sekolah" type="email" value={settings.email_sekolah} onChange={onSettingsChange} />
-                                    <FormField label="Telepon Sekolah" id="telepon_sekolah" value={settings.telepon_sekolah} onChange={onSettingsChange} />
-                                    <FormField label="Website Sekolah" id="website_sekolah" value={settings.website_sekolah} onChange={onSettingsChange} />
-                                    <div className="md:col-span-2"><FormField label="Faksimile" id="faksimile" value={settings.faksimile} onChange={onSettingsChange} /></div>
+                                    <div className="md:col-span-2"><FormField label="Nama Dinas Pendidikan" id="nama_dinas_pendidikan" value={settings.nama_dinas_pendidikan} onChange={onSettingsChange} onBlur={onSave} /></div>
+                                    <FormField label="Nama Sekolah" id="nama_sekolah" value={settings.nama_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="NPSN" id="npsn" value={settings.npsn} onChange={onSettingsChange} onBlur={onSave} />
+                                    <div className="md:col-span-2"><FormField label="Alamat Sekolah" id="alamat_sekolah" value={settings.alamat_sekolah} onChange={onSettingsChange} onBlur={onSave} /></div>
+                                    <FormField label="Desa / Kelurahan" id="desa_kelurahan" value={settings.desa_kelurahan} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Kecamatan" id="kecamatan" value={settings.kecamatan} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Kota/Kabupaten" id="kota_kabupaten" value={settings.kota_kabupaten} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Provinsi" id="provinsi" value={settings.provinsi} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Kode Pos" id="kode_pos" value={settings.kode_pos} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Email Sekolah" id="email_sekolah" type="email" value={settings.email_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Telepon Sekolah" id="telepon_sekolah" value={settings.telepon_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Website Sekolah" id="website_sekolah" value={settings.website_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <div className="md:col-span-2"><FormField label="Faksimile" id="faksimile" value={settings.faksimile} onChange={onSettingsChange} onBlur={onSave} /></div>
                                 </div>
                                 <div className="lg:col-span-1 space-y-4">
-                                    <FileInputField label="Logo Sekolah" id="logo_sekolah" onChange={onSettingsChange} imagePreview={typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null} />
-                                    <FileInputField label="Logo Dinas Pendidikan" id="logo_dinas" onChange={onSettingsChange} imagePreview={typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null} />
+                                    <FileInputField label="Logo Sekolah" id="logo_sekolah" onChange={onSettingsChange} onSave={onSave} imagePreview={typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null} />
+                                    <FileInputField label="Logo Dinas Pendidikan" id="logo_dinas" onChange={onSettingsChange} onSave={onSave} imagePreview={typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null} />
                                     <div className="pt-4">
                                         <h4 className="text-lg font-semibold text-slate-700">Pratinjau Kop Surat</h4>
                                         <p className="text-sm text-slate-500 mb-4">Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah.</p>
@@ -505,34 +707,32 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ settings, onSettingsChange,
                              <section>
                                 <h3 className="text-xl font-bold text-slate-800 border-b pb-3 mb-6">Periode Akademik</h3>
                                  <div className="space-y-4">
-                                    <FormField label="Nama Kelas" id="nama_kelas" value={settings.nama_kelas} onChange={onSettingsChange} />
-                                    <FormField label="Tahun Ajaran" id="tahun_ajaran" placeholder="e.g. 2023/2024" value={settings.tahun_ajaran} onChange={onSettingsChange} />
-                                    <FormField label="Semester" id="semester" placeholder="e.g. Ganjil atau Genap" value={settings.semester} onChange={onSettingsChange}/>
-                                    <FormField label="Tempat, Tanggal Rapor" id="tanggal_rapor" placeholder="e.g. Jakarta, 20 Desember 2023" value={settings.tanggal_rapor} onChange={onSettingsChange}/>
+                                    <FormField label="Nama Kelas" id="nama_kelas" value={settings.nama_kelas} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Tahun Ajaran" id="tahun_ajaran" placeholder="e.g. 2023/2024" value={settings.tahun_ajaran} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Semester" id="semester" placeholder="e.g. Ganjil atau Genap" value={settings.semester} onChange={onSettingsChange} onBlur={onSave}/>
+                                    <FormField label="Tempat, Tanggal Rapor" id="tanggal_rapor" placeholder="e.g. Jakarta, 20 Desember 2023" value={settings.tanggal_rapor} onChange={onSettingsChange} onBlur={onSave}/>
                                 </div>
                             </section>
                             <section>
                                 <h3 className="text-xl font-bold text-slate-800 border-b pb-3 mb-6">Kepala Sekolah dan Guru</h3>
                                  <div className="space-y-4">
-                                    <FormField label="Nama Kepala Sekolah" id="nama_kepala_sekolah" value={settings.nama_kepala_sekolah} onChange={onSettingsChange} />
-                                    <FormField label="NIP Kepala Sekolah" id="nip_kepala_sekolah" value={settings.nip_kepala_sekolah} onChange={onSettingsChange} />
-                                    <FormField label="Nama Wali Kelas" id="nama_wali_kelas" value={settings.nama_wali_kelas} onChange={onSettingsChange} />
-                                    <FormField label="NIP Wali Kelas" id="nip_wali_kelas" value={settings.nip_wali_kelas} onChange={onSettingsChange} />
+                                    <FormField label="Nama Kepala Sekolah" id="nama_kepala_sekolah" value={settings.nama_kepala_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="NIP Kepala Sekolah" id="nip_kepala_sekolah" value={settings.nip_kepala_sekolah} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="Nama Wali Kelas" id="nama_wali_kelas" value={settings.nama_wali_kelas} onChange={onSettingsChange} onBlur={onSave} />
+                                    <FormField label="NIP Wali Kelas" id="nip_wali_kelas" value={settings.nip_wali_kelas} onChange={onSettingsChange} onBlur={onSave} />
                                 </div>
                             </section>
                         </div>
+                        
+                        <section className="pt-6 border-t">
+                            <h3 className="text-xl font-bold text-slate-800 border-b pb-3 mb-6">Mata Pelajaran</h3>
+                            <PengaturanMapel subjects={subjects} onUpdateSubjects={onUpdateSubjects} />
+                        </section>
 
-                        <div className="pt-5">
-                            <div className="flex justify-end">
-                                <button
-                                    type="button"
-                                    onClick={onSave}
-                                    className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                >
-                                    Simpan Perubahan
-                                </button>
-                            </div>
-                        </div>
+                        <section>
+                            <h3 className="text-xl font-bold text-slate-800 border-b pb-3 mb-6">Ekstrakurikuler</h3>
+                            <PengaturanEkstra extracurriculars={extracurriculars} onUpdateExtracurriculars={onUpdateExtracurriculars} />
+                        </section>
                     </div>
                 </div>
             </div>
