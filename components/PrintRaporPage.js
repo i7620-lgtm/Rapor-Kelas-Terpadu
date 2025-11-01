@@ -125,22 +125,93 @@ const IdentitasSiswa = ({ student, settings }) => (
     )
 );
 
-const MainReportPage = ({ student, settings, grades, subjects, studentDescriptions, extracurriculars, studentExtracurriculars, attendance, notes }) => {
+const capitalize = (s) => {
+    if (typeof s !== 'string' || !s) return '';
+    const trimmed = s.trim().replace(/[.,;]$/, '');
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+};
+
+const lowercaseFirst = (s) => {
+    if (typeof s !== 'string' || !s) return '';
+    const trimmed = s.trim().replace(/[.,;]$/, '');
+    return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
+};
+
+
+const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
+    const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
+    const studentName = capitalize(studentNameRaw);
+    const defaultReturn = { highest: '', lowest: '' };
+
+    const currentGradeNumber = getGradeNumber(settings.nama_kelas);
+    if (currentGradeNumber === null) {
+        return { ...defaultReturn, highest: "Nama kelas belum diatur." };
+    }
+    
+    let objectivesForCurrentClass = null;
+    for (const key in learningObjectives) {
+        if (getGradeNumber(key) === currentGradeNumber) {
+            objectivesForCurrentClass = learningObjectives[key];
+            break;
+        }
+    }
+
+    const objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
+    if (!objectivesForSubject || objectivesForSubject.length === 0) {
+        return { ...defaultReturn, highest: "Tujuan Pembelajaran belum diisi." };
+    }
+
+    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    const gradedTps = objectivesForSubject
+        .map((text, index) => ({ text, score: detailedGrade?.tp?.[index] }))
+        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
+    
+    if (gradedTps.length < 2) {
+        return { ...defaultReturn, highest: "Isi nilai untuk minimal 2 TP terlebih dahulu." };
+    }
+
+    const scores = gradedTps.map(tp => tp.score);
+    const allScoresEqual = scores.every(s => s === scores[0]);
+
+    if (allScoresEqual) {
+        const firstTp = gradedTps[0];
+        const secondTp = gradedTps[1];
+        const firstTpText = lowercaseFirst(firstTp.text);
+        const secondTpText = lowercaseFirst(secondTp.text);
+        return { 
+            highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${firstTpText}`,
+            lowest: `${studentName} perlu bimbingan dalam ${secondTpText}` 
+        };
+    } else {
+        let maxScore = -1;
+        let minScore = 101;
+        scores.forEach(s => {
+            if (s > maxScore) maxScore = s;
+            if (s < minScore) minScore = s;
+        });
+        
+        const highestTp = gradedTps.find(tp => tp.score === maxScore);
+        const lowestTp = gradedTps.find(tp => tp.score === minScore);
+        
+        if (highestTp && lowestTp) {
+            const highestTpText = lowercaseFirst(highestTp.text);
+            const lowestTpText = lowercaseFirst(lowestTp.text);
+            return { 
+                highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${highestTpText}`,
+                lowest: `${studentName} perlu bimbingan dalam ${lowestTpText}`
+            };
+        }
+    }
+
+    return { highest: "Tidak dapat membuat deskripsi.", lowest: "" };
+};
+
+
+const MainReportPage = ({ student, settings, grades, subjects, learningObjectives, extracurriculars, studentExtracurriculars, attendance, notes }) => {
     const gradeData = grades.find(g => g.studentId === student.id);
     const attendanceData = attendance.find(a => a.studentId === student.id);
     const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
     const studentNote = notes[student.id] || '';
-
-    const predicateA = parseInt(settings.predikats?.a || '90', 10);
-    const predicateB = parseInt(settings.predikats?.b || '80', 10);
-    const predicateC = parseInt(settings.predikats?.c || '70', 10);
-    
-    const getPredicate = (grade) => {
-        if (grade >= predicateA) return 'A';
-        if (grade >= predicateB) return 'B';
-        if (grade >= predicateC) return 'C';
-        return 'D';
-    };
 
     const reportSubjects = React.useMemo(() => {
         const result = [];
@@ -165,9 +236,8 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
             if (orderItem.type === 'group') {
                 if (processedGroups.has(orderItem.key)) return;
 
-                let subjectToAdd = null;
+                let subjectForDesc = null;
                 let grade = null;
-                let description = '';
                 const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(orderItem.name));
 
                 if (orderItem.key === 'PABP') {
@@ -183,31 +253,30 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
                     });
                     
                     if (religionSubject) {
-                        subjectToAdd = { ...religionSubject, fullName: orderItem.name };
+                        subjectForDesc = religionSubject;
                         grade = gradeData?.finalGrades?.[religionSubject.id];
-                        description = studentDescriptions[student.id]?.[religionSubject.id] || 'Deskripsi belum dibuat.';
                         groupSubjects.forEach(s => processedSubjects.add(s.id));
                     }
                 } else { // SB or Mulok
                     const gradedSubject = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null);
                     
                     if (gradedSubject) {
-                        subjectToAdd = { ...gradedSubject, fullName: orderItem.name };
+                        subjectForDesc = gradedSubject;
                         grade = gradeData?.finalGrades?.[gradedSubject.id];
-                        description = studentDescriptions[student.id]?.[gradedSubject.id] || 'Deskripsi belum dibuat.';
                         groupSubjects.forEach(s => processedSubjects.add(s.id));
                     }
                 }
 
-                if (subjectToAdd) {
-                    result.push({ subject: subjectToAdd, grade, description });
+                if (subjectForDesc) {
+                    const description = generateDescription(student, subjectForDesc, gradeData, learningObjectives, settings);
+                    result.push({ subject: { ...subjectForDesc, fullName: orderItem.name }, grade, description });
                     processedGroups.add(orderItem.key);
                 }
             } else { // individual
                 const subject = allActiveSubjects.find(s => s.fullName === orderItem.name);
                 if (subject && !processedSubjects.has(subject.id)) {
                     const grade = gradeData?.finalGrades?.[subject.id];
-                    const description = studentDescriptions[student.id]?.[subject.id] || 'Deskripsi belum dibuat.';
+                    const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
                     result.push({ subject, grade, description });
                     processedSubjects.add(subject.id);
                 }
@@ -219,7 +288,7 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
                 const isGrouped = subjectOrder.some(orderItem => orderItem.type === 'group' && subject.fullName.startsWith(orderItem.name) && processedGroups.has(orderItem.key));
                 if (!isGrouped) {
                     const grade = gradeData?.finalGrades?.[subject.id];
-                    const description = studentDescriptions[student.id]?.[subject.id] || 'Deskripsi belum dibuat.';
+                    const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
                     result.push({ subject, grade, description });
                     processedSubjects.add(subject.id);
                 }
@@ -227,10 +296,10 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
         });
 
         return result;
-    }, [student, subjects, gradeData, studentDescriptions]);
+    }, [student, subjects, gradeData, learningObjectives, settings]);
     
     return (
-        React.createElement('div', { className: 'p-8 text-sm' },
+        React.createElement('div', { className: 'text-sm' },
             React.createElement(IdentitasSiswa, { student: student, settings: settings }),
             
             React.createElement('div', { className: 'mt-4' },
@@ -245,11 +314,10 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
                 React.createElement('table', { className: 'w-full border-collapse border border-black mt-1' },
                     React.createElement('thead', null,
                         React.createElement('tr', { className: 'font-bold text-center' },
-                            React.createElement('td', { className: 'border border-black p-1 w-[5%]' }, 'No'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[25%]' }, 'Mata Pelajaran'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[10%]' }, 'Nilai'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[10%]' }, 'Predikat'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[50%]' }, 'Deskripsi Capaian Kompetensi')
+                            React.createElement('td', { className: 'border border-black p-1 w-[5%]' }, 'No.'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[20%]' }, 'Mata Pelajaran'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[8%]' }, 'Nilai Akhir'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[67%]' }, 'Capaian Kompetensi')
                         )
                     ),
                     React.createElement('tbody', null,
@@ -258,8 +326,14 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
                                 React.createElement('td', { className: 'border border-black p-1 text-center' }, index + 1),
                                 React.createElement('td', { className: 'border border-black p-1' }, subject.fullName),
                                 React.createElement('td', { className: 'border border-black p-1 text-center' }, grade ?? ''),
-                                React.createElement('td', { className: 'border border-black p-1 text-center' }, grade != null ? getPredicate(grade) : ''),
-                                React.createElement('td', { className: 'border border-black p-1 align-top' }, description)
+                                React.createElement('td', { className: 'border border-black align-top' },
+                                    React.createElement('div', { className: 'p-1' }, 
+                                        React.createElement('div', null, description.highest)
+                                    ),
+                                    description.lowest && React.createElement('div', { className: 'p-1 border-t border-black' }, 
+                                        React.createElement('div', null, description.lowest)
+                                    )
+                                )
                             )
                         ))
                     )
@@ -348,7 +422,7 @@ const P5ReportPage = ({ student, settings, project, assessments, allProjects }) 
     const projectIndex = allProjects.findIndex(p => p.id === project.id);
     
     return (
-        React.createElement('div', { className: 'p-8 text-sm' },
+        React.createElement('div', { className: 'text-sm' },
             React.createElement('div', { className: 'text-center font-bold mb-4' },
                 React.createElement('h2', { className: 'text-sm' }, 'LAPORAN PROJEK PENGUATAN PROFIL PELAJAR PANCASILA')
             ),
@@ -478,12 +552,21 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             React.createElement('div', { id: "print-area", className: "space-y-8" },
                 students.map(student => (
                     React.createElement(React.Fragment, { key: student.id },
-                        React.createElement('div', { className: 'report-page w-[210mm] min-h-[297mm] bg-white shadow-lg mx-auto my-8 border', 'data-student-id': student.id },
+                        React.createElement('div', { 
+                            className: 'report-page w-[210mm] min-h-[297mm] bg-white shadow-lg mx-auto my-8 border box-border', 
+                            'data-student-id': student.id,
+                            style: { padding: '1.5cm' } 
+                        },
                             React.createElement(KopSurat, { settings: settings }),
                             React.createElement(MainReportPage, { student: student, settings: settings, ...restProps })
                         ),
                         p5Projects.map(project => (
-                             React.createElement('div', { key: project.id, className: 'report-page w-[210mm] min-h-[297mm] bg-white shadow-lg mx-auto my-8 border', 'data-student-id': student.id },
+                             React.createElement('div', { 
+                                key: project.id, 
+                                className: 'report-page w-[210mm] min-h-[297mm] bg-white shadow-lg mx-auto my-8 border box-border', 
+                                'data-student-id': student.id,
+                                style: { padding: '1.5cm' }
+                            },
                                 React.createElement(KopSurat, { settings: settings }),
                                 React.createElement(P5ReportPage, { student: student, settings: settings, project: project, assessments: restProps.p5Assessments, allProjects: p5Projects })
                             )
