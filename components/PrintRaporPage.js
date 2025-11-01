@@ -181,35 +181,78 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
                         )
                     ),
                     React.createElement('tbody', null,
-                        [
-                            ...groupedSubjects.PABP.length > 0 ? [groupedSubjects.PABP.find(s => gradeData?.finalGrades?.[s.id] != null) || groupedSubjects.PABP[0]].map(s => ({ ...s, fullName: 'Pendidikan Agama dan Budi Pekerti' })) : [],
-                            ...groupedSubjects.others,
-                            ...groupedSubjects.SB.length > 0 ? [groupedSubjects.SB.find(s => gradeData?.finalGrades?.[s.id] != null) || groupedSubjects.SB[0]].map(s => ({ ...s, fullName: 'Seni Budaya' })) : [],
-                            ...groupedSubjects.Mulok.length > 0 ? [groupedSubjects.Mulok.find(s => gradeData?.finalGrades?.[s.id] != null) || groupedSubjects.Mulok[0]].map(s => ({ ...s, fullName: 'Muatan Lokal' })) : []
-                        ].map((subject, index) => {
-                            let grade = 0;
-                            let originalSubjectId = subject.id;
-                            if (['Pendidikan Agama dan Budi Pekerti', 'Seni Budaya', 'Muatan Lokal'].includes(subject.fullName)) {
-                                const subGroup = subject.fullName.startsWith('Pendidikan Agama') ? groupedSubjects.PABP : subject.fullName.startsWith('Seni Budaya') ? groupedSubjects.SB : groupedSubjects.Mulok;
-                                const gradedSubject = subGroup.find(s => gradeData?.finalGrades?.[s.id] != null);
-                                grade = gradedSubject ? gradeData.finalGrades[gradedSubject.id] : null;
-                                originalSubjectId = gradedSubject ? gradedSubject.id : originalSubjectId;
-                            } else {
-                                grade = gradeData?.finalGrades?.[subject.id];
-                            }
+                        (() => {
+                            let rowCounter = 0;
+                            const renderRow = (subject, grade, description) => {
+                                rowCounter++;
+                                return (
+                                    React.createElement('tr', { key: subject.id },
+                                        React.createElement('td', { className: 'border border-black p-1 text-center' }, rowCounter),
+                                        React.createElement('td', { className: 'border border-black p-1' }, subject.fullName),
+                                        React.createElement('td', { className: 'border border-black p-1 text-center' }, grade ?? ''),
+                                        React.createElement('td', { className: 'border border-black p-1 text-center' }, grade != null ? getPredicate(grade) : ''),
+                                        React.createElement('td', { className: 'border border-black p-1 align-top' }, description)
+                                    )
+                                );
+                            };
                             
-                            const description = studentDescriptions[student.id]?.[originalSubjectId] || 'Deskripsi belum dibuat.';
+                            const rows = [];
+                            const subjectsOrder = ['Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 'Bahasa Inggris', 'Muatan Lokal'];
+                            const renderedSubjects = new Set();
+                            
+                            subjectsOrder.forEach(subjectName => {
+                                if (subjectName === 'Pendidikan Agama dan Budi Pekerti') {
+                                    if (groupedSubjects.PABP.length > 0 && !renderedSubjects.has('PABP')) {
+                                        const studentReligion = student.agama?.trim().toLowerCase();
+                                        const religionSubject = groupedSubjects.PABP.find(s => {
+                                            const startIndex = s.fullName.indexOf('(');
+                                            const endIndex = s.fullName.indexOf(')');
+                                            if (startIndex !== -1 && endIndex > startIndex + 1) {
+                                                const subjectReligion = s.fullName.substring(startIndex + 1, endIndex).trim().toLowerCase();
+                                                return subjectReligion === studentReligion;
+                                            }
+                                            return false;
+                                        });
+                                        if (religionSubject) {
+                                            const grade = gradeData?.finalGrades?.[religionSubject.id];
+                                            const description = studentDescriptions[student.id]?.[religionSubject.id] || 'Deskripsi belum dibuat.';
+                                            rows.push(renderRow({ ...religionSubject, fullName: 'Pendidikan Agama dan Budi Pekerti' }, grade, description));
+                                            renderedSubjects.add('PABP');
+                                        }
+                                    }
+                                } else if (subjectName === 'Seni Budaya') {
+                                     if (groupedSubjects.SB.length > 0 && !renderedSubjects.has('SB')) {
+                                        const gradedSubject = groupedSubjects.SB.find(s => gradeData?.finalGrades?.[s.id] != null);
+                                        if (gradedSubject) {
+                                            const grade = gradeData?.finalGrades?.[gradedSubject.id];
+                                            const description = studentDescriptions[student.id]?.[gradedSubject.id] || 'Deskripsi belum dibuat.';
+                                            rows.push(renderRow({ ...gradedSubject, fullName: 'Seni Budaya' }, grade, description));
+                                            renderedSubjects.add('SB');
+                                        }
+                                    }
+                                } else if (subjectName === 'Muatan Lokal') {
+                                     if (groupedSubjects.Mulok.length > 0 && !renderedSubjects.has('Mulok')) {
+                                        const gradedSubject = groupedSubjects.Mulok.find(s => gradeData?.finalGrades?.[s.id] != null);
+                                        if (gradedSubject) {
+                                            const grade = gradeData?.finalGrades?.[gradedSubject.id];
+                                            const description = studentDescriptions[student.id]?.[gradedSubject.id] || 'Deskripsi belum dibuat.';
+                                            rows.push(renderRow({ ...gradedSubject, fullName: 'Muatan Lokal' }, grade, description));
+                                            renderedSubjects.add('Mulok');
+                                        }
+                                    }
+                                } else {
+                                    const subject = groupedSubjects.others.find(s => s.fullName === subjectName);
+                                    if (subject && !renderedSubjects.has(subject.id)) {
+                                        const grade = gradeData?.finalGrades?.[subject.id];
+                                        const description = studentDescriptions[student.id]?.[subject.id] || 'Deskripsi belum dibuat.';
+                                        rows.push(renderRow(subject, grade, description));
+                                        renderedSubjects.add(subject.id);
+                                    }
+                                }
+                            });
 
-                            return (
-                                React.createElement('tr', { key: subject.id },
-                                    React.createElement('td', { className: 'border border-black p-1 text-center' }, index + 1),
-                                    React.createElement('td', { className: 'border border-black p-1' }, subject.fullName),
-                                    React.createElement('td', { className: 'border border-black p-1 text-center' }, grade ?? ''),
-                                    React.createElement('td', { className: 'border border-black p-1 text-center' }, grade != null ? getPredicate(grade) : ''),
-                                    React.createElement('td', { className: 'border border-black p-1 align-top' }, description)
-                                )
-                            )
-                        })
+                            return rows;
+                        })()
                     )
                 )
             ),
@@ -291,8 +334,9 @@ const MainReportPage = ({ student, settings, grades, subjects, studentDescriptio
     );
 };
 
-const P5ReportPage = ({ student, settings, project, assessments }) => {
+const P5ReportPage = ({ student, settings, project, assessments, allProjects }) => {
     const studentAssessments = assessments.find(a => a.studentId === student.id && a.projectId === project.id);
+    const projectIndex = allProjects.findIndex(p => p.id === project.id);
     
     return (
         React.createElement('div', { className: 'p-8 text-sm' },
@@ -327,7 +371,7 @@ const P5ReportPage = ({ student, settings, project, assessments }) => {
             ),
             
             React.createElement('div', { className: 'border border-black p-2' },
-                React.createElement('p', { className: 'font-bold' }, `Proyek ${project.id === 'P5_BHINNEKA' ? '1' : '2'}: ${project.title}`),
+                React.createElement('p', { className: 'font-bold' }, `Proyek ${projectIndex !== -1 ? projectIndex + 1 : ''}: ${project.title}`),
                 React.createElement('p', { className: 'italic' }, project.description)
             ),
             
@@ -432,7 +476,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         p5Projects.map(project => (
                              React.createElement('div', { key: project.id, className: 'report-page w-[210mm] min-h-[297mm] bg-white shadow-lg mx-auto my-8 border', 'data-student-id': student.id },
                                 React.createElement(KopSurat, { settings: settings }),
-                                React.createElement(P5ReportPage, { student: student, settings: settings, project: project, assessments: restProps.p5Assessments })
+                                React.createElement(P5ReportPage, { student: student, settings: settings, project: project, assessments: restProps.p5Assessments, allProjects: p5Projects })
                             )
                         ))
                     )
