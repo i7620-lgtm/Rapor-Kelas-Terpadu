@@ -219,53 +219,61 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
     );
 };
 
-const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectivesForSubject, predikats }) => {
+const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectivesForSubject }) => {
     
     useEffect(() => {
         const generateAllDescriptions = () => {
-            const kkm = parseInt(predikats.c, 10) || 70;
-            const totalTps = objectivesForSubject.length;
             let updates = JSON.parse(JSON.stringify(descriptions));
             let hasChanged = false;
 
             students.forEach(student => {
-                const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-                const gradedTps = objectivesForSubject
-                    .map((text, index) => ({ text, score: detailedGrade?.tp?.[index] }))
-                    .filter(tp => typeof tp.score === 'number');
-
-                const studentName = student.namaPanggilan || student.namaLengkap.split(' ')[0];
+                const studentName = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
                 let generatedText = "";
 
-                if (gradedTps.length === 0) {
-                    generatedText = "Data nilai tujuan pembelajaran (formatif) belum diisi.";
+                // Rule 1: Check if TPs exist for the subject
+                if (!objectivesForSubject || objectivesForSubject.length === 0) {
+                    generatedText = "Harap isi Tujuan Pembelajaran (TP) terlebih dahulu di bagian 'Tujuan Pembelajaran'.";
                 } else {
-                    const scores = gradedTps.map(tp => tp.score);
-                    const minScore = Math.min(...scores);
-                    const maxScore = Math.max(...scores);
-                    const allMastered = minScore >= kkm && gradedTps.length === totalTps && totalTps > 0;
+                    const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
+                    const gradedTps = objectivesForSubject
+                        .map((text, index) => ({ text, score: detailedGrade?.tp?.[index] }))
+                        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
 
-                    if (allMastered) {
-                        generatedText = `Ananda ${studentName} telah menguasai seluruh tujuan pembelajaran dengan sangat baik. Pertahankan prestasimu!`;
-                    } else if (maxScore > minScore) {
-                        const highestTpText = gradedTps.find(tp => tp.score === maxScore).text;
-                        const lowestTpText = gradedTps.find(tp => tp.score === minScore).text;
-                        generatedText = `Ananda ${studentName} menunjukkan penguasaan yang sangat baik pada materi: ${highestTpText}. Namun, masih perlu bimbingan lebih lanjut untuk materi: ${lowestTpText}.`;
-                    } else { // Tie-breaker case: all scores are the same
-                        if (gradedTps.length === 1) {
-                            generatedText = `Ananda ${studentName} menunjukkan penguasaan yang cukup pada materi: ${gradedTps[0].text}. Perlu latihan lebih lanjut untuk meningkatkan pemahaman.`;
-                        } else if (gradedTps.length >= 2) {
-                            const masteredText = gradedTps[0].text;
-                            const improvementText = gradedTps[1].text;
-                            generatedText = `Ananda ${studentName} telah menunjukkan pemahaman yang baik pada materi: ${masteredText}. Untuk selanjutnya, dapat berfokus pada peningkatan pemahaman materi: ${improvementText}.`;
-                        } else {
-                            generatedText = "Data nilai tujuan pembelajaran (formatif) belum cukup untuk membuat deskripsi.";
+                    // Rule 1 continuation: Check graded TPs count
+                    if (gradedTps.length === 0) {
+                        generatedText = "Harap isi nilai untuk minimal 2 Tujuan Pembelajaran (TP) terlebih dahulu.";
+                    } else if (gradedTps.length === 1) {
+                        generatedText = "Harap isi nilai untuk 1 Tujuan Pembelajaran (TP) lagi untuk membuat deskripsi otomatis.";
+                    } else { // At least 2 TPs are graded, proceed with main logic
+                        const scores = gradedTps.map(tp => tp.score);
+                        const minScore = Math.min(...scores);
+                        const maxScore = Math.max(...scores);
+                        const allScoresEqual = scores.every(score => score === scores[0]);
+
+                        // Rule 5: If all scores are equal
+                        if (allScoresEqual) {
+                            const highestTp = gradedTps[0];
+                            const lowestTp = gradedTps[1]; // Safe due to length check above
+                            if (highestTp && lowestTp) {
+                                generatedText = `Ananda ${studentName} telah menunjukkan pemahaman yang baik pada materi: ${highestTp.text}. Untuk selanjutnya, dapat berfokus pada peningkatan pemahaman materi: ${lowestTp.text}.`;
+                            }
+                        } else { // Rules 2, 3, 4: Scores are different
+                            const highestTp = gradedTps.find(tp => tp.score === maxScore);
+                            const lowestTp = gradedTps.find(tp => tp.score === minScore);
+                            
+                            if (highestTp && lowestTp) { 
+                                generatedText = `Ananda ${studentName} menunjukkan penguasaan yang sangat baik pada materi: ${highestTp.text}. Namun, masih perlu bimbingan lebih lanjut untuk materi: ${lowestTp.text}.`;
+                            }
                         }
                     }
                 }
                 
+                if (!generatedText) { // Fallback if no conditions are met
+                    generatedText = "Tidak dapat membuat deskripsi otomatis karena data nilai tidak lengkap.";
+                }
+
                 const newDescription = generatedText.trim();
-                const currentDescription = (descriptions[student.id] || {})[subject.id] || '';
+                const currentDescription = (updates[student.id] || {})[subject.id] || '';
 
                 if (newDescription !== currentDescription) {
                     if (!updates[student.id]) updates[student.id] = {};
@@ -281,7 +289,8 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
 
         generateAllDescriptions();
 
-    }, [students, grades, subject, objectivesForSubject, predikats, onUpdateDescriptions, descriptions]);
+    }, [students, grades, subject, objectivesForSubject, onUpdateDescriptions, descriptions]);
+
 
     if (students.length === 0) {
         return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
@@ -298,7 +307,7 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
                     React.createElement('textarea', { 
                         value: (descriptions[student.id]?.[subject.id] || ''), 
                         readOnly: true, 
-                        placeholder: "Deskripsi akan muncul di sini secara otomatis setelah nilai TP terisi...", 
+                        placeholder: "Deskripsi akan muncul di sini secara otomatis...", 
                         className: `w-full p-2 mt-2 text-sm border border-slate-300 rounded-md cursor-default bg-slate-100`, 
                         rows: 3 
                     })
