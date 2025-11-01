@@ -1,5 +1,4 @@
 
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { NAV_ITEMS } from './constants.js';
 import Sidebar from './components/Sidebar.js';
@@ -16,12 +15,12 @@ import PrintRaporPage from './components/PrintRaporPage.js';
 import Toast from './components/Toast.js';
 
 const defaultSubjects = [
-    { id: 'PAI', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PAI', active: false },
-    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: true },
-    { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: true },
-    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: true },
-    { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: true },
-    { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: true },
+    { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
+    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: false },
+    { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: false },
+    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: false },
+    { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: false },
+    { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: false },
     { id: 'PP', fullName: 'Pendidikan Pancasila', label: 'PP', active: true },
     { id: 'BIndo', fullName: 'Bahasa Indonesia', label: 'B. Indo', active: true },
     { id: 'MTK', fullName: 'Matematika', label: 'MTK', active: true },
