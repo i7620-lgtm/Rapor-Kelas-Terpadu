@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { NAV_ITEMS } from './constants.js';
 import Sidebar from './components/Sidebar.js';
@@ -892,6 +893,10 @@ useEffect(() => {
                         if (newStudentExtras.length > 0) { handleBulkUpdateStudentExtracurriculars(newStudentExtras); importCount++; }
                     } else if (sheetName === 'Penilaian P5') {
                         const jsonP5 = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        if (!jsonP5 || jsonP5.length < 2) {
+                            console.warn(`Skipping P5 sheet "${sheetName}" due to missing header or data.`);
+                            return; 
+                        }
                         const machineHeaders = jsonP5[0];
                         const studentDataRows = jsonP5.slice(2);
                         const updates = [];
