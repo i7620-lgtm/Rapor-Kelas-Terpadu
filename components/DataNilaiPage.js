@@ -133,11 +133,22 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
     }, []);
 
     const objectivesForSubject = useMemo(() => {
-        const gradeNum = getGradeNumber(namaKelas);
-        if (gradeNum === null) return [];
-        let gradeKey = '';
-        for (const key in objectives) if (getGradeNumber(key) === gradeNum) { gradeKey = key; break; }
-        return gradeKey ? objectives[gradeKey]?.[subject.fullName] || [] : [];
+        const currentGradeNumber = getGradeNumber(namaKelas);
+        if (currentGradeNumber === null) return [];
+        
+        let objectivesForCurrentClass = null;
+        for (const key in objectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                objectivesForCurrentClass = objectives[key];
+                break;
+            }
+        }
+        
+        if (objectivesForCurrentClass) {
+            return objectivesForCurrentClass[subject.fullName] || [];
+        }
+        
+        return [];
     }, [subject, namaKelas, objectives]);
 
     const numberOfTps = objectivesForSubject.length;
@@ -148,6 +159,10 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
             onUpdateDetailedGrade(studentId, subject.id, type, numericValue, tpIndex);
         }
     };
+
+    if (students.length === 0) {
+        return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
+    }
 
     return (
         React.createElement('div', { className: "overflow-x-auto" },
@@ -164,24 +179,53 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
                         )),
                         React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "STS"),
                         React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "SAS"),
-                        React.createElement('th', { className: "px-2 py-3 w-24 text-center font-bold" }, "Nilai Akhir")
+                        React.createElement('th', { className: "px-2 py-3 w-24 text-center font-extrabold bg-slate-200" }, "Nilai Akhir")
                     )
                 ),
                 React.createElement('tbody', null,
                     students.map(student => {
                         const studentGrade = grades.find(g => g.studentId === student.id);
                         const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+
                         return (
-                        React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50" },
-                            React.createElement('th', { className: "px-6 py-2 font-medium text-slate-900 whitespace-nowrap" }, student.namaLengkap),
-                            ...Array.from({ length: numberOfTps }).map((_, i) => (
-                                React.createElement('td', { key: i, className: "px-2 py-1" }, React.createElement('input', { type: "number", min: "0", max: "100", value: detailedGrade?.tp?.[i] ?? '', onChange: (e) => handleGradeChange(student.id, 'tp', e.target.value, i), className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" }))
-                            )),
-                            React.createElement('td', { className: "px-2 py-1" }, React.createElement('input', { type: "number", min: "0", max: "100", value: detailedGrade?.sts ?? '', onChange: (e) => handleGradeChange(student.id, 'sts', e.target.value), className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" })),
-                            React.createElement('td', { className: "px-2 py-1" }, React.createElement('input', { type: "number", min: "0", max: "100", value: detailedGrade?.sas ?? '', onChange: (e) => handleGradeChange(student.id, 'sas', e.target.value), className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" })),
-                            React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800 bg-slate-50" }, studentGrade?.finalGrades?.[subject.id] ?? '')
-                        )
-                    )})
+                            React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50" },
+                                React.createElement('th', { className: "px-6 py-2 font-medium text-slate-900 whitespace-nowrap" }, student.namaLengkap),
+                                ...Array.from({ length: numberOfTps }).map((_, i) => (
+                                    React.createElement('td', { key: i, className: "px-2 py-1" }, 
+                                        React.createElement('input', { 
+                                            type: "number", 
+                                            min: "0", 
+                                            max: "100", 
+                                            value: detailedGrade?.tp?.[i] ?? '', 
+                                            onChange: (e) => handleGradeChange(student.id, 'tp', e.target.value, i), 
+                                            className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+                                        })
+                                    )
+                                )),
+                                React.createElement('td', { className: "px-2 py-1" }, 
+                                    React.createElement('input', { 
+                                        type: "number", 
+                                        min: "0", 
+                                        max: "100", 
+                                        value: detailedGrade?.sts ?? '', 
+                                        onChange: (e) => handleGradeChange(student.id, 'sts', e.target.value), 
+                                        className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+                                    })
+                                ),
+                                React.createElement('td', { className: "px-2 py-1" }, 
+                                    React.createElement('input', { 
+                                        type: "number", 
+                                        min: "0", 
+                                        max: "100", 
+                                        value: detailedGrade?.sas ?? '', 
+                                        onChange: (e) => handleGradeChange(student.id, 'sas', e.target.value), 
+                                        className: "w-16 p-2 text-center bg-white border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+                                    })
+                                ),
+                                React.createElement('td', { className: "px-2 py-2 text-center font-bold text-slate-800 bg-slate-200" }, studentGrade?.finalGrades?.[subject.id] ?? '')
+                            )
+                        );
+                    })
                 )
             ),
             activeTooltip !== null && (
@@ -230,6 +274,10 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
         if (hasChanged) onUpdateDescriptions(updates);
     }, [students, grades, subject, objectives, namaKelas, predikats, descriptions, onUpdateDescriptions]);
 
+    if (students.length === 0) {
+        return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
+    }
+
     return (
         React.createElement('div', { className: "space-y-4 max-h-[60vh] overflow-y-auto pr-2" },
             students.map(student => (
@@ -246,9 +294,22 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
 };
 
 const SubjectDetailView = (props) => {
-    const { subject } = props;
+    const { subject, students } = props;
     const [openPanel, setOpenPanel] = useState('nilai');
     const togglePanel = (panelName) => setOpenPanel(openPanel === panelName ? null : panelName);
+
+    const filteredStudents = useMemo(() => {
+        if (subject && subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+            const match = subject.fullName.match(/\(([^)]+)\)/);
+            if (match && match[1]) {
+                const religion = match[1];
+                return students.filter(student => student.agama && student.agama.toLowerCase() === religion.toLowerCase());
+            }
+        }
+        return students;
+    }, [subject, students]);
+
+    const updatedPropsForChildren = { ...props, students: filteredStudents };
 
     return (
         React.createElement('div', { className: "space-y-4" },
@@ -260,10 +321,10 @@ const SubjectDetailView = (props) => {
                 React.createElement(TujuanPembelajaranSection, { subject: subject, objectives: props.learningObjectives, onUpdate: props.onUpdateLearningObjectives, namaKelas: props.namaKelas })
             ),
             React.createElement(AccordionItem, { title: "Input Nilai", isOpen: openPanel === 'nilai', onToggle: () => togglePanel('nilai') },
-                 React.createElement(NilaiPerMapelSection, props)
+                 React.createElement(NilaiPerMapelSection, updatedPropsForChildren)
             ),
             React.createElement(AccordionItem, { title: "Deskripsi Rapor", isOpen: openPanel === 'deskripsi', onToggle: () => togglePanel('deskripsi') },
-                React.createElement(DeskripsiNilaiSection, props)
+                React.createElement(DeskripsiNilaiSection, updatedPropsForChildren)
             )
         )
     );
