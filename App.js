@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { NAV_ITEMS } from './constants.js';
 import Sidebar from './components/Sidebar.js';
@@ -266,44 +267,40 @@ useEffect(() => {
 
 useEffect(() => {
     const loadLearningObjectives = async () => {
-        const savedObjectivesStr = localStorage.getItem('appLearningObjectives');
-        
-        if (!settings.nama_kelas) {
-            if (savedObjectivesStr) {
-                localStorage.removeItem('appLearningObjectives');
-            }
-            setLearningObjectives({});
-            return;
-        }
-
         const gradeNumber = getGradeNumber(settings.nama_kelas);
-        if (gradeNumber === null) {
-            setLearningObjectives({});
+        if (!gradeNumber) {
             return;
         }
 
         const gradeKey = `Kelas ${gradeNumber}`;
-        const currentSavedGradeKey = savedObjectivesStr ? Object.keys(JSON.parse(savedObjectivesStr))[0] : null;
+        
+        // Only fetch if data for this class doesn't exist or is an empty object (from a previous failed fetch).
+        if (learningObjectives[gradeKey] && Object.keys(learningObjectives[gradeKey]).length > 0) {
+            return;
+        }
 
-        if (gradeKey !== currentSavedGradeKey) {
-            try {
-                const response = await fetch(`/tp${gradeNumber}.json`);
-                if (!response.ok) {
-                    console.warn(`Could not load tp${gradeNumber}.json: ${response.statusText}`);
-                    setLearningObjectives({}); 
-                    return;
-                }
-                const objectivesForClass = await response.json();
-                setLearningObjectives({ [gradeKey]: objectivesForClass });
-            } catch (err) {
-                console.error(`Failed to load learning objectives for grade ${gradeNumber}:`, err);
-                setLearningObjectives({});
+        try {
+            const response = await fetch(`/tp${gradeNumber}.json`);
+            if (!response.ok) {
+                console.warn(`Could not load learning objectives from /tp${gradeNumber}.json. Status: ${response.statusText}`);
+                // Do NOT set an empty object here, to allow for retries.
+                return;
             }
+            const objectivesForClass = await response.json();
+            
+            setLearningObjectives(prev => ({
+                ...prev,
+                [gradeKey]: objectivesForClass
+            }));
+        } catch (err) {
+            console.error(`Failed to fetch and parse learning objectives for grade ${gradeNumber}:`, err);
         }
     };
 
-    loadLearningObjectives();
-}, [settings.nama_kelas]);
+    if (settings.nama_kelas) {
+      loadLearningObjectives();
+    }
+}, [settings.nama_kelas, learningObjectives]);
 
 
   useEffect(() => {
