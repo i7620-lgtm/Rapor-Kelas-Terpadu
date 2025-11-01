@@ -123,7 +123,7 @@ const TujuanPembelajaranSection = ({ subject, objectives, onUpdate, namaKelas })
     );
 };
 
-const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade, objectives, namaKelas }) => {
+const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade, objectivesForSubject }) => {
     const [activeTooltip, setActiveTooltip] = useState(null);
 
     useEffect(() => {
@@ -131,26 +131,7 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    const objectivesForSubject = useMemo(() => {
-        const currentGradeNumber = getGradeNumber(namaKelas);
-        if (currentGradeNumber === null) return [];
-        
-        let objectivesForCurrentClass = null;
-        for (const key in objectives) {
-            if (getGradeNumber(key) === currentGradeNumber) {
-                objectivesForCurrentClass = objectives[key];
-                break;
-            }
-        }
-        
-        if (objectivesForCurrentClass) {
-            return objectivesForCurrentClass[subject.fullName] || [];
-        }
-        
-        return [];
-    }, [subject, namaKelas, objectives]);
-
+    
     const numberOfTps = objectivesForSubject.length;
 
     const handleGradeChange = (studentId, type, value, tpIndex) => {
@@ -238,12 +219,8 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
     );
 };
 
-const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectives, namaKelas, predikats }) => {
+const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectivesForSubject, predikats }) => {
     useEffect(() => {
-        const gradeNum = getGradeNumber(namaKelas);
-        let gradeKey = '';
-        if (gradeNum !== null) { for (const key in objectives) if (getGradeNumber(key) === gradeNum) { gradeKey = key; break; }}
-        const objectivesForSubject = gradeKey ? objectives[gradeKey]?.[subject.fullName] || [] : [];
         const kkm = parseInt(predikats.c, 10) || 70;
         const totalTps = objectivesForSubject.length;
         const updates = JSON.parse(JSON.stringify(descriptions));
@@ -272,7 +249,7 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
         });
 
         if (hasChanged) onUpdateDescriptions(updates);
-    }, [students, grades, subject, objectives, namaKelas, predikats, descriptions, onUpdateDescriptions]);
+    }, [students, grades, subject, objectivesForSubject, predikats, descriptions, onUpdateDescriptions]);
 
     if (students.length === 0) {
         return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
@@ -294,7 +271,7 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
 };
 
 const SubjectDetailView = (props) => {
-    const { subject, students } = props;
+    const { subject, students, namaKelas, learningObjectives } = props;
     const [openPanel, setOpenPanel] = useState('nilai');
     const togglePanel = (panelName) => setOpenPanel(openPanel === panelName ? null : panelName);
 
@@ -308,8 +285,49 @@ const SubjectDetailView = (props) => {
         }
         return students;
     }, [subject, students]);
+    
+    const objectivesForSubject = useMemo(() => {
+        const currentGradeNumber = getGradeNumber(namaKelas);
+        if (currentGradeNumber === null) return [];
+        
+        let objectivesForCurrentClass = null;
+        for (const key in learningObjectives) {
+            if (getGradeNumber(key) === currentGradeNumber) {
+                objectivesForCurrentClass = learningObjectives[key];
+                break;
+            }
+        }
+        
+        if (objectivesForCurrentClass) {
+            return objectivesForCurrentClass[subject.fullName] || [];
+        }
+        
+        return [];
+    }, [subject, namaKelas, learningObjectives]);
 
-    const updatedPropsForChildren = { ...props, students: filteredStudents };
+    const updatedPropsForChildren = { ...props, students: filteredStudents, objectivesForSubject };
+
+    const renderInputNilaiContent = () => {
+        if (!namaKelas) {
+            return (
+                React.createElement('div', { className: "text-center text-slate-500 py-4" },
+                    React.createElement('p', { className: "font-semibold" }, "Nama Kelas belum diatur."),
+                    React.createElement('p', { className: "mt-1" }, "Silakan isi Nama Kelas di halaman Pengaturan terlebih dahulu untuk menampilkan input nilai.")
+                )
+            );
+        }
+
+        if (objectivesForSubject.length === 0) {
+            return (
+                React.createElement('div', { className: "text-center text-slate-500 py-4" },
+                    React.createElement('p', { className: "font-semibold" }, "Tujuan Pembelajaran belum tersedia."),
+                    React.createElement('p', { className: "mt-1" }, "Silakan isi terlebih dahulu di bagian 'Tujuan Pembelajaran' di atas.")
+                )
+            );
+        }
+
+        return React.createElement(NilaiPerMapelSection, updatedPropsForChildren);
+    };
 
     return (
         React.createElement('div', { className: "space-y-4" },
@@ -321,7 +339,7 @@ const SubjectDetailView = (props) => {
                 React.createElement(TujuanPembelajaranSection, { subject: subject, objectives: props.learningObjectives, onUpdate: props.onUpdateLearningObjectives, namaKelas: props.namaKelas })
             ),
             React.createElement(AccordionItem, { title: "Input Nilai", isOpen: openPanel === 'nilai', onToggle: () => togglePanel('nilai') },
-                 React.createElement(NilaiPerMapelSection, updatedPropsForChildren)
+                 renderInputNilaiContent()
             ),
             React.createElement(AccordionItem, { title: "Deskripsi Rapor", isOpen: openPanel === 'deskripsi', onToggle: () => togglePanel('deskripsi') },
                 React.createElement(DeskripsiNilaiSection, updatedPropsForChildren)
