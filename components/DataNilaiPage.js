@@ -220,36 +220,68 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
 };
 
 const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectivesForSubject, predikats }) => {
+    
     useEffect(() => {
-        const kkm = parseInt(predikats.c, 10) || 70;
-        const totalTps = objectivesForSubject.length;
-        const updates = JSON.parse(JSON.stringify(descriptions));
-        let hasChanged = false;
+        const generateAllDescriptions = () => {
+            const kkm = parseInt(predikats.c, 10) || 70;
+            const totalTps = objectivesForSubject.length;
+            let updates = JSON.parse(JSON.stringify(descriptions));
+            let hasChanged = false;
 
-        students.forEach(student => {
-            const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-            const studentTps = (detailedGrade && Array.isArray(detailedGrade.tp)) ? detailedGrade.tp : [];
-            const masteredTps = objectivesForSubject.filter((_, index) => (studentTps[index] ?? 0) >= kkm);
-            const studentName = student.namaPanggilan || student.namaLengkap.split(' ')[0];
-            let generatedText = "";
-            const hasGrades = studentTps.some(t => t !== null && t !== undefined);
+            students.forEach(student => {
+                const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
+                const gradedTps = objectivesForSubject
+                    .map((text, index) => ({ text, score: detailedGrade?.tp?.[index] }))
+                    .filter(tp => typeof tp.score === 'number');
 
-            if (!hasGrades) generatedText = "Data nilai tujuan pembelajaran (formatif) belum diisi.";
-            else if (masteredTps.length === totalTps && totalTps > 0) generatedText = `Ananda ${studentName} telah menguasai seluruh tujuan pembelajaran dengan sangat baik. Pertahankan prestasimu!`;
-            else if (masteredTps.length > 0) generatedText = `Ananda ${studentName} menunjukkan penguasaan yang baik pada materi: ${masteredTps.join(', ')}. Perlu peningkatan pada materi lainnya.`;
-            else generatedText = `Ananda ${studentName} masih memerlukan bimbingan lebih lanjut untuk dapat mencapai tujuan pembelajaran pada mata pelajaran ini.`;
-            
-            const newDescription = generatedText.trim();
-            const currentDescription = descriptions[student.id]?.[subject.id] || '';
-            if (newDescription !== currentDescription) {
-                hasChanged = true;
-                if (!updates[student.id]) updates[student.id] = {};
-                updates[student.id][subject.id] = newDescription;
+                const studentName = student.namaPanggilan || student.namaLengkap.split(' ')[0];
+                let generatedText = "";
+
+                if (gradedTps.length === 0) {
+                    generatedText = "Data nilai tujuan pembelajaran (formatif) belum diisi.";
+                } else {
+                    const scores = gradedTps.map(tp => tp.score);
+                    const minScore = Math.min(...scores);
+                    const maxScore = Math.max(...scores);
+                    const allMastered = minScore >= kkm && gradedTps.length === totalTps && totalTps > 0;
+
+                    if (allMastered) {
+                        generatedText = `Ananda ${studentName} telah menguasai seluruh tujuan pembelajaran dengan sangat baik. Pertahankan prestasimu!`;
+                    } else if (maxScore > minScore) {
+                        const highestTpText = gradedTps.find(tp => tp.score === maxScore).text;
+                        const lowestTpText = gradedTps.find(tp => tp.score === minScore).text;
+                        generatedText = `Ananda ${studentName} menunjukkan penguasaan yang sangat baik pada materi: ${highestTpText}. Namun, masih perlu bimbingan lebih lanjut untuk materi: ${lowestTpText}.`;
+                    } else { // Tie-breaker case: all scores are the same
+                        if (gradedTps.length === 1) {
+                            generatedText = `Ananda ${studentName} menunjukkan penguasaan yang cukup pada materi: ${gradedTps[0].text}. Perlu latihan lebih lanjut untuk meningkatkan pemahaman.`;
+                        } else if (gradedTps.length >= 2) {
+                            const masteredText = gradedTps[0].text;
+                            const improvementText = gradedTps[1].text;
+                            generatedText = `Ananda ${studentName} telah menunjukkan pemahaman yang baik pada materi: ${masteredText}. Untuk selanjutnya, dapat berfokus pada peningkatan pemahaman materi: ${improvementText}.`;
+                        } else {
+                            generatedText = "Data nilai tujuan pembelajaran (formatif) belum cukup untuk membuat deskripsi.";
+                        }
+                    }
+                }
+                
+                const newDescription = generatedText.trim();
+                const currentDescription = (descriptions[student.id] || {})[subject.id] || '';
+
+                if (newDescription !== currentDescription) {
+                    if (!updates[student.id]) updates[student.id] = {};
+                    updates[student.id][subject.id] = newDescription;
+                    hasChanged = true;
+                }
+            });
+
+            if (hasChanged) {
+                onUpdateDescriptions(updates);
             }
-        });
+        };
 
-        if (hasChanged) onUpdateDescriptions(updates);
-    }, [students, grades, subject, objectivesForSubject, predikats, descriptions, onUpdateDescriptions]);
+        generateAllDescriptions();
+
+    }, [students, grades, subject, objectivesForSubject, predikats, onUpdateDescriptions, descriptions]);
 
     if (students.length === 0) {
         return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
@@ -263,7 +295,13 @@ const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpda
                         React.createElement('h4', { className: "font-semibold text-slate-800" }, student.namaLengkap),
                         React.createElement('span', { className: "text-sm font-medium text-slate-600 bg-slate-200 px-2 py-1 rounded" }, "Nilai Akhir: ", grades.find(g => g.studentId === student.id)?.finalGrades?.[subject.id] ?? 'N/A')
                     ),
-                    React.createElement('textarea', { value: descriptions[student.id]?.[subject.id] || '', readOnly: true, placeholder: "Deskripsi akan muncul di sini secara otomatis setelah nilai TP terisi...", className: "w-full p-2 mt-2 text-sm bg-slate-100 border border-slate-300 rounded-md cursor-default", rows: 3 })
+                    React.createElement('textarea', { 
+                        value: (descriptions[student.id]?.[subject.id] || ''), 
+                        readOnly: true, 
+                        placeholder: "Deskripsi akan muncul di sini secara otomatis setelah nilai TP terisi...", 
+                        className: `w-full p-2 mt-2 text-sm border border-slate-300 rounded-md cursor-default bg-slate-100`, 
+                        rows: 3 
+                    })
                 )
             ))
         )
@@ -277,10 +315,14 @@ const SubjectDetailView = (props) => {
 
     const filteredStudents = useMemo(() => {
         if (subject && subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
-            const match = subject.fullName.match(/\(([^)]+)\)/);
-            if (match && match[1]) {
-                const religion = match[1];
-                return students.filter(student => student.agama && student.agama.toLowerCase() === religion.toLowerCase());
+            const startIndex = subject.fullName.indexOf('(');
+            const endIndex = subject.fullName.indexOf(')');
+
+            if (startIndex !== -1 && endIndex > startIndex + 1) {
+                const religion = subject.fullName.substring(startIndex + 1, endIndex).trim().toLowerCase();
+                if (religion) {
+                    return students.filter(student => student.agama && student.agama.trim().toLowerCase() === religion);
+                }
             }
         }
         return students;
