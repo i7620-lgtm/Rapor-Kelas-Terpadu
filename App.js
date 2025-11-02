@@ -76,7 +76,7 @@ const initialStudents = [
 ];
 
 const initialGrades = [
-    { studentId: 1, detailedGrades: {}, finalGrades: {} }
+    { studentId: 1, detailedGrades: {"BIndo":{"tp":[30],"sts":null,"sas":null}}, finalGrades: {"BIndo":10} }
 ];
 
 const initialNotes = {
@@ -120,6 +120,7 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [presets, setPresets] = useState(null);
+  const [dataNilaiInitialTab, setDataNilaiInitialTab] = useState('keseluruhan');
   
   const [settings, setSettings] = useState(() => {
     try {
@@ -339,6 +340,12 @@ useEffect(() => {
       }
   }, [learningObjectives]);
   
+  useEffect(() => {
+    if (activePage !== 'DATA_NILAI') {
+        setDataNilaiInitialTab('keseluruhan');
+    }
+  }, [activePage]);
+
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
   }, []);
@@ -1057,6 +1064,11 @@ useEffect(() => {
     input.click();
   }, [students, extracurriculars, settings.predikats, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments, setSettings, setSubjects, setExtracurriculars]);
 
+  const handleNavigateToNilai = useCallback((subjectId) => {
+    setDataNilaiInitialTab(subjectId);
+    setActivePage('DATA_NILAI');
+  }, []);
+
   const renderPage = () => {
     if (isLoading) {
         return React.createElement('div', { className: "flex items-center justify-center h-full" }, React.createElement('p', null, 'Memuat data awal...'));
@@ -1066,6 +1078,7 @@ useEffect(() => {
       case 'DASHBOARD':
         return React.createElement(Dashboard, { 
                   setActivePage: setActivePage, 
+                  onNavigateToNilai: handleNavigateToNilai,
                   settings: settings, 
                   students: students,
                   grades: grades,
@@ -1092,7 +1105,8 @@ useEffect(() => {
                   subjects: subjects,
                   predikats: settings.predikats,
                   onUpdatePredikats: handleUpdatePredikats,
-                  showToast: showToast
+                  showToast: showToast,
+                  initialTab: dataNilaiInitialTab,
                 });
       case 'DATA_ABSENSI':
         return React.createElement(DataAbsensiPage, { students: students, attendance: attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
