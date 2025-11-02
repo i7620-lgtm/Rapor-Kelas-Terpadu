@@ -15,7 +15,7 @@ const StatCard = ({ title, value, description, actionText, onActionClick, showAc
     )
 );
 
-const AnalysisItem = ({ title, description, status }) => {
+const AnalysisItem = ({ title, description, status, actionText, onActionClick }) => {
     const statusClasses = {
         complete: 'bg-green-100 text-green-800 border-green-400',
         incomplete: 'bg-yellow-100 text-yellow-800 border-yellow-400',
@@ -28,13 +28,20 @@ const AnalysisItem = ({ title, description, status }) => {
     };
 
     return (
-        React.createElement('div', { className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]}` },
-            React.createElement('div', { className: "flex justify-between items-start" },
-                React.createElement('div', { className: "flex-1" },
-                    React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
-                    React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, description)
-                ),
-                React.createElement('span', { className: `ml-4 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}` }, statusText[status])
+        React.createElement('div', { className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]} flex flex-col justify-between` },
+            React.createElement('div', null,
+                React.createElement('div', { className: "flex justify-between items-start" },
+                    React.createElement('div', { className: "flex-1" },
+                        React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
+                        React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, description)
+                    ),
+                    React.createElement('span', { className: `ml-4 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}` }, statusText[status])
+                )
+            ),
+            onActionClick && actionText && (
+                React.createElement('button', { onClick: onActionClick, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
+                    actionText, ' \u2192'
+                )
             )
         )
     );
@@ -73,7 +80,7 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick }) =>
 );
 
 
-const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments }) => {
+const Dashboard = ({ setActivePage, onNavigateToNilai, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments }) => {
   const waliKelasName = settings.nama_wali_kelas || "Wali Kelas";
 
   const stats = [
@@ -116,14 +123,6 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes,
     const minGrade = parseInt(settings.predikats?.c || '70', 10);
     const activeSubjects = subjects.filter(s => s.active);
 
-    if (!settings.nama_sekolah || !settings.nama_wali_kelas || !settings.tahun_ajaran || !settings.nama_kelas) {
-        items.push({
-            title: 'Pengaturan Dasar',
-            description: 'Lengkapi informasi sekolah, wali kelas, kelas, dan tahun ajaran di halaman Pengaturan.',
-            status: 'incomplete'
-        });
-    }
-
     if (isNaN(minGrade) || students.length === 0 || activeSubjects.length === 0) {
         return items;
     }
@@ -133,10 +132,15 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes,
         if (!studentGrade) return;
 
         const failingSubjects = [];
+        let firstFailingSubjectId = null;
+
         activeSubjects.forEach(subject => {
             const grade = studentGrade?.finalGrades?.[subject.id];
             if (typeof grade === 'number' && grade < minGrade) {
                 failingSubjects.push(`${subject.label} (${grade})`);
+                if (!firstFailingSubjectId) {
+                    firstFailingSubjectId = subject.id;
+                }
             }
         });
 
@@ -144,7 +148,8 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes,
             items.push({
                 title: student.namaLengkap,
                 description: `Nilai di bawah KKM: ${failingSubjects.join(', ')}`,
-                status: 'attention'
+                status: 'attention',
+                actionSubjectId: firstFailingSubjectId,
             });
         }
     });
@@ -370,7 +375,12 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes,
         React.createElement('div', { className: "mt-6" },
           academicAlerts.length > 0 ? (
             React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
-              academicAlerts.map(item => React.createElement(AnalysisItem, { key: item.title, ...item }))
+              academicAlerts.map(item => React.createElement(AnalysisItem, { 
+                key: item.title, 
+                ...item,
+                actionText: item.actionSubjectId ? "Perbaiki Nilai" : null,
+                onActionClick: item.actionSubjectId ? () => onNavigateToNilai(item.actionSubjectId) : null,
+              }))
             )
           ) : (
             React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-slate-200 text-center" },
