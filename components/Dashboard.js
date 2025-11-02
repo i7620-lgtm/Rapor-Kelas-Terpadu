@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 
-const StatCard = ({ title, value, description, actionText, onActionClick }) => (
+const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
     React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between" },
         React.createElement('div', null,
             React.createElement('h3', { className: "text-lg font-semibold text-slate-700" }, title),
             React.createElement('p', { className: "mt-4 text-4xl font-bold text-slate-900" }, value),
             React.createElement('p', { className: "mt-2 text-sm text-slate-500" }, description)
         ),
-        actionText && onActionClick && (
+        showAction && actionText && onActionClick && (
              React.createElement('button', { onClick: onActionClick, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left" },
                 actionText, ' \u2192'
             )
@@ -81,29 +81,33 @@ const Dashboard = ({ setActivePage, settings, students, grades, subjects, notes,
         title: "Kelas", 
         value: settings.nama_kelas || "-", 
         description: "Kelas yang diampu saat ini.",
-        actionText: "Klik Pengaturan untuk mengubah",
+        actionText: "Atur Kelas",
         onActionClick: () => setActivePage('PENGATURAN'),
+        showAction: !settings.nama_kelas
     },
     { 
         title: "Jumlah Siswa", 
         value: students.length.toString(), 
         description: "Siswa yang terdaftar di kelas.",
-        actionText: "Klik Data Siswa untuk menambah",
+        actionText: "Tambah Siswa Pertama",
         onActionClick: () => setActivePage('DATA_SISWA'),
+        showAction: students.length === 0
     },
     { 
         title: "Tahun Ajaran", 
         value: settings.tahun_ajaran || "-", 
         description: "Tahun ajaran yang sedang berjalan.",
-        actionText: "Klik Pengaturan untuk mengubah",
+        actionText: "Atur Tahun Ajaran",
         onActionClick: () => setActivePage('PENGATURAN'),
+        showAction: !settings.tahun_ajaran
     },
     { 
         title: "Semester", 
         value: settings.semester || "-", 
         description: "Semester yang sedang berlangsung.",
-        actionText: "Klik Pengaturan untuk mengubah",
+        actionText: "Atur Semester",
         onActionClick: () => setActivePage('PENGATURAN'),
+        showAction: !settings.semester
     },
   ];
   
