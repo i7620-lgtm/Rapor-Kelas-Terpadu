@@ -73,10 +73,20 @@
     /* Positioning and visibility properties are now handled by inline styles in React */
   }
 
+  .font-times {
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  .report-cover-border {
+    border: 6px double #000;
+  }
+
   @media print {
     body {
         margin: 0;
         padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
     .print-hidden {
         display: none !important;
