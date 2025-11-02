@@ -219,104 +219,6 @@ const NilaiPerMapelSection = ({ subject, students, grades, onUpdateDetailedGrade
     );
 };
 
-const DeskripsiNilaiSection = ({ subject, students, grades, descriptions, onUpdateDescriptions, objectivesForSubject }) => {
-    
-    useEffect(() => {
-        const generateAllDescriptions = () => {
-            let updates = JSON.parse(JSON.stringify(descriptions));
-            let hasChanged = false;
-
-            students.forEach(student => {
-                const studentName = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-                let generatedText = "";
-
-                // Rule 1: Check if TPs exist for the subject
-                if (!objectivesForSubject || objectivesForSubject.length === 0) {
-                    generatedText = "Harap isi Tujuan Pembelajaran (TP) terlebih dahulu di bagian 'Tujuan Pembelajaran'.";
-                } else {
-                    const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-                    const gradedTps = objectivesForSubject
-                        .map((text, index) => ({ text, score: detailedGrade?.tp?.[index] }))
-                        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
-
-                    // Rule 1 continuation: Check graded TPs count
-                    if (gradedTps.length === 0) {
-                        generatedText = "Harap isi nilai untuk minimal 2 Tujuan Pembelajaran (TP) terlebih dahulu.";
-                    } else if (gradedTps.length === 1) {
-                        generatedText = "Harap isi nilai untuk 1 Tujuan Pembelajaran (TP) lagi untuk membuat deskripsi otomatis.";
-                    } else { // At least 2 TPs are graded, proceed with main logic
-                        const scores = gradedTps.map(tp => tp.score);
-                        const minScore = Math.min(...scores);
-                        const maxScore = Math.max(...scores);
-                        const allScoresEqual = scores.every(score => score === scores[0]);
-
-                        // Rule 5: If all scores are equal
-                        if (allScoresEqual) {
-                            const highestTp = gradedTps[0];
-                            const lowestTp = gradedTps[1]; // Safe due to length check above
-                            if (highestTp && lowestTp) {
-                                generatedText = `Ananda ${studentName} telah menunjukkan pemahaman yang baik pada materi: ${highestTp.text}. Untuk selanjutnya, dapat berfokus pada peningkatan pemahaman materi: ${lowestTp.text}.`;
-                            }
-                        } else { // Rules 2, 3, 4: Scores are different
-                            const highestTp = gradedTps.find(tp => tp.score === maxScore);
-                            const lowestTp = gradedTps.find(tp => tp.score === minScore);
-                            
-                            if (highestTp && lowestTp) { 
-                                generatedText = `Ananda ${studentName} menunjukkan penguasaan yang sangat baik pada materi: ${highestTp.text}. Namun, masih perlu bimbingan lebih lanjut untuk materi: ${lowestTp.text}.`;
-                            }
-                        }
-                    }
-                }
-                
-                if (!generatedText) { // Fallback if no conditions are met
-                    generatedText = "Tidak dapat membuat deskripsi otomatis karena data nilai tidak lengkap.";
-                }
-
-                const newDescription = generatedText.trim();
-                const currentDescription = (updates[student.id] || {})[subject.id] || '';
-
-                if (newDescription !== currentDescription) {
-                    if (!updates[student.id]) updates[student.id] = {};
-                    updates[student.id][subject.id] = newDescription;
-                    hasChanged = true;
-                }
-            });
-
-            if (hasChanged) {
-                onUpdateDescriptions(updates);
-            }
-        };
-
-        generateAllDescriptions();
-
-    }, [students, grades, subject, objectivesForSubject, onUpdateDescriptions, descriptions]);
-
-
-    if (students.length === 0) {
-        return React.createElement('p', { className: "text-center text-slate-500 py-4" }, "Tidak ada siswa dengan agama yang sesuai untuk mata pelajaran ini.");
-    }
-
-    return (
-        React.createElement('div', { className: "space-y-4 max-h-[60vh] overflow-y-auto pr-2" },
-            students.map(student => (
-                React.createElement('div', { key: student.id, className: "p-4 border rounded-lg bg-slate-50/50" },
-                    React.createElement('div', { className: "flex justify-between items-center mb-2" },
-                        React.createElement('h4', { className: "font-semibold text-slate-800" }, student.namaLengkap),
-                        React.createElement('span', { className: "text-sm font-medium text-slate-600 bg-slate-200 px-2 py-1 rounded" }, "Nilai Akhir: ", grades.find(g => g.studentId === student.id)?.finalGrades?.[subject.id] ?? 'N/A')
-                    ),
-                    React.createElement('textarea', { 
-                        value: (descriptions[student.id]?.[subject.id] || ''), 
-                        readOnly: true, 
-                        placeholder: "Deskripsi akan muncul di sini secara otomatis...", 
-                        className: `w-full p-2 mt-2 text-sm border border-slate-300 rounded-md cursor-default bg-slate-100`, 
-                        rows: 3 
-                    })
-                )
-            ))
-        )
-    );
-};
-
 const SubjectDetailView = (props) => {
     const { subject, students, namaKelas, learningObjectives } = props;
     const [openPanel, setOpenPanel] = useState('nilai');
@@ -391,9 +293,6 @@ const SubjectDetailView = (props) => {
             ),
             React.createElement(AccordionItem, { title: "Input Nilai", isOpen: openPanel === 'nilai', onToggle: () => togglePanel('nilai') },
                  renderInputNilaiContent()
-            ),
-            React.createElement(AccordionItem, { title: "Deskripsi Rapor", isOpen: openPanel === 'deskripsi', onToggle: () => togglePanel('deskripsi') },
-                React.createElement(DeskripsiNilaiSection, updatedPropsForChildren)
             )
         )
     );
@@ -481,11 +380,17 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
     );
 };
 
-const DataNilaiPage = (props) => {
-    const [activeTab, setActiveTab] = useState('keseluruhan');
+const DataNilaiPage = ({ initialTab, ...props }) => {
+    const [activeTab, setActiveTab] = useState(initialTab || 'keseluruhan');
     const { subjects } = props;
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
     const selectedSubject = useMemo(() => activeSubjects.find((s) => s.id === activeTab), [activeTab, activeSubjects]);
+
+    useEffect(() => {
+        if (initialTab && initialTab !== 'keseluruhan') {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
 
     const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition-colors";
     const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm";
