@@ -2,6 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import { transliterate } from './TransliterationUtil.js';
 
 const generateInitialLayout = (appSettings) => {
+    // Line 1 & 2: Government Name
+    let pemdaText = appSettings.kota_kabupaten || "KOTA DENPASAR";
+    if (!pemdaText.toLowerCase().includes('pemerintah')) {
+        pemdaText = 'PEMERINTAH ' + pemdaText;
+    }
+    pemdaText = pemdaText.toUpperCase();
+
+    // Line 3 & 4: Dinas Name
+    const dinasDetailText = appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
+
+    // Line 5 & 6: School Name
+    const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+    
+    // Line 7 & 8: Address & Phone
+    const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+    const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
+
+    // Line 9: Other contacts
     const contactLine2 = [
         appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
         appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
@@ -9,19 +28,12 @@ const generateInitialLayout = (appSettings) => {
         appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
     ].filter(Boolean).join(' | ');
 
-    const dinasText = appSettings.nama_dinas_pendidikan || "PEMERINTAH KOTA DENPASAR";
-    const dinasDetailText = "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
-    const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
-    const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
-    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
-    const alamatTelpText = `${alamatText}, ${telpText}`;
-
     return [
         { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 40, width: 85, height: 85 },
         { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 40, width: 85, height: 85 },
         
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(dinasText), x: 120, y: 15, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: dinasText, x: 120, y: 33, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 15, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 33, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
         
         { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 50, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
         { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
@@ -118,34 +130,45 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 ? JSON.parse(JSON.stringify(settings.kop_layout))
                 : generateInitialLayout(settings);
     
+            // Define dynamic texts based on current settings
+            let pemdaText = settings.kota_kabupaten || "KOTA DENPASAR";
+            if (!pemdaText.toLowerCase().includes('pemerintah')) {
+                pemdaText = 'PEMERINTAH ' + pemdaText;
+            }
+            pemdaText = pemdaText.toUpperCase();
+            
+            const dinasDetailText = settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
+            const sekolahText = settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+            const alamatText = settings.alamat_sekolah ? `Jalan ${settings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+            const telpText = settings.telepon_sekolah ? `Telepon: ${settings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+            const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
             const contactLine2 = [
                 settings.kode_pos ? `Kode Pos: ${settings.kode_pos}` : null,
                 settings.email_sekolah ? `Email: ${settings.email_sekolah}` : null,
                 settings.website_sekolah ? `Website: ${settings.website_sekolah}` : null,
                 settings.faksimile ? `Faksimile: ${settings.faksimile}` : null,
             ].filter(Boolean).join(' | ');
-    
-            const dinasText = settings.nama_dinas_pendidikan || "PEMERINTAH KOTA DENPASAR";
-            const dinasDetailText = "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
-            const sekolahText = settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
-            const alamatText = settings.alamat_sekolah ? `Jalan ${settings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
-            const telpText = settings.telepon_sekolah ? `Telepon: ${settings.telepon_sekolah}` : "Telepon: (0361) 9093558";
-            const alamatTelpText = `${alamatText}, ${telpText}`;
-    
+
+            // Create a map for easy content lookup
+            const syncMap = {
+                'aksara_dinas_text': transliterate(pemdaText),
+                'latin_dinas_text': pemdaText,
+                'aksara_dinas_detail_text': transliterate(dinasDetailText),
+                'latin_dinas_detail_text': dinasDetailText,
+                'aksara_sekolah_text': transliterate(sekolahText),
+                'latin_sekolah_text': sekolahText,
+                'aksara_alamat_telp_text': transliterate(alamatTelpText),
+                'latin_alamat_telp_text': alamatTelpText,
+                'latin_kontak_lainnya_text': contactLine2,
+            };
+
+            // Sync the layout with current settings data
             const syncedLayout = layoutToLoad.map(el => {
-                if (el.type !== 'text') return el;
-                switch(el.id) {
-                    case 'aksara_dinas_text': return { ...el, content: transliterate(dinasText) };
-                    case 'latin_dinas_text': return { ...el, content: dinasText };
-                    case 'aksara_dinas_detail_text': return { ...el, content: transliterate(dinasDetailText) };
-                    case 'latin_dinas_detail_text': return { ...el, content: dinasDetailText };
-                    case 'aksara_sekolah_text': return { ...el, content: transliterate(sekolahText) };
-                    case 'latin_sekolah_text': return { ...el, content: sekolahText };
-                    case 'aksara_alamat_telp_text': return { ...el, content: transliterate(alamatTelpText) };
-                    case 'latin_alamat_telp_text': return { ...el, content: alamatTelpText };
-                    case 'latin_kontak_lainnya_text': return { ...el, content: contactLine2 };
-                    default: return el;
+                if (el.type === 'text' && syncMap.hasOwnProperty(el.id)) {
+                    // Only update if the ID is one of the default, dynamic ones
+                    return { ...el, content: syncMap[el.id] };
                 }
+                return el;
             });
     
             setElements(syncedLayout);
