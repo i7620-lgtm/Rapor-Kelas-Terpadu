@@ -136,7 +136,7 @@ const IdentitasSiswa = ({ student, settings }) => (
             React.createElement('tbody', null,
                 React.createElement('tr', null,
                     React.createElement('td', { className: 'w-1/4' }, 'Nama Sekolah'),
-                    React.createElement('td', { className: 'w-1/2' }, `: ${expandAndCapitalizeSchoolName(settings.nama_sekolah || '')}`),
+                    React.createElement('td', { className: 'w-1/2' }, `: ${settings.nama_sekolah || ''}`),
                     React.createElement('td', { className: 'w-1/8' }, 'Kelas'),
                     React.createElement('td', { className: 'w-1/8' }, `: ${settings.nama_kelas || ''}`)
                 ),
@@ -474,7 +474,7 @@ const P5ReportPage = ({ student, settings, project, assessments, allProjects }) 
                 React.createElement('tbody', null,
                     React.createElement('tr', null,
                         React.createElement('td', { className: 'w-1/4' }, 'Nama Sekolah'),
-                        React.createElement('td', { className: 'w-1/2' }, `: ${expandAndCapitalizeSchoolName(settings.nama_sekolah)}`),
+                        React.createElement('td', { className: 'w-1/2' }, `: ${settings.nama_sekolah || ''}`),
                         React.createElement('td', { className: 'w-1/8' }, 'Kelas'),
                         React.createElement('td', { className: 'w-1/8' }, `: ${settings.nama_kelas}`)
                     ),
