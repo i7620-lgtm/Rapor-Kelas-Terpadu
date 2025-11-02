@@ -1,24 +1,112 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from '@google/genai';
+import { transliterate } from './TransliterationUtil.js';
 
 const generateInitialLayout = (appSettings) => {
+    const contactLine2 = [
+        appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
+        appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
+        appSettings.website_sekolah ? `Website: ${appSettings.website_sekolah}` : null,
+        appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
+    ].filter(Boolean).join(' | ');
+
+    const dinasText = appSettings.nama_dinas_pendidikan || "PEMERINTAH KOTA DENPASAR";
+    const dinasDetailText = "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
+    const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+    const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+    const alamatTelpText = `${alamatText}, ${telpText}`;
+
     return [
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 20, width: 80, height: 80 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 690, y: 20, width: 80, height: 80 },
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 130, width: 780, height: 2 },
-        { id: 'nama_dinas_pendidikan_text', type: 'text', content: appSettings.nama_dinas_pendidikan || "PEMERINTAH KOTA CONTOH", x: 120, y: 20, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 14 },
-        { id: 'nama_sekolah_text', type: 'text', content: appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI CONTOH", x: 120, y: 50, width: 550, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
-        { id: 'alamat_sekolah_text', type: 'text', content: appSettings.alamat_sekolah || "Jalan Contoh No. 123", x: 120, y: 80, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 12 },
-        { id: 'kontak_sekolah_text', type: 'text', content: `Telepon: ${appSettings.telepon_sekolah || ''} | Email: ${appSettings.email_sekolah || ''}`, x: 120, y: 100, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 12 },
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 40, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 40, width: 85, height: 85 },
+        
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(dinasText), x: 120, y: 15, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: dinasText, x: 120, y: 33, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 50, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 85, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 20, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 128, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 12, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 142, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 154, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 170, width: 780, height: 2 },
     ];
 };
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
+const TransliterationModal = ({ isOpen, onClose, onApply, initialText }) => {
+    const [latinText, setLatinText] = useState('');
+    const [balineseText, setBalineseText] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            // Attempt to keep only latin characters from initial text for a better editing experience.
+            // This is a simple heuristic.
+            const latinOnly = initialText?.replace(/[^\u0000-\u007F]/g, "") || '';
+            setLatinText(latinOnly);
+        }
+    }, [isOpen, initialText]);
+    
+    useEffect(() => {
+        setBalineseText(transliterate(latinText));
+    }, [latinText]);
+
+    if (!isOpen) return null;
+
+    return (
+        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4" },
+            React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col" },
+                React.createElement('div', { className: "flex justify-between items-center p-4 border-b" },
+                    React.createElement('h3', { className: "text-lg font-bold text-slate-800" }, "Alat Tulis Aksara Bali"),
+                    React.createElement('button', { onClick: onClose, className: "text-slate-500 hover:text-slate-800 text-2xl" }, "\u00d7")
+                ),
+                React.createElement('div', { className: "p-6 space-y-4" },
+                    React.createElement('div', null,
+                        React.createElement('label', { htmlFor: "latin-input", className: "block text-sm font-medium text-slate-700 mb-1" },
+                            "Ketik teks Latin di sini:"
+                        ),
+                        React.createElement('input', {
+                            id: "latin-input",
+                            type: "text",
+                            value: latinText,
+                            onChange: (e) => setLatinText(e.target.value),
+                            className: "w-full p-2 border border-slate-300 rounded-md",
+                            placeholder: "Contoh: om swastyastu"
+                        })
+                    ),
+                    React.createElement('div', null,
+                        React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-1" },
+                            "Hasil Aksara Bali (Pratinjau):"
+                        ),
+                        React.createElement('div', { className: "w-full p-2 border border-slate-200 rounded-md bg-slate-50 min-h-[4rem] font-aksara-bali text-2xl" },
+                            balineseText
+                        )
+                    )
+                ),
+                React.createElement('div', { className: "flex justify-end items-center p-4 border-t bg-slate-50 rounded-b-lg" },
+                    React.createElement('button', { onClick: onClose, className: "bg-white py-2 px-4 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50" },
+                        "Batal"
+                    ),
+                    React.createElement('button', { onClick: () => onApply(balineseText), className: "ml-3 py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700" },
+                        "Gunakan Teks Ini"
+                    )
+                )
+            )
+        )
+    );
+};
+
+
 const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
     const [elements, setElements] = useState([]);
     const [selectedElementId, setSelectedElementId] = useState(null);
-    const [isTranslating, setIsTranslating] = useState(false);
+    const [transliterationModalOpen, setTransliterationModalOpen] = useState(false);
     
     const svgRef = useRef(null);
     const dragInfo = useRef(null);
@@ -26,16 +114,40 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 
     useEffect(() => {
         if (isOpen) {
-            const layoutToLoad = settings.kop_layout && settings.kop_layout.length > 0 ? settings.kop_layout : generateInitialLayout(settings);
+            const layoutToLoad = settings.kop_layout && settings.kop_layout.length > 0 
+                ? JSON.parse(JSON.stringify(settings.kop_layout))
+                : generateInitialLayout(settings);
+    
+            const contactLine2 = [
+                settings.kode_pos ? `Kode Pos: ${settings.kode_pos}` : null,
+                settings.email_sekolah ? `Email: ${settings.email_sekolah}` : null,
+                settings.website_sekolah ? `Website: ${settings.website_sekolah}` : null,
+                settings.faksimile ? `Faksimile: ${settings.faksimile}` : null,
+            ].filter(Boolean).join(' | ');
+    
+            const dinasText = settings.nama_dinas_pendidikan || "PEMERINTAH KOTA DENPASAR";
+            const dinasDetailText = "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
+            const sekolahText = settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+            const alamatText = settings.alamat_sekolah ? `Jalan ${settings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+            const telpText = settings.telepon_sekolah ? `Telepon: ${settings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+            const alamatTelpText = `${alamatText}, ${telpText}`;
+    
             const syncedLayout = layoutToLoad.map(el => {
-                if (el.type === 'text') {
-                    if (el.id === 'nama_dinas_pendidikan_text') return { ...el, content: settings.nama_dinas_pendidikan };
-                    if (el.id === 'nama_sekolah_text') return { ...el, content: settings.nama_sekolah };
-                    if (el.id === 'alamat_sekolah_text') return { ...el, content: settings.alamat_sekolah };
-                    if (el.id === 'kontak_sekolah_text') return { ...el, content: `Telepon: ${settings.telepon_sekolah || ''} | Email: ${settings.email_sekolah || ''}` };
+                if (el.type !== 'text') return el;
+                switch(el.id) {
+                    case 'aksara_dinas_text': return { ...el, content: transliterate(dinasText) };
+                    case 'latin_dinas_text': return { ...el, content: dinasText };
+                    case 'aksara_dinas_detail_text': return { ...el, content: transliterate(dinasDetailText) };
+                    case 'latin_dinas_detail_text': return { ...el, content: dinasDetailText };
+                    case 'aksara_sekolah_text': return { ...el, content: transliterate(sekolahText) };
+                    case 'latin_sekolah_text': return { ...el, content: sekolahText };
+                    case 'aksara_alamat_telp_text': return { ...el, content: transliterate(alamatTelpText) };
+                    case 'latin_alamat_telp_text': return { ...el, content: alamatTelpText };
+                    case 'latin_kontak_lainnya_text': return { ...el, content: contactLine2 };
+                    default: return el;
                 }
-                return el;
             });
+    
             setElements(syncedLayout);
             setSelectedElementId(null);
         }
@@ -132,27 +244,6 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
         }
     };
     
-    const handleTranslateToBalinese = async () => {
-        const selectedEl = elements.find(el => el.id === selectedElementId);
-        if (!selectedEl || selectedEl.type !== 'text' || !selectedEl.content) return;
-        
-        setIsTranslating(true);
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: `Transliterasikan teks Latin berikut ke Aksara Bali: "${selectedEl.content}"`,
-            });
-            const balineseText = response.text;
-            updateElement(selectedElementId, { content: balineseText.trim() });
-        } catch (error) {
-            console.error("Gagal melakukan transliterasi:", error);
-            alert("Terjadi kesalahan saat mencoba mengubah teks ke Aksara Bali.");
-        } finally {
-            setIsTranslating(false);
-        }
-    };
-    
     const handleSave = () => {
         onSaveLayout(elements);
         onClose();
@@ -162,6 +253,15 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 
     return (
         React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4", onClick: handleDeselect },
+            React.createElement(TransliterationModal, { 
+                isOpen: transliterationModalOpen, 
+                onClose: () => setTransliterationModalOpen(false),
+                onApply: (text) => {
+                  updateElement(selectedElementId, { content: text, fontFamily: 'Noto Sans Balinese' });
+                  setTransliterationModalOpen(false);
+                },
+                initialText: selectedElement?.content
+            }),
             React.createElement('div', { className: "bg-slate-100 rounded-lg shadow-xl w-full max-w-7xl h-[95vh] flex flex-col", onClick: e => e.stopPropagation() },
                 React.createElement('div', { className: "flex justify-between items-center p-4 border-b bg-white rounded-t-lg" },
                     React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Editor Visual Kop Surat"),
@@ -181,7 +281,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                             backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
                             backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
                         }},
-                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: "0 0 800 135", preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
+                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
                                 elements.map(el => {
                                     const isSelected = el.id === selectedElementId;
                                     const commonProps = {
@@ -267,8 +367,8 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                         React.createElement('div', null,
                                             React.createElement('label', { className: "text-sm" }, "Teks"),
                                             React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 }),
-                                            React.createElement('button', { onClick: handleTranslateToBalinese, disabled: isTranslating, className: "mt-2 text-xs w-full text-indigo-700 bg-indigo-100 p-1.5 rounded hover:bg-indigo-200 disabled:bg-slate-200 disabled:text-slate-500" },
-                                               isTranslating ? 'Memproses...' : 'Ubah ke Aksara Bali \u2728'
+                                            React.createElement('button', { onClick: () => setTransliterationModalOpen(true), className: "mt-2 text-xs w-full text-indigo-700 bg-indigo-100 p-1.5 rounded hover:bg-indigo-200" },
+                                               'Alat Tulis Aksara Bali...'
                                             )
                                         ),
                                         React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
@@ -307,8 +407,8 @@ const KopSuratPreview = ({ settings }) => {
 
     return (
         React.createElement('div', { className: "bg-slate-50 p-4 rounded-lg border" },
-            React.createElement('div', { className: "bg-white shadow-inner relative w-full max-w-[800px] mx-auto overflow-hidden", style: { aspectRatio: '800 / 135' } },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 135", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
+            React.createElement('div', { className: "bg-white shadow-inner relative w-full max-w-[800px] mx-auto overflow-hidden", style: { aspectRatio: '800 / 180' } },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
                     layout.map(el => {
                         if (el.type === 'text') {
                             let textAnchor = "start";
