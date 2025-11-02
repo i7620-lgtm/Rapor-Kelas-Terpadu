@@ -283,5 +283,18 @@ export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
     }
 
     // Penanganan untuk provinsi lain atau nama yang tidak cocok
-    return `PEMERINTAH ${kotaKabupatenInput}`.toUpperCase();
+    return `PEMERINTAH KABUPATEN ${kotaKabupatenInput}`.toUpperCase();
+}
+
+export function expandAndCapitalizeSchoolName(name) {
+    if (!name || !name.trim()) return '';
+    let processedName = name.trim().toLowerCase();
+    
+    // Ganti "sdn" atau "sd n" dengan "sekolah dasar negeri" terlebih dahulu
+    processedName = processedName.replace(/\b(sdn|sd n)\b/g, 'sekolah dasar negeri');
+    
+    // Kemudian ganti "sd" yang berdiri sendiri dengan "sekolah dasar"
+    processedName = processedName.replace(/\bsd\b/g, 'sekolah dasar');
+
+    return processedName.toUpperCase();
 }
