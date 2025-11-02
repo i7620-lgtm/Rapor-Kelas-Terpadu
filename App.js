@@ -666,7 +666,7 @@ useEffect(() => {
         const petunjukData = [
             ["Petunjuk Pengisian Template RKT"], [],
             ["Sheet", "Keterangan"],
-            ["Pengaturan", "Isi atau ubah pengaturan dasar aplikasi di sheet ini. Perubahan akan diterapkan saat file diunggah."],
+            ["Pengaturan", "Isi atau ubah pengaturan dasar, daftar mata pelajaran, dan ekstrakurikuler di sheet ini. Perubahan akan diterapkan saat file diunggah."],
             ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
             ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa."],
             ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
@@ -692,17 +692,36 @@ useEffect(() => {
             ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
         ];
 
-        const settingsData = settingsHeaderMapping.map(([key, header]) => {
+        const settingsDataAoA = [
+            ['Pengaturan Aplikasi'], [],
+            ['Pengaturan', 'Nilai'],
+        ];
+        settingsHeaderMapping.forEach(([key, header]) => {
             let value;
             if (key.startsWith('predikat_')) {
                 value = settings.predikats[key.split('_')[1]];
             } else {
                 value = settings[key];
             }
-            return { 'Pengaturan': header, 'Nilai': value };
+            settingsDataAoA.push([header, value]);
         });
-        const wsPengaturan = XLSX.utils.json_to_sheet(settingsData);
-        wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }];
+        
+        settingsDataAoA.push([]);
+        settingsDataAoA.push(['Mata Pelajaran']);
+        settingsDataAoA.push(['ID Internal (Jangan Diubah)', 'Nama Lengkap', 'Singkatan', 'Status Aktif']);
+        subjects.forEach(subject => {
+            settingsDataAoA.push([subject.id, subject.fullName, subject.label, subject.active ? 'Aktif' : 'Tidak Aktif']);
+        });
+
+        settingsDataAoA.push([]);
+        settingsDataAoA.push(['Ekstrakurikuler']);
+        settingsDataAoA.push(['ID Unik (Jangan Diubah)', 'Nama Ekstrakurikuler', 'Status Aktif']);
+        extracurriculars.forEach(extra => {
+            settingsDataAoA.push([extra.id, extra.name, extra.active ? 'Aktif' : 'Tidak Aktif']);
+        });
+
+        const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsDataAoA);
+        wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 20 }];
         XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
 
 
@@ -847,49 +866,110 @@ useEffect(() => {
                 const data = event.target?.result;
                 const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
                 let importCount = 0;
+                
+                const settingsWorksheet = workbook.Sheets['Pengaturan'];
+                if (settingsWorksheet) {
+                    const rows = XLSX.utils.sheet_to_json(settingsWorksheet, { header: 1 });
+                    
+                    let section = 'general';
+                    const parsedSettings = {};
+                    const parsedPredikats = {};
+                    const parsedSubjects = [];
+                    const parsedExtracurriculars = [];
+
+                    const settingsHeaderMapping = [
+                        ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
+                        ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
+                        ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
+                        ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
+                        ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
+                        ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
+                        ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
+                        ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
+                    ];
+                    const settingsMap = new Map(settingsHeaderMapping.map(([key, header]) => [header.trim().toLowerCase(), key]));
+
+                    rows.forEach(row => {
+                        if (!row || row.length === 0 || row.every(cell => cell === null || cell === undefined)) return;
+                        
+                        const headerCell = String(row[0] || '').trim().toLowerCase();
+                        if (headerCell === 'mata pelajaran') { section = 'subjects'; return; }
+                        if (headerCell === 'ekstrakurikuler') { section = 'extras'; return; }
+
+                        switch(section) {
+                            case 'general':
+                                const key = settingsMap.get(headerCell);
+                                const value = row[1];
+                                if (key) {
+                                    if (key.startsWith('predikat_')) parsedPredikats[key.split('_')[1]] = String(value);
+                                    else parsedSettings[key] = value;
+                                }
+                                break;
+                            case 'subjects':
+                                if (headerCell.includes('id internal')) return; // Skip header row
+                                const [id, fullName, label, status] = row;
+                                if (id && fullName && label) {
+                                    parsedSubjects.push({
+                                        id: String(id),
+                                        fullName: String(fullName),
+                                        label: String(label),
+                                        active: String(status || '').trim().toLowerCase() === 'aktif'
+                                    });
+                                }
+                                break;
+                            case 'extras':
+                                if (headerCell.includes('id unik')) return; // Skip header row
+                                const [extraId, name, extraStatus] = row;
+                                if (extraId && name) {
+                                    parsedExtracurriculars.push({
+                                        id: String(extraId),
+                                        name: String(name),
+                                        active: String(extraStatus || '').trim().toLowerCase() === 'aktif'
+                                    });
+                                }
+                                break;
+                        }
+                    });
+
+                    if (Object.keys(parsedSettings).length > 0 || Object.keys(parsedPredikats).length > 0) {
+                        if (Object.keys(parsedPredikats).length > 0) {
+                            parsedSettings.predikats = { ...settings.predikats, ...parsedPredikats };
+                        }
+                        setSettings(prev => ({ ...prev, ...parsedSettings }));
+                        importCount++;
+                    }
+                    
+                    if (parsedSubjects.length > 0) {
+                        setSubjects(prevSubjects => {
+                            const subjectsMap = new Map(prevSubjects.map(s => [s.id, s]));
+                            parsedSubjects.forEach(newSub => {
+                                // Update existing or add new
+                                subjectsMap.set(newSub.id, { ...(subjectsMap.get(newSub.id) || {}), ...newSub });
+                            });
+                            return Array.from(subjectsMap.values());
+                        });
+                    }
+                    if (parsedExtracurriculars.length > 0) {
+                        setExtracurriculars(prevExtras => {
+                            const extrasMap = new Map(prevExtras.map(e => [e.id, e]));
+                            parsedExtracurriculars.forEach(newExtra => {
+                                // Update existing or add new
+                                extrasMap.set(newExtra.id, { ...(extrasMap.get(newExtra.id) || {}), ...newExtra });
+                            });
+                            return Array.from(extrasMap.values());
+                        });
+                    }
+                }
 
                 const studentMap = new Map(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
 
                 workbook.SheetNames.forEach(sheetName => {
+                    if (sheetName === 'Pengaturan') return;
+
                     const worksheet = workbook.Sheets[sheetName];
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (sheetName === 'Pengaturan') {
-                        const settingsHeaderMapping = [
-                            ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
-                            ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
-                            ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
-                            ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
-                            ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
-                            ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
-                            ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
-                            ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
-                        ];
-                        const settingsMap = new Map(settingsHeaderMapping.map(([key, header]) => [header, key]));
-                        const newSettings = {};
-                        const newPredikats = {};
-
-                        json.forEach(row => {
-                            const header = row['Pengaturan'];
-                            const value = row['Nilai'];
-                            const key = settingsMap.get(header);
-                            if (key) {
-                                if (key.startsWith('predikat_')) {
-                                    newPredikats[key.split('_')[1]] = String(value);
-                                } else {
-                                    newSettings[key] = value;
-                                }
-                            }
-                        });
-                        if (Object.keys(newPredikats).length > 0) {
-                            newSettings.predikats = newPredikats;
-                        }
-
-                        if(Object.keys(newSettings).length > 0) {
-                             setSettings(prev => ({ ...prev, ...newSettings }));
-                             importCount++;
-                        }
-                    } else if (sheetName === 'Data Siswa') {
+                    if (sheetName === 'Data Siswa') {
                         importCount++;
                     } else if (sheetName === 'Data Absensi') {
                         const newAttendance = [];
@@ -975,7 +1055,7 @@ useEffect(() => {
         reader.readAsBinaryString(file);
     };
     input.click();
-  }, [students, extracurriculars, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments, setSettings]);
+  }, [students, extracurriculars, settings.predikats, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments, setSettings, setSubjects, setExtracurriculars]);
 
   const renderPage = () => {
     if (isLoading) {
