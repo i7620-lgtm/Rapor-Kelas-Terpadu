@@ -5,7 +5,9 @@ const generateInitialLayout = (appSettings) => {
     const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
     const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
     const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
-    const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+    
+    const alamatText = appSettings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
+
     const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
     const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
 
@@ -129,7 +131,8 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
             const dinasDetailText = (settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
             const sekolahText = expandAndCapitalizeSchoolName(settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
 
-            const alamatText = settings.alamat_sekolah ? `Jalan ${settings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+            const alamatText = settings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
+            
             const telpText = settings.telepon_sekolah ? `Telepon: ${settings.telepon_sekolah}` : "Telepon: (0361) 9093558";
             const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
             const contactLine2 = [
