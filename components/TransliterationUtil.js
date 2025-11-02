@@ -150,3 +150,40 @@ export function transliterate(latin) {
   
   return result;
 }
+
+const BALI_CITIES_REGECIES = {
+  KOTA: ["denpasar"],
+  KABUPATEN: ["badung", "bangli", "buleleng", "gianyar", "jembrana", "karangasem", "klungkung", "tabanan"]
+};
+
+export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
+    const defaultText = "PEMERINTAH KOTA DENPASAR";
+    if (!kotaKabupatenInput || !kotaKabupatenInput.trim()) {
+        return defaultText;
+    }
+
+    let text = kotaKabupatenInput.trim().toLowerCase();
+    let provinsi = (provinsiInput || '').trim().toLowerCase();
+
+    // If user already specified the type, just add "PEMERINTAH" if missing.
+    if (text.includes('kota ') || text.includes('kabupaten ')) {
+        if (text.startsWith('pemerintah')) {
+            return text.toUpperCase();
+        }
+        return `PEMERINTAH ${text}`.toUpperCase();
+    }
+    
+    // Apply Bali-specific logic only if province is Bali or not specified
+    if (provinsi === 'bali' || provinsi === '') {
+        if (BALI_CITIES_REGECIES.KOTA.includes(text)) {
+            return `PEMERINTAH KOTA ${kotaKabupatenInput}`.toUpperCase();
+        }
+    
+        if (BALI_CITIES_REGECIES.KABUPATEN.includes(text)) {
+            return `PEMERINTAH KABUPATEN ${kotaKabupatenInput}`.toUpperCase();
+        }
+    }
+
+    // Fallback for other provinces or non-matching names
+    return `PEMERINTAH ${kotaKabupatenInput}`.toUpperCase();
+}
