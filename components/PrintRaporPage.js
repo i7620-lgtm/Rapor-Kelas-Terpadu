@@ -1,4 +1,5 @@
 import React from 'react';
+import { transliterate } from './TransliterationUtil.js';
 
 const getGradeNumber = (str) => {
     if (!str) return null;
@@ -15,27 +16,55 @@ const getGradeNumber = (str) => {
 };
 
 const generateInitialLayout = (appSettings) => {
+    const contactLine2 = [
+        appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
+        appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
+        appSettings.website_sekolah ? `Website: ${appSettings.website_sekolah}` : null,
+        appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
+    ].filter(Boolean).join(' | ');
+
+    const dinasText = appSettings.nama_dinas_pendidikan || "PEMERINTAH KOTA DENPASAR";
+    const dinasDetailText = "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
+    const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+    const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
+    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+    const alamatTelpText = `${alamatText}, ${telpText}`;
+
     return [
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 20, width: 80, height: 80 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 690, y: 20, width: 80, height: 80 },
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 130, width: 780, height: 2 },
-        { id: 'nama_dinas_pendidikan_text', type: 'text', content: appSettings.nama_dinas_pendidikan || "PEMERINTAH KOTA CONTOH", x: 120, y: 20, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 14 },
-        { id: 'nama_sekolah_text', type: 'text', content: appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI CONTOH", x: 120, y: 50, width: 550, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
-        { id: 'alamat_sekolah_text', type: 'text', content: appSettings.alamat_sekolah || "Jalan Contoh No. 123", x: 120, y: 80, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 12 },
-        { id: 'kontak_sekolah_text', type: 'text', content: `Telepon: ${appSettings.telepon_sekolah || ''} | Email: ${appSettings.email_sekolah || ''}`, x: 120, y: 100, width: 550, textAlign: 'center', fontWeight: 'normal', fontSize: 12 },
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 40, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 40, width: 85, height: 85 },
+        
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(dinasText), x: 120, y: 15, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: dinasText, x: 120, y: 33, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 50, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 85, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 20, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 128, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 12, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 142, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 154, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 170, width: 780, height: 2 },
     ];
 };
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
 const KopSurat = ({ settings }) => {
+    // NOTE: For printing, we cannot run the transliteration util.
+    // The layout from settings should already have the transliterated text.
+    // If not, it will be blank, which is the expected fallback.
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
         : generateInitialLayout(settings);
 
     return (
-        React.createElement('div', { className: "relative w-full h-[135px]" },
-            React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 135", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
+        React.createElement('div', { className: "relative w-full h-[180px]" },
+            React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
                 layout.map(el => {
                     if (el.type === 'text') {
                         let textAnchor = "start";
@@ -301,23 +330,15 @@ const MainReportPage = ({ student, settings, grades, subjects, learningObjective
     return (
         React.createElement('div', { className: 'text-sm' },
             React.createElement(IdentitasSiswa, { student: student, settings: settings }),
-            
-            React.createElement('div', { className: 'mt-4' },
-                React.createElement('h3', { className: 'font-bold' }, 'A. Sikap'),
-                React.createElement('div', { className: 'border border-black p-2 mt-1' },
-                    React.createElement('p', null, 'Selama semester ini, Ananda ', React.createElement('b', null, student.namaPanggilan || student.namaLengkap.split(' ')[0]), ' menunjukkan sikap ', React.createElement('b', null, 'sangat baik'), ' dalam Sikap Spiritual dan Sosial. Ananda mampu menerapkan nilai-nilai kejujuran, kedisiplinan, tanggung jawab, santun, peduli, dan percaya diri dalam interaksi sehari-hari.')
-                )
-            ),
 
             React.createElement('div', { className: 'mt-4' },
-                React.createElement('h3', { className: 'font-bold' }, 'B. Pengetahuan dan Keterampilan'),
-                React.createElement('table', { className: 'w-full border-collapse border border-black mt-1' },
+                React.createElement('table', { className: 'w-full border-collapse border border-black' },
                     React.createElement('thead', null,
-                        React.createElement('tr', { className: 'font-bold text-center' },
-                            React.createElement('td', { className: 'border border-black p-1 w-[5%]' }, 'No.'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[20%]' }, 'Mata Pelajaran'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[8%]' }, 'Nilai Akhir'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[67%]' }, 'Capaian Kompetensi')
+                        React.createElement('tr', { className: 'font-bold text-center bg-slate-200' },
+                            React.createElement('td', { className: 'border border-black p-1 w-[5%] align-middle' }, 'No.'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[20%] align-middle' }, 'Mata Pelajaran'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[8%] align-middle' }, 'Nilai Akhir'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[67%] align-middle' }, 'Capaian Kompetensi')
                         )
                     ),
                     React.createElement('tbody', null,
@@ -339,15 +360,14 @@ const MainReportPage = ({ student, settings, grades, subjects, learningObjective
                     )
                 )
             ),
-
+            
             React.createElement('div', { className: 'mt-4' },
-                React.createElement('h3', { className: 'font-bold' }, 'C. Ekstrakurikuler'),
-                React.createElement('table', { className: 'w-full border-collapse border border-black mt-1' },
+                React.createElement('table', { className: 'w-full border-collapse border border-black' },
                     React.createElement('thead', null,
-                        React.createElement('tr', { className: 'font-bold text-center' },
-                            React.createElement('td', { className: 'border border-black p-1 w-[5%]' }, 'No'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[30%]' }, 'Kegiatan Ekstrakurikuler'),
-                            React.createElement('td', { className: 'border border-black p-1 w-[65%]' }, 'Keterangan')
+                        React.createElement('tr', { className: 'font-bold text-center bg-slate-200' },
+                            React.createElement('td', { className: 'border border-black p-1 w-[5%] align-middle' }, 'No'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[30%] align-middle' }, 'Kegiatan Ekstrakurikuler'),
+                            React.createElement('td', { className: 'border border-black p-1 w-[65%] align-middle' }, 'Keterangan')
                         )
                     ),
                     React.createElement('tbody', null,
@@ -366,20 +386,37 @@ const MainReportPage = ({ student, settings, grades, subjects, learningObjective
                 )
             ),
 
-            React.createElement('div', { className: 'flex mt-4 space-x-4' },
-                React.createElement('div', { className: 'w-1/2' },
-                    React.createElement('h3', { className: 'font-bold' }, 'D. Ketidakhadiran'),
-                    React.createElement('table', { className: 'w-full border-collapse border border-black mt-1' },
-                        React.createElement('tbody', null,
-                            React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1 w-2/3' }, 'Sakit'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData?.sakit || 0} hari`)),
-                            React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1' }, 'Izin'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData?.izin || 0} hari`)),
-                            React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData?.alpa || 0} hari`))
+            React.createElement('div', { className: 'mt-4' },
+                React.createElement('table', { className: 'w-full border-collapse border border-black' },
+                    React.createElement('thead', null,
+                        React.createElement('tr', { className: 'font-bold bg-slate-200' },
+                            React.createElement('td', { className: 'border border-black p-1 w-1/2' }, 'Ketidakhadiran'),
+                            React.createElement('td', { className: 'border border-black p-1 w-1/2' }, 'Catatan Wali Kelas')
+                        )
+                    ),
+                    React.createElement('tbody', null,
+                        React.createElement('tr', null,
+                            React.createElement('td', { className: 'border border-black p-1 align-top' },
+                                React.createElement('table', { className: 'w-full' },
+                                    React.createElement('tbody', null,
+                                        React.createElement('tr', null, 
+                                            React.createElement('td', { className: 'p-1 w-2/3' }, 'Sakit'), 
+                                            React.createElement('td', { className: 'p-1' }, `: ${attendanceData?.sakit || 0} hari`)
+                                        ),
+                                        React.createElement('tr', null, 
+                                            React.createElement('td', { className: 'p-1' }, 'Izin'), 
+                                            React.createElement('td', { className: 'p-1' }, `: ${attendanceData?.izin || 0} hari`)
+                                        ),
+                                        React.createElement('tr', null, 
+                                            React.createElement('td', { className: 'p-1' }, 'Tanpa Keterangan'), 
+                                            React.createElement('td', { className: 'p-1' }, `: ${attendanceData?.alpa || 0} hari`)
+                                        )
+                                    )
+                                )
+                            ),
+                            React.createElement('td', { className: 'border border-black p-2 align-top italic h-[92px]' }, studentNote)
                         )
                     )
-                ),
-                React.createElement('div', { className: 'w-1/2' },
-                    React.createElement('h3', { className: 'font-bold' }, 'E. Catatan Wali Kelas'),
-                    React.createElement('div', { className: 'border border-black p-2 mt-1 h-[92px] italic' }, studentNote)
                 )
             ),
 
@@ -460,10 +497,10 @@ const P5ReportPage = ({ student, settings, project, assessments, allProjects }) 
             
             React.createElement('table', { className: 'w-full border-collapse border border-black mt-4' },
                 React.createElement('thead', null,
-                    React.createElement('tr', { className: 'font-bold text-center' },
-                        React.createElement('td', { className: 'border border-black p-1' }, 'Dimensi'),
-                        React.createElement('td', { className: 'border border-black p-1' }, 'Sub Elemen'),
-                        React.createElement('td', { className: 'border border-black p-1' }, 'Capaian')
+                    React.createElement('tr', { className: 'font-bold text-center bg-slate-200' },
+                        React.createElement('td', { className: 'border border-black p-1 align-middle' }, 'Dimensi'),
+                        React.createElement('td', { className: 'border border-black p-1 align-middle' }, 'Sub Elemen'),
+                        React.createElement('td', { className: 'border border-black p-1 align-middle' }, 'Capaian')
                     )
                 ),
                 React.createElement('tbody', null,
