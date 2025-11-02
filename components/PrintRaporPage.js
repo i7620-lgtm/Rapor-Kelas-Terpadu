@@ -1,5 +1,5 @@
 import React from 'react';
-import { transliterate, generatePemdaText } from './TransliterationUtil.js';
+import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName } from './TransliterationUtil.js';
 
 const getGradeNumber = (str) => {
     if (!str) return null;
@@ -17,8 +17,8 @@ const getGradeNumber = (str) => {
 
 const generateInitialLayout = (appSettings) => {
     const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
-    const dinasDetailText = appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
-    const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
+    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
+    const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
     const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
     const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
     const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
@@ -134,7 +134,7 @@ const IdentitasSiswa = ({ student, settings }) => (
             React.createElement('tbody', null,
                 React.createElement('tr', null,
                     React.createElement('td', { className: 'w-1/4' }, 'Nama Sekolah'),
-                    React.createElement('td', { className: 'w-1/2' }, `: ${settings.nama_sekolah || ''}`),
+                    React.createElement('td', { className: 'w-1/2' }, `: ${expandAndCapitalizeSchoolName(settings.nama_sekolah || '')}`),
                     React.createElement('td', { className: 'w-1/8' }, 'Kelas'),
                     React.createElement('td', { className: 'w-1/8' }, `: ${settings.nama_kelas || ''}`)
                 ),
@@ -472,7 +472,7 @@ const P5ReportPage = ({ student, settings, project, assessments, allProjects }) 
                 React.createElement('tbody', null,
                     React.createElement('tr', null,
                         React.createElement('td', { className: 'w-1/4' }, 'Nama Sekolah'),
-                        React.createElement('td', { className: 'w-1/2' }, `: ${settings.nama_sekolah}`),
+                        React.createElement('td', { className: 'w-1/2' }, `: ${expandAndCapitalizeSchoolName(settings.nama_sekolah)}`),
                         React.createElement('td', { className: 'w-1/8' }, 'Kelas'),
                         React.createElement('td', { className: 'w-1/8' }, `: ${settings.nama_kelas}`)
                     ),
