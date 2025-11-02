@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { NAV_ITEMS } from './constants.js';
 import Sidebar from './components/Sidebar.js';
@@ -220,15 +219,6 @@ const App = () => {
       }
   });
 
-  const [studentDescriptions, setStudentDescriptions] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appStudentDescriptions');
-          return saved ? JSON.parse(saved) : {};
-      } catch (e) {
-          return {};
-      }
-  });
-
 useEffect(() => {
     const loadInitialData = async () => {
         setIsLoading(true);
@@ -349,10 +339,6 @@ useEffect(() => {
       }
   }, [learningObjectives]);
   
-  useEffect(() => {
-      localStorage.setItem('appStudentDescriptions', JSON.stringify(studentDescriptions));
-  }, [studentDescriptions]);
-
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
   }, []);
@@ -613,10 +599,6 @@ useEffect(() => {
       setLearningObjectives(newObjectives);
   }, []);
 
-  const handleUpdateStudentDescriptions = useCallback((newDescriptions) => {
-      setStudentDescriptions(newDescriptions);
-  }, []);
-
   const handleUpdateP5Project = useCallback((project) => {
     setP5Projects(prev => {
         const index = prev.findIndex(p => p.id === project.id);
@@ -684,6 +666,7 @@ useEffect(() => {
         const petunjukData = [
             ["Petunjuk Pengisian Template RKT"], [],
             ["Sheet", "Keterangan"],
+            ["Pengaturan", "Isi atau ubah pengaturan dasar aplikasi di sheet ini. Perubahan akan diterapkan saat file diunggah."],
             ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
             ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa."],
             ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
@@ -691,13 +674,37 @@ useEffect(() => {
             ["Penilaian P5", "Isi tingkat pencapaian siswa untuk setiap sub-elemen proyek P5. Gunakan nilai: Belum Berkembang, Mulai Berkembang, Berkembang sesuai Harapan, Sangat Berkembang."],
             ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
             ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
-            ["Deskripsi Rapor", "Isi atau sunting deskripsi capaian siswa untuk rapor."],
             [],
             ["PENTING:", "Pastikan nama siswa dan nama sheet tidak diubah agar proses impor berjalan lancar."]
         ];
         const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
         wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
         XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
+        
+        const settingsHeaderMapping = [
+            ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
+            ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
+            ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
+            ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
+            ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
+            ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
+            ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
+            ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
+        ];
+
+        const settingsData = settingsHeaderMapping.map(([key, header]) => {
+            let value;
+            if (key.startsWith('predikat_')) {
+                value = settings.predikats[key.split('_')[1]];
+            } else {
+                value = settings[key];
+            }
+            return { 'Pengaturan': header, 'Nilai': value };
+        });
+        const wsPengaturan = XLSX.utils.json_to_sheet(settingsData);
+        wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }];
+        XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
+
 
         const studentHeaderMapping = [
             ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['kewarganegaraan', "Kewarganegaraan"], ['statusDalamKeluarga', "Status dalam Keluarga"], ['anakKe', "Anak Ke-"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
@@ -825,7 +832,7 @@ useEffect(() => {
         console.error("Gagal mengekspor data:", error);
         showToast("Gagal mengekspor data.", 'error');
     }
-  }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments, subjects, learningObjectives, studentDescriptions, showToast]);
+  }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments, subjects, learningObjectives, showToast]);
 
   const handleImportAll = useCallback(() => {
     const input = document.createElement('input');
@@ -847,7 +854,42 @@ useEffect(() => {
                     const worksheet = workbook.Sheets[sheetName];
                     const json = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (sheetName === 'Data Siswa') {
+                    if (sheetName === 'Pengaturan') {
+                        const settingsHeaderMapping = [
+                            ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
+                            ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
+                            ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
+                            ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
+                            ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
+                            ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
+                            ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
+                            ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
+                        ];
+                        const settingsMap = new Map(settingsHeaderMapping.map(([key, header]) => [header, key]));
+                        const newSettings = {};
+                        const newPredikats = {};
+
+                        json.forEach(row => {
+                            const header = row['Pengaturan'];
+                            const value = row['Nilai'];
+                            const key = settingsMap.get(header);
+                            if (key) {
+                                if (key.startsWith('predikat_')) {
+                                    newPredikats[key.split('_')[1]] = String(value);
+                                } else {
+                                    newSettings[key] = value;
+                                }
+                            }
+                        });
+                        if (Object.keys(newPredikats).length > 0) {
+                            newSettings.predikats = newPredikats;
+                        }
+
+                        if(Object.keys(newSettings).length > 0) {
+                             setSettings(prev => ({ ...prev, ...newSettings }));
+                             importCount++;
+                        }
+                    } else if (sheetName === 'Data Siswa') {
                         importCount++;
                     } else if (sheetName === 'Data Absensi') {
                         const newAttendance = [];
@@ -933,7 +975,7 @@ useEffect(() => {
         reader.readAsBinaryString(file);
     };
     input.click();
-  }, [students, extracurriculars, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments]);
+  }, [students, extracurriculars, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments, setSettings]);
 
   const renderPage = () => {
     if (isLoading) {
@@ -967,8 +1009,6 @@ useEffect(() => {
                   onUpdateDetailedGrade: handleUpdateDetailedGrade,
                   learningObjectives: learningObjectives,
                   onUpdateLearningObjectives: handleUpdateLearningObjectives,
-                  studentDescriptions: studentDescriptions,
-                  onUpdateStudentDescriptions: handleUpdateStudentDescriptions,
                   subjects: subjects,
                   predikats: settings.predikats,
                   onUpdatePredikats: handleUpdatePredikats,
@@ -1016,7 +1056,7 @@ useEffect(() => {
                   attendance: attendance,
                   notes: notes,
                   subjects: subjects,
-                  studentDescriptions: studentDescriptions,
+                  learningObjectives: learningObjectives,
                   studentExtracurriculars: studentExtracurriculars,
                   extracurriculars: extracurriculars,
                   p5Projects: p5Projects,
