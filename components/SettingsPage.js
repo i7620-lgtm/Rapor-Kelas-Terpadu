@@ -1,26 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { transliterate } from './TransliterationUtil.js';
+import { transliterate, generatePemdaText } from './TransliterationUtil.js';
 
 const generateInitialLayout = (appSettings) => {
-    // Line 1 & 2: Government Name
-    let pemdaText = appSettings.kota_kabupaten || "KOTA DENPASAR";
-    if (!pemdaText.toLowerCase().includes('pemerintah')) {
-        pemdaText = 'PEMERINTAH ' + pemdaText;
-    }
-    pemdaText = pemdaText.toUpperCase();
-
-    // Line 3 & 4: Dinas Name
+    const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
     const dinasDetailText = appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
-
-    // Line 5 & 6: School Name
     const sekolahText = appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
-    
-    // Line 7 & 8: Address & Phone
     const alamatText = appSettings.alamat_sekolah ? `Jalan ${appSettings.alamat_sekolah}` : "Jalan Kebo Iwa Banjar Batuparas";
     const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
     const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
 
-    // Line 9: Other contacts
     const contactLine2 = [
         appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
         appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
@@ -29,24 +17,29 @@ const generateInitialLayout = (appSettings) => {
     ].filter(Boolean).join(' | ');
 
     return [
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 40, width: 85, height: 85 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 40, width: 85, height: 85 },
+        // Logos
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 45, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 45, width: 85, height: 85 },
         
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 15, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 33, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        // Block 1: Pemda
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 18, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 34, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
         
-        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 50, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 16, fontFamily: 'Noto Sans Balinese' },
+        // Block 2: Dinas Detail
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 52, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
         { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
         
-        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 85, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 20, fontFamily: 'Noto Sans Balinese' },
+        // Block 3: School
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 88, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
         { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
 
-        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 128, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 12, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 142, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        // Block 4: Address & Contact
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 130, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 143, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 155, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
         
-        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 154, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 170, width: 780, height: 2 },
+        // Separator Line
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 172, width: 780, height: 3 },
     ];
 };
 
@@ -131,11 +124,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 : generateInitialLayout(settings);
     
             // Define dynamic texts based on current settings
-            let pemdaText = settings.kota_kabupaten || "KOTA DENPASAR";
-            if (!pemdaText.toLowerCase().includes('pemerintah')) {
-                pemdaText = 'PEMERINTAH ' + pemdaText;
-            }
-            pemdaText = pemdaText.toUpperCase();
+            const pemdaText = generatePemdaText(settings.kota_kabupaten, settings.provinsi);
             
             const dinasDetailText = settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR";
             const sekolahText = settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN";
