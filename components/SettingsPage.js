@@ -418,9 +418,6 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [newSubjectLabel, setNewSubjectLabel] = useState('');
 
-    const activeSubjects = subjects.filter(s => s.active);
-    const inactiveSubjects = subjects.filter(s => !s.active);
-
     const handleToggle = (subjectId) => {
         onUpdateSubjects(subjects.map(s => s.id === subjectId ? { ...s, active: !s.active } : s));
     };
@@ -447,35 +444,26 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
         setNewSubjectName('');
         setNewSubjectLabel('');
     };
-
-    const SubjectItem = ({subject, isActive}) => (
-        React.createElement('div', {
-            onClick: () => handleToggle(subject.id),
-            className: `p-3 border rounded-md shadow-sm cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all duration-200 ${isActive ? 'bg-white border-slate-300' : 'bg-slate-100 border-slate-200'}`,
-            title: `Klik untuk memindahkan`
-        },
-            React.createElement('p', { className: `font-medium ${isActive ? 'text-slate-800' : 'text-slate-500'}` }, subject.fullName),
-            React.createElement('p', { className: "text-sm text-slate-500" }, "Singkatan: ", subject.label)
-        )
-    );
     
     return (
         React.createElement('div', { className: "space-y-4" },
-            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-                React.createElement('div', null,
-                    React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Aktif"),
-                    React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border" },
-                        activeSubjects.length > 0 ? activeSubjects.map(s => React.createElement(SubjectItem, { key: s.id, subject: s, isActive: true })) : React.createElement('p', { className: "text-slate-500 text-sm p-2" }, "Tidak ada.")
-                    )
-                ),
-                React.createElement('div', null,
-                     React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tidak Aktif"),
-                    React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border" },
-                        inactiveSubjects.length > 0 ? inactiveSubjects.map(s => React.createElement(SubjectItem, { key: s.id, subject: s, isActive: false })) : React.createElement('p', { className: "text-slate-500 text-sm p-2" }, "Tidak ada.")
-                    )
+            React.createElement('div', { className: "p-4 border rounded-lg bg-slate-50" },
+                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-3" }, "Pilih Mata Pelajaran Aktif"),
+                React.createElement('div', { className: "flex flex-wrap gap-2" },
+                    subjects.map(subject => (
+                        React.createElement('button', {
+                            key: subject.id,
+                            onClick: () => handleToggle(subject.id),
+                            title: subject.fullName,
+                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+                                subject.active
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                            }`
+                        }, subject.label)
+                    ))
                 )
             ),
-
             React.createElement('div', { className: "pt-4 border-t" },
                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tambah Mata Pelajaran Baru"),
                 React.createElement('div', { className: "flex flex-col sm:flex-row items-end gap-4 p-4 bg-slate-50 rounded-lg border" },
@@ -531,36 +519,24 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
         setNewExtraName('');
     };
 
-    const activeList = extracurriculars.filter(e => e.active);
-    const inactiveList = extracurriculars.filter(e => !e.active);
-    
-    const EkstraItem = ({extra, isActive}) => (
-        React.createElement('div', { 
-            key: extra.id, 
-            onClick: () => handleToggle(extra.id), 
-            className: `p-3 border rounded-md cursor-pointer hover:bg-slate-50 transition-colors ${isActive ? 'bg-white border-slate-300' : 'bg-slate-100 border-slate-200'}`
-        },
-            React.createElement('p', { className: `font-medium ${isActive ? 'text-slate-800' : 'text-slate-500'}` }, extra.name)
-        )
-    );
-
     return (
         React.createElement('div', { className: "space-y-4" },
-            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-                React.createElement('div', null,
-                    React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Aktif"),
-                    React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border" },
-                        activeList.map(ex => React.createElement(EkstraItem, { key: ex.id, extra: ex, isActive: true }))
-                    )
-                ),
-                React.createElement('div', null,
-                    React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tidak Aktif"),
-                    React.createElement('div', { className: "space-y-2 max-h-60 overflow-y-auto pr-2 bg-slate-50 p-2 rounded-md border" },
-                         inactiveList.map(ex => React.createElement(EkstraItem, { key: ex.id, extra: ex, isActive: false }))
-                    )
+             React.createElement('div', { className: "p-4 border rounded-lg bg-slate-50" },
+                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-3" }, "Pilih Ekstrakurikuler Aktif"),
+                 React.createElement('div', { className: "flex flex-wrap gap-2" },
+                    extracurriculars.map(extra => (
+                        React.createElement('button', {
+                            key: extra.id,
+                            onClick: () => handleToggle(extra.id),
+                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+                                extra.active
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                            }`
+                        }, extra.name)
+                    ))
                 )
             ),
-
              React.createElement('div', { className: "pt-4 border-t" },
                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tambah Ekstrakurikuler Baru"),
                 React.createElement('div', { className: "flex items-end gap-4 p-4 bg-slate-50 rounded-lg border" },
