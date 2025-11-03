@@ -28,7 +28,6 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance }) => {
                             React.createElement('tr', null,
                                 React.createElement('th', { scope: "col", className: "px-6 py-3" }, "No"),
                                 React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Nama Lengkap"),
-                                React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Nama Panggilan"),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-center" }, "Sakit (S)"),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-center" }, "Izin (I)"),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-center" }, "Alpa (A)"),
@@ -44,7 +43,6 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance }) => {
                                         React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50" },
                                             React.createElement('td', { className: "px-6 py-4" }, index + 1),
                                             React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-slate-900 whitespace-nowrap" }, student.namaLengkap),
-                                            React.createElement('td', { className: "px-6 py-4" }, student.namaPanggilan),
                                             React.createElement('td', { className: "px-4 py-2 text-center" },
                                                 React.createElement('input', { type: "number", min: "0", value: studentAtt.sakit, onChange: (e) => handleAttendanceChange(student.id, 'sakit', e.target.value), className: "w-20 p-2 text-center bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" })
                                             ),
@@ -60,7 +58,7 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance }) => {
                                 })
                             ) : (
                                 React.createElement('tr', null,
-                                    React.createElement('td', { colSpan: 7, className: "text-center py-10 text-slate-500" },
+                                    React.createElement('td', { colSpan: 6, className: "text-center py-10 text-slate-500" },
                                         "Belum ada data siswa. Silakan tambahkan siswa di halaman 'Data Siswa'."
                                     )
                                 )
