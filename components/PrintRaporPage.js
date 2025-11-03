@@ -279,18 +279,18 @@ const CoverPage = ({ student, settings }) => {
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
+                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
+                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
                 )
             )
         ),
-        React.createElement('div', { className: 'mb-8' },
-            React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
-            React.createElement('p', { className: 'text-2xl font-bold tracking-wider mt-2' }, 'REPUBLIK INDONESIA'),
-            React.createElement('p', { className: 'text-2xl font-bold tracking-wider mt-2' }, year)
+        React.createElement('div', { className: 'mb-8 space-y-2' },
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'REPUBLIK INDONESIA'),
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, year)
         )
     );
 };
