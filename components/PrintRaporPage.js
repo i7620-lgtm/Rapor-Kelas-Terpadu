@@ -381,9 +381,11 @@ const StudentIdentityPage = ({ student, settings }) => {
     );
 };
 
-
-const AcademicReportPage = ({ student, settings, grades, subjects, learningObjectives }) => {
+const CombinedReportContent = ({ student, settings, grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars }) => {
     const gradeData = grades.find(g => g.studentId === student.id);
+    const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
+    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+    const studentNote = notes[student.id] || '';
 
     const reportSubjects = useMemo(() => {
         const result = [];
@@ -401,12 +403,12 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
             },
             'Seni Budaya': (groupSubjects) => {
                 const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
-                return chosen ? { subject: chosen, name: `Seni (Pilihan)` } : null;
+                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
             },
             'Muatan Lokal': (groupSubjects) => {
                 const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
                  const match = chosen.fullName.match(/\(([^)]+)\)/);
-                 return chosen ? { subject: chosen, name: `Muatan Lokal (${match ? match[1] : ''})` } : null;
+                 return chosen ? { subject: chosen, name: match ? match[1] : 'Muatan Lokal' } : null;
             }
         };
 
@@ -432,20 +434,84 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
                 result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
             }
         });
-
+        
         const sortOrder = [
             'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
-            'Ilmu Pengetahuan Alam dan Sosial', 'Seni (Pilihan)', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
+            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
             'Bahasa Inggris', 'Muatan Lokal'
         ];
-        result.sort((a,b) => {
-            const aIndex = sortOrder.findIndex(item => a.name.startsWith(item));
-            const bIndex = sortOrder.findIndex(item => b.name.startsWith(item));
+        
+        const findOriginalFullName = (subjectId) => {
+            return subjects.find(s => s.id === subjectId)?.fullName || '';
+        };
+
+        result.sort((a, b) => {
+            const getSortKey = (item) => {
+                const originalFullName = findOriginalFullName(item.id);
+                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
+                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
+                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
+                return item.name;
+            };
+
+            const aSortKey = getSortKey(a);
+            const bSortKey = getSortKey(b);
+            
+            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
+            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
+            
             return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
         });
 
         return result;
     }, [student, subjects, gradeData, learningObjectives, settings]);
+
+    const extraActivities = (studentExtraData?.assignedActivities || [])
+        .map(activityId => {
+            if (!activityId) return null;
+            const activity = extracurriculars.find(e => e.id === activityId);
+            const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
+            return { name: activity?.name, description };
+        }).filter(Boolean);
+        
+    const renderDecision = () => {
+        const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
+        if (!isSemesterGenap) return null;
+
+        const kkm = parseInt(settings.predikats?.c, 10) || 70;
+        const activeSubjectIds = new Set(subjects.filter(s => s.active).map(s => s.id));
+        
+        let isLulus = true;
+        if (gradeData && Object.keys(gradeData.finalGrades || {}).length > 0) {
+            for (const subjectId in gradeData.finalGrades) {
+                if (activeSubjectIds.has(subjectId)) {
+                    const grade = gradeData.finalGrades[subjectId];
+                    if (grade !== null && grade < kkm) { isLulus = false; break; }
+                }
+            }
+        } else { isLulus = false; }
+
+        const gradeLevel = getGradeNumber(settings.nama_kelas);
+        let passText, failText, passTo, failTo;
+        if (gradeLevel === 6) {
+            passText = 'LULUS'; failText = 'TIDAK LULUS'; passTo = ''; failTo = '';
+        } else {
+            passText = 'Naik ke Kelas'; failText = 'Tinggal di Kelas';
+            const nextGrade = gradeLevel ? gradeLevel + 1 : '';
+            const nextGradeRoman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}[gradeLevel];
+            const nextGradeRomanPlusOne = {2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
+            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
+            failTo = `${gradeLevel} (${nextGradeRoman})`;
+        }
+
+        return React.createElement('div', { className: 'border-2 border-black p-4 mt-4' },
+            React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
+            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
+            React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
+              isLulus ? `${passText} ${passTo}`.trim() : `${failText} ${failTo}`.trim()
+            )
+        );
+    };
 
     return (
         React.createElement('div', { className: 'font-times' },
@@ -458,7 +524,7 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
                     ),
                     React.createElement('tr', null,
                         React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`) // Hardcoded as per example
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
                     ),
                      React.createElement('tr', null,
                         React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
@@ -481,7 +547,7 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
                 ),
                 React.createElement('tbody', null,
                     reportSubjects.map((item, index) => (
-                        React.createElement('tr', { key: item.id },
+                        React.createElement('tr', { key: item.id, className: 'break-inside-avoid' },
                             React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, index + 1),
                             React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
                             React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
@@ -495,85 +561,15 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
                         )
                     ))
                 )
-            )
-        )
-    );
-};
-
-const ContinuationPage = ({ student, settings, attendance, notes, extracurriculars, studentExtracurriculars, grades, subjects }) => {
-    const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
-    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
-    const studentNote = notes[student.id] || '';
-
-    const extraActivities = (studentExtraData?.assignedActivities || [])
-        .map(activityId => {
-            if (!activityId) return null;
-            const activity = extracurriculars.find(e => e.id === activityId);
-            const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
-            return { name: activity?.name, description };
-        }).filter(Boolean);
-        
-    const renderDecision = () => {
-        const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
-        if (!isSemesterGenap) {
-            return null; // Don't render for Ganjil
-        }
-
-        const kkm = parseInt(settings.predikats?.c, 10) || 70;
-        const gradeData = grades.find(g => g.studentId === student.id);
-        const activeSubjectIds = new Set(subjects.filter(s => s.active).map(s => s.id));
-        
-        let isLulus = true;
-        if (gradeData && Object.keys(gradeData.finalGrades || {}).length > 0) {
-            for (const subjectId in gradeData.finalGrades) {
-                if (activeSubjectIds.has(subjectId)) {
-                    const grade = gradeData.finalGrades[subjectId];
-                    if (grade !== null && grade < kkm) {
-                        isLulus = false;
-                        break;
-                    }
-                }
-            }
-        } else {
-            isLulus = false; // No grades, assume not passed
-        }
-
-        const gradeLevel = getGradeNumber(settings.nama_kelas);
-        
-        let passText, failText, passTo, failTo;
-        if (gradeLevel === 6) {
-            passText = 'LULUS';
-            failText = 'TIDAK LULUS';
-            passTo = '';
-            failTo = '';
-        } else {
-            passText = 'Naik ke Kelas';
-            failText = 'Tinggal di Kelas';
-            const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRoman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}[gradeLevel];
-            const nextGradeRomanPlusOne = {2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
-            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
-            failTo = `${gradeLevel} (${nextGradeRoman})`;
-        }
-
-        return React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { fontSize: '12pt' } },
-            React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
-            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
-            React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
-              isLulus ? `${passText} ${passTo}`.trim() : `${failText} ${failTo}`.trim()
-            )
-        );
-    };
-
-    return (
-        React.createElement('div', { className: 'font-times' },
-            React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '11pt' } },
+            ),
+            React.createElement('div', {className: 'break-before-page'}),
+            React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-4 break-inside-avoid', style: { fontSize: '11pt' } },
                 React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
                 React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
             ),
-             React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
+             React.createElement('div', { className: 'border-2 border-black p-4 mt-4 break-inside-avoid', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
             
-            React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4 break-inside-avoid' },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
                     React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
@@ -582,10 +578,9 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.alpa} hari`))
                     )
                 ),
-                renderDecision()
+                React.createElement('div', {className: 'break-inside-avoid'}, renderDecision())
             ),
-            
-            React.createElement('div', { className: 'mt-12 flex justify-between', style: { fontSize: '12pt' } },
+            React.createElement('div', { className: 'mt-12 flex justify-between break-inside-avoid', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('p', null, 'Mengetahui:'), React.createElement('p', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold' }, '(.........................)')),
                 React.createElement('div', { className: 'text-center' }, 
                     React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
@@ -595,10 +590,11 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            React.createElement('div', { className: 'mt-8 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            React.createElement('div', { className: 'mt-8 flex justify-center text-center break-inside-avoid', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 };
+
 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
@@ -613,14 +609,13 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
         cover: true,
         schoolIdentity: true,
         studentIdentity: true,
-        academic: true,
-        continuation: true,
+        academic: true, // This now represents the combined report
     });
 
     const handlePageSelectionChange = (e) => {
         const { name, checked } = e.target;
         if (name === 'all') {
-            setSelectedPages({ cover: checked, schoolIdentity: checked, studentIdentity: checked, academic: checked, continuation: checked });
+            setSelectedPages({ cover: checked, schoolIdentity: checked, studentIdentity: checked, academic: checked });
         } else {
             setSelectedPages(prev => ({ ...prev, [name]: checked }));
         }
@@ -650,6 +645,11 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
     };
+    
+    const academicPageStyle = {
+        width: PAPER_SIZES[paperSize].width,
+        minHeight: PAPER_SIZES[paperSize].height, // Use min-height to allow content to flow
+    };
 
     const contentStyle = { padding: '1.5cm' };
     const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
@@ -659,8 +659,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
         { key: 'cover', label: 'Sampul' },
         { key: 'schoolIdentity', label: 'Identitas Sekolah' },
         { key: 'studentIdentity', label: 'Identitas Murid' },
-        { key: 'academic', label: 'Akademik' },
-        { key: 'continuation', label: 'Lanjutan' },
+        { key: 'academic', label: 'Laporan Hasil Belajar' },
     ];
 
     return (
@@ -717,16 +716,10 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
                                 React.createElement(StudentIdentityPage, { student: student, settings: settings })
                             )
                         ),
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: academicPageStyle },
                             React.createElement(ReportHeader, { settings: settings }),
                             React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(AcademicReportPage, { student: student, settings: settings, ...restProps })
-                            )
-                        ),
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'continuation', style: pageStyle },
-                            React.createElement(ReportHeader, { settings: settings }),
-                            React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(ContinuationPage, { student: student, settings: settings, ...restProps })
+                                React.createElement(CombinedReportContent, { student: student, settings: settings, ...restProps })
                             )
                         )
                     )
