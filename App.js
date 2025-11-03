@@ -603,9 +603,22 @@ useEffect(() => {
             settingsDataAoA.push([header, value]);
         });
         
-        // Add logos
-        settingsDataAoA.push(['Logo Sekolah (Base64)', settings.logo_sekolah || '']);
-        settingsDataAoA.push(['Logo Dinas Pendidikan (Base64)', settings.logo_dinas || '']);
+        // Add logos by chunking them to avoid cell character limit
+        const CHUNK_SIZE = 32000;
+        const addChunkedData = (label, data) => {
+            const dataStr = data || '';
+            if (dataStr.length > CHUNK_SIZE) {
+                for (let i = 0, part = 1; i < dataStr.length; i += CHUNK_SIZE, part++) {
+                    const chunk = dataStr.substring(i, i + CHUNK_SIZE);
+                    settingsDataAoA.push([`${label} - Part ${part}`, chunk]);
+                }
+            } else {
+                settingsDataAoA.push([label, dataStr]);
+            }
+        };
+
+        addChunkedData('Logo Sekolah (Base64)', settings.logo_sekolah);
+        addChunkedData('Logo Dinas Pendidikan (Base64)', settings.logo_dinas);
         
         settingsDataAoA.push([]);
         settingsDataAoA.push(['Mata Pelajaran']);
@@ -718,7 +731,7 @@ useEffect(() => {
         showToast('Template lengkap berhasil diekspor!', 'success');
     } catch (error) {
         console.error("Gagal mengekspor data:", error);
-        showToast("Gagal mengekspor data.", 'error');
+        showToast(`Gagal mengekspor data: ${error.message}`, 'error');
     }
   }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
 
@@ -737,7 +750,6 @@ useEffect(() => {
                 const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
                 let processedSheetCount = 0;
                 
-                // Create temporary states for batch update
                 let tempSettings = JSON.parse(JSON.stringify(settings));
                 let tempSubjects = JSON.parse(JSON.stringify(subjects));
                 let tempExtracurriculars = JSON.parse(JSON.stringify(extracurriculars));
@@ -748,7 +760,6 @@ useEffect(() => {
                 let tempStudentExtracurriculars = JSON.parse(JSON.stringify(studentExtracurriculars));
                 let tempLearningObjectives = JSON.parse(JSON.stringify(learningObjectives));
 
-                // 1. Process 'Pengaturan' Sheet
                 const settingsWorksheet = workbook.Sheets['Pengaturan'];
                 if (settingsWorksheet) {
                     const rows = XLSX.utils.sheet_to_json(settingsWorksheet, { header: 1 });
@@ -762,6 +773,9 @@ useEffect(() => {
                     const predikatMap = new Map([ ['Predikat A (Mulai dari)', 'a'], ['Predikat B (Mulai dari)', 'b'], ['Predikat C (Mulai dari)', 'c'] ]);
                     
                     let section = null;
+                    const logoSekolahParts = {};
+                    const logoDinasParts = {};
+
                     rows.forEach(row => {
                         const header = String(row[0] || '').trim();
                         if (header === 'Mata Pelajaran') { section = 'subjects'; return; }
@@ -769,10 +783,19 @@ useEffect(() => {
 
                         if (settingsHeaderMap.has(header)) tempSettings[settingsHeaderMap.get(header)] = row[1];
                         if (predikatMap.has(header)) tempSettings.predikats[predikatMap.get(header)] = String(row[1]);
-
-                        if (header === 'Logo Sekolah (Base64)') tempSettings.logo_sekolah = row[1] || null;
-                        if (header === 'Logo Dinas Pendidikan (Base64)') tempSettings.logo_dinas = row[1] || null;
                         
+                        // Handle single-cell and chunked logo data
+                        if (header === 'Logo Sekolah (Base64)') tempSettings.logo_sekolah = row[1] || null;
+                        if (header.startsWith('Logo Sekolah (Base64) - Part ')) {
+                            const partMatch = header.match(/Part (\d+)/);
+                            if (partMatch) logoSekolahParts[parseInt(partMatch[1], 10)] = row[1] || '';
+                        }
+                        if (header === 'Logo Dinas Pendidikan (Base64)') tempSettings.logo_dinas = row[1] || null;
+                        if (header.startsWith('Logo Dinas Pendidikan (Base64) - Part ')) {
+                            const partMatch = header.match(/Part (\d+)/);
+                            if (partMatch) logoDinasParts[parseInt(partMatch[1], 10)] = row[1] || '';
+                        }
+
                         if (section === 'subjects' && header !== 'ID Internal (Jangan Diubah)') {
                             const [id, fullName, label, status] = row;
                             if (id && fullName) {
@@ -790,10 +813,17 @@ useEffect(() => {
                             }
                         }
                     });
+
+                    // Reassemble chunked logos
+                    const schoolKeys = Object.keys(logoSekolahParts).map(Number).sort((a, b) => a - b);
+                    if (schoolKeys.length > 0) tempSettings.logo_sekolah = schoolKeys.map(key => logoSekolahParts[key]).join('');
+
+                    const dinasKeys = Object.keys(logoDinasParts).map(Number).sort((a, b) => a - b);
+                    if (dinasKeys.length > 0) tempSettings.logo_dinas = dinasKeys.map(key => logoDinasParts[key]).join('');
+                    
                     processedSheetCount++;
                 }
 
-                // 2. Process 'Data Siswa' Sheet (Crucial for creating student map)
                 const studentWorksheet = workbook.Sheets['Data Siswa'];
                 const studentHeaderMap = new Map([
                     ["Nama Lengkap", 'namaLengkap'], ["Nama Panggilan", 'namaPanggilan'], ["NIS", 'nis'], ["NISN", 'nisn'], ["Tempat Lahir", 'tempatLahir'], ["Tanggal Lahir", 'tanggalLahir'],
@@ -830,7 +860,6 @@ useEffect(() => {
                 }
                 const studentMap = new Map(tempStudents.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
 
-                // 3. Process other data sheets
                 const subjectLabelMap = new Map(tempSubjects.map(s => [s.label.trim().toLowerCase(), s]));
                 const extraNameMap = new Map(tempExtracurriculars.map(e => [e.name.trim().toLowerCase(), e.id]));
 
@@ -890,7 +919,6 @@ useEffect(() => {
                                 detailed.sts = row['STS'] === '' ? null : Number(row['STS']);
                                 detailed.sas = row['SAS'] === '' ? null : Number(row['SAS']);
                                 
-                                // Recalculate Final Grade
                                 const tpsToConsider = (detailed.tp || []);
                                 const validTps = tpsToConsider.filter(t => typeof t === 'number');
                                 const avgTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
@@ -920,7 +948,6 @@ useEffect(() => {
                     }
                 });
 
-                // 4. Batch set states
                 setSettings(tempSettings);
                 setSubjects(tempSubjects);
                 setExtracurriculars(tempExtracurriculars);
