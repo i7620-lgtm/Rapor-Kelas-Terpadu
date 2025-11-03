@@ -288,9 +288,9 @@ const CoverPage = ({ student, settings }) => {
             )
         ),
         React.createElement('div', { className: 'mb-8' },
-            React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
-            React.createElement('p', { className: 'text-3xl font-bold tracking-wider mt-1' }, 'REPUBLIK INDONESIA'),
-            React.createElement('p', { className: 'text-3xl font-bold tracking-wider mt-4' }, `Tahun Ajaran ${year}`)
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider mt-2' }, 'REPUBLIK INDONESIA'),
+            React.createElement('p', { className: 'text-xl font-bold tracking-wider mt-2' }, year)
         )
     );
 };
