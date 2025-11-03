@@ -9,7 +9,7 @@ const StatCard = ({ title, value, description, actionText, onActionClick, showAc
         ),
         showAction && actionText && onActionClick && (
              React.createElement('button', { onClick: onActionClick, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left" },
-                actionText, ' \u2192'
+                actionText, ' →'
             )
         )
     )
@@ -40,7 +40,7 @@ const AnalysisItem = ({ title, description, status, actionText, onActionClick })
             ),
             onActionClick && actionText && (
                 React.createElement('button', { onClick: onActionClick, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
-                    actionText, ' \u2192'
+                    actionText, ' →'
                 )
             )
         )
@@ -72,7 +72,7 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick }) =>
             React.createElement('p', { className: "text-sm text-slate-600 mt-1" }, message),
             status === 'bad' && onActionClick && (
                  React.createElement('button', { onClick: onActionClick, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
-                    actionText, ' \u2192'
+                    actionText, ' →'
                 )
             )
         )
@@ -80,7 +80,18 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick }) =>
 );
 
 
-const Dashboard = ({ setActivePage, onNavigateToNilai, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments }) => {
+const Dashboard = ({ 
+    setActivePage, 
+    onNavigateToNilai, 
+    settings = {}, 
+    students = [], 
+    grades = [], 
+    subjects = [], 
+    notes = {}, 
+    attendance = [], 
+    extracurriculars = [], 
+    studentExtracurriculars = [] 
+}) => {
   const waliKelasName = settings.nama_wali_kelas || "Wali Kelas";
 
   const stats = [
@@ -303,55 +314,8 @@ const Dashboard = ({ setActivePage, onNavigateToNilai, settings, students, grade
             });
         }
 
-        // 6. P5
-        if (p5Projects.length > 0) {
-            const studentsWithIncompleteP5 = [];
-            const subElementsCount = p5Projects.reduce((acc, proj) => acc + proj.dimensions.reduce((dAcc, dim) => dAcc + dim.subElements.length, 0), 0);
-            
-            if (subElementsCount > 0) {
-                 students.forEach(student => {
-                    let assessedCount = 0;
-                    p5Projects.forEach(proj => {
-                        const assessment = p5Assessments.find(a => a.studentId === student.id && a.projectId === proj.id);
-                        if (assessment) {
-                             proj.dimensions.forEach(dim => {
-                                dim.subElements.forEach(sub => {
-                                    const key = `${dim.name}|${sub.name}`;
-                                    if (assessment.assessments[key]) {
-                                        assessedCount++;
-                                    }
-                                });
-                            });
-                        }
-                    });
-
-                    if (assessedCount < subElementsCount) {
-                        studentsWithIncompleteP5.push(student.namaLengkap);
-                    }
-                });
-            }
-
-            if (studentsWithIncompleteP5.length > 0) {
-                 results.push({
-                    category: 'Data Lainnya',
-                    title: 'Penilaian Proyek P5',
-                    status: 'bad',
-                    message: `Terdapat ${studentsWithIncompleteP5.length} siswa yang penilaian P5-nya belum lengkap.`,
-                    actionText: 'Periksa Penilaian P5',
-                    onActionClick: () => setActivePage('DATA_PROYEK_P5'),
-                });
-            } else if (subElementsCount > 0) {
-                results.push({
-                    category: 'Data Lainnya',
-                    title: 'Penilaian Proyek P5',
-                    status: 'good',
-                    message: 'Semua penilaian Proyek P5 untuk semua siswa telah terisi.',
-                });
-            }
-        }
-
         return results;
-    }, [settings, students, grades, notes, attendance, studentExtracurriculars, p5Projects, p5Assessments, subjects, setActivePage]);
+    }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, setActivePage]);
 
   return (
     React.createElement('div', { className: "space-y-8" },
