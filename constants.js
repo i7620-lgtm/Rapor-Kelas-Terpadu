@@ -3,7 +3,6 @@ export const NAV_ITEMS = [
   { id: 'DATA_SISWA', label: 'Data Siswa' },
   { id: 'DATA_NILAI', label: 'Data Nilai' },
   { id: 'DATA_EKSTRAKURIKULER', label: 'Data Ekstrakurikuler' },
-  { id: 'DATA_PROYEK_P5', label: 'Data Proyek P5' },
   { id: 'DATA_ABSENSI', label: 'Data Absensi' },
   { id: 'CATATAN_WALI_KELAS', label: 'Catatan Wali Kelas' },
   { id: 'PRINT_RAPOR', label: 'Print Rapor' },
