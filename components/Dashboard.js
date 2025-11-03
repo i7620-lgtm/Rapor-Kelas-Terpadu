@@ -105,11 +105,11 @@ const Dashboard = ({
     },
     { 
         title: "Jumlah Siswa", 
-        value: students.length.toString(), 
+        value: (students || []).length.toString(), 
         description: "Siswa yang terdaftar di kelas.",
         actionText: "Tambah Siswa Pertama",
         onActionClick: () => setActivePage('DATA_SISWA'),
-        showAction: students.length === 0
+        showAction: (students || []).length === 0
     },
     { 
         title: "Tahun Ajaran", 
@@ -132,14 +132,16 @@ const Dashboard = ({
   const academicAlerts = useMemo(() => {
     const items = [];
     const minGrade = parseInt(settings.predikats?.c || '70', 10);
-    const activeSubjects = subjects.filter(s => s.active);
+    const activeSubjects = (subjects || []).filter(s => s.active);
+    const currentStudents = students || [];
+    const currentGrades = grades || [];
 
-    if (isNaN(minGrade) || students.length === 0 || activeSubjects.length === 0) {
+    if (isNaN(minGrade) || currentStudents.length === 0 || activeSubjects.length === 0) {
         return items;
     }
     
-    students.forEach(student => {
-        const studentGrade = grades.find(g => g.studentId === student.id);
+    currentStudents.forEach(student => {
+        const studentGrade = currentGrades.find(g => g.studentId === student.id);
         if (!studentGrade) return;
 
         const failingSubjects = [];
@@ -170,7 +172,12 @@ const Dashboard = ({
 
     const completenessChecks = useMemo(() => {
         const results = [];
-        const activeSubjects = subjects.filter(s => s.active);
+        const activeSubjects = (subjects || []).filter(s => s.active);
+        const currentStudents = students || [];
+        const currentGrades = grades || [];
+        const currentAttendance = attendance || [];
+        const currentStudentExtracurriculars = studentExtracurriculars || [];
+
 
         // 1. Pengaturan Dasar
         const missingSettings = [
@@ -199,7 +206,7 @@ const Dashboard = ({
             });
         }
 
-        if (students.length === 0) {
+        if (currentStudents.length === 0) {
              results.push({
                 category: 'Data Siswa',
                 title: 'Data Siswa',
@@ -213,8 +220,8 @@ const Dashboard = ({
 
         // 2. Data Nilai
         const studentsWithMissingGrades = [];
-        students.forEach(student => {
-            const studentGrade = grades.find(g => g.studentId === student.id);
+        currentStudents.forEach(student => {
+            const studentGrade = currentGrades.find(g => g.studentId === student.id);
             const missingSubjects = activeSubjects.filter(sub => {
                 const grade = studentGrade?.finalGrades?.[sub.id];
                 return grade === undefined || grade === null || grade === '';
@@ -242,8 +249,8 @@ const Dashboard = ({
         }
 
         // 3. Data Absensi
-        const studentsWithNoAttendance = students.filter(s => {
-            const att = attendance.find(a => a.studentId === s.id);
+        const studentsWithNoAttendance = currentStudents.filter(s => {
+            const att = currentAttendance.find(a => a.studentId === s.id);
             return !att || (att.sakit === 0 && att.izin === 0 && att.alpa === 0);
         });
         if (studentsWithNoAttendance.length > 0) {
@@ -265,7 +272,7 @@ const Dashboard = ({
         }
 
         // 4. Catatan Wali Kelas
-        const studentsWithoutNotes = students.filter(s => !notes[s.id] || notes[s.id].trim() === '');
+        const studentsWithoutNotes = currentStudents.filter(s => !notes[s.id] || notes[s.id].trim() === '');
         if (studentsWithoutNotes.length > 0) {
              results.push({
                 category: 'Data Lainnya',
@@ -286,8 +293,9 @@ const Dashboard = ({
 
         // 5. Ekstrakurikuler
         const studentsWithMissingExtraDesc = [];
-        studentExtracurriculars.forEach(se => {
-            const student = students.find(s => s.id === se.studentId);
+        currentStudentExtracurriculars.forEach(se => {
+            if (!se) return; // Guard against null entries in the array
+            const student = currentStudents.find(s => s.id === se.studentId);
             if (student) {
                 const missingDescActivities = (se.assignedActivities || []).filter(activityId => activityId && (!se.descriptions || !se.descriptions[activityId]));
                 if (missingDescActivities.length > 0) {
