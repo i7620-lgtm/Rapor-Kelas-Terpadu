@@ -1,7 +1,120 @@
 import React, { useState, useMemo } from 'react';
+import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName } from './TransliterationUtil.js';
 
 // Base64 encoded Tut Wuri Handayani logo for offline use and stability
-const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYCAYAAAC+g+k+AAAgAElEQVR4nOzdB5xtVd3/8T/v9Ju+TdLQV5IeKCSgBFEEUVAEAQUVBVHQDRZ7sGCx772A2F1s7L1XsbAgiAgqKiiIBkEEBSSQpve+0+lM5v//M2fumZk7d+69J2fumcn7fM6R2XPvveece87ce+Y5M3POAYwxBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEE-g+k=";
+const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
+
+const generateInitialLayout = (appSettings) => {
+    const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
+    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
+    const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
+    
+    const alamatText = appSettings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
+
+    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+    const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
+
+    const contactLine2 = [
+        appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
+        appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
+        appSettings.website_sekolah ? `Website: ${appSettings.website_sekolah}` : null,
+        appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
+    ].filter(Boolean).join(' | ');
+
+    return [
+        // Logos
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 45, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 45, width: 85, height: 85 },
+        
+        // Block 1: Pemda
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 18, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 34, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        // Block 2: Dinas Detail
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 52, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        // Block 3: School
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 88, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+
+        // Block 4: Address & Contact
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 130, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 143, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 155, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        // Separator Line
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 172, width: 780, height: 3 },
+    ];
+};
+
+const ReportHeader = ({ settings }) => {
+    const layout = settings.kop_layout && settings.kop_layout.length > 0
+        ? settings.kop_layout
+        : generateInitialLayout(settings);
+
+    return (
+        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: '5.2cm', padding: '1cm 1.5cm 0 1.5cm' } },
+            React.createElement('div', { className: "relative w-full h-full" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
+                    layout.map(el => {
+                        if (el.type === 'text') {
+                            let textAnchor = "start";
+                            let xPos = el.x;
+                            if (el.textAlign === 'center') {
+                                textAnchor = "middle";
+                                xPos = el.x + (el.width ?? 0) / 2;
+                            } else if (el.textAlign === 'right') {
+                                textAnchor = "end";
+                                xPos = el.x + (el.width ?? 0);
+                            }
+                            return (
+                                React.createElement('text', {
+                                    key: el.id,
+                                    x: xPos,
+                                    y: el.y + (el.fontSize ?? 14),
+                                    fontSize: el.fontSize,
+                                    fontWeight: el.fontWeight,
+                                    textAnchor: textAnchor,
+                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'Poppins'
+                                }, el.content)
+                            );
+                        }
+                        if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || placeholderSvg);
+                            return (
+                                React.createElement('image', {
+                                    key: el.id,
+                                    href: imageUrl,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height
+                                })
+                            );
+                        }
+                        if (el.type === 'line') {
+                            return (
+                                React.createElement('rect', {
+                                    key: el.id,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height,
+                                    fill: "black"
+                                })
+                            );
+                        }
+                        return null;
+                    })
+                )
+            )
+        )
+    );
+};
+
 
 const getGradeNumber = (str) => {
     if (!str) return null;
@@ -159,14 +272,14 @@ const CoverPage = ({ student, settings }) => {
                 })
             ),
             React.createElement('h1', { className: 'text-2xl font-bold tracking-widest mt-8' }, 'RAPOR'),
-            React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'PESERTA DIDIK'),
+            React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'MURID'),
             React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'SEKOLAH DASAR'),
             React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, '(SD)'),
 
             React.createElement('div', { className: 'mt-24 w-full px-8' },
-                React.createElement('p', { className: 'text-sm' }, 'Nama Peserta Didik:'),
+                React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA PESERTA DIDIK').toUpperCase())
+                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
@@ -187,28 +300,25 @@ const SchoolIdentityPage = ({ settings }) => {
         { label: "Nama Sekolah", value: settings.nama_sekolah },
         { label: "NPSN", value: settings.npsn },
         { label: "NIS/NSS/NDS", value: '-'},
-        { label: "Alamat Sekolah", value: settings.alamat_sekolah},
-        { sub: true, label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
-        { sub: true, label: 'Kecamatan', value: settings.kecamatan },
-        { sub: true, label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
-        { sub: true, label: 'Provinsi', value: settings.provinsi },
-        { sub: true, label: 'Website', value: settings.website_sekolah },
-        { sub: true, label: 'E-mail', value: settings.email_sekolah },
-        { sub: true, label: 'Kode Pos', value: settings.kode_pos, telp: settings.telepon_sekolah },
+        { label: "Alamat Sekolah", value: ""},
+        { label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
+        { label: 'Kecamatan', value: settings.kecamatan },
+        { label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
+        { label: 'Provinsi', value: settings.provinsi },
+        { label: 'Website', value: settings.website_sekolah },
+        { label: 'E-mail', value: settings.email_sekolah },
+        { label: 'Kode Pos', value: settings.kode_pos, telp: settings.telepon_sekolah },
     ];
 
     return(
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('div', { className: 'text-center font-bold mb-12 space-y-1', style: { fontSize: '14pt' } },
-                React.createElement('h2', null, 'RAPOR'),
-                React.createElement('h2', null, 'PESERTA DIDIK'),
-                React.createElement('h2', null, 'SEKOLAH DASAR (SD)')
-            ),
+            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS SEKOLAH'),
              React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
                     identitasSekolah.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: `w-[35%] py-2 ${item.sub ? 'pl-8' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[5%] py-2' }, `${index + 1}.`),
+                            React.createElement('td', { className: 'w-[30%] py-2' }, item.label),
                             React.createElement('td', { className: 'w-[5%] py-2' }, ':'),
                             React.createElement('td', { className: 'w-[60%] py-2' }, 
                                 item.value || '-', 
@@ -224,13 +334,13 @@ const SchoolIdentityPage = ({ settings }) => {
 
 const StudentIdentityPage = ({ student, settings }) => {
     const identitasSiswa = [
-        { no: '1.', label: 'Nama Peserta Didik', value: (student.namaLengkap || '').toUpperCase() },
+        { no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
         { no: '3.', label: 'Tempat, Tanggal Lahir', value: `${student.tempatLahir || ''}, ${formatDate(student.tanggalLahir)}` },
         { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
         { no: '5.', label: 'Agama', value: student.agama },
         { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
-        { no: '7.', label: 'Alamat Peserta Didik', value: student.alamatSiswa },
+        { no: '7.', label: 'Alamat Murid', value: student.alamatSiswa },
         { no: '8.', label: 'Nama Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.namaAyah },
         { sub: true, label: 'b. Ibu', value: student.namaIbu },
@@ -238,7 +348,7 @@ const StudentIdentityPage = ({ student, settings }) => {
         { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
         { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
         { no: '10.', label: 'Alamat Orang Tua', value: student.alamatOrangTua },
-        { no: '11.', label: 'Wali Peserta Didik' },
+        { no: '11.', label: 'Wali Murid' },
         { sub: true, label: 'a. Nama', value: student.namaWali },
         { sub: true, label: 'b. Pekerjaan', value: student.pekerjaanWali },
         { sub: true, label: 'c. Alamat', value: student.alamatWali },
@@ -246,7 +356,7 @@ const StudentIdentityPage = ({ student, settings }) => {
     
     return (
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS PESERTA DIDIK'),
+            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS MURID'),
             React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
                     identitasSiswa.map((item, index) => (
@@ -345,7 +455,7 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
             React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
                 React.createElement('tbody', null,
                     React.createElement('tr', null,
-                        React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Peserta Didik'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
+                        React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
                         React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
                     ),
                     React.createElement('tr', null,
@@ -354,7 +464,7 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
                     ),
                      React.createElement('tr', null,
                         React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? `${settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)'}`: '2'}`)
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
                     ),
                     React.createElement('tr', null,
                         React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
@@ -450,7 +560,7 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
 
         return React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { fontSize: '12pt' } },
             React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
-            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, peserta didik dinyatakan:'),
+            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
             React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
               isLulus ? `${passText} ${passTo}`.trim() : `${failText} ${failTo}`.trim()
             )
@@ -458,7 +568,7 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
     };
 
     return (
-        React.createElement('div', { className: 'pt-8 font-times' },
+        React.createElement('div', { className: 'font-times' },
             React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '11pt' } },
                 React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
                 React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
@@ -539,10 +649,13 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     };
     
     const pageStyle = {
-        padding: '1.5cm',
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
     };
+
+    const contentStyle = { padding: '1.5cm' };
+    const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
+
 
     const pageCheckboxes = [
         { key: 'cover', label: 'Sampul' },
@@ -590,19 +703,33 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
                 students.map(student => (
                     React.createElement(React.Fragment, { key: student.id },
                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                            React.createElement(CoverPage, { student: student, settings: settings })
+                            React.createElement('div', { style: contentStyle, className: "h-full" },
+                                React.createElement(CoverPage, { student: student, settings: settings })
+                            )
                         ),
-                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                            React.createElement(SchoolIdentityPage, { settings: settings })
+                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+                            React.createElement(ReportHeader, { settings: settings }),
+                            React.createElement('div', { style: contentStyleWithHeader },
+                                React.createElement(SchoolIdentityPage, { settings: settings })
+                            )
                         ),
-                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
-                            React.createElement(StudentIdentityPage, { student: student, settings: settings })
+                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+                            React.createElement(ReportHeader, { settings: settings }),
+                            React.createElement('div', { style: contentStyleWithHeader },
+                                React.createElement(StudentIdentityPage, { student: student, settings: settings })
+                            )
                         ),
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                            React.createElement(AcademicReportPage, { student: student, settings: settings, ...restProps })
+                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                            React.createElement(ReportHeader, { settings: settings }),
+                            React.createElement('div', { style: contentStyleWithHeader },
+                                React.createElement(AcademicReportPage, { student: student, settings: settings, ...restProps })
+                            )
                         ),
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'continuation', style: pageStyle },
-                            React.createElement(ContinuationPage, { student: student, settings: settings, ...restProps })
+                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'continuation', style: pageStyle },
+                            React.createElement(ReportHeader, { settings: settings }),
+                            React.createElement('div', { style: contentStyleWithHeader },
+                                React.createElement(ContinuationPage, { student: student, settings: settings, ...restProps })
+                            )
                         )
                     )
                 ))
