@@ -547,7 +547,7 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
                 ),
                 React.createElement('tbody', null,
                     reportSubjects.map((item, index) => (
-                        React.createElement('tr', { key: item.id, className: 'break-inside-avoid' },
+                        React.createElement('tr', { key: item.id, style: { pageBreakInside: 'avoid' } },
                             React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, index + 1),
                             React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
                             React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
@@ -562,14 +562,15 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
                     ))
                 )
             ),
-            React.createElement('div', {className: 'break-before-page'}),
-            React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-4 break-inside-avoid', style: { fontSize: '11pt' } },
-                React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
-                React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
+            React.createElement('div', {style: { pageBreakInside: 'avoid' }, className: 'mt-4'},
+                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
+                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
+                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
+                )
             ),
-             React.createElement('div', { className: 'border-2 border-black p-4 mt-4 break-inside-avoid', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
+             React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { pageBreakInside: 'avoid', fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
             
-            React.createElement('div', { className: 'grid grid-cols-2 gap-4 break-inside-avoid' },
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4', style: { pageBreakInside: 'avoid' } },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
                     React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
@@ -578,9 +579,9 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.alpa} hari`))
                     )
                 ),
-                React.createElement('div', {className: 'break-inside-avoid'}, renderDecision())
+                React.createElement('div', { style: { pageBreakInside: 'avoid'} }, renderDecision())
             ),
-            React.createElement('div', { className: 'mt-12 flex justify-between break-inside-avoid', style: { fontSize: '12pt' } },
+            React.createElement('div', { className: 'mt-12 flex justify-between', style: { pageBreakInside: 'avoid', fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('p', null, 'Mengetahui:'), React.createElement('p', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold' }, '(.........................)')),
                 React.createElement('div', { className: 'text-center' }, 
                     React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
@@ -590,7 +591,7 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            React.createElement('div', { className: 'mt-8 flex justify-center text-center break-inside-avoid', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            React.createElement('div', { className: 'mt-8 flex justify-center text-center', style: { pageBreakInside: 'avoid', fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 };
