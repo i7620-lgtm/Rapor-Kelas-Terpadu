@@ -1,17 +1,11 @@
-
 {
   "short_name": "RKT",
   "name": "RKT - Rapor Kelas Terpadu",
   "icons": [
     {
-      "src": "https://picsum.photos/192/192",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "https://picsum.photos/512/512",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
     }
   ],
   "start_url": ".",
