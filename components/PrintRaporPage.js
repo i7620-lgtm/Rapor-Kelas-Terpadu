@@ -359,10 +359,10 @@ const StudentIdentityPage = ({ student, settings }) => {
                 React.createElement('tbody', null,
                     identitasSiswa.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-2' }, item.no || ''),
-                            React.createElement('td', { className: `w-[30%] py-2 ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[5%] py-2' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[60%] py-2' }, item.value || (item.sub ? '-' : ''))
+                            React.createElement('td', { className: 'w-[5%] py-1' }, item.no || ''),
+                            React.createElement('td', { className: `w-[35%] py-1 ${item.sub ? 'pl-4' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[3%] py-1 text-center' }, item.label ? ':' : ''),
+                            React.createElement('td', { className: 'w-[57%] py-1' }, item.value || (item.sub ? '-' : ''))
                         )
                     ))
                 )
