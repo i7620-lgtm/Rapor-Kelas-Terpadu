@@ -288,9 +288,9 @@ const CoverPage = ({ student, settings }) => {
             )
         ),
         React.createElement('div', { className: 'mb-8' },
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider mt-2' }, 'REPUBLIK INDONESIA'),
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider mt-2' }, year)
+            React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
+            React.createElement('p', { className: 'text-2xl font-bold tracking-wider mt-2' }, 'REPUBLIK INDONESIA'),
+            React.createElement('p', { className: 'text-2xl font-bold tracking-wider mt-2' }, year)
         )
     );
 };
@@ -300,14 +300,15 @@ const SchoolIdentityPage = ({ settings }) => {
         { label: "Nama Sekolah", value: settings.nama_sekolah },
         { label: "NPSN", value: settings.npsn },
         { label: "NIS/NSS/NDS", value: '-'},
-        { label: "Alamat Sekolah", value: ""},
+        { label: "Alamat Sekolah", value: settings.alamat_sekolah },
         { label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
         { label: 'Kecamatan', value: settings.kecamatan },
         { label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
         { label: 'Provinsi', value: settings.provinsi },
         { label: 'Website', value: settings.website_sekolah },
         { label: 'E-mail', value: settings.email_sekolah },
-        { label: 'Kode Pos', value: settings.kode_pos, telp: settings.telepon_sekolah },
+        { label: 'Kode Pos', value: settings.kode_pos },
+        { label: 'Telepon', value: settings.telepon_sekolah },
     ];
 
     return(
@@ -320,10 +321,7 @@ const SchoolIdentityPage = ({ settings }) => {
                             React.createElement('td', { className: 'w-[5%] py-2' }, `${index + 1}.`),
                             React.createElement('td', { className: 'w-[30%] py-2' }, item.label),
                             React.createElement('td', { className: 'w-[5%] py-2' }, ':'),
-                            React.createElement('td', { className: 'w-[60%] py-2' }, 
-                                item.value || '-', 
-                                item.telp ? ` Telp. ${item.telp}` : ''
-                            )
+                            React.createElement('td', { className: 'w-[60%] py-2' }, item.value || '-')
                         )
                     ))
                 )
