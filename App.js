@@ -725,175 +725,216 @@ useEffect(() => {
     input.onchange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = event.target?.result;
                 const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
-                let importCount = 0;
+                let processedSheetCount = 0;
                 
+                // Create temporary states for batch update
+                let tempSettings = JSON.parse(JSON.stringify(settings));
+                let tempSubjects = JSON.parse(JSON.stringify(subjects));
+                let tempExtracurriculars = JSON.parse(JSON.stringify(extracurriculars));
+                let tempStudents = JSON.parse(JSON.stringify(students));
+                let tempGrades = JSON.parse(JSON.stringify(grades));
+                let tempNotes = JSON.parse(JSON.stringify(notes));
+                let tempAttendance = JSON.parse(JSON.stringify(attendance));
+                let tempStudentExtracurriculars = JSON.parse(JSON.stringify(studentExtracurriculars));
+                let tempLearningObjectives = JSON.parse(JSON.stringify(learningObjectives));
+
+                // 1. Process 'Pengaturan' Sheet
                 const settingsWorksheet = workbook.Sheets['Pengaturan'];
                 if (settingsWorksheet) {
                     const rows = XLSX.utils.sheet_to_json(settingsWorksheet, { header: 1 });
+                    const settingsHeaderMap = new Map([
+                        ['Nama Dinas Pendidikan', 'nama_dinas_pendidikan'], ['Nama Sekolah', 'nama_sekolah'], ['NPSN', 'npsn'], ['Alamat Sekolah', 'alamat_sekolah'],
+                        ['Desa / Kelurahan', 'desa_kelurahan'], ['Kecamatan', 'kecamatan'], ['Kota/Kabupaten', 'kota_kabupaten'], ['Provinsi', 'provinsi'], ['Kode Pos', 'kode_pos'],
+                        ['Email Sekolah', 'email_sekolah'], ['Telepon Sekolah', 'telepon_sekolah'], ['Website Sekolah', 'website_sekolah'], ['Faksimile', 'faksimile'],
+                        ['Nama Kelas', 'nama_kelas'], ['Tahun Ajaran', 'tahun_ajaran'], ['Semester', 'semester'], ['Tempat, Tanggal Rapor', 'tanggal_rapor'],
+                        ['Nama Kepala Sekolah', 'nama_kepala_sekolah'], ['NIP Kepala Sekolah', 'nip_kepala_sekolah'], ['Nama Wali Kelas', 'nama_wali_kelas'], ['NIP Wali Kelas', 'nip_wali_kelas']
+                    ]);
+                    const predikatMap = new Map([ ['Predikat A (Mulai dari)', 'a'], ['Predikat B (Mulai dari)', 'b'], ['Predikat C (Mulai dari)', 'c'] ]);
                     
-                    let section = 'general';
-                    const parsedSettings = {};
-                    const parsedPredikats = {};
-                    const parsedSubjects = [];
-                    const parsedExtracurriculars = [];
-
-                    const settingsHeaderMapping = [
-                        ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
-                        ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
-                        ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
-                        ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
-                        ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
-                        ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
-                        ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
-                        ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
-                    ];
-                    const settingsMap = new Map(settingsHeaderMapping.map(([key, header]) => [header.trim().toLowerCase(), key]));
-
+                    let section = null;
                     rows.forEach(row => {
-                        if (!row || row.length === 0 || row.every(cell => cell === null || cell === undefined)) return;
-                        
-                        const headerCell = String(row[0] || '').trim().toLowerCase();
-                        if (headerCell === 'mata pelajaran') { section = 'subjects'; return; }
-                        if (headerCell === 'ekstrakurikuler') { section = 'extras'; return; }
+                        const header = String(row[0] || '').trim();
+                        if (header === 'Mata Pelajaran') { section = 'subjects'; return; }
+                        if (header === 'Ekstrakurikuler') { section = 'extras'; return; }
 
-                        switch(section) {
-                            case 'general':
-                                const key = settingsMap.get(headerCell);
-                                const value = row[1];
-                                if (key) {
-                                    if (key.startsWith('predikat_')) parsedPredikats[key.split('_')[1]] = String(value);
-                                    else parsedSettings[key] = value;
-                                }
-                                break;
-                            case 'subjects':
-                                if (headerCell.includes('id internal')) return; // Skip header row
-                                const [id, fullName, label, status] = row;
-                                if (id && fullName && label) {
-                                    parsedSubjects.push({
-                                        id: String(id),
-                                        fullName: String(fullName),
-                                        label: String(label),
-                                        active: String(status || '').trim().toLowerCase() === 'aktif'
-                                    });
-                                }
-                                break;
-                            case 'extras':
-                                if (headerCell.includes('id unik')) return; // Skip header row
-                                const [extraId, name, extraStatus] = row;
-                                if (extraId && name) {
-                                    parsedExtracurriculars.push({
-                                        id: String(extraId),
-                                        name: String(name),
-                                        active: String(extraStatus || '').trim().toLowerCase() === 'aktif'
-                                    });
-                                }
-                                break;
+                        if (settingsHeaderMap.has(header)) tempSettings[settingsHeaderMap.get(header)] = row[1];
+                        if (predikatMap.has(header)) tempSettings.predikats[predikatMap.get(header)] = String(row[1]);
+
+                        if (section === 'subjects' && header !== 'ID Internal (Jangan Diubah)') {
+                            const [id, fullName, label, status] = row;
+                            if (id && fullName) {
+                                const existing = tempSubjects.find(s => s.id === id);
+                                const subjectData = { id: String(id), fullName: String(fullName), label: String(label), active: String(status).toLowerCase() === 'aktif' };
+                                if (existing) Object.assign(existing, subjectData); else tempSubjects.push(subjectData);
+                            }
+                        }
+                        if (section === 'extras' && header !== 'ID Unik (Jangan Diubah)') {
+                            const [id, name, status] = row;
+                            if (id && name) {
+                                const existing = tempExtracurriculars.find(e => e.id === id);
+                                const extraData = { id: String(id), name: String(name), active: String(status).toLowerCase() === 'aktif' };
+                                if (existing) Object.assign(existing, extraData); else tempExtracurriculars.push(extraData);
+                            }
                         }
                     });
-
-                    if (Object.keys(parsedSettings).length > 0 || Object.keys(parsedPredikats).length > 0) {
-                        if (Object.keys(parsedPredikats).length > 0) {
-                            parsedSettings.predikats = { ...settings.predikats, ...parsedPredikats };
-                        }
-                        setSettings(prev => ({ ...prev, ...parsedSettings }));
-                        importCount++;
-                    }
-                    
-                    if (parsedSubjects.length > 0) {
-                        setSubjects(prevSubjects => {
-                            const subjectsMap = new Map(prevSubjects.map(s => [s.id, s]));
-                            parsedSubjects.forEach(newSub => {
-                                // Update existing or add new
-                                subjectsMap.set(newSub.id, { ...(subjectsMap.get(newSub.id) || {}), ...newSub });
-                            });
-                            return Array.from(subjectsMap.values());
-                        });
-                    }
-                    if (parsedExtracurriculars.length > 0) {
-                        setExtracurriculars(prevExtras => {
-                            const extrasMap = new Map(prevExtras.map(e => [e.id, e]));
-                            parsedExtracurriculars.forEach(newExtra => {
-                                // Update existing or add new
-                                extrasMap.set(newExtra.id, { ...(extrasMap.get(newExtra.id) || {}), ...newExtra });
-                            });
-                            return Array.from(extrasMap.values());
-                        });
-                    }
+                    processedSheetCount++;
                 }
 
-                const studentMap = new Map(students.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
+                // 2. Process 'Data Siswa' Sheet (Crucial for creating student map)
+                const studentWorksheet = workbook.Sheets['Data Siswa'];
+                const studentHeaderMap = new Map([
+                    ["Nama Lengkap", 'namaLengkap'], ["Nama Panggilan", 'namaPanggilan'], ["NIS", 'nis'], ["NISN", 'nisn'], ["Tempat Lahir", 'tempatLahir'], ["Tanggal Lahir", 'tanggalLahir'],
+                    ["Jenis Kelamin", 'jenisKelamin'], ["Agama", 'agama'], ["Kewarganegaraan", 'kewarganegaraan'], ["Status dalam Keluarga", 'statusDalamKeluarga'], ["Anak Ke-", 'anakKe'],
+                    ["Asal TK", 'asalTk'], ["Alamat Siswa", 'alamatSiswa'], ["Diterima di Kelas", 'diterimaDiKelas'], ["Diterima Tanggal", 'diterimaTanggal'],
+                    ["Nama Ayah", 'namaAyah'], ["Nama Ibu", 'namaIbu'], ["Pekerjaan Ayah", 'pekerjaanAyah'], ["Pekerjaan Ibu", 'pekerjaanIbu'],
+                    ["Alamat Orang Tua", 'alamatOrangTua'], ["Telepon Orang Tua", 'teleponOrangTua'], ["Nama Wali", 'namaWali'], ["Pekerjaan Wali", 'pekerjaanWali'],
+                    ["Alamat Wali", 'alamatWali'], ["Telepon Wali", 'teleponWali']
+                ]);
+
+                if (studentWorksheet) {
+                    const studentJson = XLSX.utils.sheet_to_json(studentWorksheet);
+                    let maxId = Math.max(0, ...tempStudents.map(s => s.id));
+
+                    studentJson.forEach(row => {
+                        const studentData = {};
+                        for (const header in row) if (studentHeaderMap.has(header)) studentData[studentHeaderMap.get(header)] = row[header];
+                        if (!studentData.namaLengkap) return;
+
+                        const studentNameKey = studentData.namaLengkap.trim().toLowerCase();
+                        const existingStudent = tempStudents.find(s => s.namaLengkap.trim().toLowerCase() === studentNameKey);
+
+                        if (existingStudent) {
+                            Object.assign(existingStudent, studentData);
+                        } else {
+                            const newId = ++maxId;
+                            tempStudents.push({ ...studentData, id: newId });
+                            tempGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
+                            tempAttendance.push({ studentId: newId, sakit: 0, izin: 0, alpa: 0 });
+                            tempStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
+                        }
+                    });
+                    processedSheetCount++;
+                }
+                const studentMap = new Map(tempStudents.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
+
+                // 3. Process other data sheets
+                const subjectLabelMap = new Map(tempSubjects.map(s => [s.label.trim().toLowerCase(), s]));
+                const extraNameMap = new Map(tempExtracurriculars.map(e => [e.name.trim().toLowerCase(), e.id]));
 
                 workbook.SheetNames.forEach(sheetName => {
-                    if (sheetName === 'Pengaturan') return;
-
                     const worksheet = workbook.Sheets[sheetName];
                     const json = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (sheetName === 'Data Siswa' || sheetName === 'Pengaturan') return;
 
-                    if (sheetName === 'Data Siswa') {
-                        importCount++;
-                    } else if (sheetName === 'Data Absensi') {
-                        const newAttendance = [];
-                        json.forEach(row => {
-                            const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
-                            const studentId = studentMap.get(studentName);
-                            if (studentId) {
-                                newAttendance.push({ 
-                                    studentId, 
-                                    sakit: parseInt(String(row["Sakit (S)"] || '0'), 10) || 0, 
-                                    izin: parseInt(String(row["Izin (I)"] || '0'), 10) || 0, 
-                                    alpa: parseInt(String(row["Alpa (A)"] || '0'), 10) || 0 
-                                });
-                            }
-                        });
-                        if(newAttendance.length > 0) { handleBulkUpdateAttendance(newAttendance); importCount++; }
-                    } else if (sheetName === 'Catatan Wali Kelas') {
-                        const newNotes = {};
-                        json.forEach(row => {
-                            const studentName = String(row["Nama Lengkap"] || '').trim().toLowerCase();
-                            const studentId = studentMap.get(studentName);
-                            if (studentId != null) newNotes[studentId] = String(row["Catatan Wali Kelas"] || '');
-                        });
-                        if(Object.keys(newNotes).length > 0) { handleBulkUpdateNotes(newNotes); importCount++; }
-                    } else if (sheetName === 'Data Ekstrakurikuler') {
-                        const extraMap = new Map(extracurriculars.map(ex => [ex.name.trim().toLowerCase(), ex.id]));
-                        const newStudentExtras = [];
+                    if (sheetName === 'Data Absensi') {
                         json.forEach(row => {
                             const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
                             if (studentId) {
-                                const assignedActivities = [];
-                                const descriptions = {};
-                                for (let i = 1; i <= 5; i++) {
-                                    const extraName = String(row[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
-                                    const extraId = extraMap.get(extraName) || null;
-                                    assignedActivities.push(extraId);
-                                    if (extraId) descriptions[extraId] = String(row[`Deskripsi ${i}`] || '');
-                                }
-                                newStudentExtras.push({ studentId, assignedActivities, descriptions });
+                                const attendanceRecord = tempAttendance.find(a => a.studentId === studentId);
+                                const newAtt = { sakit: parseInt(String(row["Sakit (S)"] || 0)), izin: parseInt(String(row["Izin (I)"] || 0)), alpa: parseInt(String(row["Alpa (A)"] || 0)) };
+                                if (attendanceRecord) Object.assign(attendanceRecord, newAtt);
                             }
                         });
-                        if (newStudentExtras.length > 0) { handleBulkUpdateStudentExtracurriculars(newStudentExtras); importCount++; }
+                        processedSheetCount++;
+                    } else if (sheetName === 'Catatan Wali Kelas') {
+                        json.forEach(row => {
+                           const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
+                           if (studentId != null) tempNotes[studentId] = String(row["Catatan Wali Kelas"] || '');
+                        });
+                        processedSheetCount++;
+                    } else if (sheetName === 'Data Ekstrakurikuler') {
+                        json.forEach(row => {
+                            const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
+                            if (studentId) {
+                                const assignedActivities = [], descriptions = {};
+                                for (let i = 1; i <= 5; i++) {
+                                    const extraName = String(row[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
+                                    const extraId = extraNameMap.get(extraName);
+                                    if (extraId) { assignedActivities.push(extraId); descriptions[extraId] = String(row[`Deskripsi ${i}`] || ''); }
+                                }
+                                const studentExtraRecord = tempStudentExtracurriculars.find(se => se.studentId === studentId);
+                                if (studentExtraRecord) Object.assign(studentExtraRecord, { assignedActivities, descriptions });
+                            }
+                        });
+                        processedSheetCount++;
+                    } else if (sheetName.startsWith('Nilai ')) {
+                        const subjectLabel = sheetName.replace('Nilai ', '').trim().toLowerCase();
+                        const subject = subjectLabelMap.get(subjectLabel);
+                        if (!subject) return;
+
+                        json.forEach(row => {
+                            const studentId = studentMap.get(String(row["Nama Siswa"] || '').trim().toLowerCase());
+                            if (studentId) {
+                                const gradeRecord = tempGrades.find(g => g.studentId === studentId);
+                                if (!gradeRecord.detailedGrades) gradeRecord.detailedGrades = {};
+                                if (!gradeRecord.detailedGrades[subject.id]) gradeRecord.detailedGrades[subject.id] = { tp: [], sts: null, sas: null };
+
+                                const detailed = gradeRecord.detailedGrades[subject.id];
+                                const tps = [];
+                                Object.keys(row).forEach(key => { if(key.startsWith('TP ')) tps[parseInt(key.replace('TP ','')) - 1] = row[key] === '' ? null : Number(row[key]); });
+                                detailed.tp = tps;
+                                detailed.sts = row['STS'] === '' ? null : Number(row['STS']);
+                                detailed.sas = row['SAS'] === '' ? null : Number(row['SAS']);
+                                
+                                // Recalculate Final Grade
+                                const tpsToConsider = (detailed.tp || []);
+                                const validTps = tpsToConsider.filter(t => typeof t === 'number');
+                                const avgTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
+                                const finalGrade = (avgTp + (detailed.sts || 0) + (detailed.sas || 0)) / 3;
+                                gradeRecord.finalGrades[subject.id] = isNaN(finalGrade) ? null : Math.round(finalGrade);
+                            }
+                        });
+                        processedSheetCount++;
+                    } else if (sheetName === 'Tujuan Pembelajaran') {
+                        const gradeNum = getGradeNumber(tempSettings.nama_kelas);
+                        if (gradeNum) {
+                            const gradeKey = `Kelas ${gradeNum}`;
+                            const newObjectivesForClass = {};
+                            const subjectFullNameMap = new Map(tempSubjects.map(s => [s.fullName.toLowerCase(), s]));
+                            json.forEach(row => {
+                                const subjectName = String(row['Nama Mapel'] || '').trim().toLowerCase();
+                                const subject = subjectFullNameMap.get(subjectName);
+                                if (subject) {
+                                    const objectives = [];
+                                    Object.keys(row).forEach(key => { if(key.startsWith('TP ')) objectives.push(row[key]); });
+                                    newObjectivesForClass[subject.fullName] = objectives.filter(Boolean);
+                                }
+                            });
+                            tempLearningObjectives[gradeKey] = newObjectivesForClass;
+                            processedSheetCount++;
+                        }
                     }
                 });
 
-                if (importCount > 0) {
-                    showToast(`${importCount} sheet data berhasil diimpor!`, 'success');
-                } else {
-                    showToast("Tidak ada sheet dengan data valid yang ditemukan untuk diimpor.", 'error');
-                }
+                // 4. Batch set states
+                setSettings(tempSettings);
+                setSubjects(tempSubjects);
+                setExtracurriculars(tempExtracurriculars);
+                setStudents(tempStudents);
+                setGrades(tempGrades);
+                setNotes(tempNotes);
+                setAttendance(tempAttendance);
+                setStudentExtracurriculars(tempStudentExtracurriculars);
+                setLearningObjectives(tempLearningObjectives);
+
+                showToast(`${processedSheetCount} sheet berhasil diimpor!`, 'success');
+
             } catch (error) {
                 console.error("Gagal mengimpor data:", error);
-                showToast("Gagal membaca file impor.", 'error');
+                showToast(`Gagal membaca file: ${error.message}`, 'error');
             }
         };
         reader.readAsBinaryString(file);
     };
     input.click();
-  }, [students, extracurriculars, settings.predikats, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, setSettings, setSubjects, setExtracurriculars]);
+  }, [settings, subjects, extracurriculars, students, grades, notes, attendance, studentExtracurriculars, learningObjectives, showToast]);
 
   const handleNavigateToNilai = useCallback((subjectId) => {
     setDataNilaiInitialTab(subjectId);
@@ -940,7 +981,15 @@ useEffect(() => {
       case 'DATA_ABSENSI':
         return React.createElement(DataAbsensiPage, { students: students, attendance: attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
       case 'CATATAN_WALI_KELAS':
-        return React.createElement(CatatanWaliKelasPage, { students: students, notes: notes, onUpdateNote: handleUpdateNote, onBulkUpdateNotes: handleBulkUpdateNotes, showToast: showToast, noteTemplates: presets?.studentNotesTemplates || [] });
+        return React.createElement(CatatanWaliKelasPage, { 
+                  students: students, 
+                  notes: notes, 
+                  onUpdateNote: handleUpdateNote, 
+                  grades: grades,
+                  subjects: subjects,
+                  settings: settings,
+                  showToast: showToast,
+                });
       case 'DATA_EKSTRAKURIKULER':
         return React.createElement(DataEkstrakurikulerPage, { 
                   students: students,
