@@ -1,7 +1,79 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, noteTemplates }) => {
-    const [templateDropdown, setTemplateDropdown] = useState(null);
+const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings }) => {
+
+    const handleGenerateNote = (student) => {
+        const predA = parseInt(settings.predikats?.a || 90, 10);
+        const predB = parseInt(settings.predikats?.b || 80, 10);
+        const nickname = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
+
+        const studentGradeData = grades.find(g => g.studentId === student.id);
+        if (!studentGradeData || !studentGradeData.finalGrades) {
+            onUpdateNote(student.id, `${nickname} menunjukkan perkembangan yang baik dalam berbagai aspek. Pertahankan semangat belajar.`);
+            return;
+        }
+
+        const activeSubjects = subjects.filter(s => s.active);
+        const finalGrades = studentGradeData.finalGrades;
+
+        // Condition A: Check for >= 5 'A' grades
+        const aGradeSubjects = activeSubjects
+            .filter(s => finalGrades[s.id] >= predA)
+            .map(s => {
+                let name = s.fullName;
+                if (name.startsWith('Pendidikan Agama')) return 'P. Agama';
+                if (name.startsWith('Pendidikan Pancasila')) return 'Pancasila';
+                if (name.startsWith('Ilmu Pengetahuan Alam dan Sosial')) return 'IPAS';
+                if (name.startsWith('Pendidikan Jasmani')) return 'PJOK';
+                return name;
+            });
+
+        if (aGradeSubjects.length >= 5) {
+            const note = `${nickname} menunjukkan keaktifan dan prestasi akademik yang sangat baik, terutama dalam ${aGradeSubjects.slice(0, 2).join(' dan ')}. Pertahankan terus prestasi yang telah dicapai.`;
+            onUpdateNote(student.id, note);
+            return;
+        }
+
+        // Condition C: Check for Religion and Pancasila grades >= B
+        const studentReligion = student.agama?.trim().toLowerCase();
+        const religionSubject = activeSubjects.find(s => 
+            s.fullName.startsWith('Pendidikan Agama dan Budi Pekerti') && 
+            s.fullName.toLowerCase().includes(`(${studentReligion})`)
+        );
+        const pancasilaSubject = activeSubjects.find(s => s.id === 'PP');
+
+        const religionGrade = religionSubject ? finalGrades[religionSubject.id] : null;
+        const pancasilaGrade = pancasilaSubject ? finalGrades[pancasilaSubject.id] : null;
+
+        if (typeof religionGrade === 'number' && typeof pancasilaGrade === 'number' && religionGrade >= predB && pancasilaGrade >= predB) {
+            const note = `${nickname} menunjukkan sikap dan perilaku yang baik, santun, dan bertanggung jawab. Selalu aktif dalam diskusi dan menunjukkan kepedulian terhadap teman.`;
+            onUpdateNote(student.id, note);
+            return;
+        }
+
+        // Condition B: Fallback to general academic development
+        let highestGrade = -1;
+        let highestSubject = null;
+        activeSubjects.forEach(s => {
+            const grade = finalGrades[s.id];
+            if (typeof grade === 'number' && grade > highestGrade) {
+                highestGrade = grade;
+                let name = s.fullName;
+                if (name.startsWith('Pendidikan Agama')) highestSubject = 'P. Agama';
+                else highestSubject = name;
+            }
+        });
+
+        if (highestSubject) {
+            const note = `${nickname} menunjukkan perkembangan akademik yang positif secara keseluruhan. Terlihat menonjol dalam ${highestSubject}. Perlu terus didukung untuk meningkatkan konsentrasi dan partisipasi di beberapa mata pelajaran lain.`;
+            onUpdateNote(student.id, note);
+            return;
+        }
+
+        // Absolute fallback
+        const fallbackNote = `${nickname} menunjukkan perkembangan yang baik dalam berbagai aspek. Pertahankan semangat belajar.`;
+        onUpdateNote(student.id, fallbackNote);
+    };
 
     const handleNoteChange = (studentId, note) => {
         onUpdateNote(studentId, note);
@@ -39,31 +111,12 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, noteTemplates }) 
                                                 rows: 4,
                                                 "aria-label": `Catatan wali kelas untuk ${student.namaLengkap}`
                                             }),
-                                            React.createElement('div', { className: "relative mt-2 text-right" },
+                                            React.createElement('div', { className: "flex justify-end mt-2" },
                                                 React.createElement('button', {
-                                                    onClick: () => setTemplateDropdown(templateDropdown === student.id ? null : student.id),
-                                                    className: "text-xs font-medium text-indigo-600 hover:text-indigo-800"
-                                                }, "Gunakan Template"),
-                                                templateDropdown === student.id && (
-                                                    React.createElement('div', { className: "absolute right-0 mt-1 w-64 bg-white rounded-md shadow-lg z-10 border border-slate-200" },
-                                                        React.createElement('ul', { className: "py-1" },
-                                                            noteTemplates.map((template) => (
-                                                                React.createElement('li', { key: template.id },
-                                                                    React.createElement('a', {
-                                                                        href: "#",
-                                                                        onClick: (e) => {
-                                                                            e.preventDefault();
-                                                                            const newNote = template.content.replace(/\[Nama Siswa\]/g, student.namaLengkap);
-                                                                            handleNoteChange(student.id, newNote);
-                                                                            setTemplateDropdown(null);
-                                                                        },
-                                                                        className: "block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 text-left"
-                                                                    }, template.title)
-                                                                )
-                                                            ))
-                                                        )
-                                                    )
-                                                )
+                                                    onClick: () => handleGenerateNote(student),
+                                                    className: "px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full hover:bg-indigo-200 transition-colors",
+                                                    title: "Buat catatan dasar berdasarkan data nilai dan sikap siswa"
+                                                }, "Buat Catatan Otomatis")
                                             )
                                         )
                                     )
