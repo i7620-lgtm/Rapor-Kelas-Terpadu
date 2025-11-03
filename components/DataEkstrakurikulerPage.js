@@ -2,6 +2,29 @@ import React from 'react';
 
 const MAX_EXTRA_FIELDS = 5;
 
+const defaultDescriptions = {
+    'CATUR': 'menunjukkan kemampuan berpikir strategis yang baik.',
+    'IPA': 'sangat antusias dan aktif dalam setiap percobaan.',
+    'KARATE': 'menunjukkan disiplin dan motivasi yang tinggi dalam latihan.',
+    'KEWIRAUSAHAAN': 'memiliki ide-ide kreatif dan motivasi yang kuat.',
+    'KODING': 'menunjukkan kemampuan pemecahan masalah yang baik.',
+    'MADING': 'aktif berkolaborasi dan menyumbangkan ide-ide kreatif.',
+    'MATEMATIKA': 'menunjukkan kemampuan analisis dan pemecahan masalah yang tajam.',
+    'MENGGAMBAR': 'memiliki kreativitas dan kemampuan visual yang menonjol.',
+    'MENARI': 'menunjukkan kelenturan dan ekspresi yang baik dalam setiap gerakan.',
+    'NYURAT_AKSARA_BALI': 'menunjukkan ketekunan dan kemauan belajar yang tinggi.',
+    'PRAMUKA': 'sangat aktif, kolaboratif, dan menunjukkan jiwa kepemimpinan.',
+    'SILAT': 'menunjukkan disiplin dan semangat yang tinggi dalam berlatih.',
+    'VOLI': 'menunjukkan kemampuan kerjasama tim yang baik di lapangan.',
+    'XIANGQI': 'menunjukkan kemampuan strategi dan konsentrasi yang baik.'
+};
+
+const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    const trimmed = string.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+};
+
 const DataEkstrakurikulerPage = ({
     students,
     extracurriculars,
@@ -12,16 +35,38 @@ const DataEkstrakurikulerPage = ({
 
     const handleAssignmentChange = (studentId, index, activityId) => {
         const studentExtra = studentExtracurriculars.find(se => se.studentId === studentId) || { studentId, assignedActivities: [], descriptions: {} };
+
         const newAssigned = [...(studentExtra.assignedActivities || [])];
         while (newAssigned.length < MAX_EXTRA_FIELDS) {
             newAssigned.push(null);
         }
-        newAssigned[index] = activityId === "---" ? null : activityId;
-        
-        const updatedStudentExtra = { ...studentExtra, assignedActivities: newAssigned };
-        
-        const newStudentExtracurriculars = studentExtracurriculars.filter(se => se.studentId !== studentId);
-        newStudentExtracurriculars.push(updatedStudentExtra);
+        const newActivityId = activityId === "---" ? null : activityId;
+        newAssigned[index] = newActivityId;
+
+        const newDescriptions = { ...(studentExtra.descriptions || {}) };
+
+        if (newActivityId && !newDescriptions[newActivityId]) {
+            const student = students.find(s => s.id === studentId);
+            if (student) {
+                const nickname = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
+                const template = defaultDescriptions[newActivityId];
+                const generatedDescription = template
+                    ? `${capitalizeFirstLetter(nickname)} ${template}`
+                    : `${capitalizeFirstLetter(nickname)} mengikuti kegiatan dengan baik.`;
+                newDescriptions[newActivityId] = generatedDescription;
+            }
+        }
+
+        const updatedStudentExtra = {
+            ...studentExtra,
+            assignedActivities: newAssigned,
+            descriptions: newDescriptions
+        };
+
+        const newStudentExtracurriculars = studentExtracurriculars
+            .filter(se => se.studentId !== studentId)
+            .concat(updatedStudentExtra);
+
         onUpdateStudentExtracurriculars(newStudentExtracurriculars);
     };
     
