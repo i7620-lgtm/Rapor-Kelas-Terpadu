@@ -9,9 +9,9 @@ import DataNilaiPage from './components/DataNilaiPage.js';
 import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
 import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
-import DataProyekP5Page from './components/DataProyekP5Page.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
 import Toast from './components/Toast.js';
+import useServiceWorker from './hooks/useServiceWorker.js';
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
@@ -91,14 +91,6 @@ const initialStudentExtracurriculars = [
     { studentId: 1, assignedActivities: ['PRAMUKA', null, null, null, null], descriptions: { 'PRAMUKA': 'Ananda Rummy sangat aktif dan antusias dalam mengikuti kegiatan Pramuka.' } }
 ];
 
-const initialP5Assessments = [
-    {
-        studentId: 1,
-        projectId: 'P5_BHINNEKA',
-        assessments: {}
-    }
-];
-
 const getGradeNumber = (str) => {
     if (!str) return null;
     const match = str.match(/\d+/);
@@ -116,6 +108,7 @@ const getGradeNumber = (str) => {
 };
 
 const App = () => {
+  const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -178,29 +171,6 @@ const App = () => {
           return initialStudentExtracurriculars;
       }
   });
-   const [p5Projects, setP5Projects] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appP5Projects');
-          const parsed = saved ? JSON.parse(saved) : [];
-          if (Array.isArray(parsed)) {
-            return parsed.map(p => ({
-              ...p,
-              dimensions: Array.isArray(p.dimensions) ? p.dimensions.map((d) => typeof d === 'string' ? { name: d, subElements: [] } : d) : []
-            }));
-          }
-          return [];
-      } catch (e) {
-          return [];
-      }
-  });
-  const [p5Assessments, setP5Assessments] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appP5Assessments');
-          return saved ? JSON.parse(saved) : initialP5Assessments;
-      } catch (e) {
-          return initialP5Assessments;
-      }
-  });
 
   const [subjects, setSubjects] = useState(() => {
     try {
@@ -236,15 +206,6 @@ useEffect(() => {
                 setExtracurriculars(loadedPresets.extracurriculars || []);
             }
             
-            const savedP5Projects = localStorage.getItem('appP5Projects');
-            if (!savedP5Projects || savedP5Projects === '[]') {
-                const projectsWithSubElements = (loadedPresets.p5Projects || []).map((p) => ({
-                    ...p,
-                    dimensions: (p.dimensions || []).map((d) => typeof d === 'string' ? { name: d, subElements: [] } : d)
-                }));
-                setP5Projects(projectsWithSubElements);
-            }
-
         } catch (err) {
             console.error("Gagal memuat data preset:", err);
             showToast("Gagal memuat data awal dari server.", 'error');
@@ -323,14 +284,6 @@ useEffect(() => {
   }, [studentExtracurriculars]);
 
   useEffect(() => {
-    localStorage.setItem('appP5Projects', JSON.stringify(p5Projects));
-  }, [p5Projects]);
-
-  useEffect(() => {
-    localStorage.setItem('appP5Assessments', JSON.stringify(p5Assessments));
-  }, [p5Assessments]);
-
-  useEffect(() => {
     localStorage.setItem('appSubjects', JSON.stringify(subjects));
   }, [subjects]);
 
@@ -397,7 +350,6 @@ useEffect(() => {
     const newGrades = [];
     const newAttendance = [];
     const newStudentExtracurriculars = [];
-    const newP5Assessments = [];
 
     studentsData.forEach(studentData => {
         const newId = newIdCounter++;
@@ -405,19 +357,15 @@ useEffect(() => {
         newGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
         newAttendance.push({ studentId: newId, sakit: 0, izin: 0, alpa: 0 });
         newStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
-        p5Projects.forEach(project => {
-            newP5Assessments.push({ studentId: newId, projectId: project.id, assessments: {} });
-        });
     });
 
     setStudents(prev => [...prev, ...newStudents]);
     setGrades(prev => [...prev, ...newGrades]);
     setAttendance(prev => [...prev, ...newAttendance]);
     setStudentExtracurriculars(prev => [...prev, ...newStudentExtracurriculars]);
-    setP5Assessments(prev => [...prev, ...newP5Assessments]);
 
     showToast(`${newStudents.length} siswa berhasil diimpor!`, 'success');
-  }, [students, p5Projects, showToast]);
+  }, [students, showToast]);
 
   const handleDeleteStudent = useCallback((studentId) => {
     setStudents(prev => prev.filter(s => s.id !== studentId));
@@ -429,7 +377,6 @@ useEffect(() => {
     });
     setAttendance(prev => prev.filter(a => a.studentId !== studentId));
     setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
-    setP5Assessments(prev => prev.filter(a => a.studentId !== studentId));
   }, []);
   
   const handleUpdateGrade = useCallback((studentId, subject, value) => {
@@ -606,62 +553,6 @@ useEffect(() => {
       setLearningObjectives(newObjectives);
   }, []);
 
-  const handleUpdateP5Project = useCallback((project) => {
-    setP5Projects(prev => {
-        const index = prev.findIndex(p => p.id === project.id);
-        if (index > -1) {
-            const updated = [...prev];
-            updated[index] = project;
-            return updated;
-        }
-        return [...prev, project];
-    });
-  }, []);
-
-  const handleDeleteP5Project = useCallback((projectId) => {
-      setP5Projects(prev => prev.filter(p => p.id !== projectId));
-      setP5Assessments(prev => prev.filter(a => a.projectId !== projectId));
-  }, []);
-
-  const handleUpdateP5Assessment = useCallback((studentId, projectId, subElementKey, level) => {
-      setP5Assessments(prev => {
-          const studentAssessmentIndex = prev.findIndex(a => a.studentId === studentId && a.projectId === projectId);
-          const updatedAssessments = [...prev];
-          
-          if (studentAssessmentIndex > -1) {
-              const newAssessment = { ...updatedAssessments[studentAssessmentIndex] };
-              newAssessment.assessments = { ...newAssessment.assessments, [subElementKey]: level };
-              updatedAssessments[studentAssessmentIndex] = newAssessment;
-          } else {
-              updatedAssessments.push({
-                  studentId,
-                  projectId,
-                  assessments: { [subElementKey]: level }
-              });
-          }
-          return updatedAssessments;
-      });
-  }, []);
-
-  const handleBulkUpdateP5Assessments = useCallback((updates) => {
-    setP5Assessments(prev => {
-        const assessmentsMap = new Map();
-        prev.forEach(a => assessmentsMap.set(`${a.studentId}-${a.projectId}`, JSON.parse(JSON.stringify(a))));
-        
-        updates.forEach(({ studentId, projectId, subElementKey, level }) => {
-            const key = `${studentId}-${projectId}`;
-            let assessment = assessmentsMap.get(key);
-            if (!assessment) {
-                assessment = { studentId, projectId, assessments: {} };
-            }
-            assessment.assessments[subElementKey] = level;
-            assessmentsMap.set(key, assessment);
-        });
-
-        return Array.from(assessmentsMap.values());
-    });
-  }, []);
-
     const handleExportAll = useCallback(() => {
     if (typeof XLSX === 'undefined') {
         showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
@@ -678,7 +569,6 @@ useEffect(() => {
             ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa."],
             ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
             ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
-            ["Penilaian P5", "Isi tingkat pencapaian siswa untuk setiap sub-elemen proyek P5. Gunakan nilai: Belum Berkembang, Mulai Berkembang, Berkembang sesuai Harapan, Sangat Berkembang."],
             ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
             ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
             [],
@@ -782,38 +672,6 @@ useEffect(() => {
         wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
         XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
         
-        const p5_ws_data = [];
-        const machineHeaders = ['studentId', 'namaLengkap'];
-        const humanHeaders = ['ID Siswa (Jangan Diubah)', 'Nama Siswa'];
-        p5Projects.forEach(project => {
-            project.dimensions.forEach(dim => {
-                dim.subElements.forEach(sub => {
-                    const subElementKey = `${dim.name}|${sub.name}`;
-                    machineHeaders.push(`PROJ:${project.id}|KEY:${subElementKey}`);
-                    humanHeaders.push(`${project.title} - ${sub.name}`);
-                });
-            });
-        });
-        p5_ws_data.push(machineHeaders);
-        p5_ws_data.push(humanHeaders);
-        students.forEach(student => {
-            const row = [student.id, student.namaLengkap];
-            p5Projects.forEach(project => {
-                const studentAssessments = p5Assessments.find(a => a.studentId === student.id && a.projectId === project.id);
-                project.dimensions.forEach(dim => {
-                    dim.subElements.forEach(sub => {
-                        const subElementKey = `${dim.name}|${sub.name}`;
-                        row.push(studentAssessments?.assessments[subElementKey] || null);
-                    });
-                });
-            });
-            p5_ws_data.push(row);
-        });
-        const wsP5 = XLSX.utils.aoa_to_sheet(p5_ws_data);
-        wsP5['!rows'] = [{hidden: true}];
-        wsP5['!cols'] = [{wch: 20}, {wch: 30}, ...machineHeaders.slice(2).map(() => ({ wch: 30 }))];
-        XLSX.utils.book_append_sheet(wb, wsP5, "Penilaian P5");
-
         const activeSubjects = subjects.filter(s => s.active);
         const currentGradeNumber = getGradeNumber(settings.nama_kelas);
         let objectivesForCurrentClass = {};
@@ -858,7 +716,7 @@ useEffect(() => {
         console.error("Gagal mengekspor data:", error);
         showToast("Gagal mengekspor data.", 'error');
     }
-  }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, p5Projects, p5Assessments, subjects, learningObjectives, showToast]);
+  }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
 
   const handleImportAll = useCallback(() => {
     const input = document.createElement('input');
@@ -1019,33 +877,6 @@ useEffect(() => {
                             }
                         });
                         if (newStudentExtras.length > 0) { handleBulkUpdateStudentExtracurriculars(newStudentExtras); importCount++; }
-                    } else if (sheetName === 'Penilaian P5') {
-                        const jsonP5 = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                        if (!jsonP5 || jsonP5.length < 2) {
-                            console.warn(`Skipping P5 sheet "${sheetName}" due to missing header or data.`);
-                            return; 
-                        }
-                        const machineHeaders = jsonP5[0];
-                        const studentDataRows = jsonP5.slice(2);
-                        const updates = [];
-                        const ASSESSMENT_LEVELS = ['Belum Berkembang', 'Mulai Berkembang', 'Berkembang sesuai Harapan', 'Sangat Berkembang'];
-                        studentDataRows.forEach(row => {
-                            const studentId = parseInt(String(row[0]), 10);
-                            if (isNaN(studentId) || !students.some(s => s.id === studentId)) return;
-                            for (let i = 2; i < machineHeaders.length; i++) {
-                                const header = machineHeaders[i];
-                                if (header && typeof header === 'string' && header.startsWith('PROJ:')) {
-                                    const projParts = header.split('|KEY:');
-                                    if (projParts.length === 2) {
-                                        const projectId = projParts[0].replace('PROJ:', '');
-                                        const subElementKey = projParts[1];
-                                        const level = ASSESSMENT_LEVELS.includes(row[i]) ? row[i] : '';
-                                        updates.push({ studentId, projectId, subElementKey, level });
-                                    }
-                                }
-                            }
-                        });
-                        if (updates.length > 0) { handleBulkUpdateP5Assessments(updates); importCount++; }
                     }
                 });
 
@@ -1062,7 +893,7 @@ useEffect(() => {
         reader.readAsBinaryString(file);
     };
     input.click();
-  }, [students, extracurriculars, settings.predikats, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, handleBulkUpdateP5Assessments, setSettings, setSubjects, setExtracurriculars]);
+  }, [students, extracurriculars, settings.predikats, showToast, handleBulkUpdateAttendance, handleBulkUpdateNotes, handleBulkUpdateStudentExtracurriculars, setSettings, setSubjects, setExtracurriculars]);
 
   const handleNavigateToNilai = useCallback((subjectId) => {
     setDataNilaiInitialTab(subjectId);
@@ -1087,8 +918,6 @@ useEffect(() => {
                   attendance: attendance,
                   extracurriculars: extracurriculars,
                   studentExtracurriculars: studentExtracurriculars,
-                  p5Projects: p5Projects,
-                  p5Assessments: p5Assessments,
                 });
       case 'DATA_SISWA':
         return React.createElement(DataSiswaPage, { students: students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
@@ -1120,17 +949,6 @@ useEffect(() => {
                   onUpdateStudentExtracurriculars: handleUpdateStudentExtracurriculars,
                   showToast: showToast
                 });
-      case 'DATA_PROYEK_P5':
-        return React.createElement(DataProyekP5Page, {
-                  students: students,
-                  projects: p5Projects,
-                  assessments: p5Assessments,
-                  onUpdateProject: handleUpdateP5Project,
-                  onDeleteProject: handleDeleteP5Project,
-                  onUpdateAssessment: handleUpdateP5Assessment,
-                  onBulkUpdateAssessments: handleBulkUpdateP5Assessments,
-                  showToast: showToast
-                });
       case 'PENGATURAN':
         return React.createElement(SettingsPage, { 
                   settings: settings, 
@@ -1153,8 +971,6 @@ useEffect(() => {
                   learningObjectives: learningObjectives,
                   studentExtracurriculars: studentExtracurriculars,
                   extracurriculars: extracurriculars,
-                  p5Projects: p5Projects,
-                  p5Assessments: p5Assessments,
                   showToast: showToast
                 });
       default:
@@ -1182,6 +998,15 @@ useEffect(() => {
           type: toast.type,
           onClose: () => setToast(null)
         })
+      ),
+      isUpdateAvailable && (
+        React.createElement('div', { className: "fixed bottom-0 left-0 right-0 bg-slate-800 text-white p-4 flex justify-between items-center shadow-lg z-50" },
+          React.createElement('p', { className: "text-sm" }, "Versi baru dari aplikasi tersedia."),
+          React.createElement('button', {
+            onClick: updateAssets,
+            className: "px-4 py-2 text-sm font-semibold bg-indigo-500 rounded-lg hover:bg-indigo-600"
+          }, "Muat Ulang")
+        )
       )
     )
   );
