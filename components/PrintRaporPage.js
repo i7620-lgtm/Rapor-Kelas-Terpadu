@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 
+// Base64 encoded Tut Wuri Handayani logo for offline use and stability
+const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYCAYAAAC+g+k+AAAgAElEQVR4nOzdB5xtVd3/8T/v9Ju+TdLQV5IeKCSgBFEEUVAEAQUVBVHQDRZ7sGCx772A2F1s7L1XsbAgiAgqKiiIBkEEBSSQpve+0+lM5v//M2fumZk7d+69J2fumcn7fM6R2XPvveece87ce+Y5M3POAYwxBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEEQBEE-g+k=";
+
 const getGradeNumber = (str) => {
     if (!str) return null;
     const match = str.match(/\d+/);
@@ -111,15 +114,48 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     return { highest: "Tidak dapat membuat deskripsi.", lowest: "" };
 };
 
-const CoverPage = ({ student, settings }) => (
-    React.createElement('div', { className: 'h-full flex flex-col justify-between items-center text-center p-4 report-cover-border' },
+const CoverPage = ({ student, settings }) => {
+    const year = useMemo(() => {
+        if (settings.tanggal_rapor) {
+            try {
+                // Handle format "Denpasar, 20 Desember 2024"
+                const parts = settings.tanggal_rapor.split(' ');
+                if (parts.length >= 3) {
+                    const yearPart = parts[parts.length - 1];
+                    const reportYear = parseInt(yearPart, 10);
+                    const monthName = parts[parts.length - 2];
+                    const monthIndex = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'].indexOf(monthName.toLowerCase());
+
+                    if (!isNaN(reportYear) && monthIndex !== -1) {
+                        // If report date is in the first half of the year (Jan-June), it belongs to the previous academic year end
+                        if (monthIndex < 6) {
+                            return `${reportYear - 1}/${reportYear}`;
+                        }
+                        return `${reportYear}/${reportYear + 1}`;
+                    }
+                }
+            } catch (e) { /* Fallback below */ }
+        }
+        if (settings.tahun_ajaran) {
+            return settings.tahun_ajaran;
+        }
+
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+        if (currentMonth < 6) {
+             return `${currentYear - 1}/${currentYear}`;
+        }
+        return `${currentYear}/${currentYear + 1}`;
+    }, [settings.tanggal_rapor, settings.tahun_ajaran]);
+
+    return React.createElement('div', { className: 'h-full flex flex-col justify-between items-center text-center p-8 report-cover-border' },
         React.createElement('div', null),
         React.createElement('div', { className: 'w-full' },
-            React.createElement('div', { className: 'flex justify-center mb-8' },
+            React.createElement('div', { className: 'flex justify-center mb-10' },
                 React.createElement('img', { 
-                    src: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Lambang_Pendidikan_Dasar_dan_Menengah_TUT_WURI_HANDAYANI.svg/2048px-Lambang_Pendidikan_Dasar_dan_Menengah_TUT_WURI_HANDAYANI.svg.png', 
+                    src: logoTutWuriHandayani, 
                     alt: "Logo Tut Wuri Handayani", 
-                    className: 'h-36 w-36 object-contain' 
+                    className: 'h-48 w-48 object-contain' 
                 })
             ),
             React.createElement('h1', { className: 'text-2xl font-bold tracking-widest mt-8' }, 'RAPOR'),
@@ -130,60 +166,54 @@ const CoverPage = ({ student, settings }) => (
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Peserta Didik:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-xl font-bold' }, (student.namaLengkap || 'NAMA SISWA').toUpperCase())
+                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA PESERTA DIDIK').toUpperCase())
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-xl font-bold' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
+                    React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
                 )
             )
         ),
-        React.createElement('div', { className: 'mb-8 text-sm' },
-            React.createElement('p', { className: 'font-bold' }, 'KEMENTERIAN PENDIDIKAN, KEBUDAYAAN,'),
-            React.createElement('p', { className: 'font-bold' }, 'RISET, DAN TEKNOLOGI'),
-            React.createElement('p', { className: 'font-bold' }, 'REPUBLIK INDONESIA')
+        React.createElement('div', { className: 'mb-8' },
+            React.createElement('p', { className: 'text-3xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
+            React.createElement('p', { className: 'text-3xl font-bold tracking-wider mt-1' }, 'REPUBLIK INDONESIA'),
+            React.createElement('p', { className: 'text-3xl font-bold tracking-wider mt-4' }, `Tahun Ajaran ${year}`)
         )
-    )
-);
+    );
+};
 
 const SchoolIdentityPage = ({ settings }) => {
-     const identitasSekolah = [
+    const identitasSekolah = [
         { label: "Nama Sekolah", value: settings.nama_sekolah },
         { label: "NPSN", value: settings.npsn },
         { label: "NIS/NSS/NDS", value: '-'},
         { label: "Alamat Sekolah", value: settings.alamat_sekolah},
-        { sub: [
-            { label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
-            { label: 'Kecamatan', value: settings.kecamatan },
-            { label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
-            { label: 'Provinsi', value: settings.provinsi },
-            { label: 'Website', value: settings.website_sekolah },
-            { label: 'E-mail', value: settings.email_sekolah },
-            { label: 'Kode Pos', value: settings.kode_pos, telp: settings.telepon_sekolah },
-        ]}
+        { sub: true, label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
+        { sub: true, label: 'Kecamatan', value: settings.kecamatan },
+        { sub: true, label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
+        { sub: true, label: 'Provinsi', value: settings.provinsi },
+        { sub: true, label: 'Website', value: settings.website_sekolah },
+        { sub: true, label: 'E-mail', value: settings.email_sekolah },
+        { sub: true, label: 'Kode Pos', value: settings.kode_pos, telp: settings.telepon_sekolah },
     ];
 
     return(
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('div', { className: 'text-center font-bold mb-16 space-y-1', style: { fontSize: '14pt' } },
+            React.createElement('div', { className: 'text-center font-bold mb-12 space-y-1', style: { fontSize: '14pt' } },
                 React.createElement('h2', null, 'RAPOR'),
                 React.createElement('h2', null, 'PESERTA DIDIK'),
                 React.createElement('h2', null, 'SEKOLAH DASAR (SD)')
             ),
-             React.createElement('table', { className: 'w-full' },
+             React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
                     identitasSekolah.map((item, index) => (
-                        React.createElement(React.Fragment, { key: index },
-                            React.createElement('tr', { className: 'align-top' },
-                                React.createElement('td', { className: 'w-1/3 py-1' }, item.label),
-                                React.createElement('td', { className: 'w-2/3 py-1' }, item.value ? `: ${item.value}` : '')
-                            ),
-                            item.sub && item.sub.map((subItem, subIndex) => (
-                                    React.createElement('tr', { key: subIndex, className: 'align-top' },
-                                    React.createElement('td', { className: 'pl-6' }, subItem.label),
-                                    React.createElement('td', null, `: ${subItem.value || '-'}`, subItem.telp ? ` Telp. ${subItem.telp}` : '')
-                                )
-                            ))
+                        React.createElement('tr', { key: index, className: 'align-top' },
+                            React.createElement('td', { className: `w-[35%] py-2 ${item.sub ? 'pl-8' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[5%] py-2' }, ':'),
+                            React.createElement('td', { className: 'w-[60%] py-2' }, 
+                                item.value || '-', 
+                                item.telp ? ` Telp. ${item.telp}` : ''
+                            )
                         )
                     ))
                 )
@@ -194,65 +224,55 @@ const SchoolIdentityPage = ({ settings }) => {
 
 const StudentIdentityPage = ({ student, settings }) => {
     const identitasSiswa = [
-        { label: 'Nama Peserta Didik', value: (student.namaLengkap || '').toUpperCase() },
-        { label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
-        { label: 'Tempat, Tanggal Lahir', value: `${student.tempatLahir || ''}, ${formatDate(student.tanggalLahir)}` },
-        { label: 'Jenis Kelamin', value: student.jenisKelamin },
-        { label: 'Agama', value: student.agama },
-        { label: 'Pendidikan Sebelumnya', value: student.asalTk },
-        { label: 'Alamat Peserta Didik', value: student.alamatSiswa },
-        { label: 'Nama Orang Tua', sub: [
-            { label: 'a. Ayah', value: student.namaAyah },
-            { label: 'b. Ibu', value: student.namaIbu },
-        ]},
-        { label: 'Pekerjaan Orang Tua', sub: [
-            { label: 'a. Ayah', value: student.pekerjaanAyah },
-            { label: 'b. Ibu', value: student.pekerjaanIbu },
-        ]},
-        { label: 'Alamat Orang Tua', value: student.alamatOrangTua },
-        { label: 'Wali Peserta Didik', sub: [
-            { label: 'a. Nama', value: student.namaWali },
-            { label: 'b. Pekerjaan', value: student.pekerjaanWali },
-            { label: 'c. Alamat', value: student.alamatWali },
-        ]},
+        { no: '1.', label: 'Nama Peserta Didik', value: (student.namaLengkap || '').toUpperCase() },
+        { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
+        { no: '3.', label: 'Tempat, Tanggal Lahir', value: `${student.tempatLahir || ''}, ${formatDate(student.tanggalLahir)}` },
+        { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
+        { no: '5.', label: 'Agama', value: student.agama },
+        { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
+        { no: '7.', label: 'Alamat Peserta Didik', value: student.alamatSiswa },
+        { no: '8.', label: 'Nama Orang Tua' },
+        { sub: true, label: 'a. Ayah', value: student.namaAyah },
+        { sub: true, label: 'b. Ibu', value: student.namaIbu },
+        { no: '9.', label: 'Pekerjaan Orang Tua' },
+        { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
+        { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
+        { no: '10.', label: 'Alamat Orang Tua', value: student.alamatOrangTua },
+        { no: '11.', label: 'Wali Peserta Didik' },
+        { sub: true, label: 'a. Nama', value: student.namaWali },
+        { sub: true, label: 'b. Pekerjaan', value: student.pekerjaanWali },
+        { sub: true, label: 'c. Alamat', value: student.alamatWali },
     ];
     
     return (
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-8', style: { fontSize: '14pt' } }, 'IDENTITAS PESERTA DIDIK'),
-            React.createElement('div', { className: 'space-y-4' },
-                React.createElement('table', { className: 'w-full' },
-                    React.createElement('tbody', null,
-                        identitasSiswa.map((item, index) => (
-                             React.createElement(React.Fragment, { key: index },
-                                React.createElement('tr', { className: 'align-top' },
-                                    React.createElement('td', { className: 'w-1/3 py-1' }, item.label),
-                                    React.createElement('td', { className: 'w-2/3 py-1' }, item.value ? `: ${item.value}` : ':')
-                                ),
-                                item.sub && item.sub.map((subItem, subIndex) => (
-                                     React.createElement('tr', { key: subIndex, className: 'align-top' },
-                                        React.createElement('td', { className: 'pl-4' }, subItem.label),
-                                        React.createElement('td', null, `: ${subItem.value || '-'}`)
-                                    )
-                                ))
-                            )
-                        ))
-                    )
-                ),
-                React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                    React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
-                    React.createElement('div', { className: 'text-center' },
-                        React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
-                        React.createElement('p', null, 'Kepala Sekolah,'),
-                        React.createElement('div', { className: 'h-20' }),
-                        React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
-                        React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
-                    )
+            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS PESERTA DIDIK'),
+            React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
+                React.createElement('tbody', null,
+                    identitasSiswa.map((item, index) => (
+                        React.createElement('tr', { key: index, className: 'align-top' },
+                            React.createElement('td', { className: 'w-[5%] py-2' }, item.no || ''),
+                            React.createElement('td', { className: `w-[30%] py-2 ${item.sub ? 'pl-4' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[5%] py-2' }, item.label ? ':' : ''),
+                            React.createElement('td', { className: 'w-[60%] py-2' }, item.value || (item.sub ? '-' : ''))
+                        )
+                    ))
+                )
+            ),
+            React.createElement('div', { className: 'flex justify-between items-end pt-10' },
+                React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
+                React.createElement('div', { className: 'text-center' },
+                    React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
+                    React.createElement('p', null, 'Kepala Sekolah,'),
+                    React.createElement('div', { className: 'h-20' }),
+                    React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
+                    React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 )
             )
         )
     );
 };
+
 
 const AcademicReportPage = ({ student, settings, grades, subjects, learningObjectives }) => {
     const gradeData = grades.find(g => g.studentId === student.id);
@@ -322,42 +342,42 @@ const AcademicReportPage = ({ student, settings, grades, subjects, learningObjec
     return (
         React.createElement('div', { className: 'font-times' },
             React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '14pt' } }, 'LAPORAN HASIL BELAJAR (RAPOR)'),
-            React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '12pt' } },
+            React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
                 React.createElement('tbody', null,
                     React.createElement('tr', null,
-                        React.createElement('td', { className: 'w-[20%]' }, 'Nama Peserta Didik'), React.createElement('td', { className: 'w-[45%]' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                        React.createElement('td', { className: 'w-[15%]' }, 'Kelas'), React.createElement('td', { className: 'w-[20%]' }, `: ${settings.nama_kelas || ''}`)
+                        React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Peserta Didik'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
+                        React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
                     ),
                     React.createElement('tr', null,
-                        React.createElement('td', null, 'NISN/NIS'), React.createElement('td', null, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                        React.createElement('td', null, 'Fase'), React.createElement('td', null, `: C`) // Hardcoded as per example
+                        React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`) // Hardcoded as per example
                     ),
                      React.createElement('tr', null,
-                        React.createElement('td', null, 'Nama Sekolah'), React.createElement('td', null, `: ${settings.nama_sekolah || ''}`),
-                        React.createElement('td', null, 'Semester'), React.createElement('td', null, `: ${settings.semester ? `${settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)'}`: '2'}`)
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? `${settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)'}`: '2'}`)
                     ),
                     React.createElement('tr', null,
-                        React.createElement('td', null, 'Alamat Sekolah'), React.createElement('td', null, `: ${settings.alamat_sekolah || ''}`),
-                        React.createElement('td', null, 'Tahun Pelajaran'), React.createElement('td', null, `: ${settings.tahun_ajaran || ''}`)
+                        React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
+                        React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
                     )
                 )
             ),
             React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '11pt' } },
                 React.createElement('thead', null,
                     React.createElement('tr', { className: 'font-bold text-center' },
-                        React.createElement('td', { className: 'border-2 border-black p-1 w-[5%]' }, 'No.'),
-                        React.createElement('td', { className: 'border-2 border-black p-1 w-[20%]' }, 'Mata Pelajaran'),
-                        React.createElement('td', { className: 'border-2 border-black p-1 w-[8%]' }, 'Nilai Akhir'),
-                        React.createElement('td', { className: 'border-2 border-black p-1 w-[67%]' }, 'Capaian Kompetensi')
+                        React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'),
+                        React.createElement('td', { className: 'border-2 border-black p-2 w-[20%]' }, 'Mata Pelajaran'),
+                        React.createElement('td', { className: 'border-2 border-black p-2 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
+                        React.createElement('td', { className: 'border-2 border-black p-2 w-[67%]' }, 'Capaian Kompetensi')
                     )
                 ),
                 React.createElement('tbody', null,
                     reportSubjects.map((item, index) => (
                         React.createElement('tr', { key: item.id },
-                            React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, index + 1),
-                            React.createElement('td', { className: 'border border-black p-2 align-top' }, item.name),
-                            React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, item.grade ?? ''),
-                            React.createElement('td', { className: 'border border-black p-2 align-top text-justify' },
+                            React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, index + 1),
+                            React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
+                            React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
+                            React.createElement('td', { className: 'border border-black p-3 align-top text-justify' },
                                 React.createElement('p', {className: 'mb-1'}, item.description.highest),
                                 item.description.lowest && React.createElement(React.Fragment, null,
                                   React.createElement('hr', { className: 'border-t border-black my-1' }),
@@ -412,41 +432,46 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
 
         const gradeLevel = getGradeNumber(settings.nama_kelas);
         
-        let passText, failText;
+        let passText, failText, passTo, failTo;
         if (gradeLevel === 6) {
             passText = 'LULUS';
             failText = 'TIDAK LULUS';
+            passTo = '';
+            failTo = '';
         } else {
-            passText = 'Naik Kelas';
-            failText = 'Tidak Naik Kelas';
+            passText = 'Naik ke Kelas';
+            failText = 'Tinggal di Kelas';
+            const nextGrade = gradeLevel ? gradeLevel + 1 : '';
+            const nextGradeRoman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}[gradeLevel];
+            const nextGradeRomanPlusOne = {2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
+            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
+            failTo = `${gradeLevel} (${nextGradeRoman})`;
         }
 
-        const decisionText = isLulus 
-            ? React.createElement(React.Fragment, null, passText, ' / ', React.createElement('s', { className: 'text-black' }, failText))
-            : React.createElement(React.Fragment, null, React.createElement('s', { className: 'text-black' }, passText), ' / ', failText);
-
-        return React.createElement('div', { className: 'border-2 border-black p-2 mt-4', style: { fontSize: '11pt' } },
+        return React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { fontSize: '12pt' } },
             React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
-            React.createElement('p', null, 'Berdasarkan pencapaian kompetensi pada semester ke-1 dan ke-2, peserta didik ditetapkan:'),
-            React.createElement('p', { className: 'font-bold mt-1' }, decisionText)
+            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, peserta didik dinyatakan:'),
+            React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
+              isLulus ? `${passText} ${passTo}`.trim() : `${failText} ${failTo}`.trim()
+            )
         );
     };
 
     return (
         React.createElement('div', { className: 'pt-8 font-times' },
             React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '11pt' } },
-                React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-1 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-1 w-[70%]' }, 'Keterangan'))),
-                React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-2 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-2' }, item.name), React.createElement('td', { className: 'border border-black p-2' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
+                React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
+                React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
             ),
-             React.createElement('div', { className: 'border-2 border-black p-2 mt-4', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Guru'), React.createElement('p', null, studentNote || 'Tidak ada catatan.')),
+             React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
             
             React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-1' }, 'Ketidakhadiran'))),
+                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData.sakit} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData.izin} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-1 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-1' }, `: ${attendanceData.alpa} hari`))
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.sakit} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.izin} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.alpa} hari`))
                     )
                 ),
                 renderDecision()
@@ -470,6 +495,8 @@ const ContinuationPage = ({ student, settings, attendance, notes, extracurricula
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
     F4: { width: '21.5cm', height: '33cm' },
+    Letter: { width: '21.59cm', height: '27.94cm' },
+    Legal: { width: '21.59cm', height: '35.56cm' },
 };
 
 const PrintRaporPage = ({ students, settings, ...restProps }) => {
@@ -520,7 +547,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     const pageCheckboxes = [
         { key: 'cover', label: 'Sampul' },
         { key: 'schoolIdentity', label: 'Identitas Sekolah' },
-        { key: 'studentIdentity', label: 'Identitas Siswa' },
+        { key: 'studentIdentity', label: 'Identitas Murid' },
         { key: 'academic', label: 'Akademik' },
         { key: 'continuation', label: 'Lanjutan' },
     ];
@@ -531,17 +558,17 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
                  React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
-                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih siswa, halaman, dan ukuran kertas, lalu klik cetak.")
+                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik cetak.")
                     ),
                     React.createElement('div', { className: "flex items-center gap-4 mt-4 md:mt-0" },
                         React.createElement('select', { id: "studentSelector", className: "w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
-                            React.createElement('option', { value: "all" }, "Cetak Semua Siswa"),
+                            React.createElement('option', { value: "all" }, "Cetak Semua Murid"),
                             students.map(s => React.createElement('option', { key: s.id, value: String(s.id) }, s.namaLengkap))
                         ),
                         React.createElement('select', {
                             id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
-                            className: "w-40 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, key))),
+                            className: "w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))),
                         React.createElement('button', { onClick: handlePrint, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700" }, "Cetak Rapor")
                     )
                 ),
