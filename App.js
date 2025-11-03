@@ -603,6 +603,10 @@ useEffect(() => {
             settingsDataAoA.push([header, value]);
         });
         
+        // Add logos
+        settingsDataAoA.push(['Logo Sekolah (Base64)', settings.logo_sekolah || '']);
+        settingsDataAoA.push(['Logo Dinas Pendidikan (Base64)', settings.logo_dinas || '']);
+        
         settingsDataAoA.push([]);
         settingsDataAoA.push(['Mata Pelajaran']);
         settingsDataAoA.push(['ID Internal (Jangan Diubah)', 'Nama Lengkap', 'Singkatan', 'Status Aktif']);
@@ -766,6 +770,9 @@ useEffect(() => {
                         if (settingsHeaderMap.has(header)) tempSettings[settingsHeaderMap.get(header)] = row[1];
                         if (predikatMap.has(header)) tempSettings.predikats[predikatMap.get(header)] = String(row[1]);
 
+                        if (header === 'Logo Sekolah (Base64)') tempSettings.logo_sekolah = row[1] || null;
+                        if (header === 'Logo Dinas Pendidikan (Base64)') tempSettings.logo_dinas = row[1] || null;
+                        
                         if (section === 'subjects' && header !== 'ID Internal (Jangan Diubah)') {
                             const [id, fullName, label, status] = row;
                             if (id && fullName) {
