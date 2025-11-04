@@ -142,15 +142,39 @@ const Dashboard = ({
     
     currentStudents.forEach(student => {
         const studentGrade = currentGrades.find(g => g.studentId === student.id);
+        // A student without any grade entry at all is a different kind of problem, handled by completeness checks.
+        // We only proceed if there is a grade object for the student.
         if (!studentGrade) return;
+
+        const studentReligion = student.agama?.trim().toLowerCase();
+
+        const relevantSubjects = activeSubjects.filter(subject => {
+            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+                // if student religion is not set, we can't determine the correct subject.
+                if (!studentReligion) return false;
+                
+                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                if (subjectReligionMatch) {
+                    const subjectReligion = subjectReligionMatch[1].trim().toLowerCase();
+                    return subjectReligion === studentReligion;
+                }
+                return false;
+            }
+            return true;
+        });
 
         const failingSubjects = [];
         let firstFailingSubjectId = null;
 
-        activeSubjects.forEach(subject => {
+        relevantSubjects.forEach(subject => {
             const grade = studentGrade?.finalGrades?.[subject.id];
-            if (typeof grade === 'number' && grade < minGrade) {
-                failingSubjects.push(`${subject.label} (${grade})`);
+            
+            const isMissing = grade === undefined || grade === null || grade === '';
+            const isBelowKKM = typeof grade === 'number' && grade < minGrade;
+
+            if (isMissing || isBelowKKM) {
+                const gradeDisplay = isMissing ? 'Kosong' : grade;
+                failingSubjects.push(`${subject.label} (${gradeDisplay})`);
                 if (!firstFailingSubjectId) {
                     firstFailingSubjectId = subject.id;
                 }
@@ -160,7 +184,7 @@ const Dashboard = ({
         if (failingSubjects.length > 0) {
             items.push({
                 title: student.namaLengkap,
-                description: `Nilai di bawah KKM: ${failingSubjects.join(', ')}`,
+                description: `Nilai perlu perhatian: ${failingSubjects.join(', ')}`,
                 status: 'attention',
                 actionSubjectId: firstFailingSubjectId,
             });
