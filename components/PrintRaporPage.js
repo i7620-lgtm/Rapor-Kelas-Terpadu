@@ -606,11 +606,12 @@ const PAPER_SIZES = {
 
 const PrintRaporPage = ({ students, settings, ...restProps }) => {
     const [paperSize, setPaperSize] = useState('A4');
+    const [selectedStudentId, setSelectedStudentId] = useState('all');
     const [selectedPages, setSelectedPages] = useState({
         cover: true,
         schoolIdentity: true,
         studentIdentity: true,
-        academic: true, // This now represents the combined report
+        academic: true,
     });
 
     const handlePageSelectionChange = (e) => {
@@ -623,24 +624,29 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     };
     
     const handlePrint = () => {
-        const studentToPrint = document.getElementById('studentSelector').value;
-        const allPages = document.querySelectorAll('.report-page');
+        const pagesToPrint = document.querySelectorAll('#print-area .report-page');
         
-        allPages.forEach(page => {
-            const studentId = page.getAttribute('data-student-id');
+        pagesToPrint.forEach(page => {
             const pageType = page.getAttribute('data-page-type');
-            
-            const studentMatch = (studentToPrint === 'all' || studentToPrint === studentId);
-            const pageMatch = selectedPages[pageType];
-
-            page.style.display = (studentMatch && pageMatch) ? 'block' : 'none';
+            if (!selectedPages[pageType]) {
+                page.classList.add('hide-in-print');
+            }
         });
 
         setTimeout(() => {
             window.print();
-            allPages.forEach(page => page.style.display = 'block');
+            pagesToPrint.forEach(page => {
+                page.classList.remove('hide-in-print');
+            });
         }, 100);
     };
+
+    const studentsToRender = useMemo(() => {
+        if (selectedStudentId === 'all') {
+            return students;
+        }
+        return students.filter(s => String(s.id) === selectedStudentId);
+    }, [students, selectedStudentId]);
     
     const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
@@ -649,7 +655,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     
     const academicPageStyle = {
         width: PAPER_SIZES[paperSize].width,
-        minHeight: PAPER_SIZES[paperSize].height, // Use min-height to allow content to flow
+        minHeight: PAPER_SIZES[paperSize].height,
     };
 
     const contentStyle = { padding: '1.5cm' };
@@ -671,15 +677,25 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
                         React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik cetak.")
                     ),
-                    React.createElement('div', { className: "flex items-center gap-4 mt-4 md:mt-0" },
-                        React.createElement('select', { id: "studentSelector", className: "w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
-                            React.createElement('option', { value: "all" }, "Cetak Semua Murid"),
-                            students.map(s => React.createElement('option', { key: s.id, value: String(s.id) }, s.namaLengkap))
+                    React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
+                        React.createElement('div', null,
+                            React.createElement('label', { htmlFor: 'studentSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Pilih Murid'),
+                            React.createElement('select', { 
+                                id: "studentSelector",
+                                value: selectedStudentId,
+                                onChange: (e) => setSelectedStudentId(e.target.value),
+                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
+                                React.createElement('option', { value: "all" }, "Cetak Semua Murid"),
+                                students.map(s => React.createElement('option', { key: s.id, value: String(s.id) }, s.namaLengkap))
+                            )
                         ),
-                        React.createElement('select', {
-                            id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
-                            className: "w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                        }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))),
+                        React.createElement('div', null,
+                            React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
+                            React.createElement('select', {
+                                id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
+                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
+                        ),
                         React.createElement('button', { onClick: handlePrint, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700" }, "Cetak Rapor")
                     )
                 ),
@@ -698,7 +714,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                students.map(student => (
+                studentsToRender.map(student => (
                     React.createElement(React.Fragment, { key: student.id },
                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                             React.createElement('div', { style: contentStyle, className: "h-full" },
