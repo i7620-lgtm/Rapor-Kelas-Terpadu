@@ -11,7 +11,6 @@ import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
 import Toast from './components/Toast.js';
-import useServiceWorker from './hooks/useServiceWorker.js';
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
@@ -108,7 +107,6 @@ const getGradeNumber = (str) => {
 };
 
 const App = () => {
-  const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1081,15 +1079,6 @@ useEffect(() => {
           type: toast.type,
           onClose: () => setToast(null)
         })
-      ),
-      isUpdateAvailable && (
-        React.createElement('div', { className: "fixed bottom-0 left-0 right-0 bg-slate-800 text-white p-4 flex justify-between items-center shadow-lg z-50" },
-          React.createElement('p', { className: "text-sm" }, "Versi baru dari aplikasi tersedia."),
-          React.createElement('button', {
-            onClick: updateAssets,
-            className: "px-4 py-2 text-sm font-semibold bg-indigo-500 rounded-lg hover:bg-indigo-600"
-          }, "Muat Ulang")
-        )
       )
     )
   );
