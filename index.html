@@ -91,14 +91,31 @@
     .print-hidden {
         display: none !important;
     }
+    .report-page.hide-in-print {
+        display: none !important;
+    }
     .report-page {
         box-shadow: none !important;
         border: none !important;
         margin: 0 !important;
         page-break-after: always;
+        padding: 0 !important;
     }
     .report-page:last-of-type {
       page-break-after: avoid;
+    }
+    thead.report-header-group {
+        display: table-header-group;
+    }
+    tbody {
+        display: table-row-group;
+    }
+    /* --- Improved page break handling --- */
+    table tr, table tbody tr, .signature-block {
+        page-break-inside: avoid !important;
+    }
+    h2, h3, h4 {
+        page-break-after: avoid; /* Mencegah judul dipisah dari kontennya */
     }
   }
 
@@ -110,16 +127,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script type="module" src="./index.js"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: './' }).then(registration => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-          }, err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-        });
-      }
-    </script>
   </body>
 </html>
