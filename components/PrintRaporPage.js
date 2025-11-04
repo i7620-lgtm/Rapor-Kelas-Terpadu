@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName } from './TransliterationUtil.js';
 
 // Base64 encoded Tut Wuri Handayani logo for offline use and stability
-const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAAAMFBMVEX///8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzPj53iLAAAAEHRSTlMAQL/AQCAgUJ/Pv7/Pn29fbxwkAAABGElEQVR4nO3PMRJAQQwAMYf9L/kQjBSQ3g953t29525rAAAAAAAAAAAAAAAAAAAAAAAAAABg/hB6Jz1gZADEDBDMAMEMEMwAwQwQzADBDNA3ACQDyAABmCHA/gXIfAFyvy8g8wIkfgfk/wFyPy4g8wAkfgfk/wHyPy0g8wAkfgfk/wHyPy8g8wAkfgfk/wHyPy4g8wAkfgfk/wHyPy0g8wAkfgfk/wHyPy8g8wAkfgfk/wHyPy4g8wAkfgfk/wHyPy0g8wAkfgfk/wHyPy8g8wAkfgfk/wHyPy4g8wAkfgfk/wHyPy0g8wAkfgfk/wHyPy8g8wAkfgfk/wHyPy4g8wAkfgT1gZADEDBDMAMEMEMwAwQwQzADBDNDfACQDyAABmCHA/gLk/gHIfAFy/wDI/QPIfAABAAAAAAAAAAAAAAAAAAAAAAAAAACA+QEzVgwS+40xZwAAAABJRU5ErkJggg==";
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
@@ -131,20 +131,24 @@ const getGradeNumber = (str) => {
 };
 
 const formatDate = (dateString) => {
-    if (!dateString || dateString === 'Invalid Date' || dateString === '') return '-';
+    if (!dateString || dateString instanceof Date && isNaN(dateString)) return '-';
     try {
         const date = new Date(dateString);
         // add timezone offset to prevent off-by-one day errors
         const userTimezoneOffset = date.getTimezoneOffset() * 60000;
         const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
         
+        if (isNaN(adjustedDate.getTime())) {
+            return String(dateString); // Return original string if date is invalid
+        }
+
         return adjustedDate.toLocaleDateString('id-ID', {
             day: '2-digit',
             month: 'long',
             year: 'numeric',
         });
     } catch (e) {
-        return dateString;
+        return String(dateString); // Return original string on error
     }
 };
 
@@ -381,91 +385,63 @@ const StudentIdentityPage = ({ student, settings }) => {
     );
 };
 
-const CombinedReportContent = ({ student, settings, grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars }) => {
-    const gradeData = grades.find(g => g.studentId === student.id);
+const ReportStudentInfo = ({ student, settings }) => (
+    React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
+        React.createElement('tbody', null,
+            React.createElement('tr', null,
+                React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
+                React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
+            ),
+            React.createElement('tr', null,
+                React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
+                React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
+            ),
+                React.createElement('tr', null,
+                React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
+                React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
+            ),
+            React.createElement('tr', null,
+                React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
+                React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
+            )
+        )
+    )
+);
+
+const AcademicTable = ({ subjectsToRender, startingIndex = 1 }) => (
+    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '11pt' } },
+        React.createElement('thead', { className: "report-header-group" },
+            React.createElement('tr', { className: 'font-bold text-center' },
+                React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'),
+                React.createElement('td', { className: 'border-2 border-black p-2 w-[20%]' }, 'Mata Pelajaran'),
+                React.createElement('td', { className: 'border-2 border-black p-2 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
+                React.createElement('td', { className: 'border-2 border-black p-2 w-[67%]' }, 'Capaian Kompetensi')
+            )
+        ),
+        React.createElement('tbody', null,
+            subjectsToRender.map((item, index) => (
+                React.createElement('tr', { key: item.id },
+                    React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black p-3 align-top text-justify' },
+                        React.createElement('p', {className: 'mb-1'}, item.description.highest),
+                        item.description.lowest && React.createElement(React.Fragment, null,
+                            React.createElement('hr', { className: 'border-t border-black my-1' }),
+                            React.createElement('p', null, item.description.lowest)
+                        )
+                    )
+                )
+            ))
+        )
+    )
+);
+
+const ReportFooterContent = ({ student, settings, attendance, notes, studentExtracurriculars, extracurriculars }) => {
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
     const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
     const studentNote = notes[student.id] || '';
-
-    const reportSubjects = useMemo(() => {
-        const result = [];
-        const processedGroups = new Set();
-        const allActiveSubjects = subjects.filter(s => s.active);
-        
-        const groupConfigs = {
-            'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
-                const studentReligion = student.agama?.trim().toLowerCase();
-                const representative = groupSubjects.find(s => {
-                    const match = s.fullName.match(/\(([^)]+)\)/);
-                    return match && match[1].trim().toLowerCase() === studentReligion;
-                });
-                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
-            },
-            'Seni Budaya': (groupSubjects) => {
-                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
-                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
-            },
-            'Muatan Lokal': (groupSubjects) => {
-                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
-                 const match = chosen.fullName.match(/\(([^)]+)\)/);
-                 return chosen ? { subject: chosen, name: match ? match[1] : 'Muatan Lokal' } : null;
-            }
-        };
-
-        Object.keys(groupConfigs).forEach(groupName => {
-            if (processedGroups.has(groupName)) return;
-            const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(groupName));
-            if (groupSubjects.length > 0) {
-                const config = groupConfigs[groupName](groupSubjects);
-                if (config) {
-                     const grade = gradeData?.finalGrades?.[config.subject.id];
-                     const description = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
-                     result.push({ id: config.subject.id, name: config.name, grade: grade, description: description });
-                }
-                processedGroups.add(groupName);
-            }
-        });
-        
-        allActiveSubjects.forEach(subject => {
-            const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
-            if (!isGrouped) {
-                const grade = gradeData?.finalGrades?.[subject.id];
-                const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
-                result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
-            }
-        });
-        
-        const sortOrder = [
-            'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
-            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
-            'Bahasa Inggris', 'Muatan Lokal'
-        ];
-        
-        const findOriginalFullName = (subjectId) => {
-            return subjects.find(s => s.id === subjectId)?.fullName || '';
-        };
-
-        result.sort((a, b) => {
-            const getSortKey = (item) => {
-                const originalFullName = findOriginalFullName(item.id);
-                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
-                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
-                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
-                return item.name;
-            };
-
-            const aSortKey = getSortKey(a);
-            const bSortKey = getSortKey(b);
-            
-            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
-            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
-            
-            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
-        });
-
-        return result;
-    }, [student, subjects, gradeData, learningObjectives, settings]);
-
+    
     const extraActivities = (studentExtraData?.assignedActivities || [])
         .map(activityId => {
             if (!activityId) return null;
@@ -473,115 +449,54 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
             const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
             return { name: activity?.name, description };
         }).filter(Boolean);
-        
+
     const renderDecision = () => {
         const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
         if (!isSemesterGenap) return null;
 
-        const kkm = parseInt(settings.predikats?.c, 10) || 70;
-        const activeSubjectIds = new Set(subjects.filter(s => s.active).map(s => s.id));
-        
-        let isLulus = true;
-        if (gradeData && Object.keys(gradeData.finalGrades || {}).length > 0) {
-            for (const subjectId in gradeData.finalGrades) {
-                if (activeSubjectIds.has(subjectId)) {
-                    const grade = gradeData.finalGrades[subjectId];
-                    if (grade !== null && grade < kkm) { isLulus = false; break; }
-                }
-            }
-        } else { isLulus = false; }
-
         const gradeLevel = getGradeNumber(settings.nama_kelas);
         let passText, failText, passTo, failTo;
+
         if (gradeLevel === 6) {
-            passText = 'LULUS'; failText = 'TIDAK LULUS'; passTo = ''; failTo = '';
+            passText = 'LULUS';
         } else {
-            passText = 'Naik ke Kelas'; failText = 'Tinggal di Kelas';
+            passText = 'Naik ke Kelas';
             const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRoman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI'}[gradeLevel];
             const nextGradeRomanPlusOne = {2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
             passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
-            failTo = `${gradeLevel} (${nextGradeRoman})`;
         }
-
+        
         return React.createElement('div', { className: 'border-2 border-black p-4 mt-4' },
             React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
             React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
             React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
-              isLulus ? `${passText} ${passTo}`.trim() : `${failText} ${failTo}`.trim()
+                `${passText} ${passTo || ''}`.trim()
             )
         );
     };
 
     return (
-        React.createElement('div', { className: 'font-times' },
-            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '14pt' } }, 'LAPORAN HASIL BELAJAR (RAPOR)'),
-            React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
-                React.createElement('tbody', null,
-                    React.createElement('tr', null,
-                        React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                        React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
-                    ),
-                    React.createElement('tr', null,
-                        React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
-                    ),
-                     React.createElement('tr', null,
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
-                    ),
-                    React.createElement('tr', null,
-                        React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
-                        React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
-                    )
-                )
-            ),
-            React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '11pt' } },
-                React.createElement('thead', null,
-                    React.createElement('tr', { className: 'font-bold text-center' },
-                        React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'),
-                        React.createElement('td', { className: 'border-2 border-black p-2 w-[20%]' }, 'Mata Pelajaran'),
-                        React.createElement('td', { className: 'border-2 border-black p-2 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
-                        React.createElement('td', { className: 'border-2 border-black p-2 w-[67%]' }, 'Capaian Kompetensi')
-                    )
-                ),
-                React.createElement('tbody', null,
-                    reportSubjects.map((item, index) => (
-                        React.createElement('tr', { key: item.id, style: { pageBreakInside: 'avoid' } },
-                            React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, index + 1),
-                            React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
-                            React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
-                            React.createElement('td', { className: 'border border-black p-3 align-top text-justify' },
-                                React.createElement('p', {className: 'mb-1'}, item.description.highest),
-                                item.description.lowest && React.createElement(React.Fragment, null,
-                                  React.createElement('hr', { className: 'border-t border-black my-1' }),
-                                  React.createElement('p', null, item.description.lowest)
-                                )
-                            )
-                        )
-                    ))
-                )
-            ),
-            React.createElement('div', {style: { pageBreakInside: 'avoid' }, className: 'mt-4'},
+        React.createElement(React.Fragment, null,
+            React.createElement('div', { className: 'mt-4 signature-block'},
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
+                    React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
                     React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
                 )
             ),
-             React.createElement('div', { className: 'border-2 border-black p-4 mt-4', style: { pageBreakInside: 'avoid', fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
+            React.createElement('div', { className: 'border-2 border-black p-4 mt-4 signature-block', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
             
-            React.createElement('div', { className: 'grid grid-cols-2 gap-4', style: { pageBreakInside: 'avoid' } },
+            React.createElement('div', { className: 'grid grid-cols-2 gap-4 signature-block' },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
+                    React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.sakit} hari`)),
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.izin} hari`)),
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.alpa} hari`))
                     )
                 ),
-                React.createElement('div', { style: { pageBreakInside: 'avoid'} }, renderDecision())
+                React.createElement('div', { className: 'signature-block' }, renderDecision())
             ),
-            React.createElement('div', { className: 'mt-12 flex justify-between', style: { pageBreakInside: 'avoid', fontSize: '12pt' } },
+            React.createElement('div', { className: 'signature-block mt-12 flex justify-between', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('p', null, 'Mengetahui:'), React.createElement('p', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold' }, '(.........................)')),
                 React.createElement('div', { className: 'text-center' }, 
                     React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
@@ -591,7 +506,7 @@ const CombinedReportContent = ({ student, settings, grades, subjects, learningOb
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            React.createElement('div', { className: 'mt-8 flex justify-center text-center', style: { pageBreakInside: 'avoid', fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            React.createElement('div', { className: 'signature-block mt-8 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 };
@@ -625,6 +540,15 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     
     const handlePrint = () => {
         const pagesToPrint = document.querySelectorAll('#print-area .report-page');
+
+        const afterPrintHandler = () => {
+            pagesToPrint.forEach(page => {
+                page.classList.remove('hide-in-print');
+            });
+            window.removeEventListener('afterprint', afterPrintHandler);
+        };
+
+        window.addEventListener('afterprint', afterPrintHandler);
         
         pagesToPrint.forEach(page => {
             const pageType = page.getAttribute('data-page-type');
@@ -633,12 +557,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             }
         });
 
-        setTimeout(() => {
-            window.print();
-            pagesToPrint.forEach(page => {
-                page.classList.remove('hide-in-print');
-            });
-        }, 100);
+        window.print();
     };
 
     const studentsToRender = useMemo(() => {
@@ -651,11 +570,6 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
-    };
-    
-    const academicPageStyle = {
-        width: PAPER_SIZES[paperSize].width,
-        minHeight: PAPER_SIZES[paperSize].height,
     };
 
     const contentStyle = { padding: '1.5cm' };
@@ -714,33 +628,170 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                studentsToRender.map(student => (
-                    React.createElement(React.Fragment, { key: student.id },
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                            React.createElement('div', { style: contentStyle, className: "h-full" },
-                                React.createElement(CoverPage, { student: student, settings: settings })
-                            )
-                        ),
-                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                            React.createElement(ReportHeader, { settings: settings }),
-                            React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(SchoolIdentityPage, { settings: settings })
-                            )
-                        ),
-                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
-                            React.createElement(ReportHeader, { settings: settings }),
-                            React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(StudentIdentityPage, { student: student, settings: settings })
-                            )
-                        ),
-                        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: academicPageStyle },
-                            React.createElement(ReportHeader, { settings: settings }),
-                            React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(CombinedReportContent, { student: student, settings: settings, ...restProps })
+                studentsToRender.map(student => {
+                    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
+                    const gradeData = grades.find(g => g.studentId === student.id);
+                    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+
+                    const reportSubjects = useMemo(() => {
+                        const result = [];
+                        const processedGroups = new Set();
+                        const allActiveSubjects = subjects.filter(s => s.active);
+                        
+                        const groupConfigs = {
+                            'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
+                                const studentReligion = student.agama?.trim().toLowerCase();
+                                const representative = groupSubjects.find(s => {
+                                    const match = s.fullName.match(/\(([^)]+)\)/);
+                                    return match && match[1].trim().toLowerCase() === studentReligion;
+                                });
+                                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
+                            },
+                            'Seni Budaya': (groupSubjects) => {
+                                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
+                                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
+                            },
+                            'Muatan Lokal': (groupSubjects) => {
+                                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
+                                if (chosen) {
+                                    const match = chosen.fullName.match(/\(([^)]+)\)/);
+                                    return { subject: chosen, name: match ? match[1] : 'Muatan Lokal' };
+                                }
+                                return null;
+                            }
+                        };
+
+                        Object.keys(groupConfigs).forEach(groupName => {
+                            if (processedGroups.has(groupName)) return;
+                            const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(groupName));
+                            if (groupSubjects.length > 0) {
+                                const config = groupConfigs[groupName](groupSubjects);
+                                if (config && config.subject) {
+                                     const grade = gradeData?.finalGrades?.[config.subject.id];
+                                     const description = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
+                                     result.push({ id: config.subject.id, name: config.name, grade: grade, description: description });
+                                }
+                                processedGroups.add(groupName);
+                            }
+                        });
+                        
+                        allActiveSubjects.forEach(subject => {
+                            const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
+                            if (!isGrouped) {
+                                const grade = gradeData?.finalGrades?.[subject.id];
+                                const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
+                                result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
+                            }
+                        });
+                        
+                        const sortOrder = [
+                            'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
+                            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
+                            'Bahasa Inggris', 'Muatan Lokal'
+                        ];
+                        
+                        const findOriginalFullName = (subjectId) => subjects.find(s => s.id === subjectId)?.fullName || '';
+
+                        result.sort((a, b) => {
+                            const getSortKey = (item) => {
+                                const originalFullName = findOriginalFullName(item.id);
+                                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
+                                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
+                                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
+                                return item.name;
+                            };
+                            const aSortKey = getSortKey(a);
+                            const bSortKey = getSortKey(b);
+                            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
+                            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
+                            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+                        });
+                        return result;
+                    }, [student, subjects, gradeData, learningObjectives, settings]);
+
+                    const { needsSplitting, splitPoint } = useMemo(() => {
+                        const activeSubjects = subjects.filter(s => s.active);
+                        const studentReligion = student.agama?.trim().toLowerCase();
+                        const relevantSubjectsForGradeCheck = activeSubjects.filter(subject => {
+                            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+                                if (!studentReligion) return false;
+                                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                                if (subjectReligionMatch) {
+                                    return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                                }
+                                return false;
+                            }
+                            return true;
+                        });
+                        
+                        const areGradesComplete = relevantSubjectsForGradeCheck.every(subject => {
+                            const grade = gradeData?.finalGrades?.[subject.id];
+                            return grade !== undefined && grade !== null && grade !== '';
+                        });
+    
+                        const assignedActivities = studentExtraData?.assignedActivities?.filter(Boolean) || [];
+                        const areExtrasComplete = assignedActivities.every(activityId => 
+                            studentExtraData?.descriptions?.[activityId] && studentExtraData.descriptions[activityId].trim() !== ''
+                        );
+                        
+                        const isDataComplete = areGradesComplete && areExtrasComplete;
+    
+                        if (!isDataComplete) {
+                            return { needsSplitting: false, splitPoint: reportSubjects.length };
+                        }
+                        
+                        const extraCount = assignedActivities.length;
+                        
+                        const calculatedSplitPoint = extraCount < 3 ? 6 : 7;
+                        const calculatedNeedsSplitting = reportSubjects.length > calculatedSplitPoint;
+    
+                        return { 
+                            needsSplitting: calculatedNeedsSplitting, 
+                            splitPoint: calculatedSplitPoint 
+                        };
+                    }, [student, subjects, gradeData, studentExtraData, reportSubjects]);
+
+                    const page1Subjects = needsSplitting ? reportSubjects.slice(0, splitPoint) : reportSubjects;
+                    const page2Subjects = needsSplitting ? reportSubjects.slice(splitPoint) : [];
+
+                    return (
+                        React.createElement(React.Fragment, { key: student.id },
+                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
+                                React.createElement('div', { style: contentStyle, className: "h-full" }, React.createElement(CoverPage, { student: student, settings: settings }))
+                            ),
+                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+                                React.createElement(ReportHeader, { settings: settings }),
+                                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                            ),
+                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+                                React.createElement(ReportHeader, { settings: settings }),
+                                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                            ),
+                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+                                React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
+                                React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
+                                    React.createElement('div', { className: 'font-times' },
+                                        React.createElement(ReportStudentInfo, { student: student, settings: settings }),
+                                        React.createElement(AcademicTable, { subjectsToRender: page1Subjects }),
+                                        !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
+                                    )
+                                )
+                            ),
+                            needsSplitting && (
+                                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+                                    React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
+                                    React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
+                                        React.createElement('div', { className: 'font-times' },
+                                            React.createElement(ReportStudentInfo, { student: student, settings: settings }),
+                                            React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: splitPoint + 1 }),
+                                            React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
+                                        )
+                                    )
+                                )
                             )
                         )
-                    )
-                ))
+                    );
+                })
             )
         )
     );
