@@ -511,6 +511,174 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
     );
 };
 
+const ReportPagesForStudent = ({ student, settings, pageStyle, ...restProps }) => {
+    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
+    const gradeData = grades.find(g => g.studentId === student.id);
+    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+
+    const reportSubjects = useMemo(() => {
+        const result = [];
+        const processedGroups = new Set();
+        const allActiveSubjects = subjects.filter(s => s.active);
+        
+        const groupConfigs = {
+            'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
+                const studentReligion = student.agama?.trim().toLowerCase();
+                const representative = groupSubjects.find(s => {
+                    const match = s.fullName.match(/\(([^)]+)\)/);
+                    return match && match[1].trim().toLowerCase() === studentReligion;
+                });
+                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
+            },
+            'Seni Budaya': (groupSubjects) => {
+                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
+                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
+            },
+            'Muatan Lokal': (groupSubjects) => {
+                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
+                if (chosen) {
+                    const match = chosen.fullName.match(/\(([^)]+)\)/);
+                    return { subject: chosen, name: match ? match[1] : 'Muatan Lokal' };
+                }
+                return null;
+            }
+        };
+
+        Object.keys(groupConfigs).forEach(groupName => {
+            if (processedGroups.has(groupName)) return;
+            const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(groupName));
+            if (groupSubjects.length > 0) {
+                const config = groupConfigs[groupName](groupSubjects);
+                if (config && config.subject) {
+                     const grade = gradeData?.finalGrades?.[config.subject.id];
+                     const description = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
+                     result.push({ id: config.subject.id, name: config.name, grade: grade, description: description });
+                }
+                processedGroups.add(groupName);
+            }
+        });
+        
+        allActiveSubjects.forEach(subject => {
+            const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
+            if (!isGrouped) {
+                const grade = gradeData?.finalGrades?.[subject.id];
+                const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
+                result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
+            }
+        });
+        
+        const sortOrder = [
+            'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
+            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
+            'Bahasa Inggris', 'Muatan Lokal'
+        ];
+        
+        const findOriginalFullName = (subjectId) => subjects.find(s => s.id === subjectId)?.fullName || '';
+
+        result.sort((a, b) => {
+            const getSortKey = (item) => {
+                const originalFullName = findOriginalFullName(item.id);
+                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
+                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
+                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
+                return item.name;
+            };
+            const aSortKey = getSortKey(a);
+            const bSortKey = getSortKey(b);
+            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
+            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
+            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+        });
+        return result;
+    }, [student, subjects, gradeData, learningObjectives, settings]);
+
+    const { needsSplitting, splitPoint } = useMemo(() => {
+        const activeSubjects = subjects.filter(s => s.active);
+        const studentReligion = student.agama?.trim().toLowerCase();
+        const relevantSubjectsForGradeCheck = activeSubjects.filter(subject => {
+            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+                if (!studentReligion) return false;
+                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                if (subjectReligionMatch) {
+                    return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                }
+                return false;
+            }
+            return true;
+        });
+        
+        const areGradesComplete = relevantSubjectsForGradeCheck.every(subject => {
+            const grade = gradeData?.finalGrades?.[subject.id];
+            return grade !== undefined && grade !== null && grade !== '';
+        });
+
+        const assignedActivities = studentExtraData?.assignedActivities?.filter(Boolean) || [];
+        const areExtrasComplete = assignedActivities.every(activityId => 
+            studentExtraData?.descriptions?.[activityId] && studentExtraData.descriptions[activityId].trim() !== ''
+        );
+        
+        const isDataComplete = areGradesComplete && areExtrasComplete;
+
+        if (!isDataComplete) {
+            return { needsSplitting: false, splitPoint: reportSubjects.length };
+        }
+        
+        const extraCount = assignedActivities.length;
+        
+        const calculatedSplitPoint = extraCount < 3 ? 6 : 7;
+        const calculatedNeedsSplitting = reportSubjects.length > calculatedSplitPoint;
+
+        return { 
+            needsSplitting: calculatedNeedsSplitting, 
+            splitPoint: calculatedSplitPoint 
+        };
+    }, [student, subjects, gradeData, studentExtraData, reportSubjects]);
+
+    const page1Subjects = needsSplitting ? reportSubjects.slice(0, splitPoint) : reportSubjects;
+    const page2Subjects = needsSplitting ? reportSubjects.slice(splitPoint) : [];
+
+    const contentStyle = { padding: '1.5cm' };
+    const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
+
+    return (
+        React.createElement(React.Fragment, null,
+            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
+                React.createElement('div', { style: contentStyle, className: "h-full" }, React.createElement(CoverPage, { student: student, settings: settings }))
+            ),
+            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(SchoolIdentityPage, { settings: settings }))
+            ),
+            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+            ),
+            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+                React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
+                React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
+                    React.createElement('div', { className: 'font-times' },
+                        React.createElement(ReportStudentInfo, { student: student, settings: settings }),
+                        React.createElement(AcademicTable, { subjectsToRender: page1Subjects }),
+                        !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
+                    )
+                )
+            ),
+            needsSplitting && (
+                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+                    React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
+                    React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
+                        React.createElement('div', { className: 'font-times' },
+                            React.createElement(ReportStudentInfo, { student: student, settings: settings }),
+                            React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: splitPoint + 1 }),
+                            React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
+                        )
+                    )
+                )
+            )
+        )
+    );
+};
+
 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
@@ -572,10 +740,6 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
         height: PAPER_SIZES[paperSize].height,
     };
 
-    const contentStyle = { padding: '1.5cm' };
-    const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
-
-
     const pageCheckboxes = [
         { key: 'cover', label: 'Sampul' },
         { key: 'schoolIdentity', label: 'Identitas Sekolah' },
@@ -628,170 +792,15 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                studentsToRender.map(student => {
-                    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
-                    const gradeData = grades.find(g => g.studentId === student.id);
-                    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
-
-                    const reportSubjects = useMemo(() => {
-                        const result = [];
-                        const processedGroups = new Set();
-                        const allActiveSubjects = subjects.filter(s => s.active);
-                        
-                        const groupConfigs = {
-                            'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
-                                const studentReligion = student.agama?.trim().toLowerCase();
-                                const representative = groupSubjects.find(s => {
-                                    const match = s.fullName.match(/\(([^)]+)\)/);
-                                    return match && match[1].trim().toLowerCase() === studentReligion;
-                                });
-                                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
-                            },
-                            'Seni Budaya': (groupSubjects) => {
-                                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
-                                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
-                            },
-                            'Muatan Lokal': (groupSubjects) => {
-                                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
-                                if (chosen) {
-                                    const match = chosen.fullName.match(/\(([^)]+)\)/);
-                                    return { subject: chosen, name: match ? match[1] : 'Muatan Lokal' };
-                                }
-                                return null;
-                            }
-                        };
-
-                        Object.keys(groupConfigs).forEach(groupName => {
-                            if (processedGroups.has(groupName)) return;
-                            const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(groupName));
-                            if (groupSubjects.length > 0) {
-                                const config = groupConfigs[groupName](groupSubjects);
-                                if (config && config.subject) {
-                                     const grade = gradeData?.finalGrades?.[config.subject.id];
-                                     const description = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
-                                     result.push({ id: config.subject.id, name: config.name, grade: grade, description: description });
-                                }
-                                processedGroups.add(groupName);
-                            }
-                        });
-                        
-                        allActiveSubjects.forEach(subject => {
-                            const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
-                            if (!isGrouped) {
-                                const grade = gradeData?.finalGrades?.[subject.id];
-                                const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
-                                result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
-                            }
-                        });
-                        
-                        const sortOrder = [
-                            'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
-                            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
-                            'Bahasa Inggris', 'Muatan Lokal'
-                        ];
-                        
-                        const findOriginalFullName = (subjectId) => subjects.find(s => s.id === subjectId)?.fullName || '';
-
-                        result.sort((a, b) => {
-                            const getSortKey = (item) => {
-                                const originalFullName = findOriginalFullName(item.id);
-                                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
-                                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
-                                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
-                                return item.name;
-                            };
-                            const aSortKey = getSortKey(a);
-                            const bSortKey = getSortKey(b);
-                            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
-                            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
-                            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
-                        });
-                        return result;
-                    }, [student, subjects, gradeData, learningObjectives, settings]);
-
-                    const { needsSplitting, splitPoint } = useMemo(() => {
-                        const activeSubjects = subjects.filter(s => s.active);
-                        const studentReligion = student.agama?.trim().toLowerCase();
-                        const relevantSubjectsForGradeCheck = activeSubjects.filter(subject => {
-                            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
-                                if (!studentReligion) return false;
-                                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
-                                if (subjectReligionMatch) {
-                                    return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
-                                }
-                                return false;
-                            }
-                            return true;
-                        });
-                        
-                        const areGradesComplete = relevantSubjectsForGradeCheck.every(subject => {
-                            const grade = gradeData?.finalGrades?.[subject.id];
-                            return grade !== undefined && grade !== null && grade !== '';
-                        });
-    
-                        const assignedActivities = studentExtraData?.assignedActivities?.filter(Boolean) || [];
-                        const areExtrasComplete = assignedActivities.every(activityId => 
-                            studentExtraData?.descriptions?.[activityId] && studentExtraData.descriptions[activityId].trim() !== ''
-                        );
-                        
-                        const isDataComplete = areGradesComplete && areExtrasComplete;
-    
-                        if (!isDataComplete) {
-                            return { needsSplitting: false, splitPoint: reportSubjects.length };
-                        }
-                        
-                        const extraCount = assignedActivities.length;
-                        
-                        const calculatedSplitPoint = extraCount < 3 ? 6 : 7;
-                        const calculatedNeedsSplitting = reportSubjects.length > calculatedSplitPoint;
-    
-                        return { 
-                            needsSplitting: calculatedNeedsSplitting, 
-                            splitPoint: calculatedSplitPoint 
-                        };
-                    }, [student, subjects, gradeData, studentExtraData, reportSubjects]);
-
-                    const page1Subjects = needsSplitting ? reportSubjects.slice(0, splitPoint) : reportSubjects;
-                    const page2Subjects = needsSplitting ? reportSubjects.slice(splitPoint) : [];
-
-                    return (
-                        React.createElement(React.Fragment, { key: student.id },
-                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                                React.createElement('div', { style: contentStyle, className: "h-full" }, React.createElement(CoverPage, { student: student, settings: settings }))
-                            ),
-                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                                React.createElement(ReportHeader, { settings: settings }),
-                                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(SchoolIdentityPage, { settings: settings }))
-                            ),
-                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
-                                React.createElement(ReportHeader, { settings: settings }),
-                                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
-                            ),
-                            React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
-                                React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
-                                React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
-                                    React.createElement('div', { className: 'font-times' },
-                                        React.createElement(ReportStudentInfo, { student: student, settings: settings }),
-                                        React.createElement(AcademicTable, { subjectsToRender: page1Subjects }),
-                                        !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
-                                    )
-                                )
-                            ),
-                            needsSplitting && (
-                                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
-                                    React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
-                                    React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
-                                        React.createElement('div', { className: 'font-times' },
-                                            React.createElement(ReportStudentInfo, { student: student, settings: settings }),
-                                            React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: splitPoint + 1 }),
-                                            React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    );
-                })
+                studentsToRender.map(student => 
+                    React.createElement(ReportPagesForStudent, { 
+                        key: student.id, 
+                        student: student, 
+                        settings: settings,
+                        pageStyle: pageStyle,
+                        ...restProps
+                    })
+                )
             )
         )
     );
