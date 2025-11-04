@@ -625,11 +625,23 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     const handlePrint = () => {
         const studentToPrint = document.getElementById('studentSelector').value;
         const allPages = document.querySelectorAll('.report-page');
-        
+
         allPages.forEach(page => {
             const studentId = page.getAttribute('data-student-id');
             const pageType = page.getAttribute('data-page-type');
-            
+
+            // The school identity page is always shown if selected, as it's not student-specific.
+            if (pageType === 'schoolIdentity') {
+                page.style.display = selectedPages.schoolIdentity ? 'block' : 'none';
+                return;
+            }
+
+            // For other pages, they must have a studentId to be considered.
+            if (!studentId) {
+                page.style.display = 'none';
+                return;
+            }
+
             const studentMatch = (studentToPrint === 'all' || studentToPrint === studentId);
             const pageMatch = selectedPages[pageType];
 
@@ -638,6 +650,7 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
 
         setTimeout(() => {
             window.print();
+            // Restore display for all pages after printing
             allPages.forEach(page => page.style.display = 'block');
         }, 100);
     };
@@ -698,17 +711,17 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
+                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-page-type': 'schoolIdentity', style: pageStyle },
+                    React.createElement(ReportHeader, { settings: settings }),
+                    React.createElement('div', { style: contentStyleWithHeader },
+                        React.createElement(SchoolIdentityPage, { settings: settings })
+                    )
+                ),
                 students.map(student => (
                     React.createElement(React.Fragment, { key: student.id },
                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                             React.createElement('div', { style: contentStyle, className: "h-full" },
                                 React.createElement(CoverPage, { student: student, settings: settings })
-                            )
-                        ),
-                         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                            React.createElement(ReportHeader, { settings: settings }),
-                            React.createElement('div', { style: contentStyleWithHeader },
-                                React.createElement(SchoolIdentityPage, { settings: settings })
                             )
                         ),
                          React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
