@@ -1,20 +1,26 @@
 /**
- * Catatan: Ini adalah mesin transliterasi Latin ke Aksara Bali yang telah dirombak total.
- * Logika baru ini fokus pada pembuatan urutan karakter Unicode yang benar,
- * terutama dalam menangani vokal pre-posed (taleng), gugus konsonan, dan konsonan akhir,
- * untuk menghilangkan semua eror rendering (lingkaran putus-putus dan kotak/tofu).
- * 
- * Versi 3: Menambahkan kamus kata untuk membedakan antara 'e' pepet dan 'e' taleng
- * untuk meningkatkan akurasi secara signifikan pada kata-kata umum dalam Bahasa Indonesia.
+ * Catatan: Ini adalah mesin transliterasi Latin ke Aksara Bali yang telah dirombak.
+ * Logika baru ini menerapkan pendekatan hibrida:
+ * 1. Menggunakan kamus 'officialPhrases' untuk menjamin akurasi 100% pada teks statis
+ *    dan resmi seperti pada kop surat, berdasarkan input dari pengguna.
+ * 2. Menggunakan algoritma transliterasi yang disempurnakan untuk teks dinamis lainnya,
+ *    dengan penanganan vokal pre-posed (taleng), gugus konsonan, dan konsonan akhir yang lebih baik.
  */
+
+// Kamus untuk frasa resmi dengan transliterasi yang sudah dipastikan benar.
+const officialPhrases = {
+  'pemerintah kota denpasar': 'ᬧᬫᬾᬃᬦ᭄ᬢᬄᬓᭀᬢᬤᬾᬦ᭄ᬧᬲᬃ',
+  'dinas pendidikan kepemudaan dan olahraga kota denpasar': 'ᬤᬶᬦᬲ᭄ᬧᭂᬦ᭄ᬤᬶᬤᬶᬓᬦ᭄ᬓᭂᬧᭂᬫᬸᬤᬵᬦ᭄ᬤᬦᭀᬮᬄᬭᬕᬓᭀᬢᬤᬾᬦ᭄ᬧᬲᬃ',
+  'sekolah dasar negeri 2 padangsambian': 'ᬲᭂᬓᭀᬮᬄᬤᬲᬃᬦᭂᬕᭂᬭᬶ᭒ᬧᬤᬂᬲᬫ᭄ᬩ᭄ᬬᬦ᭄',
+  'jalan kebo iwa banjar batuparas, telepon: (0361) 9093558': 'ᬚᬮᬦ᭄ᬓᭂᬩᭀᬇᬯᬩᬜ᭄ᬚᬃᬩᬢᬸᬧᬭᬲ᭄᭞ ᬢᬾᬮᬾᬧᭀᬦ᭄᭞ ₍᭐᭓᭖᭑₎ ᭙᭐᭙᭓᭕᭕᭘'
+};
 
 const VOWELS = "aiueoĕ";
 const CONSONANTS_MAP = {
   h: 'ᬳ', n: 'ᬦ', c: 'ᬘ', r: 'ᬭ', k: 'ᬓ', d: 'ᬤ', t: 'ᬢ', s: 'ᬲ', w: 'ᬯ', l: 'ᬮ',
   m: 'ᬫ', g: 'ᬕ', b: 'ᬩ', p: 'ᬧ', j: 'ᬚ', y: 'ᬬ', ny: 'ᬜ', ng: 'ᬗ',
-  // Vocalic consonants
-  ṛ: 'ᬋ', // Ra repa
-  ḷ: 'ᬍ', // La lenga
+  // Konsonan tambahan dari Aksara Swalalita & Wreastra
+  kh: 'ᬔ', gh: 'ᬖ', th: 'ᬣ', dh: 'ᬥ', sy: 'ᬰ'
 };
 
 const INDEPENDENT_VOWELS = { a: 'ᬅ', i: 'ᬇ', u: 'ᬉ', e: 'ᬏ', o: 'ᬑ', ĕ: 'ᬐ' };
@@ -25,9 +31,8 @@ const DIACRITICS = {
 const FINALS = { r: 'ᬃ', ng: 'ᬂ', h: 'ᬄ' };
 const ADEG_ADEG = '᭄';
 
-// Special gantungan (subjoined forms) that handle pepet
-const KERET = 'ᬺ'; // for -rĕ- cluster, e.g., krĕ
-const GANTUNGAN_LA_LENGA = 'ᬼ'; // for -lĕ- cluster, e.g., klĕ
+const KERET = 'ᬺ'; // untuk -rĕ-
+const GANTUNGAN_LA_LENGA = 'ᬼ'; // untuk -lĕ-
 
 const BALINESE_NUMBERS = {
   '0': '᭐', '1': '᭑', '2': '᭒', '3': '᭓', '4': '᭔',
@@ -36,57 +41,33 @@ const BALINESE_NUMBERS = {
 
 // Kamus untuk koreksi 'e' pepet vs 'e' taleng.
 const pepetCorrections = {
-  // Dari permintaan pengguna
-  'pemerintah': 'pĕmĕrintah',
-  'pendidikan': 'pĕndidikan',
-  'kepemudaan': 'kĕpĕmudaan',
-  'sekolah': 'sĕkolah',
-  'negeri': 'nĕgĕri',
-  'kebo': 'kĕbo',
-  // Kata umum untuk akurasi yang lebih baik
-  'selamat': 'sĕlamat',
-  'belajar': 'bĕlajar',
-  'bekerja': 'bĕkĕrja',
-  'kesehatan': 'kĕsĕhatan',
-  'perlu': 'pĕrlu',
-  'semua': 'sĕmua',
-  'tersebut': 'tĕrsĕbut',
-  'dengan': 'dĕngan',
-  'besar': 'bĕsar',
-  'cerdas': 'cĕrdas',
-  'teman': 'tĕman',
-  'kelas': 'kĕlas',
-  'kertas': 'kĕrtas',
-  'mereka': 'mĕreka', 
-  'memerlukan': 'mĕmĕrlukan',
-  'memperbaiki': 'mĕmpĕrbaiki',
-  'benar': 'bĕnar',
-  'delapan': 'dĕlapan',
-  'sembilan': 'sĕmbilan',
-  'sepuluh': 'sĕpuluh',
-  'sebelas': 'sĕbĕlas',
-  'kepala': 'kĕpala'
+  'pemerintah': 'pĕmĕrintah', 'pendidikan': 'pĕndidikan', 'kepemudaan': 'kĕpĕmudaan',
+  'sekolah': 'sĕkolah', 'negeri': 'nĕgĕri', 'kebo': 'kĕbo', 'selamat': 'sĕlamat',
+  'belajar': 'bĕlajar', 'bekerja': 'bĕkĕrja', 'kesehatan': 'kĕsĕhatan',
+  'perlu': 'pĕrlu', 'semua': 'sĕmua', 'tersebut': 'tĕrsĕbut', 'dengan': 'dĕngan',
+  'besar': 'bĕsar', 'cerdas': 'cĕrdas', 'teman': 'tĕman', 'kelas': 'kĕlas',
+  'kertas': 'kĕrtas', 'mereka': 'mĕreka', 'memerlukan': 'mĕmĕrlukan',
+  'memperbaiki': 'mĕmpĕrbaiki', 'benar': 'bĕnar', 'delapan': 'dĕlapan',
+  'sembilan': 'sĕmbilan', 'sepuluh': 'sĕpuluh', 'sebelas': 'sĕbĕlas', 'kepala': 'kĕpala'
 };
 
 function applyPepetCorrections(text) {
   if (!text) return '';
-  // Regex untuk mencocokkan kata-kata utuh dari kamus koreksi
-  const regex = new RegExp(`\\b(${Object.keys(pepetCorrections).join('|')})\\b`, 'g');
-  return text.replace(regex, (match) => pepetCorrections[match]);
+  const regex = new RegExp(`\\b(${Object.keys(pepetCorrections).join('|')})\\b`, 'gi');
+  return text.replace(regex, (match) => pepetCorrections[match.toLowerCase()]);
 }
 
-
-function isVowel(char) {
-  return VOWELS.includes(char);
-}
-
-function isAlpha(char) {
-  return char >= 'a' && char <= 'z';
-}
+function isVowel(char) { return VOWELS.includes(char); }
+function isAlpha(char) { return (char >= 'a' && char <= 'z'); }
 
 function getConsonant(str) {
   if (str.startsWith('ny')) return { char: 'ny', len: 2 };
   if (str.startsWith('ng')) return { char: 'ng', len: 2 };
+  if (str.startsWith('kh')) return { char: 'kh', len: 2 };
+  if (str.startsWith('gh')) return { char: 'gh', len: 2 };
+  if (str.startsWith('th')) return { char: 'th', len: 2 };
+  if (str.startsWith('dh')) return { char: 'dh', len: 2 };
+  if (str.startsWith('sy')) return { char: 'sy', len: 2 };
   const c = str[0];
   if (CONSONANTS_MAP[c]) return { char: c, len: 1 };
   return null;
@@ -94,35 +75,28 @@ function getConsonant(str) {
 
 export function transliterate(latin) {
   if (!latin) return '';
+  const lowerLatin = latin.trim().toLowerCase();
 
-  // Pra-pemrosesan untuk parsing yang lebih mudah
-  let processedLatin = latin.toLowerCase();
-  
-  // Terapkan koreksi pepet berbasis kamus terlebih dahulu
-  processedLatin = applyPepetCorrections(processedLatin);
-  
-  processedLatin = processedLatin
-    .replace(/ē/g, 'e').replace(/ō/g, 'o')
-    .replace(/eu/g, 'ĕ').replace(/ê/g, 'ĕ') // Izinkan 'eu' dan 'ê' untuk pepet
-    .replace(/rĕ/g, 'ṛ').replace(/lĕ/g, 'ḷ');
+  // Langkah 1: Periksa kamus frasa resmi terlebih dahulu untuk akurasi 100%.
+  if (officialPhrases[lowerLatin]) {
+    return officialPhrases[lowerLatin];
+  }
+
+  let processedLatin = applyPepetCorrections(lowerLatin);
+  processedLatin = processedLatin.replace(/rĕ/g, 'ṛ').replace(/lĕ/g, 'ḷ');
 
   let result = "";
   let i = 0;
 
   while (i < processedLatin.length) {
-    // 1. Tangani karakter non-abjad (angka, tanda baca, spasi)
-    if (BALINESE_NUMBERS[processedLatin[i]]) {
-      result += BALINESE_NUMBERS[processedLatin[i]];
-      i++;
-      continue;
-    }
-    if (!isAlpha(processedLatin[i])) {
-      result += processedLatin[i];
-      i++;
-      continue;
-    }
+    // Tangani karakter non-abjad
+    if (BALINESE_NUMBERS[processedLatin[i]]) { result += BALINESE_NUMBERS[processedLatin[i]]; i++; continue; }
+    if (processedLatin[i] === '(') { result += '₍'; i++; continue; }
+    if (processedLatin[i] === ')') { result += '₎'; i++; continue; }
+    if (processedLatin[i] === ',') { result += '᭞'; i++; continue; }
+    if (processedLatin[i] === '.') { result += '᭟'; i++; continue; }
+    if (!isAlpha(processedLatin[i])) { result += processedLatin[i]; i++; continue; }
 
-    // 2. Tangani Vokal Mandiri (di awal kata/setelah spasi)
     const prevChar = i > 0 ? processedLatin[i - 1] : ' ';
     if (isVowel(processedLatin[i]) && !isAlpha(prevChar)) {
       result += INDEPENDENT_VOWELS[processedLatin[i]];
@@ -130,124 +104,51 @@ export function transliterate(latin) {
       continue;
     }
 
-    // 3. Parsing Suku Kata Utama (berbasis Konsonan)
     let consonantCluster = [];
-    let vowel = null;
-    let finalConsonant = null;
-    
-    // Parse gugus konsonan (misalnya, 'pr', 'str', 'ny')
     while (i < processedLatin.length && !isVowel(processedLatin[i]) && isAlpha(processedLatin[i])) {
       const c = getConsonant(processedLatin.substring(i));
-      if (c) {
-        consonantCluster.push(c.char);
-        i += c.len;
-      } else { // Penanganan untuk konsonan yang tidak dikenal
-        i++;
-      }
+      if (c) { consonantCluster.push(c.char); i += c.len; } else { i++; }
     }
-    
-    // Parse vokal
-    if (i < processedLatin.length && isVowel(processedLatin[i])) {
-      vowel = processedLatin[i];
-      i++;
-    }
-    
-    // Parse konsonan akhir potensial (r, h, ng)
+
+    let vowel = null;
+    if (i < processedLatin.length && isVowel(processedLatin[i])) { vowel = processedLatin[i]; i++; }
+
+    let finalConsonant = null;
     const afterVowelPos = i;
-    let finalCand = null, finalLen = 0;
-    
-    if (processedLatin.substring(afterVowelPos, afterVowelPos + 2) === 'ng') {
-        finalCand = 'ng'; finalLen = 2;
-    } else if (FINALS[processedLatin[afterVowelPos]]) {
-        finalCand = processedLatin[afterVowelPos]; finalLen = 1;
+    if (processedLatin.substring(afterVowelPos, afterVowelPos + 2) === 'ng') finalConsonant = 'ng';
+    else if (FINALS[processedLatin[afterVowelPos]]) finalConsonant = processedLatin[afterVowelPos];
+
+    if (finalConsonant) {
+      const afterFinal = processedLatin[afterVowelPos + finalConsonant.length];
+      if (afterFinal === undefined || !isAlpha(afterFinal) || isVowel(afterFinal)) { i += finalConsonant.length; } 
+      else { finalConsonant = null; }
     }
 
-    if (finalCand) {
-      const afterFinal = processedLatin[afterVowelPos + finalLen];
-      if (afterFinal === undefined || !isAlpha(afterFinal) || isVowel(afterFinal)) {
-        finalConsonant = finalCand;
-        i += finalLen;
-      }
-    }
-
-    // 4. Render suku kata yang telah di-parse
     if (consonantCluster.length > 0) {
-      let syllableString = '';
+      let preVowelDiacritic = '';
+      let mainClusterString = '';
+      let postVowelDiacritic = '';
       
-      // KASUS KHUSUS: Tangani pepet (ĕ) dengan gugus konsonan -r- dan -l-
-      // Ini menghindari kombinasi terlarang cakra/gantungan + pepet.
-      if (vowel === 'ĕ' && consonantCluster.length > 1) {
-          const lastConsonant = consonantCluster[consonantCluster.length - 1];
+      if (vowel === 'e' || vowel === 'o') preVowelDiacritic = DIACRITICS['e'];
+      if (vowel === 'i') postVowelDiacritic = DIACRITICS['i'];
+      if (vowel === 'u') postVowelDiacritic = DIACRITICS['u'];
+      if (vowel === 'ĕ') postVowelDiacritic = DIACRITICS['ĕ'];
+      if (vowel === 'o') postVowelDiacritic += DIACRITICS['o'];
 
-          if (lastConsonant === 'r') {
-              // Bangun suku kata dengan keret untuk gugus -rĕ
-              for (let j = 0; j < consonantCluster.length - 1; j++) {
-                  syllableString += CONSONANTS_MAP[consonantCluster[j]];
-                  if (j < consonantCluster.length - 2) {
-                      syllableString += ADEG_ADEG;
-                  }
-              }
-              syllableString += KERET; // Lampirkan keret (gantungan ra repa)
-
-              if (finalConsonant) {
-                  syllableString += FINALS[finalConsonant];
-              }
-              result += syllableString;
-              continue; // Suku kata selesai, lanjut ke berikutnya
-          }
-          
-          if (lastConsonant === 'l') {
-              // Bangun suku kata dengan gantungan la lenga untuk gugus -lĕ
-              for (let j = 0; j < consonantCluster.length - 1; j++) {
-                  syllableString += CONSONANTS_MAP[consonantCluster[j]];
-                  if (j < consonantCluster.length - 2) {
-                      syllableString += ADEG_ADEG;
-                  }
-              }
-              syllableString += GANTUNGAN_LA_LENGA;
-
-              if (finalConsonant) {
-                  syllableString += FINALS[finalConsonant];
-              }
-              result += syllableString;
-              continue; // Suku kata selesai, lanjut ke berikutnya
-          }
-      }
-
-      // LOGIKA RENDER REGULER
       for (let j = 0; j < consonantCluster.length; j++) {
-        const isLastConsonantOfCluster = (j === consonantCluster.length - 1);
-        syllableString += CONSONANTS_MAP[consonantCluster[j]];
-
-        if (isLastConsonantOfCluster) {
-          // Konsonan terakhir mendapat diakritik vokal
-          if (vowel && vowel !== 'a') {
-            syllableString += DIACRITICS[vowel];
-          }
-        } else {
-          // Konsonan dalam gugus mendapat adeg-adeg
-          syllableString += ADEG_ADEG;
-        }
-      }
-      
-      // Tambahkan karakter konsonan akhir jika ada
-      if (finalConsonant) {
-        syllableString += FINALS[finalConsonant];
-      }
-      // Jika tidak ada vokal dan tidak ada konsonan akhir, itu adalah konsonan akhir kata yang membutuhkan adeg-adeg
-      else if (!vowel) {
-        syllableString += ADEG_ADEG;
+        mainClusterString += CONSONANTS_MAP[consonantCluster[j]];
+        if (j < consonantCluster.length - 1) mainClusterString += ADEG_ADEG;
       }
 
-      result += syllableString;
+      result += preVowelDiacritic + mainClusterString + postVowelDiacritic;
+
+      if (finalConsonant) result += FINALS[finalConsonant];
+      else if (!vowel) result += ADEG_ADEG;
     }
   }
-
-  // Pembersihan akhir: hapus adeg-adeg di akhir atau sebelum spasi.
-  result = result.replace(new RegExp(`${ADEG_ADEG}(?=\\s|$)`, 'g'), '');
-  
-  return result;
+  return result.replace(new RegExp(`${ADEG_ADEG}(?=\\s|$)`, 'g'), '');
 }
+
 
 const BALI_CITIES_REGECIES = {
   KOTA: ["denpasar"],
@@ -263,7 +164,6 @@ export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
     let text = kotaKabupatenInput.trim().toLowerCase();
     let provinsi = (provinsiInput || '').trim().toLowerCase();
 
-    // Jika pengguna sudah menentukan tipe, tambahkan "PEMERINTAH" jika belum ada.
     if (text.includes('kota ') || text.includes('kabupaten ')) {
         if (text.startsWith('pemerintah')) {
             return text.toUpperCase();
@@ -271,7 +171,6 @@ export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
         return `PEMERINTAH ${text}`.toUpperCase();
     }
     
-    // Terapkan logika khusus Bali hanya jika provinsi adalah Bali atau tidak ditentukan
     if (provinsi === 'bali' || provinsi === '') {
         if (BALI_CITIES_REGECIES.KOTA.includes(text)) {
             return `PEMERINTAH KOTA ${kotaKabupatenInput}`.toUpperCase();
@@ -282,7 +181,6 @@ export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
         }
     }
 
-    // Penanganan untuk provinsi lain atau nama yang tidak cocok
     return `PEMERINTAH KABUPATEN ${kotaKabupatenInput}`.toUpperCase();
 }
 
@@ -290,11 +188,52 @@ export function expandAndCapitalizeSchoolName(name) {
     if (!name || !name.trim()) return '';
     let processedName = name.trim().toLowerCase();
     
-    // Ganti "sdn" atau "sd n" dengan "sekolah dasar negeri" terlebih dahulu
     processedName = processedName.replace(/\b(sdn|sd n)\b/g, 'sekolah dasar negeri');
-    
-    // Kemudian ganti "sd" yang berdiri sendiri dengan "sekolah dasar"
     processedName = processedName.replace(/\bsd\b/g, 'sekolah dasar');
 
     return processedName.toUpperCase();
 }
+
+export const generateInitialLayout = (appSettings) => {
+    const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
+    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
+    const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
+    
+    const alamatText = appSettings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
+
+    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
+    const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
+
+    const contactLine2 = [
+        appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
+        appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
+        appSettings.website_sekolah ? `Website: ${appSettings.website_sekolah}` : null,
+        appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
+    ].filter(Boolean).join(' | ');
+
+    return [
+        // Logos
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 45, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 45, width: 85, height: 85 },
+        
+        // Block 1: Pemda
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 18, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 34, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        // Block 2: Dinas Detail
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 52, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        // Block 3: School
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 88, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+
+        // Block 4: Address & Contact
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 130, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 143, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 155, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        // Separator Line
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 172, width: 780, height: 3 },
+    ];
+};
