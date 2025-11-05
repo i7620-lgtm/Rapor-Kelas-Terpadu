@@ -82,40 +82,76 @@
   }
 
   @media print {
-    body {
-        margin: 0;
-        padding: 0;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
+    /* Hide elements not meant for printing */
     .print-hidden {
         display: none !important;
     }
-    .report-page.hide-in-print {
+
+    /* Reset body and core layout components */
+    body, #root, main {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        border: none !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: visible !important;
+        position: static !important;
+    }
+
+    /* Ensure only the print area is visible */
+    body > *:not(#root),
+    #root > *:not(main),
+    main > *:not(#print-area) {
         display: none !important;
     }
+
+    #print-area {
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Define report page styles for printing */
     .report-page {
+        display: block !important;
         box-shadow: none !important;
         border: none !important;
         margin: 0 !important;
-        page-break-after: always;
         padding: 0 !important;
+        width: 100% !important;
+        height: 100% !important; /* Use 100vh if issues persist */
+        page-break-after: always;
+        overflow: hidden !important; /* Hide overflow content on a single page */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
+
     .report-page:last-of-type {
-      page-break-after: avoid;
+        page-break-after: avoid;
     }
+
     thead.report-header-group {
         display: table-header-group;
     }
+
     tbody {
         display: table-row-group;
     }
-    /* --- Improved page break handling --- */
-    table tr, table tbody tr, .signature-block {
+
+    /* Improve page break control inside elements */
+    table, tr, td, .signature-block, img {
         page-break-inside: avoid !important;
     }
-    h2, h3, h4 {
-        page-break-after: avoid; /* Mencegah judul dipisah dari kontennya */
+    
+    h1, h2, h3, h4, p {
+        page-break-after: avoid;
+    }
+
+    /* Class added by JS to hide unselected pages */
+    .report-page.hide-in-print {
+        display: none !important;
     }
   }
 
