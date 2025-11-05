@@ -221,17 +221,16 @@ const CoverPage = ({ student, settings }) => {
 
     const coverLogo = settings.logo_cover || logoTutWuriHandayani;
 
-    return React.createElement('div', { className: 'h-full flex flex-col justify-between items-center text-center p-8 report-cover-border' },
-        React.createElement('div', null),
-        React.createElement('div', { className: 'w-full' },
+    return React.createElement('div', { className: 'h-full flex flex-col items-center text-center p-8 report-cover-border' },
+        React.createElement('div', { className: 'w-full pt-16' },
             React.createElement('div', { className: 'flex justify-center mb-10' },
-                React.createElement('img', { 
-                    src: coverLogo, 
-                    alt: "Logo Cover Rapor", 
-                    className: 'h-48 w-48 object-contain' 
+                React.createElement('img', {
+                    src: coverLogo,
+                    alt: "Logo Cover Rapor",
+                    className: 'h-48 w-48 object-contain'
                 })
             ),
-            React.createElement('h1', { className: 'text-2xl font-bold tracking-widest mt-8' }, 'RAPOR'),
+            React.createElement('h1', { className: 'text-2xl font-bold tracking-widest' }, 'RAPOR'),
             React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'MURID'),
             React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'SEKOLAH DASAR'),
             React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, '(SD)'),
@@ -247,6 +246,7 @@ const CoverPage = ({ student, settings }) => {
                 )
             )
         ),
+        React.createElement('div', { className: 'flex-grow' }),
         React.createElement('div', { className: 'mb-8 space-y-2' },
             React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
             React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'REPUBLIK INDONESIA'),
