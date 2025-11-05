@@ -228,7 +228,7 @@ const CoverPage = ({ student, settings }) => {
                 React.createElement('img', { 
                     src: coverLogo, 
                     alt: "Logo Cover Rapor", 
-                    className: 'h-52 w-52 object-contain' 
+                    className: 'h-48 w-48 object-contain' 
                 })
             ),
             React.createElement('h1', { className: 'text-2xl font-bold tracking-widest mt-8' }, 'RAPOR'),
@@ -377,13 +377,13 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1 }) => (
         React.createElement('tbody', null,
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black p-2 align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black p-2 align-top text-justify' },
+                    React.createElement('td', { className: 'border border-black px-2 py-1 text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black px-2 py-1 align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black px-2 py-1 text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black px-2 py-1 align-top text-justify' },
                         React.createElement('p', {className: 'mb-1'}, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'border-t border-black my-1' }),
+                            React.createElement('hr', { className: 'border-t border-slate-400 my-1' }),
                             React.createElement('p', null, item.description.lowest)
                         )
                     )
@@ -436,7 +436,7 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
             React.createElement('div', { className: 'mt-4 signature-block'},
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
                     React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
-                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black p-2 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-2' }, item.name), React.createElement('td', { className: 'border border-black p-2' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
+                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-1 text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-1' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-1' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
                 )
             ),
             React.createElement('div', { className: 'border-2 border-black p-2 mt-4 signature-block', style: { fontSize: '11pt' } }, React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('div', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
@@ -445,9 +445,9 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
                     React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.sakit} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.izin} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black p-2 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black p-2' }, `: ${attendanceData.alpa} hari`))
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${attendanceData.sakit} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${attendanceData.izin} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${attendanceData.alpa} hari`))
                     )
                 ),
                 React.createElement('div', { className: 'signature-block' }, renderDecision())
@@ -462,7 +462,7 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
                     React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            React.createElement('div', { className: 'signature-block mt-8 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            React.createElement('div', { className: 'signature-block mt-6 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 };
@@ -641,22 +641,6 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     }, []);
     
     const handlePrint = () => {
-        const printArea = document.getElementById('print-area');
-        if (!printArea) return;
-
-        const pages = printArea.querySelectorAll('.report-page');
-        
-        // Temporarily hide pages that are not selected for printing
-        pages.forEach(page => {
-            const pageType = page.getAttribute('data-page-type');
-            if (pageType && !selectedPages[pageType]) {
-                page.classList.add('hide-in-print');
-            } else {
-                page.classList.remove('hide-in-print');
-            }
-        });
-        
-        // Trigger print dialog
         window.print();
     };
 
@@ -724,16 +708,23 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                studentsToRender.map(student => 
-                    React.createElement(ReportPagesForStudent, { 
+                studentsToRender.map(student => {
+                    const studentSelectedPages = {
+                        cover: selectedPages.cover,
+                        schoolIdentity: selectedPages.schoolIdentity,
+                        studentIdentity: selectedPages.studentIdentity,
+                        academic: selectedPages.academic
+                    };
+
+                    return React.createElement(ReportPagesForStudent, { 
                         key: student.id, 
                         student: student, 
                         settings: settings,
                         pageStyle: pageStyle,
-                        selectedPages: selectedPages,
+                        selectedPages: studentSelectedPages,
                         ...restProps
                     })
-                )
+                })
             )
         )
     );
