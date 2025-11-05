@@ -82,48 +82,42 @@
   }
 
   @media print {
-    /* Hide elements not meant for printing */
-    .print-hidden {
-        display: none !important;
-    }
-
-    /* Reset body and core layout components */
-    body, #root, main {
+    /* A more robust printing strategy */
+    body {
         margin: 0 !important;
         padding: 0 !important;
-        background: #fff !important;
-        box-shadow: none !important;
-        border: none !important;
-        width: 100% !important;
-        height: 100% !important;
-        overflow: visible !important;
-        position: static !important;
+        background-color: #fff !important;
+    }
+    
+    /* Hide everything by default */
+    body * {
+        visibility: hidden !important;
     }
 
-    /* Ensure only the print area is visible */
-    body > *:not(#root),
-    #root > *:not(main),
-    main > *:not(#print-area) {
-        display: none !important;
+    /* Make only the print area and its contents visible */
+    #print-area, #print-area * {
+        visibility: visible !important;
     }
 
+    /* Position the print area to take over the whole screen */
     #print-area {
-        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
-        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
-
-    /* Define report page styles for printing */
+    
     .report-page {
-        display: block !important;
         box-shadow: none !important;
         border: none !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        height: 100% !important; /* Use 100vh if issues persist */
+        height: 100% !important;
         page-break-after: always;
-        overflow: hidden !important; /* Hide overflow content on a single page */
+        overflow: visible !important; /* Allow content to flow naturally */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
@@ -132,26 +126,14 @@
         page-break-after: avoid;
     }
 
-    thead.report-header-group {
-        display: table-header-group;
+    /* Ensure table headers repeat on page break */
+    thead {
+        display: table-header-group !important;
     }
 
-    tbody {
-        display: table-row-group;
-    }
-
-    /* Improve page break control inside elements */
-    table, tr, td, .signature-block, img {
+    /* General page break avoidance for key elements */
+    table, tr, td, img, .signature-block {
         page-break-inside: avoid !important;
-    }
-    
-    h1, h2, h3, h4, p {
-        page-break-after: avoid;
-    }
-
-    /* Class added by JS to hide unselected pages */
-    .report-page.hide-in-print {
-        display: none !important;
     }
   }
 
