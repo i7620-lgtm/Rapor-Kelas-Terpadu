@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
 
 // Base64 encoded Tut Wuri Handayani logo for offline use and stability
-const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAbFBMVEX////8/Pz5+fnr6+vQ0NDk5OTW1tbu7u7i4uLz8/Pj4+O3t7fNzc3S0tLf39/29vbg4ODAwMDt7e3m5ubJycnBwcHc3Nza2trLy8vPz8+rq6vHx8fExMSioqK/v7+kpKScnJyPj4+JiYl+fn5kZGT32x70AAAJyUlEQVR4nO2d63qrOBBAM4oCoqDiitVXddv//5e30LQMSSBhhj3jeb+1s8wlkzCSSc7OaDQajUaj0Wg0Go1Go9FoNBqNRqPRaDQajUaj0Wg0Go1Go9FoNBqNRqPRaDT+H/g3Jv2Dq+Mvkx5Y/jXkY/J/ZfK0g/f/g2v82+A23w9+b/+n8O/D2j/rD/85pB/4dYv/H2j82v/n+T/M0v7x0v7zN0b633/Vf6fD/+T/Uf+P/L+W/18T+n9d/m/g3/T/2/g/vJ6/b/V/n/P/4/v+v5T/k6c/+w+Gf9X//X+p/2dv/fV/+A9u/N/T/7N4x//hX4l/h38f+f/z//D/e/f//4X//v+L//l/bO782f9H+/v/3/7+P+b3/78z+f8L/3/+3/Tf9v8b2/n/P/7f4/+n/D8R/5v+8f9/+x+m/5r/P/uG3/u//b/N/3X/f/r//f/j/5//v/7v/3eP//X/+b8f/v/+T//v/j9a/m/2/f/7/f/0n6T/83/+n+b//9v9v/d//t/Vv+3/l3//z/T/V///1P/z/k/+/wP/X5L/L/y3/L+I/wv/b/9v9v9l/m//b/x/xP+H/7f9v+n/5/9t/b/h/+3/3/5/+P/5f9v/2//d/xP+3/7f/P/c/w//f/+/+v/z/0f/v/b/9P/h/+X/bf8v/H/w/9v/e/3/8f/p//9m9+w/K35o+B1W/A8Bv/39/h6B/+k/4e/L+/3/6f/3++2v679L//b/f/d///0X/e/2/x/8b/f/2/+V+D/h//3+b/v/q/5/Yn//f2D+r/tv9v/n/+X/Z/6/+P/N/23+b/t/c/9/+v/4/4v//4//R/9/8f/z/xf/b/x/+H/b/2v+3/b/Wv8v/P/A/3/y/6v+P+L/G//f+f/1/8v/3/x/3f/X/R/+P/1f/n/V/9v+3/7f3P+H/xf9f9v/G/+f/7/l/8v/Z//v/H/O//d+P/7/+P+z/4v/b/5v+H+r/0//b/b/tv/3/7f/l/+P+b/v/9f+3/z//f/Z/1v+X/v/4f9n//4k/1/3/47/L/1f+f/7f1X/v/D/dv+3/z//f/7f2P/X/2/9v+X//wT/b/7//v/S//v+X/t/G/8v+P/t/83+f/z/kv+v/z/+/xD/5/8v/L/8v+n/p/9n/x//P/n/8/+H/+f+v/b/1P/f/p/+/0//L/6/Wv+f/n/b/4//7/x/1//v/n/+P/t/m/9//v/R/y//T/+f8//7/+P+z/4v/b/p/4f+V//f7v/3/1P+H/9f7f+7/L/p/s/9n/y/8v8P/z/0/+f/3/7f/b/y//X/v/m/+H/7f7v/l/7f+3/9f+X/v/5f8v/X/l/wv/X//f8f97/8/9f87/+3/L/5f+3/9f6/7/vP8X/f/1/xP/n/+/9v/G/6/9P9v+3+7/+v/H/R/+f+39T/w//T//f7f9X/7/+X/5f+f93+7/+f/7/+n/5/8v/b/3/qf+n/6f+v+n/r//f/j/6/6f6/+/+z/x//r/v/8v+L//f7v/1/9P+r/p/+X+L/5/9v9n/b/pv+X/5/7P/Z//v+f+L/3f+v/7/1/z/9/+H/x/+n//f5v/+/6f9f9//h//X/5/7v9n/3/9//f9z/x/8/8P/z/3/z/2f/D/6v+f/3/7/+39z/R/+/8P9//+//Z/+//r/S/+/+H/r/t/x/+X/+/+v+7/a/1//p/9f9P9P/a/wv/b/1/m//3/4//39T/h//X/f/p/3//L/b/wv+P/2//b/y/+b/J/4f/l/+v+3/z/y/y//L/x/+P+//x//f/T/a/z/+H/b/y/7P/x/9v83/S/+f/L/4//n/2/7/2n9v/7/e/0/8//x//P/r//fzP7/Vf8v9f9T/6/9P/n/8/+//H//f2P+3/b/j/+v/L/i/5f/v/b/vP+//z/L/j/6/+P/x/8v/T/d/+v/n/t/9n9n/r/W/+v/H/t/6/4/+f+v+//L/n/8f+f/x/z/9/+P+T/4f/1/5f8//h/+v+P/z/z/0f/v/L/d//v/p/+/yr/f/l/+P+n/y/+f/v/4f/v/1v9f+v/R/+/7/9P+b/1/6f+v+z/9f/P/V/+f/n/R/+P+//d/x/9f/z/8f8X/2/5v+r/v/f/kv+f//9x/9/8v/P/q//P/7/Wv9//L/o/5v9/8T/j//f/L/h/5f/H/+/6f7v9f+L//f+v9P/v/8/8f+H/7f9v/7/8v/R/5//v/l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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP43/gMAqS6T1h40tQAAAABJRU5ErkJggg==";
+const logoTutWuriHandayani = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAbFBMVEX////8/Pz5+fnr6+vQ0NDk5OTW1tbu7u7i4uLz8/Pj4+O3t7fNzc3S0tLf39/29vbg4ODAwMDt7e3m5ubJycnBwcHc3Nza2trLy8vPz8+rq6vHx8fExMSioqK/v7+kpKScnJyPj4+JiYl+fn5kZGT32x70AAAJyUlEQVR4nO2d63qrOBBAM4oCoqDiitVXddv//5e30LQMSSBhhj3jeb+1s8wlkzCSSc7OaDQajUaj0Wg0Go1Go9FoNBqNRqPRaDQajUaj0Wg0Go1Go9FoNBqNRqPRaDT+H/g3Jv2Dq+Mvkx5Y/jXkY/J/ZfK0g/f/g2v82+A23w9+b/+n8O/D2j/rD/85pB/4dYv/H2j82v/n+T/M0v7x0v7zN0b633/Vf6fD/+T/Uf+P/L+W/18T+n9d/m/g3/T/2/g/vJ6/b/V/n/P/4/v+v5T/k6c/+w+Gf9X//X+p/2dv/fV/+A9u/N/T/7N4x//hX4l/h38f+f/z//D/e/f//4X//v+L//l/bO782f9H+/v/3/7+P+b3/78z+f8L/3/+3/Tf9v8b2/n/P/7f4/+n/D8R/5v+8f9/+x+m/5r/P/uG3/u//b/N/3X/f/r//f/j/5//v/7v/3eP//X/+b8f/v/+T//v/j9a/m/2/f/7/f/0n6T/83/+n+b//9v9v/d//t/Vv+3/l3//z/T/V///1P/z/k/+/wP/X5L/L/y3/L+I/wv/b/9v9v9l/m//b/x/xP+H/7f9v+n/5/9t/b/h/+3/3/5/+P/5f9v/2//d/xP+3/7f/P/c/w//f/+/+v/z/0f/v/b/9P/h/+X/bf8v/H/w/9v/e/3/8f/p//9m9+w/K35o+B1W/A8Bv/39/h6B/+k/4e/L+/3/6f/3++2v679L//b/f/d///0X/e/2/x/8b/f/2/+V+D/h//3+b/v/q/5/Yn//f2D+r/tv9v/n/+X/Z/6/+P/N/23+b/t/c/9/+v/4/4v//4//R/9/8f/z/xf/b/x/+H/b/2v+3/b/Wv8v/P/A/3/y/6v+P+L/G//f+f/1/8v/3/x/3f/X/R/+P/1f/n/V/9v+3/7f3P+H/xf9f9v/G/+f/7/l/8v/Z//v/H/O//d+P/7/+P+z/4v/b/5v+H+r/0//b/b/tv/3/7f/l/+P+b/v/9f+3/z//f/Z/1v+X/v/4f9n//4k/1/3/47/L/1f+f/7f1X/v/D/dv+3/z//f/7f2P/X/2/9v+X//wT/b/7//v/S//v+X/t/G/8v+P/t/83+f/z/kv+v/z/+/xD/5/8v/L/8v+n/p/9n/x//P/n/8/+H/+f+v/b/1P/f/p/+/0//L/6/Wv+f/n/b/4//7/x/1//v/n/+P/t/m/9//v/R/y//T/+f8//7/+P+z/4v/b/p/4f+V//f7v/3/1P+H/9f7f+7/L/p/s/9n/y/8v8P/z/0/+f/3/7f/b/y//X/v/m/+H/7f7v/l/7f+3/9f+X/v/5f8v/X/l/wv/X//f8f97/8/9f87/+3/L/5f+3/9f6/7/vP8X/f/1/xP/n/+/9v/G/6/9P9v+3+7/+v/H/R/+f+39T/w//T//f7f9X/7/+X/5f+f93+7/+f/7/+n/5/8v/b/3/qf+n/6f+v+n/r//f/j/6/6f6/+/+z/x//r/v/8v+L//f7v/1/9P+r/p/+X+L/5/9v9n/b/pv+X/5/7P/Z//v+f+L/3f+v/7/1/z/9/+H/x/+n//f5v/+/6f9f9//h//X/5/7v9n/3/9//f9z/x/8/8P/z/3/z/2f/D/6v+f/3/7/+39z/R/+/8P9//+//Z/+//r/S/+/+H/r/t/x/+X/+/+v+7/a/1//p/9f9P9P/a/wv/b/1/m//3/4//39T/h//X/f/p/3//L/b/wv+P/2//b/y/+b/J/4f/l/+v+3/z/y/y//L/x/+P+//x//f/T/a/z/+H/b/y/7P/x/9v83/S/+f/L/4//n/2/7/2n9v/7/e/0/8//x//P/r//fzP7/Vf8v9f9T/6/9P/n/8/+//H//f2P+3/b/j/+v/L/i/5f/v/b/vP+//z/L/j/6/+P/x/8v/T/d/+v/n/t/9n9n/r/W/+v/H/t/6/4/+f+v+//L/n/8f+f/x/z/9/+P+T/4f/1/5f8//h/+v+P/z/z/0f/v/L/d//v/p/+/yr/f/l/+P+n/y/+f/v/4f/v/1v9f+v/R/+/7/9P+b/1/6f+v+z/9f/P/V/+f/n/R/+P+//d/x/9f/z/8f8X/2/5v+r/v/f/kv+f//9x/9/8v/P/q//P/7/Wv9//L/o/5v9/8T/j//f/L/h/5f/H/+/6f7v9f+L//f+v9P/v/8/8f+H/7f9v/7/8v/R/5//v/l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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP43/gMAqS6T1h40tQAAAABJRU5ErkJggg==";
 
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
@@ -228,7 +228,7 @@ const CoverPage = ({ student, settings }) => {
                 React.createElement('img', { 
                     src: coverLogo, 
                     alt: "Logo Cover Rapor", 
-                    className: 'h-48 w-48 object-contain' 
+                    className: 'h-52 w-52 object-contain' 
                 })
             ),
             React.createElement('h1', { className: 'text-2xl font-bold tracking-widest mt-8' }, 'RAPOR'),
@@ -330,11 +330,11 @@ const StudentIdentityPage = ({ student, settings }) => {
             React.createElement('div', { className: 'flex justify-between items-end pt-10' },
                 React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
                 React.createElement('div', { className: 'text-center' },
-                    React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
-                    React.createElement('p', null, 'Kepala Sekolah,'),
+                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
+                    React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
                     React.createElement('div', { className: 'h-20' }),
-                    React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
-                    React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
+                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 )
             )
         )
@@ -344,19 +344,19 @@ const StudentIdentityPage = ({ student, settings }) => {
 const ReportStudentInfo = ({ student, settings }) => (
     React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
         React.createElement('tbody', null,
-            React.createElement('tr', null,
+            React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
                 React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
             ),
-            React.createElement('tr', null,
+            React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
                 React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
             ),
-                React.createElement('tr', null,
+            React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
                 React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
             ),
-            React.createElement('tr', null,
+            React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
                 React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
             )
@@ -377,10 +377,10 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1 }) => (
         React.createElement('tbody', null,
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black p-3 align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black p-3 text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black p-3 align-top text-justify' },
+                    React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black p-2 align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black p-2 text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black p-2 align-top text-justify' },
                         React.createElement('p', {className: 'mb-1'}, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
                             React.createElement('hr', { className: 'border-t border-black my-1' }),
@@ -418,14 +418,14 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
         } else {
             passText = 'Naik ke Kelas';
             const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRomanPlusOne = {2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
+            const nextGradeRomanPlusOne = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
             passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
         }
         
-        return React.createElement('div', { className: 'border-2 border-black p-4 mt-4' },
-            React.createElement('p', { className: 'font-bold' }, 'Keputusan: '),
-            React.createElement('p', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
-            React.createElement('div', { className: 'font-bold mt-2 border-y-2 border-black text-center py-2' }, 
+        return React.createElement('div', { className: 'border-2 border-black p-2 mt-4' },
+            React.createElement('div', { className: 'font-bold' }, 'Keputusan: '),
+            React.createElement('div', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
+            React.createElement('div', { className: 'font-bold mt-1 border-y-2 border-black text-center py-1' }, 
                 `${passText} ${passTo || ''}`.trim()
             )
         );
@@ -436,10 +436,10 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
             React.createElement('div', { className: 'mt-4 signature-block'},
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
                     React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
-                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index }, React.createElement('td', { className: 'border border-black p-3 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-3' }, item.name), React.createElement('td', { className: 'border border-black p-3' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-3 text-center h-8' }, '-')))
+                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black p-2 text-center' }, index + 1), React.createElement('td', { className: 'border border-black p-2' }, item.name), React.createElement('td', { className: 'border border-black p-2' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
                 )
             ),
-            React.createElement('div', { className: 'border-2 border-black p-4 mt-4 signature-block', style: { fontSize: '11pt' } }, React.createElement('p', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('p', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
+            React.createElement('div', { className: 'border-2 border-black p-2 mt-4 signature-block', style: { fontSize: '11pt' } }, React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'), React.createElement('div', { className: 'h-16' }, studentNote || 'Tidak ada catatan.')),
             
             React.createElement('div', { className: 'grid grid-cols-2 gap-4 signature-block' },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
@@ -452,17 +452,17 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
                 ),
                 React.createElement('div', { className: 'signature-block' }, renderDecision())
             ),
-            React.createElement('div', { className: 'signature-block mt-12 flex justify-between', style: { fontSize: '12pt' } },
-                React.createElement('div', { className: 'text-center' }, React.createElement('p', null, 'Mengetahui:'), React.createElement('p', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold' }, '(.........................)')),
+            React.createElement('div', { className: 'signature-block mt-8 flex justify-between', style: { fontSize: '12pt' } },
+                React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-20' }), React.createElement('div', { className: 'font-bold' }, '(.........................)')),
                 React.createElement('div', { className: 'text-center' }, 
-                    React.createElement('p', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
-                    React.createElement('p', null, 'Wali Kelas,'), 
+                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
+                    React.createElement('div', null, 'Wali Kelas,'), 
                     React.createElement('div', { className: 'h-20' }), 
-                    React.createElement('p', { className: 'font-bold underline' }, settings.nama_wali_kelas || '_________________'), 
-                    React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
+                    React.createElement('div', { className: 'font-bold underline' }, settings.nama_wali_kelas || '_________________'), 
+                    React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            React.createElement('div', { className: 'signature-block mt-8 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('p', null, 'Mengetahui,'), React.createElement('p', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('p', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            React.createElement('div', { className: 'signature-block mt-8 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-20' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 };
@@ -549,46 +549,15 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
     const { needsSplitting, splitPoint } = useMemo(() => {
-        const activeSubjects = subjects.filter(s => s.active);
-        const studentReligion = student.agama?.trim().toLowerCase();
-        const relevantSubjectsForGradeCheck = activeSubjects.filter(subject => {
-            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
-                if (!studentReligion) return false;
-                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
-                if (subjectReligionMatch) {
-                    return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
-                }
-                return false;
-            }
-            return true;
-        });
-        
-        const areGradesComplete = relevantSubjectsForGradeCheck.every(subject => {
-            const grade = gradeData?.finalGrades?.[subject.id];
-            return grade !== undefined && grade !== null && grade !== '';
-        });
-
-        const assignedActivities = studentExtraData?.assignedActivities?.filter(Boolean) || [];
-        const areExtrasComplete = assignedActivities.every(activityId => 
-            studentExtraData?.descriptions?.[activityId] && studentExtraData.descriptions[activityId].trim() !== ''
-        );
-        
-        const isDataComplete = areGradesComplete && areExtrasComplete;
-
-        if (!isDataComplete) {
-            return { needsSplitting: false, splitPoint: reportSubjects.length };
-        }
-        
-        const extraCount = assignedActivities.length;
-        
-        const calculatedSplitPoint = extraCount < 3 ? 6 : 7;
+        const extraCount = (studentExtraData?.assignedActivities || []).filter(Boolean).length;
+        const calculatedSplitPoint = extraCount > 2 ? 6 : 7;
         const calculatedNeedsSplitting = reportSubjects.length > calculatedSplitPoint;
 
         return { 
             needsSplitting: calculatedNeedsSplitting, 
             splitPoint: calculatedSplitPoint 
         };
-    }, [student, subjects, gradeData, studentExtraData, reportSubjects]);
+    }, [student, reportSubjects, studentExtraData]);
 
     const page1Subjects = needsSplitting ? reportSubjects.slice(0, splitPoint) : reportSubjects;
     const page2Subjects = needsSplitting ? reportSubjects.slice(splitPoint) : [];
@@ -672,24 +641,22 @@ const PrintRaporPage = ({ students, settings, ...restProps }) => {
     }, []);
     
     const handlePrint = () => {
-        const pagesToPrint = document.querySelectorAll('#print-area .report-page');
+        const printArea = document.getElementById('print-area');
+        if (!printArea) return;
 
-        const afterPrintHandler = () => {
-            pagesToPrint.forEach(page => {
-                page.classList.remove('hide-in-print');
-            });
-            window.removeEventListener('afterprint', afterPrintHandler);
-        };
-
-        window.addEventListener('afterprint', afterPrintHandler);
+        const pages = printArea.querySelectorAll('.report-page');
         
-        pagesToPrint.forEach(page => {
+        // Temporarily hide pages that are not selected for printing
+        pages.forEach(page => {
             const pageType = page.getAttribute('data-page-type');
-            if (!selectedPages[pageType]) {
+            if (pageType && !selectedPages[pageType]) {
                 page.classList.add('hide-in-print');
+            } else {
+                page.classList.remove('hide-in-print');
             }
         });
-
+        
+        // Trigger print dialog
         window.print();
     };
 
