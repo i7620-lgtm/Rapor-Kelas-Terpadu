@@ -1,49 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName } from './TransliterationUtil.js';
-
-const generateInitialLayout = (appSettings) => {
-    const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
-    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
-    const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
-    
-    const alamatText = appSettings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
-
-    const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
-    const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
-
-    const contactLine2 = [
-        appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
-        appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
-        appSettings.website_sekolah ? `Website: ${appSettings.website_sekolah}` : null,
-        appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
-    ].filter(Boolean).join(' | ');
-
-    return [
-        // Logos
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 45, width: 85, height: 85 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 45, width: 85, height: 85 },
-        
-        // Block 1: Pemda
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 18, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 34, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        
-        // Block 2: Dinas Detail
-        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 52, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        
-        // Block 3: School
-        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 88, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
-
-        // Block 4: Address & Contact
-        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 130, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 143, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 155, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        
-        // Separator Line
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 172, width: 780, height: 3 },
-    ];
-};
+import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
@@ -723,6 +679,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('div', { className: "lg:col-span-1 space-y-4" },
                                     React.createElement(FileInputField, { label: "Logo Sekolah", id: "logo_sekolah", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null }),
                                     React.createElement(FileInputField, { label: "Logo Dinas Pendidikan", id: "logo_dinas", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null }),
+                                    React.createElement(FileInputField, { label: "Logo Cover Rapor", id: "logo_cover", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_cover === 'string' ? settings.logo_cover : null }),
                                     React.createElement('div', { className: "pt-4" },
                                         React.createElement('h4', { className: "text-lg font-semibold text-slate-700" }, "Pratinjau Kop Surat"),
                                         React.createElement('p', { className: "text-sm text-slate-500 mb-4" }, "Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah."),
