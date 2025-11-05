@@ -37,7 +37,8 @@ const initialSettings = {
   nama_dinas_pendidikan: '', nama_sekolah: '', npsn: '', alamat_sekolah: '', desa_kelurahan: '',
   kecamatan: '', kota_kabupaten: '', provinsi: '', kode_pos: '', email_sekolah: '',
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
-  logo_dinas: null, nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
+  logo_dinas: null, logo_cover: null,
+  nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   predikats: { a: '90', b: '80', c: '70' },
   kop_layout: []
@@ -631,6 +632,7 @@ useEffect(() => {
 
         addChunkedData('Logo Sekolah (Base64)', settings.logo_sekolah);
         addChunkedData('Logo Dinas Pendidikan (Base64)', settings.logo_dinas);
+        addChunkedData('Logo Cover Rapor (Base64)', settings.logo_cover);
         
         settingsDataAoA.push([]);
         settingsDataAoA.push(['Mata Pelajaran']);
@@ -787,6 +789,7 @@ useEffect(() => {
                     let section = null;
                     const logoSekolahParts = {};
                     const logoDinasParts = {};
+                    const logoCoverParts = {};
 
                     rows.forEach(row => {
                         const header = String(row[0] || '').trim();
@@ -806,6 +809,11 @@ useEffect(() => {
                         if (header.startsWith('Logo Dinas Pendidikan (Base64) - Part ')) {
                             const partMatch = header.match(/Part (\d+)/);
                             if (partMatch) logoDinasParts[parseInt(partMatch[1], 10)] = row[1] || '';
+                        }
+                        if (header === 'Logo Cover Rapor (Base64)') tempSettings.logo_cover = row[1] || null;
+                        if (header.startsWith('Logo Cover Rapor (Base64) - Part ')) {
+                            const partMatch = header.match(/Part (\d+)/);
+                            if (partMatch) logoCoverParts[parseInt(partMatch[1], 10)] = row[1] || '';
                         }
 
                         if (section === 'subjects' && header !== 'ID Internal (Jangan Diubah)') {
@@ -832,6 +840,9 @@ useEffect(() => {
 
                     const dinasKeys = Object.keys(logoDinasParts).map(Number).sort((a, b) => a - b);
                     if (dinasKeys.length > 0) tempSettings.logo_dinas = dinasKeys.map(key => logoDinasParts[key]).join('');
+
+                    const coverKeys = Object.keys(logoCoverParts).map(Number).sort((a, b) => a - b);
+                    if (coverKeys.length > 0) tempSettings.logo_cover = coverKeys.map(key => logoCoverParts[key]).join('');
                     
                     processedSheetCount++;
                 }
