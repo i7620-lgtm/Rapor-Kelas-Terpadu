@@ -116,8 +116,22 @@ const App = () => {
   const [settings, setSettings] = useState(() => {
     try {
         const saved = localStorage.getItem('appSettings');
-        return saved ? JSON.parse(saved) : initialSettings;
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Perform a merge to ensure all properties from initialSettings are present,
+            // and nested objects like predikats are handled correctly.
+            return {
+                ...initialSettings,
+                ...parsed,
+                predikats: {
+                    ...initialSettings.predikats,
+                    ...(parsed.predikats || {})
+                }
+            };
+        }
+        return initialSettings;
     } catch (e) {
+        // If parsing fails, return initial settings.
         return initialSettings;
     }
   });
