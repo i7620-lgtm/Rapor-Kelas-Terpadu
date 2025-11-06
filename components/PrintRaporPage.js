@@ -360,15 +360,15 @@ const ReportStudentInfo = ({ student, settings }) => (
             ),
             React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: C`)
+                React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
             ),
             React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
-                React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
+                React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
             ),
             React.createElement('tr', { className: 'align-top' },
                 React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
-                React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
+                React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
             )
         )
     )
@@ -391,12 +391,10 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1 }) => (
                     React.createElement('td', { className: 'border border-black px-2 py-1 align-top' }, item.name),
                     React.createElement('td', { className: 'border border-black px-2 py-1 text-center align-top' }, item.grade ?? ''),
                     React.createElement('td', { className: 'border border-black px-2 py-1 align-top text-justify' },
-                        React.createElement('div', null,
-                            item.description.highest,
-                            item.description.lowest && React.createElement(React.Fragment, null,
-                                React.createElement('div', { style: { borderTop: '1px solid #ccc', margin: '4px 0', width: '80%' } }),
-                                item.description.lowest
-                            )
+                        React.createElement('p', {className: 'mb-1'}, item.description.highest),
+                        item.description.lowest && React.createElement(React.Fragment, null,
+                            React.createElement('hr', { className: 'border-t border-slate-400 my-1' }),
+                            React.createElement('p', null, item.description.lowest)
                         )
                     )
                 )
