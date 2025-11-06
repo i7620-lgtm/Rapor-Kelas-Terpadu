@@ -115,16 +115,14 @@
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        height: 100% !important;
-        page-break-after: always;
+        /* height: 100% !important; REMOVED */
+        /* page-break-after: always; REMOVED */
         overflow: visible !important; /* Allow content to flow naturally */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
-    .report-page:last-of-type {
-        page-break-after: avoid;
-    }
+    /* .report-page:last-of-type { page-break-after: avoid; } REMOVED */
 
     /* Ensure table headers repeat on page break */
     thead {
@@ -132,8 +130,11 @@
     }
 
     /* General page break avoidance for key elements */
-    table, tr, td, img, .signature-block {
-        page-break-inside: avoid !important;
+    table {
+        page-break-inside: auto !important; /* Allow tables to break across pages if needed */
+    }
+    tr, td, img, .signature-block, .page-break-avoid {
+        page-break-inside: avoid !important; /* Keep rows/cells/images/signature blocks/custom blocks intact */
     }
   }
 
