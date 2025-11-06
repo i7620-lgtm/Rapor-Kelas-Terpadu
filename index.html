@@ -107,6 +107,7 @@
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
+        overflow: visible !important; /* Allow content to flow naturally across pages */
     }
     
     .report-page {
@@ -115,14 +116,10 @@
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        /* height: 100% !important; REMOVED */
-        /* page-break-after: always; REMOVED */
         overflow: visible !important; /* Allow content to flow naturally */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
-
-    /* .report-page:last-of-type { page-break-after: avoid; } REMOVED */
 
     /* Ensure table headers repeat on page break */
     thead {
@@ -133,8 +130,23 @@
     table {
         page-break-inside: auto !important; /* Allow tables to break across pages if needed */
     }
+    
+    /* Keep rows/cells/images/custom blocks intact */
     tr, td, img, .signature-block, .page-break-avoid {
-        page-break-inside: avoid !important; /* Keep rows/cells/images/signature blocks/custom blocks intact */
+        page-break-inside: avoid !important; 
+    }
+
+    /* Specific blocks that must stay together */
+    .student-identity-block-wrapper,
+    .academic-content-block,
+    .report-footer-content-block {
+        page-break-inside: avoid !important;
+    }
+    
+    /* To prevent the report footer from appearing orphaned,
+       it should start on a new page if it doesn't entirely fit. */
+    .report-footer-content-block {
+        page-break-before: auto !important; /* Allow it to flow naturally, but as a unit */
     }
   }
 
