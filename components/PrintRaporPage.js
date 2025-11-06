@@ -9,7 +9,7 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        React.createElement('div', { style: { padding: '1cm 1.5cm 0 1.5cm' } },
+        React.createElement('div', { className: "report-header-content" }, /* Use new class for header padding/height */
             React.createElement('div', { className: "relative w-full h-full" },
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
                     layout.map(el => {
@@ -311,7 +311,7 @@ const StudentIdentityPage = ({ student, settings }) => {
         { no: '7.', label: 'Alamat Murid', value: student.alamatSiswa },
         { no: '8.', label: 'Nama Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.namaAyah },
-        { sub: true, label: 'b. Ibu', value: student.namaIbu },
+        { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
         { no: '9.', label: 'Pekerjaan Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
         { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
@@ -564,8 +564,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
 
-    const contentStyle = { padding: '1.5cm' };
-
     return (
         React.createElement(React.Fragment, null,
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
@@ -573,15 +571,15 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: contentStyle }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { className: "report-main-content" }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: contentStyle }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { className: "report-main-content" }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
-            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: contentStyle },
+                React.createElement('div', { className: "report-main-content" },
                     React.createElement('div', { className: 'academic-content-block font-times' }, /* Wrap student info and academic table */
                         React.createElement(ReportStudentInfo, { student: student, settings: settings }),
                         React.createElement(AcademicTable, { subjectsToRender: reportSubjects }) // Render all subjects
@@ -654,6 +652,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 box-shadow: none !important;
                 border: none !important;
                 page-break-after: always; /* Each .report-page is conceptually a new page */
+                overflow: hidden !important; /* Ensure fixed height pages do not scroll */
             }
             /* The very last report-page element in the entire document should not force a break after it */
             #print-area > .report-page:last-of-type {
