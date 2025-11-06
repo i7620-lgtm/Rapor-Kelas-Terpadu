@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
 
-// Removed the base64 encoded Tut Wuri Handayani logo. It should now be uploaded via settings.
-
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
@@ -480,7 +478,7 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
     );
 };
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ...restProps }) => {
+const ReportPagesForStudent = ({ student, settings, selectedPages, pageStyle, ...restProps }) => {
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
 
@@ -575,21 +573,30 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
 
     const contentStyle = { padding: '1.5cm' };
     const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
+    
+    const previewPageStyle = {
+        width: pageStyle.width,
+        minHeight: pageStyle.height, // Use height as minHeight for preview
+        height: 'auto', // Allow content to push height
+        display: 'flex',
+        flexDirection: 'column',
+        pageBreakAfter: 'always', // For explicit breaks in preview mode
+    };
 
     return (
         React.createElement(React.Fragment, null,
-            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
+            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', style: { ...previewPageStyle, border: '6px double #000' }, 'data-student-id': String(student.id), 'data-page-type': 'cover' },
                 React.createElement(CoverPage, { student: student, settings: settings })
             ),
-            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', style: previewPageStyle, 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity' },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: contentStyleWithHeader }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
-            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', style: previewPageStyle, 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity' },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: contentStyleWithHeader }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
-            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', style: previewPageStyle, 'data-student-id': String(student.id), 'data-page-type': 'academic' },
                 React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
                 React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
                     React.createElement('div', { className: 'font-times' },
@@ -600,7 +607,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
                 )
             ),
             selectedPages.academic && needsSplitting && (
-                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
+                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', style: previewPageStyle, 'data-student-id': String(student.id), 'data-page-type': 'academic' },
                     React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
                     React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
                         React.createElement('div', { className: 'font-times' },
@@ -652,28 +659,22 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     }, []);
     
     const handlePrint = async () => {
-        // Apply selected paper size to the print area
-        const printArea = document.getElementById('print-area');
-        if (printArea) {
-            printArea.style.width = PAPER_SIZES[paperSize].width;
-            printArea.style.height = 'auto'; // Let height adjust naturally with content
-        }
-
         // Set CSS variables for print to control page size
+        const pageHeight = PAPER_SIZES[paperSize].height;
+        const pageWidth = PAPER_SIZES[paperSize].width;
+
         const style = document.createElement('style');
         style.innerHTML = `
             @page {
                 size: ${paperSize} portrait;
                 margin: 0;
             }
-            .report-page {
-                width: ${PAPER_SIZES[paperSize].width} !important;
-                min-height: ${PAPER_SIZES[paperSize].height} !important;
-                height: auto !important; /* Allow content to dictate height, but enforce minimum */
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
+            :root {
+                --page-width: ${pageWidth};
+                --page-height: ${pageHeight};
             }
+            /* The .report-page styles are already in index.html,
+               but we set the variables here for dynamic sizing. */
         `;
         document.head.appendChild(style);
 
@@ -692,6 +693,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         return students.filter(s => String(s.id) === selectedStudentId);
     }, [students, selectedStudentId]);
     
+    // Reintroduced pageStyle prop for on-screen preview sizing
     const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -764,7 +766,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         key: student.id, 
                         student: student, 
                         settings: settings,
-                        pageStyle: pageStyle,
+                        pageStyle: pageStyle, // Reintroduced
                         selectedPages: studentSelectedPages,
                         ...restProps
                     })
