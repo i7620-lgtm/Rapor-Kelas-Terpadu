@@ -82,31 +82,36 @@
   }
 
   @media print {
-    /* A more robust printing strategy */
+    /* Define CSS variables at the root for page dimensions */
+    :root {
+        --page-width: 21cm; /* Default A4 */
+        --page-height: 29.7cm; /* Default A4 */
+    }
+
     body {
         margin: 0 !important;
         padding: 0 !important;
         background-color: #fff !important;
+        font-family: "Times New Roman", Times, serif; /* Apply Times New Roman for print body */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
     
-    /* Hide everything by default */
-    body * {
-        visibility: hidden !important;
+    /* Hide everything by default that is not in #print-area */
+    body > *:not(#print-area):not(.tp-tooltip) { /* Exclude tooltips from hiding */
+        display: none !important;
     }
 
     /* Make only the print area and its contents visible */
-    #print-area, #print-area * {
-        visibility: visible !important;
-    }
-
-    /* Position the print area to take over the whole screen */
     #print-area {
-        position: absolute !important;
+        display: block !important;
+        position: relative !important; /* Allow positioning of children */
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
+        width: var(--page-width) !important; /* Force width */
         margin: 0 !important;
         padding: 0 !important;
+        overflow: hidden; /* Hide any content that flows outside the print-area itself */
     }
     
     .report-page {
@@ -114,26 +119,33 @@
         border: none !important;
         margin: 0 !important;
         padding: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        page-break-after: always;
-        overflow: visible !important; /* Allow content to flow naturally */
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+        width: var(--page-width) !important;
+        min-height: var(--page-height) !important; /* Ensure content stretches to at least one page */
+        height: auto !important; /* Allow content to dictate its height and flow if needed */
+        box-sizing: border-box !important; /* Include padding and border in size */
+        page-break-before: always !important; /* Each .report-page starts a new physical page */
+        overflow: visible !important; /* Allow content to flow across physical pages if min-height is exceeded */
     }
 
-    .report-page:last-of-type {
-        page-break-after: avoid;
+    /* The very first report-page in the print-area should not have a page break before it */
+    #print-area > .report-page:first-of-type {
+        page-break-before: auto !important;
     }
 
     /* Ensure table headers repeat on page break */
-    thead {
+    thead.report-header-group { /* Use the specific class added in JS */
         display: table-header-group !important;
     }
 
     /* General page break avoidance for key elements */
     table, tr, td, img, .signature-block {
         page-break-inside: avoid !important;
+    }
+
+    /* Specific adjustment for academic table row headers to prevent breaking */
+    .academic-table-row-header {
+      page-break-inside: avoid !important;
+      display: table-row !important;
     }
   }
 
