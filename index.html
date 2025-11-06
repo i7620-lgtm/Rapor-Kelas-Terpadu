@@ -116,13 +116,13 @@
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
-        overflow: visible !important; /* Allow content to flow naturally */
+        overflow: hidden !important; /* Keep fixed size pages */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
     /* Ensure table headers repeat on page break */
-    thead {
+    thead.report-header-group {
         display: table-header-group !important;
     }
 
@@ -135,6 +135,12 @@
     tr, td, img, .signature-block, .page-break-avoid {
         page-break-inside: avoid !important; 
     }
+    
+    /* Avoid page breaks for headings directly before content */
+    h2, h3, h4 {
+        page-break-after: avoid !important;
+        page-break-inside: avoid !important;
+    }
 
     /* Specific blocks that must stay together */
     .student-identity-block-wrapper,
@@ -142,11 +148,20 @@
     .report-footer-content-block {
         page-break-inside: avoid !important;
     }
-    
-    /* To prevent the report footer from appearing orphaned,
-       it should start on a new page if it doesn't entirely fit. */
-    .report-footer-content-block {
-        page-break-before: auto !important; /* Allow it to flow naturally, but as a unit */
+
+    /* Header for print */
+    .report-header-content {
+        height: 5.2cm !important; /* Fixed height for the header */
+        overflow: hidden !important; /* Prevent content from spilling out */
+        padding: 1cm 1.5cm 0.5cm 1.5cm !important; /* Internal padding for header content */
+    }
+
+    /* Main content area */
+    .report-main-content {
+        padding: 0.5cm 1.5cm 1.5cm 1.5cm !important; /* Adjusted top padding */
+        box-sizing: border-box !important;
+        height: calc(100% - 5.2cm) !important; /* Remaining height for content after header */
+        overflow: hidden !important; /* For fixed height pages, content should scroll or be managed */
     }
   }
 
