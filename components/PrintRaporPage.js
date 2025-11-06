@@ -325,26 +325,28 @@ const StudentIdentityPage = ({ student, settings }) => {
     return (
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
             React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS MURID'),
-            React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
-                React.createElement('tbody', null,
-                    identitasSiswa.map((item, index) => (
-                        React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-1' }, item.no || ''),
-                            React.createElement('td', { className: `w-[35%] py-1 ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[3%] py-1 text-center' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[57%] py-1' }, item.value || (item.sub ? '-' : ''))
-                        )
-                    ))
-                )
-            ),
-            React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
-                    React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
-                    React.createElement('div', { className: 'h-20' }),
-                    React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
-                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+            React.createElement('div', { className: "page-break-avoid" }, /* Wrap entire core content */
+                React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
+                    React.createElement('tbody', null,
+                        identitasSiswa.map((item, index) => (
+                            React.createElement('tr', { key: index, className: 'align-top' },
+                                React.createElement('td', { className: 'w-[5%] py-1' }, item.no || ''),
+                                React.createElement('td', { className: `w-[35%] py-1 ${item.sub ? 'pl-4' : ''}` }, item.label),
+                                React.createElement('td', { className: 'w-[3%] py-1 text-center' }, item.label ? ':' : ''),
+                                React.createElement('td', { className: 'w-[57%] py-1' }, item.value || (item.sub ? '-' : ''))
+                            )
+                        ))
+                    )
+                ),
+                React.createElement('div', { className: 'flex justify-between items-end pt-10' },
+                    React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
+                    React.createElement('div', { className: 'text-center signature-block' },
+                        React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
+                        React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
+                        React.createElement('div', { className: 'h-20' }),
+                        React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
+                        React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    )
                 )
             )
         )
@@ -442,7 +444,7 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
     };
 
     return (
-        React.createElement(React.Fragment, null,
+        React.createElement('div', { className: "page-break-avoid" }, /* Wrap all footer content */
             React.createElement('div', { className: 'mt-4 signature-block'},
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
                     React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
@@ -561,7 +563,9 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
     const { needsSplitting, splitPoint } = useMemo(() => {
-        const fixedSplitPoint = 7;
+        // A rough estimation of how many subjects can fit on one page.
+        // This might need fine-tuning based on actual content length and font sizes.
+        const fixedSplitPoint = 7; 
         const calculatedNeedsSplitting = reportSubjects.length > fixedSplitPoint;
     
         return { 
@@ -592,9 +596,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
             selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
                 React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
                 React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
-                    React.createElement('div', { className: 'font-times' },
+                    React.createElement('div', { className: 'font-times page-break-avoid' }, /* Ensures student info and academic table stay together */
                         React.createElement(ReportStudentInfo, { student: student, settings: settings }),
                         React.createElement(AcademicTable, { subjectsToRender: page1Subjects }),
+                        // If needsSplitting is false, footer goes here
                         !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                     )
                 )
@@ -603,8 +608,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
                 React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
                     React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
                     React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
-                        React.createElement('div', { className: 'font-times' },
-                            React.createElement(ReportStudentInfo, { student: student, settings: settings }),
+                        React.createElement('div', { className: 'font-times page-break-avoid' }, /* Ensures student info, academic table, and footer stay together */
+                            React.createElement(ReportStudentInfo, { student: student, settings: settings }), /* Repeat student info for continuity */
                             React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: splitPoint + 1 }),
                             React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                         )
@@ -673,7 +678,15 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
+                page-break-after: always; /* Each .report-page is conceptually a new page */
             }
+            /* The very last report-page element in the entire document should not force a break after it */
+            #print-area > .report-page:last-of-type {
+                page-break-after: auto !important;
+            }
+            /* If there are multiple academic pages for a student, the intermediate one should also page-break-after */
+            /* This is handled by default .report-page:last-of-type for a student which will be caught by the overall last-of-type */
+            /* If we need more granular control, we would add classes to the ReportPagesForStudent components. */
         `;
         document.head.appendChild(style);
 
