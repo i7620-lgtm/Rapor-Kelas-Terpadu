@@ -9,7 +9,7 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: '5.2cm', padding: '1cm 1.5cm 0 1.5cm' } },
+        React.createElement('div', { style: { padding: '1cm 1.5cm 0 1.5cm' } },
             React.createElement('div', { className: "relative w-full h-full" },
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
                     layout.map(el => {
@@ -190,7 +190,7 @@ const CoverPage = ({ student, settings }) => {
         if (settings.tanggal_rapor) {
             try {
                 // Handle format "Denpasar, 20 Desember 2024"
-                const parts = settings.tanggal_raapor.split(' ');
+                const parts = settings.tanggal_rapor.split(' ');
                 if (parts.length >= 3) {
                     const yearPart = parts[parts.length - 1];
                     const reportYear = parseInt(yearPart, 10);
@@ -423,15 +423,16 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
         if (!isSemesterGenap) return null;
 
         const gradeLevel = getGradeNumber(settings.nama_kelas);
-        let passText, failText, passTo, failTo;
+        let passText, failText, passTo;
 
         if (gradeLevel === 6) {
             passText = 'LULUS';
+            passTo = ''; // No specific class to pass to after grade 6
         } else {
             passText = 'Naik ke Kelas';
             const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRomanPlusOne = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
-            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
+            const nextGradeRoman = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII'}[nextGrade];
+            passTo = `${nextGrade} (${nextGradeRoman})`;
         }
         
         return React.createElement('div', { className: 'border-2 border-black p-2 mt-4' },
@@ -564,7 +565,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
 
 
     const contentStyle = { padding: '1.5cm' };
-    const contentStyleWithHeader = { padding: '1.5cm', paddingTop: '5.2cm' };
 
     return (
         React.createElement(React.Fragment, null,
@@ -573,15 +573,15 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { style: contentStyle }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: contentStyleWithHeader }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { style: contentStyle }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
             selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: {...pageStyle, height: 'auto'} },
-                React.createElement('div', { style: { height: '5.2cm' } }, React.createElement(ReportHeader, { settings: settings })),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: 0, verticalAlign: 'top' } },
+                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement('div', { style: contentStyle },
                     React.createElement('div', { className: 'academic-content-block font-times' }, /* Wrap student info and academic table */
                         React.createElement(ReportStudentInfo, { student: student, settings: settings }),
                         React.createElement(AcademicTable, { subjectsToRender: reportSubjects }) // Render all subjects
