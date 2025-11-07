@@ -84,7 +84,7 @@ const initialNotes = {
 };
 
 const initialAttendance = [
-    { studentId: 1, sakit: 1, izin: 2, alpa: 0 }
+    { studentId: 1, sakit: null, izin: null, alpa: null } // Changed 0 to null
 ];
 
 const initialStudentExtracurriculars = [
@@ -163,7 +163,14 @@ const App = () => {
   const [attendance, setAttendance] = useState(() => {
       try {
           const saved = localStorage.getItem('appAttendance');
-          return saved ? JSON.parse(saved) : initialAttendance;
+          // For existing data, if 0, keep it 0. For new data, initialize to null.
+          const parsed = saved ? JSON.parse(saved) : initialAttendance;
+          return parsed.map(att => ({
+              studentId: att.studentId,
+              sakit: att.sakit === 0 ? 0 : (att.sakit ?? null), // Treat 0 as explicit 0, otherwise null
+              izin: att.izin === 0 ? 0 : (att.izin ?? null),
+              alpa: att.alpa === 0 ? 0 : (att.alpa ?? null)
+          }));
       } catch (e) {
           return initialAttendance;
       }
@@ -349,7 +356,7 @@ useEffect(() => {
             const newId = prev.length > 0 ? Math.max(...prev.map(s => s.id)) + 1 : 1;
             const newStudent = { ...studentData, id: newId };
             setGrades(g_prev => [...g_prev, { studentId: newId, detailedGrades: {}, finalGrades: {} }]);
-            setAttendance(a_prev => [...a_prev, { studentId: newId, sakit: 0, izin: 0, alpa: 0 }]);
+            setAttendance(a_prev => [...a_prev, { studentId: newId, sakit: null, izin: null, alpa: null }]); // Initialized with null
             setStudentExtracurriculars(se_prev => [...se_prev, { studentId: newId, assignedActivities: [], descriptions: {} }]);
             return [...prev, newStudent];
         }
@@ -368,7 +375,7 @@ useEffect(() => {
         const newId = newIdCounter++;
         newStudents.push({ ...studentData, id: newId });
         newGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
-        newAttendance.push({ studentId: newId, sakit: 0, izin: 0, alpa: 0 });
+        newAttendance.push({ studentId: newId, sakit: null, izin: null, alpa: null }); // Initialized with null
         newStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
     });
 
@@ -437,11 +444,20 @@ useEffect(() => {
     setAttendance(prev => {
         const studentAttIndex = prev.findIndex(a => a.studentId === studentId);
         const updatedAttendance = [...prev];
+        
+        let numericValue = parseInt(value, 10);
+        // Treat empty string or invalid number input as null
+        if (value === '' || isNaN(numericValue) || numericValue < 0) {
+            numericValue = null;
+        }
+
         if (studentAttIndex > -1) {
-            const newAtt = { ...updatedAttendance[studentAttIndex], [type]: value };
+            const newAtt = { ...updatedAttendance[studentAttIndex], [type]: numericValue };
             updatedAttendance[studentAttIndex] = newAtt;
         } else {
-            updatedAttendance.push({ studentId, sakit: 0, izin: 0, alpa: 0, [type]: value });
+            // Initialize other attendance types to null for a new entry
+            const newEntry = { studentId, sakit: null, izin: null, alpa: null, [type]: numericValue };
+            updatedAttendance.push(newEntry);
         }
         return updatedAttendance;
     });
@@ -452,7 +468,7 @@ useEffect(() => {
           const updatedAttendanceMap = new Map(prev.map(a => [a.studentId, a]));
           newAttendanceData.forEach(newAtt => {
               if (newAtt && typeof newAtt === 'object') {
-                const existing = updatedAttendanceMap.get(newAtt.studentId) || { studentId: newAtt.studentId, sakit: 0, izin: 0, alpa: 0 };
+                const existing = updatedAttendanceMap.get(newAtt.studentId) || { studentId: newAtt.studentId, sakit: null, izin: null, alpa: null }; // Initialize with null
                 updatedAttendanceMap.set(newAtt.studentId, Object.assign({}, existing, newAtt));
               }
           });
@@ -579,7 +595,7 @@ useEffect(() => {
             ["Sheet", "Keterangan"],
             ["Pengaturan", "Isi atau ubah pengaturan dasar, daftar mata pelajaran, dan ekstrakurikuler di sheet ini. Perubahan akan diterapkan saat file diunggah."],
             ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
-            ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa."],
+            ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa. Kosongkan jika tidak ada absensi untuk jenis tersebut."],
             ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
             ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
             ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
@@ -669,8 +685,13 @@ useEffect(() => {
         XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
 
         const dataAbsensi = students.map(student => {
-            const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: 0, izin: 0, alpa: 0 };
-            return { "Nama Lengkap": student.namaLengkap, "Sakit (S)": studentAtt.sakit, "Izin (I)": studentAtt.izin, "Alpa (A)": studentAtt.alpa };
+            const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null }; // Default to null for export
+            return { 
+                "Nama Lengkap": student.namaLengkap, 
+                "Sakit (S)": studentAtt.sakit ?? '', // Export null as empty string
+                "Izin (I)": studentAtt.izin ?? '',   // Export null as empty string
+                "Alpa (A)": studentAtt.alpa ?? ''    // Export null as empty string
+            };
         });
         const wsAbsensi = XLSX.utils.json_to_sheet(dataAbsensi);
         wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
@@ -875,7 +896,7 @@ useEffect(() => {
                             const newId = ++maxId;
                             tempStudents.push({ ...studentData, id: newId });
                             tempGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
-                            tempAttendance.push({ studentId: newId, sakit: 0, izin: 0, alpa: 0 });
+                            tempAttendance.push({ studentId: newId, sakit: null, izin: null, alpa: null }); // Initialized with null
                             tempStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
                         }
                     });
@@ -893,12 +914,23 @@ useEffect(() => {
                     if (sheetName === 'Data Siswa' || sheetName === 'Pengaturan') return;
 
                     if (sheetName === 'Data Absensi') {
+                        const parseAttendanceValue = (value) => {
+                            if (value === '' || value === undefined || value === null) return null;
+                            const num = parseInt(String(value), 10);
+                            return isNaN(num) ? null : num;
+                        };
+
                         json.forEach(row => {
                             const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
                             if (studentId) {
                                 const attendanceRecord = tempAttendance.find(a => a.studentId === studentId);
-                                const newAtt = { sakit: parseInt(String(row["Sakit (S)"] || 0)), izin: parseInt(String(row["Izin (I)"] || 0)), alpa: parseInt(String(row["Alpa (A)"] || 0)) };
+                                const newAtt = {
+                                    sakit: parseAttendanceValue(row["Sakit (S)"]),
+                                    izin: parseAttendanceValue(row["Izin (I)"]),
+                                    alpa: parseAttendanceValue(row["Alpa (A)"])
+                                };
                                 if (attendanceRecord) Object.assign(attendanceRecord, newAtt);
+                                else tempAttendance.push({ studentId, ...newAtt }); // Add if not found
                             }
                         });
                         processedSheetCount++;
