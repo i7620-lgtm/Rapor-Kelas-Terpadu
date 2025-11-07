@@ -37,7 +37,8 @@ const AnalysisItem = ({ title, description, status, actionText, onActionClick })
                     ),
                     React.createElement('span', { className: `ml-4 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}` }, statusText[status])
                 )
-            ),
+            )
+            ,
             onActionClick && actionText && (
                 React.createElement('button', { onClick: onActionClick, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
                     actionText, ' →'
@@ -243,23 +244,48 @@ const Dashboard = ({
         }
 
         // 2. Data Nilai
-        const studentsWithMissingGrades = [];
+        const studentsWithEmptyGrades = new Set();
+        const studentsWithBelowKKMGrades = new Set();
+        const minGrade = parseInt(settings.predikats?.c || '70', 10);
+
         currentStudents.forEach(student => {
             const studentGrade = currentGrades.find(g => g.studentId === student.id);
-            const missingSubjects = activeSubjects.filter(sub => {
-                const grade = studentGrade?.finalGrades?.[sub.id];
-                return grade === undefined || grade === null || grade === '';
-            });
-            if (missingSubjects.length > 0) {
-                studentsWithMissingGrades.push(`${student.namaLengkap} (${missingSubjects.map(s => s.label).join(', ')})`);
+            // If studentGrade is entirely missing, all subjects are effectively empty for this student
+            if (!studentGrade) {
+                studentsWithEmptyGrades.add(student.id);
+            } else {
+                activeSubjects.forEach(sub => {
+                    const grade = studentGrade.finalGrades?.[sub.id];
+                    
+                    const isMissing = grade === undefined || grade === null || grade === '';
+                    const isBelowKKM = typeof grade === 'number' && grade < minGrade;
+
+                    if (isMissing) {
+                        studentsWithEmptyGrades.add(student.id);
+                    }
+                    if (isBelowKKM) {
+                        studentsWithBelowKKMGrades.add(student.id);
+                    }
+                });
             }
         });
-         if (studentsWithMissingGrades.length > 0) {
+        
+        const emptyCount = studentsWithEmptyGrades.size;
+        const belowKkmCount = studentsWithBelowKKMGrades.size;
+
+        if (emptyCount > 0 || belowKkmCount > 0) {
+            let messageParts = [];
+            if (emptyCount > 0) {
+                messageParts.push(`${emptyCount} siswa dengan nilai akhir yang belum terisi`);
+            }
+            if (belowKkmCount > 0) {
+                messageParts.push(`${belowKkmCount} siswa dengan nilai akhir di bawah KKM`);
+            }
             results.push({
                 category: 'Data Nilai',
                 title: 'Kelengkapan Nilai Akhir',
                 status: 'bad',
-                message: `Terdapat ${studentsWithMissingGrades.length} siswa dengan nilai akhir yang belum terisi.`,
+                message: `Terdapat ${messageParts.join(' dan ')}.`,
                 actionText: 'Periksa Data Nilai',
                 onActionClick: () => setActivePage('DATA_NILAI'),
             });
@@ -268,21 +294,22 @@ const Dashboard = ({
                 category: 'Data Nilai',
                 title: 'Kelengkapan Nilai Akhir',
                 status: 'good',
-                message: 'Semua siswa telah memiliki nilai akhir untuk semua mata pelajaran yang aktif.',
+                message: 'Semua siswa telah memiliki nilai akhir yang lengkap dan di atas KKM untuk semua mata pelajaran yang aktif.',
             });
         }
 
         // 3. Data Absensi
         const studentsWithNoAttendance = currentStudents.filter(s => {
             const att = currentAttendance.find(a => a.studentId === s.id);
-            return !att || (att.sakit === 0 && att.izin === 0 && att.alpa === 0);
+            // Considered "empty" if all attendance types (sakit, izin, alpa) are null
+            return !att || (att.sakit === null && att.izin === null && att.alpa === null);
         });
         if (studentsWithNoAttendance.length > 0) {
              results.push({
                 category: 'Data Lainnya',
                 title: 'Data Absensi',
                 status: 'bad',
-                message: `Terdapat ${studentsWithNoAttendance.length} siswa yang data absensinya masih kosong (0 semua).`,
+                message: `Terdapat ${studentsWithNoAttendance.length} siswa yang belum memiliki catatan absensi.`,
                 actionText: 'Periksa Data Absensi',
                 onActionClick: () => setActivePage('DATA_ABSENSI'),
             });
@@ -316,33 +343,29 @@ const Dashboard = ({
         }
 
         // 5. Ekstrakurikuler
-        const studentsWithMissingExtraDesc = [];
-        currentStudentExtracurriculars.forEach(se => {
-            if (!se) return; // Guard against null entries in the array
-            const student = currentStudents.find(s => s.id === se.studentId);
-            if (student) {
-                const missingDescActivities = (se.assignedActivities || []).filter(activityId => activityId && (!se.descriptions || !se.descriptions[activityId]));
-                if (missingDescActivities.length > 0) {
-                    studentsWithMissingExtraDesc.push(student.namaLengkap);
-                }
-            }
+        const studentsWithoutAnyAssignedExtra = currentStudents.filter(s => {
+            const studentExtra = currentStudentExtracurriculars.find(se => se.studentId === s.id);
+            // Considered "empty" if there's no record or the assignedActivities array is null/empty/contains only nulls
+            return !studentExtra || 
+                   !studentExtra.assignedActivities || 
+                   studentExtra.assignedActivities.every(activity => activity === null);
         });
 
-        if (studentsWithMissingExtraDesc.length > 0) {
+        if (studentsWithoutAnyAssignedExtra.length > 0) {
              results.push({
                 category: 'Data Lainnya',
-                title: 'Deskripsi Ekstrakurikuler',
+                title: 'Ekstrakurikuler',
                 status: 'bad',
-                message: `${studentsWithMissingExtraDesc.length} siswa memiliki ekstrakurikuler tanpa deskripsi.`,
-                actionText: 'Isi Deskripsi Ekstra',
+                message: `Terdapat ${studentsWithoutAnyAssignedExtra.length} siswa yang belum memiliki ekstrakurikuler.`,
+                actionText: 'Atur Ekstrakurikuler',
                 onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'),
             });
         } else {
              results.push({
                 category: 'Data Lainnya',
-                title: 'Deskripsi Ekstrakurikuler',
+                title: 'Ekstrakurikuler',
                 status: 'good',
-                message: 'Semua ekstrakurikuler yang diikuti siswa telah memiliki deskripsi.',
+                message: 'Semua siswa telah memiliki setidaknya satu ekstrakurikuler.',
             });
         }
 
