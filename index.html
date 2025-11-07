@@ -9,9 +9,7 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <meta name="theme-color" content="#ffffff" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Removed Google Fonts link for Noto Sans Balinese. Font will be embedded via Base64. -->
   <script type="importmap">
 {
   "imports": {
@@ -23,6 +21,14 @@
 }
 </script>
 <style>
+  /* Embedded Noto Sans Balinese font for reliable PDF generation */
+  @font-face {
+    font-family: 'Noto Sans Balinese';
+    src: url('data:application/font-woff2;charset=utf-8;base64,YOUR_ACTUAL_NOTO_SANS_BALINESE_WOFF2_BASE64_DATA_GOES_HERE') format('woff2');
+    font-weight: 400 700;
+    font-display: swap;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
@@ -81,74 +87,13 @@
     border: 6px double #000;
   }
 
-  @media print {
-    /* A more robust printing strategy */
-    body {
-        margin: 0 !important;
-        padding: 0 !important;
-        background-color: #fff !important;
-    }
-    
-    /* Hide everything by default */
-    body * {
-        visibility: hidden !important;
-    }
-
-    /* Make only the print area and its contents visible */
-    #print-area, #print-area * {
-        visibility: visible !important;
-    }
-
-    /* Position the print area to take over the whole screen */
-    #print-area {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: visible !important; /* Allow content to flow naturally across pages */
-    }
-    
-    .report-page {
-        box-shadow: none !important;
-        border: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-        overflow: visible !important; /* Allow content to flow naturally */
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    /* Ensure table headers repeat on page break */
-    thead {
-        display: table-header-group !important;
-    }
-
-    /* General page break avoidance for key elements */
-    table {
-        page-break-inside: auto !important; /* Allow tables to break across pages if needed */
-    }
-    
-    /* Keep rows/cells/images/custom blocks intact */
-    tr, td, img, .signature-block, .page-break-avoid {
-        page-break-inside: avoid !important; 
-    }
-
-    /* Specific blocks that must stay together */
-    .student-identity-block-wrapper,
-    .academic-content-block,
-    .report-footer-content-block {
-        page-break-inside: avoid !important;
-    }
-    
-    /* To prevent the report footer from appearing orphaned,
-       it should start on a new page if it doesn't entirely fit. */
-    .report-footer-content-block {
-        page-break-before: auto !important; /* Allow it to flow naturally, but as a unit */
-    }
-  }
+  /*
+  Removed @media print block.
+  html2canvas captures visible DOM. To prevent issues,
+  rely on component's existing CSS for page layout and visibility.
+  For actual browser printing, use the 'print-hidden' class
+  on elements that should not appear in print.
+  */
 
 </style>
 </head>
@@ -156,6 +101,7 @@
     <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script type="module" src="./index.js"></script>
   </body>
 </html>
