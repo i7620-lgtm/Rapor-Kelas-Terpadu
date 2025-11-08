@@ -6,6 +6,11 @@ const HEADER_HEIGHT_CM = 5.2; // Height of the report header area in cm
 const PAGE_BOTTOM_MARGIN_CM = 1.0; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
+// New derived constant for the 'bottom' CSS property of the main content area
+// This includes the standard bottom margin, the height of the page number footer,
+// and an additional buffer (0.5cm) to ensure space between report footer content and page number footer.
+const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
+
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
@@ -334,7 +339,7 @@ const StudentIdentityPage = ({ student, settings }) => {
         { no: '7.', label: 'Alamat Murid', value: student.alamatSiswa },
         { no: '8.', label: 'Nama Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.namaAyah },
-        { sub: true, label: 'b. Ibu', value: student.ibu },
+        { sub: true, label: 'b. Ibu', value: student.namaIbu },
         { no: '9.', label: 'Pekerjaan Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
         { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
@@ -631,11 +636,17 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
     const page1Subjects = needsSplitting ? reportSubjects.slice(0, splitPoint) : reportSubjects;
     const page2Subjects = needsSplitting ? reportSubjects.slice(splitPoint) : [];
 
-    // Calculate dynamic top/bottom padding for the main content wrapper
-    const CONTENT_HORIZONTAL_PADDING = '1.5cm';
-    const CONTENT_TOP_PADDING_FIRST_PAGE = `${HEADER_HEIGHT_CM}cm`; // Starts after header
-    const CONTENT_TOP_PADDING_SUBSEQUENT_PAGE = '1.5cm'; // Standard page margin
-    const CONTENT_BOTTOM_PADDING = `${PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5}cm`; // Margin + Footer height + buffer
+    // Calculate dynamic heights for the main content wrapper
+    const CONTENT_HORIZONTAL_PADDING = '1.5cm'; // Standard horizontal page margin
+    const pageHeightCm = parseFloat(pageStyle.height); // Get numerical page height in cm
+
+    // For the first academic page content wrapper:
+    const firstPageContentTopCm = HEADER_HEIGHT_CM; // Starts after ReportHeader
+    const firstPageContentHeightCm = pageHeightCm - firstPageContentTopCm - REPORT_CONTENT_BOTTOM_OFFSET_CM;
+
+    // For subsequent academic page content wrapper:
+    const subsequentPageContentTopCm = 1.5; // Standard page top margin for subsequent pages (no header)
+    const subsequentPageContentHeightCm = pageHeightCm - subsequentPageContentTopCm - REPORT_CONTENT_BOTTOM_OFFSET_CM;
 
     // Calculate total academic pages for footer numbering
     const totalAcademicPages = 1 + (needsSplitting ? 1 : 0);
@@ -647,46 +658,40 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: CONTENT_TOP_PADDING_FIRST_PAGE } }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: CONTENT_TOP_PADDING_FIRST_PAGE } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
             selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                // Main content area wrapper, positioned absolutely between header and page footer
-                // Removed flex-grow to prevent content stretching
+                // Main content area wrapper for the first academic page
                 React.createElement('div', { className: 'absolute flex flex-col font-times', style: {
-                    top: CONTENT_TOP_PADDING_FIRST_PAGE,
-                    bottom: CONTENT_BOTTOM_PADDING,
+                    top: `${firstPageContentTopCm}cm`,
                     left: CONTENT_HORIZONTAL_PADDING,
                     right: CONTENT_HORIZONTAL_PADDING,
+                    height: `${firstPageContentHeightCm}cm`, // EXPLICIT HEIGHT
                     fontSize: '11pt',
                 } },
                     React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '14pt' } }, 'LAPORAN HASIL BELAJAR'),
                     React.createElement(ReportStudentInfo, { student: student, settings: settings }),
                     React.createElement(AcademicTable, { subjectsToRender: page1Subjects }),
-                    // Removed !needsSplitting && React.createElement('div', { className: 'flex-grow' }), // THIS is the culprit for stretching
                     !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                 ),
                 React.createElement(PageFooter, { student: student, settings: settings, currentPage: 1, totalPages: totalAcademicPages })
             ),
             selectedPages.academic && needsSplitting && (
                 React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                    // No ReportHeader for subsequent academic pages (already handled by styling within header component)
-                    // Main content area wrapper for subsequent academic page
-                    // Removed flex-grow to prevent content stretching
+                    // Main content area wrapper for the subsequent academic page
                     React.createElement('div', { className: 'absolute flex flex-col font-times', style: {
-                        top: CONTENT_TOP_PADDING_SUBSEQUENT_PAGE,
-                        bottom: CONTENT_BOTTOM_PADDING,
+                        top: `${subsequentPageContentTopCm}cm`,
                         left: CONTENT_HORIZONTAL_PADDING,
                         right: CONTENT_HORIZONTAL_PADDING,
+                        height: `${subsequentPageContentHeightCm}cm`, // EXPLICIT HEIGHT
                         fontSize: '11pt',
                     } },
-                        // Removed title and student info from subsequent academic pages
                         React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: splitPoint + 1 }),
-                        // Removed React.createElement('div', { className: 'flex-grow' }), // THIS is also a culprit
                         React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                     ),
                     React.createElement(PageFooter, { student: student, settings: settings, currentPage: 2, totalPages: totalAcademicPages })
@@ -754,11 +759,10 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     scale: 2, // Higher scale for better resolution
                     useCORS: true, // Needed if images are from different origins (though logos are base64 here)
                     logging: false,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight,
-                    // Explicitly set width/height for html2canvas to match element dimensions
-                    width: element.offsetWidth,
-                    height: element.offsetHeight,
+                    windowWidth: element.offsetWidth, // Use element's current rendered width
+                    windowHeight: element.offsetHeight, // Use element's current rendered height
+                    width: element.offsetWidth, // Explicitly pass width
+                    height: element.offsetHeight, // Explicitly pass height
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
