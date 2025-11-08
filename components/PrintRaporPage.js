@@ -250,7 +250,7 @@ const CoverPage = ({ student, settings }) => {
     const coverLogo = settings.logo_cover || ''; // Now falls back to empty string
 
     return React.createElement('div', {
-        className: 'flex flex-col items-center text-center p-8 box-border',
+        className: 'flex flex-col items-center text-center p-8 box-border font-times',
         style: {
             position: 'absolute',
             top: '1.5cm',
@@ -646,20 +646,20 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
 
     return (
         React.createElement(React.Fragment, null,
-            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
+            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                 React.createElement(CoverPage, { student: student, settings: settings })
             ),
-            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
-            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
-            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+            selectedPages.academic && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { className: 'absolute flex flex-col font-times', style: {
+                React.createElement('div', { className: 'absolute flex flex-col', style: {
                     top: `${firstPageContentTopCm}cm`,
                     left: CONTENT_HORIZONTAL_PADDING,
                     right: CONTENT_HORIZONTAL_PADDING,
@@ -674,8 +674,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, ..
                 React.createElement(PageFooter, { student: student, settings: settings, currentPage: 1, totalPages: totalAcademicPages })
             ),
             selectedPages.academic && needsSplitting && (
-                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                    React.createElement('div', { className: 'absolute flex flex-col font-times', style: {
+                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                    React.createElement('div', { className: 'absolute flex flex-col', style: {
                         top: `${subsequentPageContentTopCm}cm`,
                         left: CONTENT_HORIZONTAL_PADDING,
                         right: CONTENT_HORIZONTAL_PADDING,
@@ -750,22 +750,30 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     scale: 2, // Higher scale for better resolution
                     useCORS: true, // Needed if images are from different origins (though logos are base64 here)
                     logging: false,
-                    windowWidth: element.offsetWidth, // Use element's current rendered width
-                    windowHeight: element.offsetHeight, // Use element's current rendered height
-                    width: element.offsetWidth, // Explicitly pass width
-                    height: element.offsetHeight, // Explicitly pass height
+                    windowWidth: element.scrollWidth,
+                    windowHeight: element.scrollHeight,
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 const pdfWidth = doc.internal.pageSize.getWidth();
                 const pdfHeight = doc.internal.pageSize.getHeight();
                 
-                const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+                // Use pdfHeight for scaling to ensure content fits within one page vertically
+                const imgWidth = (canvas.width * pdfHeight) / canvas.height;
+                let finalImgWidth = pdfWidth;
+                let finalImgHeight = pdfHeight;
+                let x = 0;
+                
+                // If scaled image width is less than PDF width, center it
+                if (imgWidth < pdfWidth) {
+                    finalImgWidth = imgWidth;
+                    x = (pdfWidth - imgWidth) / 2;
+                }
 
                 if (i > 0) {
                     doc.addPage();
                 }
-                doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
+                doc.addImage(imgData, 'JPEG', x, 0, finalImgWidth, finalImgHeight);
             }
             
             const pdfBlob = doc.output('blob');
