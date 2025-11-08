@@ -316,10 +316,10 @@ const SchoolIdentityPage = ({ settings }) => {
                 React.createElement('tbody', null,
                     identitasSekolah.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-2' }, `${index + 1}.`),
-                            React.createElement('td', { className: 'w-[30%] py-2' }, item.label),
-                            React.createElement('td', { className: 'w-[5%] py-2' }, ':'),
-                            React.createElement('td', { className: 'w-[60%] py-2' }, item.value || '-')
+                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, `${index + 1}.`),
+                            React.createElement('td', { className: 'w-[30%] py-[2px]' }, item.label),
+                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, ':'),
+                            React.createElement('td', { className: 'w-[60%] py-[2px]' }, item.value || '-')
                         )
                     ))
                 )
@@ -357,10 +357,10 @@ const StudentIdentityPage = ({ student, settings }) => {
                 React.createElement('tbody', null,
                     identitasSiswa.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-1' }, item.no || ''),
-                            React.createElement('td', { className: `w-[35%] py-1 ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[3%] py-1 text-center' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[57%] py-1' }, item.value || (item.sub ? '-' : ''))
+                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, item.no || ''),
+                            React.createElement('td', { className: `w-[35%] py-[2px] ${item.sub ? 'pl-4' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[3%] py-[2px] text-center' }, item.label ? ':' : ''),
+                            React.createElement('td', { className: 'w-[57%] py-[2px]' }, item.value || (item.sub ? '-' : ''))
                         )
                     ))
                 )
@@ -383,20 +383,20 @@ const ReportStudentInfo = ({ student, settings }) => (
     React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
         React.createElement('tbody', null,
             React.createElement('tr', { className: 'align-top' },
-                React.createElement('td', { className: 'w-[20%] py-1 px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-1 px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                React.createElement('td', { className: 'w-[15%] py-1 px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-1 px-2' }, `: ${settings.nama_kelas || ''}`)
+                React.createElement('td', { className: 'w-[20%] py-[2px] px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-[2px] px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
+                React.createElement('td', { className: 'w-[15%] py-[2px] px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-[2px] px-2' }, `: ${settings.nama_kelas || ''}`)
             ),
             React.createElement('tr', { className: 'align-top' },
-                React.createElement('td', { className: 'py-1 px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-1 px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                React.createElement('td', { className: 'py-1 px-2' }, 'Fase'), React.createElement('td', { className: 'py-1 px-2' }, `: C`)
+                React.createElement('td', { className: 'py-[2px] px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
+                React.createElement('td', { className: 'py-[2px] px-2' }, 'Fase'), React.createElement('td', { className: 'py-[2px] px-2' }, `: C`)
             ),
             React.createElement('tr', { className: 'align-top' },
-                React.createElement('td', { className: 'py-1 px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.nama_sekolah || ''}`),
-                React.createElement('td', { className: 'py-1 px-2' }, 'Semester'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
+                React.createElement('td', { className: 'py-[2px] px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.nama_sekolah || ''}`),
+                React.createElement('td', { className: 'py-[2px] px-2' }, 'Semester'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
             ),
             React.createElement('tr', { className: 'align-top' },
-                React.createElement('td', { className: 'py-1 px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.alamat_sekolah || ''}`),
-                React.createElement('td', { className: 'whitespace-nowrap py-1 px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-1 px-2' }, `: ${settings.tahun_ajaran || ''}`)
+                React.createElement('td', { className: 'py-[2px] px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.alamat_sekolah || ''}`),
+                React.createElement('td', { className: 'whitespace-nowrap py-[2px] px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.tahun_ajaran || ''}`)
             )
         )
     )
@@ -406,19 +406,19 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1 }) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '11pt' } },
         React.createElement('thead', { className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
-                React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'),
-                React.createElement('td', { className: 'border-2 border-black p-2 w-[20%]' }, 'Mata Pelajaran'),
-                React.createElement('td', { className: 'border-2 border-black p-2 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: 'border-2 border-black p-2 w-[67%]' }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'),
+                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[20%]' }, 'Mata Pelajaran'),
+                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
+                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[67%]' }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', null,
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black px-2 py-1 text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black px-2 py-1 align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black px-2 py-1 text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black px-2 py-1 align-top text-justify' },
+                    React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black px-2 py-[2px] align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black px-2 py-[2px] align-top text-justify' },
                         React.createElement('p', {className: 'mb-1'}, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
                             React.createElement('hr', { className: 'border-t border-slate-400 my-1' }),
@@ -477,8 +477,8 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
     return (
         React.createElement('div', { className: 'mt-4' }, // Outer wrapper for ReportFooterContent, with top margin
             React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
-                React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black p-2 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black p-2 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black p-2 w-[70%]' }, 'Keterangan'))),
-                React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-1 text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-1' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-1' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
+                React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[70%]' }, 'Keterangan'))),
+                React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
             ),
             React.createElement('div', { className: 'border-2 border-black p-2 mt-4', style: { fontSize: '11pt' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
@@ -487,11 +487,11 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
             
             React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
                 React.createElement('table', { className: 'border-collapse border-2 border-black mt-4', style: { fontSize: '11pt' } },
-                    React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black p-2' }, 'Ketidakhadiran'))),
+                    React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black px-2 py-1' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${sakitCount} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${izinCount} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-1 pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black px-2 py-1' }, `: ${alpaCount} hari`))
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${sakitCount} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${izinCount} hari`)),
+                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${alpaCount} hari`))
                     )
                 ),
                 React.createElement('div', null, renderDecision())
