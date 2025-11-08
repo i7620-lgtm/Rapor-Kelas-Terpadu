@@ -311,7 +311,7 @@ const SchoolIdentityPage = ({ settings }) => {
 
     return(
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS SEKOLAH'),
+            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS SEKOLAH'),
              React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
                     identitasSekolah.map((item, index) => (
@@ -352,15 +352,15 @@ const StudentIdentityPage = ({ student, settings }) => {
     
     return (
         React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-12', style: { fontSize: '14pt' } }, 'IDENTITAS MURID'),
+            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS MURID'),
             React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
                     identitasSiswa.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, item.no || ''),
-                            React.createElement('td', { className: `w-[35%] py-[2px] ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[3%] py-[2px] text-center' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[57%] py-[2px]' }, item.value || (item.sub ? '-' : ''))
+                            React.createElement('td', { className: 'w-[5%] py-[1.5px]' }, item.no || ''),
+                            React.createElement('td', { className: `w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}` }, item.label),
+                            React.createElement('td', { className: 'w-[3%] py-[1.5px] text-center' }, item.label ? ':' : ''),
+                            React.createElement('td', { className: 'w-[57%] py-[1.5px]' }, item.value || (item.sub ? '-' : ''))
                         )
                     ))
                 )
@@ -381,7 +381,7 @@ const StudentIdentityPage = ({ student, settings }) => {
 
 const ReportStudentInfo = ({ student, settings, infoRef }) => (
     React.createElement('div', { ref: infoRef },
-        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '11pt' } },
+        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'w-[20%] py-[2px] px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-[2px] px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
@@ -405,7 +405,7 @@ const ReportStudentInfo = ({ student, settings, infoRef }) => (
 );
 
 const AcademicTable = ({ subjectsToRender, startingIndex = 1, tableRef }) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '11pt' } },
+    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10.5pt' } },
         React.createElement('thead', { className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'),
@@ -478,17 +478,17 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
 
     return (
         React.createElement('div', { ref: footerRef, className: 'mt-2' }, // Outer wrapper for ReportFooterContent, with top margin
-            React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '11pt' } },
+            React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10.5pt' } },
                 React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[70%]' }, 'Keterangan'))),
                 React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
             ),
-            React.createElement('div', { className: 'border-2 border-black p-2 mt-2', style: { fontSize: '11pt' } },
+            React.createElement('div', { className: 'border-2 border-black p-2 mt-2', style: { fontSize: '10.5pt' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
                 React.createElement('div', { className: 'min-h-[3rem]' }, studentNote || 'Tidak ada catatan.')
             ),
             
             React.createElement('div', { className: 'grid grid-cols-2 gap-4 mt-2' },
-                React.createElement('table', { className: 'border-collapse border-2 border-black', style: { fontSize: '11pt' } },
+                React.createElement('table', { className: 'border-collapse border-2 border-black', style: { fontSize: '10.5pt' } },
                     React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black px-2 py-1' }, 'Ketidakhadiran'))),
                     React.createElement('tbody', null,
                         React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${sakitCount} hari`)),
@@ -548,13 +548,13 @@ const PageFooter = ({ student, settings, currentPage, totalPages }) => {
 const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, ...restProps }) => {
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
-    const [dynamicSplitPoint, setDynamicSplitPoint] = useState(null);
+    const [academicPageChunks, setAcademicPageChunks] = useState(null);
 
-    const page1ContentRef = useRef(null);
+    const pageContentRef = useRef(null);
     const studentInfoRef = useRef(null);
     const tableBodyRef = useRef(null);
     const footerContentRef = useRef(null);
-
+    
     const reportSubjects = useMemo(() => {
         const result = [];
         const processedGroups = new Set();
@@ -633,12 +633,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     useEffect(() => {
         if (!selectedPages.academic || reportSubjects.length === 0) {
-            setDynamicSplitPoint(reportSubjects.length);
+            setAcademicPageChunks([reportSubjects]);
             return;
         }
 
-        const calculateSplit = () => {
-            const pageContent = page1ContentRef.current;
+        const calculateChunks = () => {
+            const pageContent = pageContentRef.current;
             const studentInfo = studentInfoRef.current;
             const tableBody = tableBodyRef.current;
             const footerContent = footerContentRef.current;
@@ -650,61 +650,71 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             const footerContentHeight = footerContent.offsetHeight;
 
             const tableRows = Array.from(tableBody.children);
-            let cumulativeHeight = studentInfoHeight;
-            let splitIndex = -1;
+            if (tableRows.length !== reportSubjects.length) return;
+            const rowHeights = tableRows.map(row => row.offsetHeight);
 
-            for (let i = 0; i < tableRows.length; i++) {
-                const row = tableRows[i];
-                const rowHeight = row.offsetHeight;
-                
-                // Check if adding the NEXT row would exceed the available space
-                // Also, consider the footer height which will be added at the end of the last table
-                const projectedHeightWithNextRow = cumulativeHeight + rowHeight;
-                const finalHeightCheck = (i === tableRows.length - 1) ? projectedHeightWithNextRow + footerContentHeight : projectedHeightWithNextRow;
+            const allChunks = [];
+            let subjectIndex = 0;
+            let isFirstPage = true;
 
-                if (finalHeightCheck > availableHeight) {
-                    splitIndex = i;
-                    break;
+            while (subjectIndex < reportSubjects.length) {
+                let currentHeight = isFirstPage ? studentInfoHeight : 0;
+                let chunkEndIndex = subjectIndex;
+
+                while (chunkEndIndex < reportSubjects.length) {
+                    const currentRowHeight = rowHeights[chunkEndIndex];
+                    if (currentHeight + currentRowHeight <= availableHeight) {
+                        currentHeight += currentRowHeight;
+                        chunkEndIndex++;
+                    } else {
+                        break;
+                    }
                 }
-                cumulativeHeight += rowHeight;
+
+                if (chunkEndIndex === reportSubjects.length) {
+                    if (currentHeight + footerContentHeight > availableHeight) {
+                        if (chunkEndIndex - subjectIndex > 1) {
+                            chunkEndIndex--;
+                        }
+                    }
+                }
+
+                if (chunkEndIndex === subjectIndex && subjectIndex < reportSubjects.length) {
+                    chunkEndIndex++;
+                }
+
+                allChunks.push(reportSubjects.slice(subjectIndex, chunkEndIndex));
+                subjectIndex = chunkEndIndex;
+                isFirstPage = false;
             }
             
-            setDynamicSplitPoint(splitIndex === -1 ? tableRows.length : splitIndex);
+            setAcademicPageChunks(allChunks);
         };
         
-        // Timeout to allow DOM to render and stabilize before measuring
-        const timer = setTimeout(calculateSplit, 100);
+        const timer = setTimeout(calculateChunks, 100);
         return () => clearTimeout(timer);
 
     }, [reportSubjects, paperSize, selectedPages.academic, student.id]);
 
-    if (dynamicSplitPoint === null) {
-        // Initial render for measurement, keep all subjects on page 1
-        // and render the footer off-screen or with visibility hidden to measure its height
-        const page1SubjectsForMeasure = reportSubjects;
-        return React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
+    if (academicPageChunks === null) {
+        return React.createElement('div', { 
+            className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
+            style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
+        },
             React.createElement(ReportHeader, { settings: settings }),
-            React.createElement('div', { ref: page1ContentRef, className: 'absolute flex flex-col', style: {
-                top: `${HEADER_HEIGHT_CM}cm`, left: '1.5cm', right: '1.5cm', bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '11pt', visibility: 'hidden'
+            React.createElement('div', { ref: pageContentRef, className: 'absolute flex flex-col', style: {
+                top: `${HEADER_HEIGHT_CM}cm`, left: '1.5cm', right: '1.5cm', bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
             } },
-                React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '14pt' } }, 'LAPORAN HASIL BELAJAR'),
+                React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
                 React.createElement(ReportStudentInfo, { student, settings, infoRef: studentInfoRef }),
-                React.createElement(AcademicTable, { subjectsToRender: page1SubjectsForMeasure, tableRef: tableBodyRef }),
+                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, tableRef: tableBodyRef }),
                 React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, footerRef: footerContentRef })
             )
         );
     }
     
-    const needsSplitting = dynamicSplitPoint < reportSubjects.length;
-    const page1Subjects = reportSubjects.slice(0, dynamicSplitPoint);
-    const page2Subjects = needsSplitting ? reportSubjects.slice(dynamicSplitPoint) : [];
-
-    const CONTENT_HORIZONTAL_PADDING = '1.5cm';
-    const firstPageContentTopCm = HEADER_HEIGHT_CM;
-    const subsequentPageContentTopCm = 1.5;
+    const totalAcademicPages = academicPageChunks.length > 0 && academicPageChunks.some(chunk => chunk.length > 0) ? academicPageChunks.length : 0;
     
-    const totalAcademicPages = 1 + (needsSplitting ? 1 : 0);
-
     return (
         React.createElement(React.Fragment, null,
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
@@ -712,35 +722,42 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${firstPageContentTopCm}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
-            selectedPages.academic && page1Subjects.length > 0 && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { ref: page1ContentRef, className: 'absolute flex flex-col', style: {
-                    top: `${firstPageContentTopCm}cm`, left: CONTENT_HORIZONTAL_PADDING, right: CONTENT_HORIZONTAL_PADDING, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '11pt',
-                } },
-                    React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '14pt' } }, 'LAPORAN HASIL BELAJAR'),
-                    React.createElement(ReportStudentInfo, { student, settings, infoRef: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: page1Subjects, tableRef: tableBodyRef }),
-                    !needsSplitting && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, footerRef: footerContentRef })
-                ),
-                React.createElement(PageFooter, { student: student, settings: settings, currentPage: 1, totalPages: totalAcademicPages })
-            ),
-            selectedPages.academic && needsSplitting && (
-                React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+            selectedPages.academic && academicPageChunks.map((chunk, pageIndex) => {
+                if (chunk.length === 0) return null;
+
+                const isFirstAcademicPage = pageIndex === 0;
+                const isLastAcademicPage = pageIndex === academicPageChunks.length - 1;
+
+                let startingIndex = 1;
+                for (let i = 0; i < pageIndex; i++) {
+                    startingIndex += academicPageChunks[i].length;
+                }
+
+                const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : 1.5;
+
+                return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                    isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
+                    
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
-                        top: `${subsequentPageContentTopCm}cm`, left: CONTENT_HORIZONTAL_PADDING, right: CONTENT_HORIZONTAL_PADDING, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '11pt',
-                    } },
-                        React.createElement(AcademicTable, { subjectsToRender: page2Subjects, startingIndex: dynamicSplitPoint + 1 }),
-                        React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
+                        top: `${contentTopCm}cm`, left: '1.5cm', right: '1.5cm', bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
+                    }},
+                        isFirstAcademicPage && React.createElement(React.Fragment, null,
+                            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
+                            React.createElement(ReportStudentInfo, { student, settings })
+                        ),
+                        React.createElement(AcademicTable, { subjectsToRender: chunk, startingIndex: startingIndex }),
+                        isLastAcademicPage && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                     ),
-                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: 2, totalPages: totalAcademicPages })
-                )
-            )
+                    
+                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: pageIndex + 1, totalPages: totalAcademicPages })
+                );
+            })
         )
     );
 };
@@ -800,11 +817,10 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             for (let i = 0; i < reportElements.length; i++) {
                 const element = reportElements[i];
                 const canvas = await html2canvas(element, { 
-                    scale: 2, // Higher scale for better resolution
-                    useCORS: true, // Needed if images are from different origins (though logos are base64 here)
+                    scale: 2,
+                    useCORS: true,
                     logging: false,
-                    windowWidth: element.scrollWidth,
-                    windowHeight: element.scrollHeight,
+                    allowTaint: true
                 });
 
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
