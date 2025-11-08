@@ -11,6 +11,7 @@ import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
 import Toast from './components/Toast.js';
+import useServiceWorker from './hooks/useServiceWorker.js';
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
@@ -108,6 +109,7 @@ const getGradeNumber = (str) => {
 };
 
 const App = () => {
+  const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1119,6 +1121,19 @@ useEffect(() => {
   
   return (
     React.createElement(React.Fragment, null,
+      isUpdateAvailable && React.createElement(
+        'div',
+        { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" },
+        React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'),
+        React.createElement(
+          'button',
+          {
+            onClick: updateAssets,
+            className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold'
+          },
+          'Perbarui Sekarang'
+        )
+      ),
       React.createElement('div', { className: "flex h-screen bg-slate-100 font-sans" },
         React.createElement(Sidebar, {
           activePage: activePage,
