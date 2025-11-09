@@ -51,18 +51,27 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Event 'fetch': Sajikan aset dari cache terlebih dahulu
+// Event 'fetch': Prioritaskan jaringan, gunakan cache sebagai fallback (Network-First)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
+    // Coba ambil dari jaringan terlebih dahulu
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Jika berhasil, kloning respons
+        const responseToCache = networkResponse.clone();
+        // Buka cache dan simpan respons baru
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        // Kembalikan respons dari jaringan
+        return networkResponse;
+      })
+      .catch(() => {
+        // Jika permintaan jaringan gagal (misalnya, offline),
+        // coba sajikan respons dari cache
+        return caches.match(event.request);
+      })
   );
 });
 
