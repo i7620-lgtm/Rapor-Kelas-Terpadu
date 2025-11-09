@@ -330,13 +330,30 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
             let total = 0, subjectCount = 0;
             const displayGrades = displaySubjects.reduce((acc, displaySubject) => {
                 let grade;
-                if (['PABP', 'SB', 'Mulok'].includes(displaySubject.id)) {
+                if (displaySubject.id === 'PABP') {
+                    const studentReligion = student.agama?.trim().toLowerCase();
+                    if (studentReligion) {
+                        const religionSubject = activeSubjects.find(s => 
+                            s.fullName.startsWith('Pendidikan Agama dan Budi Pekerti') && 
+                            s.fullName.toLowerCase().includes(`(${studentReligion})`)
+                        );
+                        if (religionSubject) {
+                            grade = studentGrades.finalGrades?.[religionSubject.id];
+                        }
+                    }
+                } else if (['SB', 'Mulok'].includes(displaySubject.id)) {
                     const memberSubjects = activeSubjects.filter((s) => s.fullName.startsWith(displaySubject.fullName));
                     for (const member of memberSubjects) {
                         const memberGrade = studentGrades.finalGrades?.[member.id];
-                        if (memberGrade !== undefined && memberGrade !== null) { grade = memberGrade; break; }
+                        if (memberGrade !== undefined && memberGrade !== null) {
+                            grade = memberGrade;
+                            break;
+                        }
                     }
-                } else grade = studentGrades.finalGrades?.[displaySubject.id];
+                } else {
+                     grade = studentGrades.finalGrades?.[displaySubject.id];
+                }
+
                 if (typeof grade === 'number') { total += grade; subjectCount++; }
                 acc[displaySubject.id] = grade;
                 return acc;
