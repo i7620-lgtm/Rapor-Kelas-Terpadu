@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
-const getGradeNumber = (str) => {
+export const getGradeNumber = (str) => {
     if (!str) return null;
     const match = str.match(/\d+/);
     if (match) {
