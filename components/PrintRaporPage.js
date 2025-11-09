@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
+import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 
 // Define fixed heights and margins for layout consistency
 const HEADER_HEIGHT_CM = 5.2; // Height of the report header area in cm
-const PAGE_BOTTOM_MARGIN_CM = 1.0; // Standard bottom margin of the paper in cm
+const PAGE_TOP_MARGIN_CM = 1.5; // Standard top margin of the paper in cm
+const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5; // Standard left/right margin
+const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
 // New derived constant for the 'bottom' CSS property of the main content area
@@ -77,20 +80,6 @@ const ReportHeader = ({ settings }) => {
     );
 };
 
-
-const getGradeNumber = (str) => {
-    if (!str) return null;
-    const match = str.match(/\d+/);
-    if (match) return parseInt(match[0], 10);
-    const upperStr = str.toUpperCase();
-    if (upperStr.includes('VI')) return 6;
-    if (upperStr.includes('V')) return 5;
-    if (upperStr.includes('IV')) return 4;
-    if (upperStr.includes('III')) return 3;
-    if (upperStr.includes('II')) return 2;
-    if (upperStr.includes('I')) return 1;
-    return null;
-};
 
 const formatDate = (dateString) => {
     if (!dateString || dateString instanceof Date && isNaN(dateString)) return '-';
@@ -336,7 +325,7 @@ const StudentIdentityPage = ({ student, settings }) => {
         { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
         { no: '5.', label: 'Agama', value: student.agama },
         { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
-        { no: '7.', label: 'Alamat Murid', value: student.alamatSiswa },
+        { no: '7.', 'label': 'Alamat Murid', value: student.alamatSiswa },
         { no: '8.', label: 'Nama Orang Tua' },
         { sub: true, label: 'a. Ayah', value: student.namaAyah },
         { sub: true, label: 'b. Ibu', value: student.namaIbu },
@@ -379,8 +368,9 @@ const StudentIdentityPage = ({ student, settings }) => {
     );
 };
 
-const ReportStudentInfo = ({ student, settings, infoRef }) => (
-    React.createElement('div', { ref: infoRef },
+const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
+    React.createElement('div', { ref: ref },
+        React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
         React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
@@ -402,9 +392,9 @@ const ReportStudentInfo = ({ student, settings, infoRef }) => (
             )
         )
     )
-);
+));
 
-const AcademicTable = ({ subjectsToRender, startingIndex = 1, tableRef }) => (
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1 }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10.5pt' } },
         React.createElement('thead', { className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
@@ -414,7 +404,7 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1, tableRef }) => (
                 React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[67%]' }, 'Capaian Kompetensi')
             )
         ),
-        React.createElement('tbody', { ref: tableRef },
+        React.createElement('tbody', { ref: ref },
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
                     React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center align-top' }, startingIndex + index),
@@ -431,9 +421,9 @@ const AcademicTable = ({ subjectsToRender, startingIndex = 1, tableRef }) => (
             ))
         )
     )
-);
+));
 
-const ReportFooterContent = ({ student, settings, attendance, notes, studentExtracurriculars, extracurriculars, footerRef }) => {
+const ReportFooterContent = React.forwardRef(({ student, settings, attendance, notes, studentExtracurriculars, extracurriculars }, ref) => {
     // Treat null attendance values as 0 for display in the report
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
@@ -477,7 +467,7 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
     };
 
     return (
-        React.createElement('div', { ref: footerRef, className: 'mt-2' }, // Outer wrapper for ReportFooterContent, with top margin
+        React.createElement('div', { ref: ref, className: 'mt-2' }, // Outer wrapper for ReportFooterContent, with top margin
             React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10.5pt' } },
                 React.createElement('thead', { className: "report-header-group" }, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[70%]' }, 'Keterangan'))),
                 React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
@@ -511,10 +501,10 @@ const ReportFooterContent = ({ student, settings, attendance, notes, studentExtr
             React.createElement('div', { className: 'mt-2 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
-};
+});
 
 // New PageFooter component
-const PageFooter = ({ student, settings, currentPage, totalPages }) => {
+const PageFooter = ({ student, settings, currentPage }) => { // Removed totalPages as it's not strictly used in display
     const className = settings.nama_kelas || '';
     const studentName = student.namaLengkap || '';
     const nisn = student.nisn || '-';
@@ -550,11 +540,13 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
 
-    const pageContentRef = useRef(null);
-    const studentInfoRef = useRef(null);
-    const tableBodyRef = useRef(null);
-    const footerContentRef = useRef(null);
-    
+    // Refs for measuring content heights
+    const measurementPageRef = useRef(null); // Ref for the hidden measurement page
+    const dynamicContentWrapperRef = useRef(null); // Ref for the main content area (student info, table, footer)
+    const studentInfoAndTitleRef = useRef(null); // Ref for the H2 title + ReportStudentInfo
+    const tableBodyRef = useRef(null); // Ref for the <tbody> within AcademicTable
+    const footerContentRef = useRef(null); // Ref for ReportFooterContent
+
     const reportSubjects = useMemo(() => {
         const result = [];
         const processedGroups = new Set();
@@ -633,88 +625,133 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     useEffect(() => {
         if (!selectedPages.academic || reportSubjects.length === 0) {
-            setAcademicPageChunks([reportSubjects]);
+            setAcademicPageChunks([reportSubjects]); // No pagination needed if no academic page or no subjects
             return;
         }
 
         const calculateChunks = () => {
-            const pageContent = pageContentRef.current;
-            const studentInfo = studentInfoRef.current;
-            const tableBody = tableBodyRef.current;
-            const footerContent = footerContentRef.current;
+            // These refs are for the *hidden measurement page*
+            const dynamicContentWrapperDiv = dynamicContentWrapperRef.current;
+            const studentInfoAndTitleDiv = studentInfoAndTitleRef.current;
+            const footerContentDiv = footerContentRef.current;
+            const tableBodyDiv = tableBodyRef.current;
 
-            if (!pageContent || !studentInfo || !tableBody || !footerContent) return;
+            if (!dynamicContentWrapperDiv || !studentInfoAndTitleDiv || !tableBodyDiv || !footerContentDiv) {
+                // If any critical element for measurement isn't ready, retry.
+                // This typically happens on the very first render before refs are assigned.
+                setTimeout(calculateChunks, 50); 
+                return;
+            }
 
-            const availableHeight = pageContent.offsetHeight;
-            const studentInfoHeight = studentInfo.offsetHeight;
-            const footerContentHeight = footerContent.offsetHeight;
-
-            const tableRows = Array.from(tableBody.children);
-            if (tableRows.length !== reportSubjects.length) return;
+            // Total height available within the absolutely positioned content wrapper (i.e., after header/before page footer)
+            const totalContentAreaHeightPx = dynamicContentWrapperDiv.offsetHeight; 
+            const studentInfoAndTitleHeightPx = studentInfoAndTitleDiv.offsetHeight;
+            const footerContentHeightPx = footerContentDiv.offsetHeight;
+            
+            const tableRows = Array.from(tableBodyDiv.children);
+            if (tableRows.length !== reportSubjects.length) {
+                // Number of rendered rows doesn't match subjects, meaning initial render for measurement isn't stable.
+                setTimeout(calculateChunks, 50);
+                return;
+            }
             const rowHeights = tableRows.map(row => row.offsetHeight);
 
             const allChunks = [];
-            let subjectIndex = 0;
-            let isFirstPage = true;
+            let currentSubjectIndex = 0;
+            let isFirstAcademicPageForStudent = true; 
 
-            while (subjectIndex < reportSubjects.length) {
-                let currentHeight = isFirstPage ? studentInfoHeight : 0;
-                let chunkEndIndex = subjectIndex;
+            while (currentSubjectIndex < reportSubjects.length) {
+                let currentPageSubjects = [];
+                let availableSpaceForTableRows = 0;
 
-                while (chunkEndIndex < reportSubjects.length) {
-                    const currentRowHeight = rowHeights[chunkEndIndex];
-                    if (currentHeight + currentRowHeight <= availableHeight) {
-                        currentHeight += currentRowHeight;
-                        chunkEndIndex++;
-                    } else {
+                // Calculate available space for table rows on the current page
+                if (isFirstAcademicPageForStudent) {
+                    // On the first academic page, subtract student info height
+                    availableSpaceForTableRows = totalContentAreaHeightPx - studentInfoAndTitleHeightPx;
+                } else {
+                    // On subsequent pages, full content area is available for table rows
+                    availableSpaceForTableRows = totalContentAreaHeightPx;
+                }
+                
+                // If this is potentially the last academic page chunk for the student, subtract footer height
+                // The condition checks if all remaining subjects will fit into the current page,
+                // considering the footer space if it's the very last academic content.
+                let tempCheckIndex = currentSubjectIndex;
+                let tempHeightSum = 0;
+                let subjectsFitWithoutFooter = true;
+                while (tempCheckIndex < reportSubjects.length) {
+                    tempHeightSum += rowHeights[tempCheckIndex];
+                    if (tempHeightSum > availableSpaceForTableRows) {
+                        subjectsFitWithoutFooter = false;
                         break;
                     }
+                    tempCheckIndex++;
+                }
+                
+                if (subjectsFitWithoutFooter) {
+                    // If all remaining subjects fit on this page, then this is the last academic page.
+                    availableSpaceForTableRows -= footerContentHeightPx;
+                }
+                
+                availableSpaceForTableRows = Math.max(0, availableSpaceForTableRows); // Ensure it doesn't go negative
+
+                let tempRowIndex = currentSubjectIndex;
+                while (tempRowIndex < reportSubjects.length && availableSpaceForTableRows >= rowHeights[tempRowIndex]) {
+                    currentPageSubjects.push(reportSubjects[tempRowIndex]);
+                    availableSpaceForTableRows -= rowHeights[tempRowIndex];
+                    tempRowIndex++;
                 }
 
-                if (chunkEndIndex === reportSubjects.length) {
-                    if (currentHeight + footerContentHeight > availableHeight) {
-                        if (chunkEndIndex - subjectIndex > 1) {
-                            chunkEndIndex--;
-                        }
-                    }
+                // Fallback for when no subjects fit (e.g., a single row is too large)
+                if (currentPageSubjects.length === 0 && tempRowIndex < reportSubjects.length) {
+                    currentPageSubjects.push(reportSubjects[tempRowIndex]);
+                    tempRowIndex++;
+                    console.warn(`Subject row for '${reportSubjects[tempRowIndex - 1]?.name}' is too tall for a page. It will be rendered alone.`);
                 }
-
-                if (chunkEndIndex === subjectIndex && subjectIndex < reportSubjects.length) {
-                    chunkEndIndex++;
-                }
-
-                allChunks.push(reportSubjects.slice(subjectIndex, chunkEndIndex));
-                subjectIndex = chunkEndIndex;
-                isFirstPage = false;
+                
+                allChunks.push(currentPageSubjects);
+                currentSubjectIndex = tempRowIndex;
+                isFirstAcademicPageForStudent = false; // Next iteration won't be the first academic page
             }
             
             setAcademicPageChunks(allChunks);
         };
         
-        const timer = setTimeout(calculateChunks, 100);
+        // Timeout ensures all elements for measurement are rendered and have their `offsetHeight` values.
+        const timer = setTimeout(calculateChunks, 100); 
         return () => clearTimeout(timer);
 
     }, [reportSubjects, paperSize, selectedPages.academic, student.id]);
 
-    if (academicPageChunks === null) {
+
+    // Render a hidden measurement page first to get accurate heights
+    if (academicPageChunks === null && selectedPages.academic) {
         return React.createElement('div', { 
+            ref: measurementPageRef, // Ref for the hidden container
             className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
             style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
         },
-            React.createElement(ReportHeader, { settings: settings }),
-            React.createElement('div', { ref: pageContentRef, className: 'absolute flex flex-col', style: {
-                top: `${HEADER_HEIGHT_CM}cm`, left: '1.5cm', right: '1.5cm', bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
+            // Dynamic content wrapper simulates the actual content area, positioned relative to the page
+            // Top: after header, Bottom: before page number footer
+            React.createElement('div', { ref: dynamicContentWrapperRef, className: 'absolute flex flex-col', style: {
+                top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
             } },
-                React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-                React.createElement(ReportStudentInfo, { student, settings, infoRef: studentInfoRef }),
-                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, tableRef: tableBodyRef }),
-                React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, footerRef: footerContentRef })
+                // This div combines the H2 title and student info for a single measurement
+                React.createElement('div', { ref: studentInfoAndTitleRef }, 
+                    React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
+                    React.createElement(ReportStudentInfo, { student, settings })
+                ),
+                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef }),
+                React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, ref: footerContentRef })
             )
         );
     }
     
-    const totalAcademicPages = academicPageChunks.length > 0 && academicPageChunks.some(chunk => chunk.length > 0) ? academicPageChunks.length : 0;
-    
+    // Calculate total academic pages for numbering, considering non-empty chunks
+    const totalAcademicPages = academicPageChunks?.filter(chunk => chunk.length > 0).length || 0;
+    const showAcademicFooter = totalAcademicPages > 1;
+
+    // Render the actual report pages
     return (
         React.createElement(React.Fragment, null,
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
@@ -722,40 +759,44 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: '1.5cm', paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
-            selectedPages.academic && academicPageChunks.map((chunk, pageIndex) => {
+            selectedPages.academic && academicPageChunks?.map((chunk, pageIndex) => {
                 if (chunk.length === 0) return null;
 
                 const isFirstAcademicPage = pageIndex === 0;
-                const isLastAcademicPage = pageIndex === academicPageChunks.length - 1;
+                const isLastAcademicPage = pageIndex === totalAcademicPages - 1;
 
                 let startingIndex = 1;
                 for (let i = 0; i < pageIndex; i++) {
                     startingIndex += academicPageChunks[i].length;
                 }
 
-                const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : 1.5;
+                // Top margin for content: HEADER_HEIGHT_CM for first academic page, PAGE_TOP_MARGIN_CM for subsequent
+                const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : PAGE_TOP_MARGIN_CM;
 
                 return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                    // Render ReportHeader only on the very first academic page for the student
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
+                    // Main content area for academic pages
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
-                        top: `${contentTopCm}cm`, left: '1.5cm', right: '1.5cm', bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
+                        top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
-                        isFirstAcademicPage && React.createElement(React.Fragment, null,
-                            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-                            React.createElement(ReportStudentInfo, { student, settings })
-                        ),
+                        // Render student info (and title) only on the very first academic page for the student
+                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
+                        // Academic table, using `startingIndex` for correct numbering
                         React.createElement(AcademicTable, { subjectsToRender: chunk, startingIndex: startingIndex }),
+                        // Render ReportFooterContent only on the very last academic page for the student
                         isLastAcademicPage && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                     ),
                     
-                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: pageIndex + 1, totalPages: totalAcademicPages })
+                    // Page number footer, conditionally rendered
+                    showAcademicFooter && React.createElement(PageFooter, { student: student, settings: settings, currentPage: pageIndex + 1 })
                 );
             })
         )
@@ -828,7 +869,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 const pdfHeight = doc.internal.pageSize.getHeight();
                 
                 // Use pdfHeight for scaling to ensure content fits within one page vertically
-                const imgWidth = (canvas.width * pdfHeight) / canvas.height;
+                const imgHeightRatio = pdfHeight / canvas.height;
+                const imgWidth = canvas.width * imgHeightRatio;
                 let finalImgWidth = pdfWidth;
                 let finalImgHeight = pdfHeight;
                 let x = 0;
