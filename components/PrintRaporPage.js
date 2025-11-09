@@ -424,8 +424,10 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
 ));
 
 const ReportFooterContent = React.forwardRef((props, ref) => {
-    const { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, showExtra, showNotes, showAttendance, showSignatures } = props;
-    // The main ref is passed as an object to accommodate multiple refs. Default to empty object if ref is null.
+    const { 
+        student, settings, attendance, notes, studentExtracurriculars, extracurriculars,
+        showExtra, showNotes, showAttendance, showParentTeacherSignature, showHeadmasterSignature 
+    } = props;
     const { extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef } = ref || {};
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
@@ -492,7 +494,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 ),
                 React.createElement('div', null, renderDecision())
             ),
-            showSignatures && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
+            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center' }, 
                     React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
@@ -502,7 +504,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            showSignatures && React.createElement('div', { ref: headmasterRef, className: 'mt-2 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-2 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 });
@@ -750,7 +752,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes, studentExtracurriculars, extracurriculars,
-                        showExtra: true, showNotes: true, showAttendance: true, showSignatures: true,
+                        showExtra: true, showNotes: true, showAttendance: true, 
+                        showParentTeacherSignature: true, showHeadmasterSignature: true,
                         ref: { extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef }
                     })
                 )
@@ -804,8 +807,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                             showExtra: chunkItemTypes.has('extra'),
                             showNotes: chunkItemTypes.has('notes'),
                             showAttendance: chunkItemTypes.has('attendance'),
-                            showSignatures: chunkItemTypes.has('signatures') || chunkItemTypes.has('headmaster')
-                            // Refs are not needed for rendering, only measurement
+                            showParentTeacherSignature: chunkItemTypes.has('signatures'),
+                            showHeadmasterSignature: chunkItemTypes.has('headmaster'),
                         })
                     ),
                     
