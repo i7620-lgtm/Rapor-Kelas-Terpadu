@@ -541,12 +541,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
 
     // Refs for measuring content heights
-    const measurementPageRef = useRef(null); // Ref for the hidden measurement page
-    const dynamicContentWrapperRef = useRef(null); // Ref for the main content area (student info, table, footer)
-    const studentInfoAndTitleRef = useRef(null); // Ref for the H2 title + ReportStudentInfo
-    const tableHeaderRef = useRef(null); // Ref for the <thead> within AcademicTable
-    const tableBodyRef = useRef(null); // Ref for the <tbody> within AcademicTable
-    const footerContentRef = useRef(null); // Ref for ReportFooterContent
+    const measurementPageRef = useRef(null);
+    const studentInfoAndTitleRef = useRef(null);
+    const tableHeaderRef = useRef(null);
+    const tableBodyRef = useRef(null);
+    const footerContentRef = useRef(null);
+    const cmRef = useRef(null);
+    const [cmToPx, setCmToPx] = useState(0);
+
+    useEffect(() => {
+        if (cmRef.current) {
+            setCmToPx(cmRef.current.offsetHeight); // offsetHeight of a 1cm div gives the conversion factor
+        }
+    }, [cmRef.current]);
 
     const reportSubjects = useMemo(() => {
         const result = [];
@@ -626,121 +633,171 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     useEffect(() => {
         if (!selectedPages.academic || reportSubjects.length === 0) {
-            setAcademicPageChunks([reportSubjects]); // No pagination needed if no academic page or no subjects
+            setAcademicPageChunks(selectedPages.academic ? [reportSubjects] : []);
             return;
         }
+        if (cmToPx === 0) return;
 
-        const calculateChunks = () => {
-            const dynamicContentWrapperDiv = dynamicContentWrapperRef.current;
-            const studentInfoAndTitleDiv = studentInfoAndTitleRef.current;
-            const footerContentDiv = footerContentRef.current;
-            const tableBodyDiv = tableBodyRef.current;
-            const tableHeaderDiv = tableHeaderRef.current;
+        setAcademicPageChunks(null);
 
-            if (!dynamicContentWrapperDiv || !studentInfoAndTitleDiv || !tableBodyDiv || !footerContentDiv || !tableHeaderDiv) {
-                setTimeout(calculateChunks, 50); 
+        const calculateChunksWithRetry = (retryCount = 0, maxRetries = 50, timeout = 50) => {
+            if (retryCount >= maxRetries) {
+                console.error("Failed to calculate page layout after multiple retries. Display may be incorrect.");
+                setAcademicPageChunks([reportSubjects]); // Fallback to a single page
                 return;
             }
 
-            const totalContentAreaHeightPx = dynamicContentWrapperDiv.offsetHeight; 
-            const studentInfoAndTitleHeightPx = studentInfoAndTitleDiv.offsetHeight;
-            const footerContentHeightPx = footerContentDiv.offsetHeight;
-            const tableHeaderHeightPx = tableHeaderDiv.offsetHeight;
+            const allElementsReady = studentInfoAndTitleRef.current && 
+                                   footerContentRef.current && 
+                                   tableBodyRef.current && 
+                                   tableHeaderRef.current;
             
-            const tableRows = Array.from(tableBodyDiv.children);
-            if (tableRows.length !== reportSubjects.length) {
-                setTimeout(calculateChunks, 50);
+            const heightsAreValid = allElementsReady &&
+                                    tableBodyRef.current.children.length === reportSubjects.length;
+
+            if (!heightsAreValid) {
+                setTimeout(() => calculateChunksWithRetry(retryCount + 1, maxRetries, timeout), timeout);
                 return;
             }
-            const rowHeights = tableRows.map(row => row.offsetHeight);
 
-            const allChunks = [];
-            let currentSubjectIndex = 0;
-            let isFirstAcademicPageForStudent = true; 
+            // --- Define available heights ---
+            const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
+            const totalContentAreaHeightOnFirstPagePx = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
+            const totalContentAreaHeightOnSubsequentPagePx = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
+            
+            // --- Get measured heights of all components ---
+            const studentInfoAndTitleHeightPx = studentInfoAndTitleRef.current.offsetHeight;
+            const footerContentHeightPx = footerContentRef.current.offsetHeight;
+            const tableHeaderHeightPx = tableHeaderRef.current.offsetHeight;
+            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.offsetHeight);
 
-            while (currentSubjectIndex < reportSubjects.length) {
-                let currentPageSubjects = [];
-                let availableHeight = 0;
+            const allItems = reportSubjects.map((subject, index) => ({ subject, index }));
+            const chunkedItemPages = [];
+            let currentItemIndex = 0;
 
-                if (isFirstAcademicPageForStudent) {
-                    availableHeight = totalContentAreaHeightPx - studentInfoAndTitleHeightPx - tableHeaderHeightPx;
+            // --- Step 1: Paginate subjects greedily, filling pages fully ---
+            // First page
+            const page1RowSpace = totalContentAreaHeightOnFirstPagePx - studentInfoAndTitleHeightPx - tableHeaderHeightPx;
+            const firstPageItems = [];
+            let heightUsedOnPage1 = 0;
+            for (let i = 0; i < allItems.length; i++) {
+                const item = allItems[i];
+                const rowHeight = rowHeights[item.index];
+                if (heightUsedOnPage1 + rowHeight <= page1RowSpace) {
+                    firstPageItems.push(item);
+                    heightUsedOnPage1 += rowHeight;
                 } else {
-                    availableHeight = totalContentAreaHeightPx - tableHeaderHeightPx;
+                    break;
                 }
-                
-                availableHeight = Math.max(0, availableHeight);
+            }
+            if (firstPageItems.length > 0) {
+                chunkedItemPages.push(firstPageItems);
+            }
+            currentItemIndex = firstPageItems.length;
 
-                // --- Greedy Fill Phase ---
-                let tempRowIndex = currentSubjectIndex;
-                while (tempRowIndex < reportSubjects.length && availableHeight >= rowHeights[tempRowIndex]) {
-                    currentPageSubjects.push(reportSubjects[tempRowIndex]);
-                    availableHeight -= rowHeights[tempRowIndex];
-                    tempRowIndex++;
-                }
-
-                // --- Adjustment Phase for Footer ---
-                // This adjustment only happens if the greedy fill consumed ALL remaining subjects.
-                if (tempRowIndex >= reportSubjects.length && currentPageSubjects.length > 0) {
-                    
-                    // Calculate height of subjects currently in the chunk
-                    let currentChunkSubjectsHeight = 0;
-                    currentPageSubjects.forEach((sub, i) => {
-                        currentChunkSubjectsHeight += rowHeights[currentSubjectIndex + i];
-                    });
-
-                    // Get the total available height for THIS page, to compare against
-                    let pageAvailableHeight;
-                    if (isFirstAcademicPageForStudent) {
-                        pageAvailableHeight = totalContentAreaHeightPx - studentInfoAndTitleHeightPx - tableHeaderHeightPx;
+            // Subsequent pages
+            const subsequentPageRowSpace = totalContentAreaHeightOnSubsequentPagePx - tableHeaderHeightPx;
+            while (currentItemIndex < allItems.length) {
+                const nextPageItems = [];
+                let heightUsedOnNextPage = 0;
+                for (let i = currentItemIndex; i < allItems.length; i++) {
+                    const item = allItems[i];
+                    const rowHeight = rowHeights[item.index];
+                    if (heightUsedOnNextPage + rowHeight <= subsequentPageRowSpace) {
+                        nextPageItems.push(item);
+                        heightUsedOnNextPage += rowHeight;
                     } else {
-                        pageAvailableHeight = totalContentAreaHeightPx - tableHeaderHeightPx;
-                    }
-
-                    // If the subjects + footer are too big, move subjects to the next page
-                    while (currentChunkSubjectsHeight + footerContentHeightPx > pageAvailableHeight && currentPageSubjects.length > 1) {
-                        const subjectToMove = currentPageSubjects.pop();
-                        tempRowIndex--;
-                        currentChunkSubjectsHeight -= rowHeights[tempRowIndex];
+                        break;
                     }
                 }
-
-                // Handle case where a single subject is too tall for an empty page
-                if (currentPageSubjects.length === 0 && currentSubjectIndex < reportSubjects.length) {
-                    currentPageSubjects.push(reportSubjects[currentSubjectIndex]);
-                    tempRowIndex = currentSubjectIndex + 1;
-                    console.warn(`Subject row for '${reportSubjects[currentSubjectIndex]?.name}' is too tall for an empty page. It will be rendered alone.`);
+                if (nextPageItems.length === 0 && currentItemIndex < allItems.length) {
+                    // Handle case where a single row is larger than the available space
+                    nextPageItems.push(allItems[currentItemIndex]);
                 }
+                if (nextPageItems.length > 0) {
+                    chunkedItemPages.push(nextPageItems);
+                }
+                currentItemIndex += nextPageItems.length;
+            }
+
+            // --- Step 2: Adjust the last page to fit the footer ---
+            if (chunkedItemPages.length > 0) {
+                const lastPageItems = chunkedItemPages[chunkedItemPages.length - 1];
+                const isFooterOnFirstPage = chunkedItemPages.length === 1;
+
+                const availableHeightOnLastPage = isFooterOnFirstPage ? totalContentAreaHeightOnFirstPagePx : totalContentAreaHeightOnSubsequentPagePx;
                 
-                allChunks.push(currentPageSubjects);
-                currentSubjectIndex = tempRowIndex;
-                isFirstAcademicPageForStudent = false;
+                const calculateTotalHeight = (items) => {
+                    const itemsHeight = items.reduce((sum, item) => sum + rowHeights[item.index], 0);
+                    return (isFooterOnFirstPage ? studentInfoAndTitleHeightPx : 0) +
+                           tableHeaderHeightPx +
+                           itemsHeight +
+                           footerContentHeightPx;
+                };
+
+                if (calculateTotalHeight(lastPageItems) > availableHeightOnLastPage) {
+                    const itemsToMove = [];
+                    while (lastPageItems.length > 0 && calculateTotalHeight(lastPageItems) > availableHeightOnLastPage) {
+                        itemsToMove.unshift(lastPageItems.pop());
+                    }
+
+                    if (lastPageItems.length === 0 && itemsToMove.length > 0) {
+                        lastPageItems.push(itemsToMove.shift());
+                    }
+
+                    if (itemsToMove.length > 0) {
+                        // Re-chunk the items that were moved
+                        let movedItemIndex = 0;
+                        while(movedItemIndex < itemsToMove.length) {
+                            const newOverflowPage = [];
+                            let heightUsed = 0;
+                             for (let i = movedItemIndex; i < itemsToMove.length; i++) {
+                                const item = itemsToMove[i];
+                                const rowHeight = rowHeights[item.index];
+                                if (heightUsed + rowHeight <= subsequentPageRowSpace) {
+                                    newOverflowPage.push(item);
+                                    heightUsed += rowHeight;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (newOverflowPage.length === 0) {
+                                newOverflowPage.push(itemsToMove[movedItemIndex]);
+                            }
+                            chunkedItemPages.push(newOverflowPage);
+                            movedItemIndex += newOverflowPage.length;
+                        }
+                    }
+                }
             }
             
-            setAcademicPageChunks(allChunks);
+            const finalChunks = chunkedItemPages.map(chunk => chunk.map(item => item.subject));
+            setAcademicPageChunks(finalChunks);
         };
-        
-        const timer = setTimeout(calculateChunks, 100); 
-        return () => clearTimeout(timer);
 
-    }, [reportSubjects, paperSize, selectedPages.academic, student.id]);
+        document.fonts.ready.then(() => {
+            calculateChunksWithRetry();
+        });
+
+    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx]);
 
 
-    // Render a hidden measurement page first to get accurate heights
-    if (academicPageChunks === null && selectedPages.academic) {
-        return React.createElement('div', { 
-            ref: measurementPageRef, // Ref for the hidden container
-            className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
-            style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
-        },
-            React.createElement('div', { ref: dynamicContentWrapperRef, className: 'absolute flex flex-col', style: {
-                top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
-            } },
-                React.createElement('div', { ref: studentInfoAndTitleRef }, 
-                    React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-                    React.createElement(ReportStudentInfo, { student, settings })
-                ),
-                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
-                React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, ref: footerContentRef })
+    if (academicPageChunks === null && selectedPages.academic && reportSubjects.length > 0) {
+        // Render the measurement page
+        return React.createElement(React.Fragment, null,
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { 
+                ref: measurementPageRef,
+                className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
+                style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
+            },
+                 React.createElement('div', { className: 'absolute flex flex-col', style: {
+                    top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
+                } },
+                    React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoAndTitleRef }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
+                    React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, ref: footerContentRef })
+                )
             )
         );
     }
@@ -748,9 +805,9 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const totalAcademicPages = academicPageChunks?.filter(chunk => chunk.length > 0).length || 0;
     const showAcademicFooter = totalAcademicPages > 1;
 
-    // Render the actual report pages
     return (
         React.createElement(React.Fragment, null,
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                 React.createElement(CoverPage, { student: student, settings: settings })
             ),
