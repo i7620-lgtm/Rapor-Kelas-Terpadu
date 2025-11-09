@@ -666,17 +666,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             const totalContentAreaHeightOnSubsequentPagePx = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
             
             // --- Get measured heights of all components ---
-            const studentInfoAndTitleHeightPx = studentInfoAndTitleRef.current.getBoundingClientRect().height;
-            const footerContentHeightPx = footerContentRef.current.getBoundingClientRect().height;
-            const tableHeaderHeightPx = tableHeaderRef.current.getBoundingClientRect().height;
-            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
+            const studentInfoAndTitleHeightPx = studentInfoAndTitleRef.current.offsetHeight;
+            const footerContentHeightPx = footerContentRef.current.offsetHeight;
+            const tableHeaderHeightPx = tableHeaderRef.current.offsetHeight;
+            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.offsetHeight);
 
-            // Get margins
-            const tableElement = tableBodyRef.current.parentElement;
-            const tableMarginTop = parseFloat(window.getComputedStyle(tableElement).marginTop) || 0;
-            const footerMarginTop = parseFloat(window.getComputedStyle(footerContentRef.current).marginTop) || 0;
-
-            // --- Pagination Logic ---
+            // --- New Pagination Logic ---
             const allItems = reportSubjects.map((subject, index) => ({ subject, height: rowHeights[index] }));
             const finalChunks = [];
             
@@ -689,14 +684,20 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             // --- Page 1 ---
             const page1Items = [];
-            let heightUsedOnPage1 = studentInfoAndTitleHeightPx + tableMarginTop + tableHeaderHeightPx;
+            let heightUsedOnPage1 = studentInfoAndTitleHeightPx + tableHeaderHeightPx;
             
             for (let i = currentItemIndex; i < allItems.length; i++) {
                 const item = allItems[i];
-                const isLastItem = (i === allItems.length - 1);
-                const footerSpaceNeeded = isLastItem ? (footerMarginTop + footerContentHeightPx) : 0;
+                const remainingItems = allItems.slice(i);
+                const remainingItemsHeight = remainingItems.reduce((sum, current) => sum + current.height, 0);
 
-                if (heightUsedOnPage1 + item.height + footerSpaceNeeded <= totalContentAreaHeightOnFirstPagePx) {
+                if (heightUsedOnPage1 + remainingItemsHeight + footerContentHeightPx <= totalContentAreaHeightOnFirstPagePx) {
+                    page1Items.push(...remainingItems.map(it => it.subject));
+                    currentItemIndex = allItems.length;
+                    break;
+                }
+
+                if (heightUsedOnPage1 + item.height <= totalContentAreaHeightOnFirstPagePx) {
                     page1Items.push(item.subject);
                     heightUsedOnPage1 += item.height;
                     currentItemIndex++;
@@ -714,14 +715,20 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             // --- Subsequent Pages ---
             while (currentItemIndex < allItems.length) {
                 const nextPageItems = [];
-                let heightUsedOnNextPage = tableMarginTop + tableHeaderHeightPx;
+                let heightUsedOnNextPage = tableHeaderHeightPx;
 
                 for (let i = currentItemIndex; i < allItems.length; i++) {
                     const item = allItems[i];
-                    const isLastItem = (i === allItems.length - 1);
-                    const footerSpaceNeeded = isLastItem ? (footerMarginTop + footerContentHeightPx) : 0;
-                    
-                    if (heightUsedOnNextPage + item.height + footerSpaceNeeded <= totalContentAreaHeightOnSubsequentPagePx) {
+                    const remainingItems = allItems.slice(i);
+                    const remainingItemsHeight = remainingItems.reduce((sum, current) => sum + current.height, 0);
+
+                    if (heightUsedOnNextPage + remainingItemsHeight + footerContentHeightPx <= totalContentAreaHeightOnSubsequentPagePx) {
+                        nextPageItems.push(...remainingItems.map(it => it.subject));
+                        currentItemIndex = allItems.length;
+                        break;
+                    }
+
+                    if (heightUsedOnNextPage + item.height <= totalContentAreaHeightOnSubsequentPagePx) {
                         nextPageItems.push(item.subject);
                         heightUsedOnNextPage += item.height;
                         currentItemIndex++;
