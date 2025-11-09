@@ -511,7 +511,7 @@ const PageFooter = ({ student, settings, currentPage }) => { // Removed totalPag
 
     return (
         React.createElement('div', { 
-            className: "absolute left-[1.5cm] right-[1.5cm] font-times page-number-footer", 
+            className: "absolute left-[1.5cm] right-[1.5cm] font-times", 
             style: { 
                 bottom: `${PAGE_BOTTOM_MARGIN_CM}cm`, // Position at the specified bottom margin
                 fontSize: '10pt',
@@ -539,7 +539,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
-    const [isVerifying, setIsVerifying] = useState(false);
 
     // Refs for measuring content heights
     const measurementPageRef = useRef(null);
@@ -632,7 +631,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         return result;
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
-    // Initial Pagination Calculation
     useEffect(() => {
         if (!selectedPages.academic || reportSubjects.length === 0) {
             setAcademicPageChunks(selectedPages.academic ? [[]] : []);
@@ -640,115 +638,113 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         }
         if (cmToPx === 0) return;
 
-        setAcademicPageChunks(null); // Trigger measurement render
+        setAcademicPageChunks(null);
 
-        const calculateInitialChunks = (retryCount = 0, maxRetries = 50, timeout = 50) => {
+        const calculateChunksWithRetry = (retryCount = 0, maxRetries = 50, timeout = 50) => {
             if (retryCount >= maxRetries) {
-                console.error("Failed to calculate page layout. Display may be incorrect.");
-                setAcademicPageChunks([reportSubjects]); // Fallback
+                console.error("Failed to calculate page layout after multiple retries. Display may be incorrect.");
+                setAcademicPageChunks([reportSubjects]); // Fallback to a single page
                 return;
             }
 
-            const allElementsReady = studentInfoAndTitleRef.current && footerContentRef.current && tableBodyRef.current && tableHeaderRef.current;
-            const heightsAreValid = allElementsReady && tableBodyRef.current.children.length === reportSubjects.length;
+            const allElementsReady = studentInfoAndTitleRef.current && 
+                                   footerContentRef.current && 
+                                   tableBodyRef.current && 
+                                   tableHeaderRef.current;
+            
+            const heightsAreValid = allElementsReady &&
+                                    tableBodyRef.current.children.length === reportSubjects.length;
 
             if (!heightsAreValid) {
-                setTimeout(() => calculateInitialChunks(retryCount + 1, maxRetries, timeout), timeout);
+                setTimeout(() => calculateChunksWithRetry(retryCount + 1, maxRetries, timeout), timeout);
                 return;
             }
 
+            // --- Define available heights ---
             const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
-            const contentAreaFirstPagePx = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
-            const contentAreaSubsequentPagePx = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
-            const studentInfoHeightPx = studentInfoAndTitleRef.current.offsetHeight;
-            const footerHeightPx = footerContentRef.current.offsetHeight;
-            const tableHeaderHeightPx = tableHeaderRef.current.offsetHeight;
-            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.offsetHeight);
+            const totalContentAreaHeightOnFirstPagePx = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
+            const totalContentAreaHeightOnSubsequentPagePx = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
+            
+            // --- Get measured heights of all components ---
+            const studentInfoAndTitleHeightPx = studentInfoAndTitleRef.current.getBoundingClientRect().height;
+            const footerContentHeightPx = footerContentRef.current.getBoundingClientRect().height;
+            const tableHeaderHeightPx = tableHeaderRef.current.getBoundingClientRect().height;
+            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
+
+            // Get margins
+            const tableElement = tableBodyRef.current.parentElement;
+            const tableMarginTop = parseFloat(window.getComputedStyle(tableElement).marginTop) || 0;
+            const footerMarginTop = parseFloat(window.getComputedStyle(footerContentRef.current).marginTop) || 0;
+
+            // --- Pagination Logic ---
             const allItems = reportSubjects.map((subject, index) => ({ subject, height: rowHeights[index] }));
+            const finalChunks = [];
             
-            const chunks = [];
-            let currentChunk = [];
-            let currentHeight = studentInfoHeightPx + tableHeaderHeightPx;
-            let isFirstPage = true;
+            if (allItems.length === 0) {
+                setAcademicPageChunks(selectedPages.academic ? [[]] : []);
+                return;
+            }
+            
+            let currentItemIndex = 0;
 
-            for (const item of allItems) {
-                const availableHeight = isFirstPage ? contentAreaFirstPagePx : contentAreaSubsequentPagePx;
-                const remainingItems = allItems.slice(allItems.indexOf(item));
-                const remainingHeight = remainingItems.reduce((sum, it) => sum + it.height, 0);
+            // --- Page 1 ---
+            const page1Items = [];
+            let heightUsedOnPage1 = studentInfoAndTitleHeightPx + tableMarginTop + tableHeaderHeightPx;
+            
+            for (let i = currentItemIndex; i < allItems.length; i++) {
+                const item = allItems[i];
+                const isLastItem = (i === allItems.length - 1);
+                const footerSpaceNeeded = isLastItem ? (footerMarginTop + footerContentHeightPx) : 0;
 
-                if (currentHeight + remainingHeight + footerHeightPx <= availableHeight) {
-                    currentChunk.push(...remainingItems.map(it => it.subject));
-                    break;
-                }
-
-                if (currentHeight + item.height > availableHeight) {
-                    chunks.push(currentChunk);
-                    currentChunk = [item.subject];
-                    currentHeight = tableHeaderHeightPx + item.height;
-                    isFirstPage = false;
+                if (heightUsedOnPage1 + item.height + footerSpaceNeeded <= totalContentAreaHeightOnFirstPagePx) {
+                    page1Items.push(item.subject);
+                    heightUsedOnPage1 += item.height;
+                    currentItemIndex++;
                 } else {
-                    currentChunk.push(item.subject);
-                    currentHeight += item.height;
-                }
-            }
-            if (currentChunk.length > 0) chunks.push(currentChunk);
-            setAcademicPageChunks(chunks);
-        };
-        document.fonts.ready.then(calculateInitialChunks);
-    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx]);
-    
-    // Verification and Correction Effect
-    useEffect(() => {
-        if (!academicPageChunks || academicPageChunks.length === 0 || isVerifying || cmToPx === 0) {
-            return;
-        }
-
-        setIsVerifying(true);
-
-        const verifyLayout = () => {
-            const pageElements = document.querySelectorAll(`.report-page[data-student-id='${student.id}'][data-page-type='academic']`);
-            if (pageElements.length !== academicPageChunks.length) {
-                setIsVerifying(false);
-                return; // Wait for DOM to match state
-            }
-            
-            let correctionMade = false;
-            for (let i = 0; i < pageElements.length; i++) {
-                const page = pageElements[i];
-                const pageRect = page.getBoundingClientRect();
-                const contentContainer = page.querySelector('.report-content-container');
-                if (!contentContainer) continue;
-                
-                const lastChild = contentContainer.lastElementChild;
-                if (!lastChild) continue;
-
-                const lastChildRect = lastChild.getBoundingClientRect();
-                const pageBottomBoundary = pageRect.bottom - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
-
-                if (lastChildRect.bottom > pageBottomBoundary + 5) { // +5px buffer
-                    const newChunks = JSON.parse(JSON.stringify(academicPageChunks));
-                    const currentChunk = newChunks[i];
-                    if (currentChunk.length <= 1) continue;
-
-                    const itemToMove = currentChunk.pop();
-                    if (!newChunks[i + 1]) newChunks[i + 1] = [];
-                    newChunks[i + 1].unshift(itemToMove);
-                    
-                    setAcademicPageChunks(newChunks);
-                    correctionMade = true;
                     break;
                 }
             }
 
-            if (!correctionMade) {
-                setIsVerifying(false);
+            if (page1Items.length === 0 && allItems.length > 0) {
+                page1Items.push(allItems[0].subject);
+                currentItemIndex = 1;
             }
+            finalChunks.push(page1Items);
+
+            // --- Subsequent Pages ---
+            while (currentItemIndex < allItems.length) {
+                const nextPageItems = [];
+                let heightUsedOnNextPage = tableMarginTop + tableHeaderHeightPx;
+
+                for (let i = currentItemIndex; i < allItems.length; i++) {
+                    const item = allItems[i];
+                    const isLastItem = (i === allItems.length - 1);
+                    const footerSpaceNeeded = isLastItem ? (footerMarginTop + footerContentHeightPx) : 0;
+                    
+                    if (heightUsedOnNextPage + item.height + footerSpaceNeeded <= totalContentAreaHeightOnSubsequentPagePx) {
+                        nextPageItems.push(item.subject);
+                        heightUsedOnNextPage += item.height;
+                        currentItemIndex++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                if (nextPageItems.length === 0 && currentItemIndex < allItems.length) {
+                    nextPageItems.push(allItems[currentItemIndex].subject);
+                    currentItemIndex++;
+                }
+                finalChunks.push(nextPageItems);
+            }
+
+            setAcademicPageChunks(finalChunks);
         };
 
-        const timeoutId = setTimeout(verifyLayout, 150);
-        return () => clearTimeout(timeoutId);
+        document.fonts.ready.then(() => {
+            calculateChunksWithRetry();
+        });
 
-    }, [academicPageChunks, cmToPx, student.id]);
+    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx]);
 
 
     if (academicPageChunks === null && selectedPages.academic && reportSubjects.length > 0) {
@@ -792,7 +788,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 if (chunk.length === 0 && academicPageChunks.length === 1) { // Render footer-only page
                      return React.createElement('div', { key: `academic-${student.id}-footer-only`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                         React.createElement(ReportHeader, { settings: settings }),
-                        React.createElement('div', { className: 'absolute flex flex-col report-content-container', style: {
+                        React.createElement('div', { className: 'absolute flex flex-col', style: {
                             top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                         }},
                             React.createElement(ReportStudentInfo, { student, settings }),
@@ -818,7 +814,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
-                    React.createElement('div', { className: 'absolute flex flex-col report-content-container', style: {
+                    React.createElement('div', { className: 'absolute flex flex-col', style: {
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
@@ -858,7 +854,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    const [isLayoutFinalizing, setIsLayoutFinalizing] = useState(false);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -879,10 +874,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     }, []);
     
     const handleGeneratePdf = async () => {
-        if (isLayoutFinalizing) {
-            showToast('Harap tunggu, tata letak sedang disempurnakan.', 'error');
-            return;
-        }
         setIsGeneratingPdf(true);
         try {
             const { jsPDF } = window.jspdf;
@@ -956,11 +947,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         { key: 'academic', label: 'Laporan Hasil Belajar' },
     ];
 
-    const isProcessing = isGeneratingPdf || isLayoutFinalizing;
-    let buttonText = 'Generate PDF Rapor';
-    if (isLayoutFinalizing) buttonText = 'Menyempurnakan Tata Letak...';
-    if (isGeneratingPdf) buttonText = 'Membangun PDF...';
-
     return (
         React.createElement(React.Fragment, null,
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
@@ -990,9 +976,9 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         ),
                         React.createElement('button', { 
                             onClick: handleGeneratePdf,
-                            disabled: isProcessing,
+                            disabled: isGeneratingPdf,
                             className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        }, buttonText)
+                        }, isGeneratingPdf ? 'Membangun PDF...' : 'Generate PDF Rapor')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4" },
@@ -1025,7 +1011,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         pageStyle: pageStyle,
                         selectedPages: studentSelectedPages,
                         paperSize: paperSize,
-                        setIsLayoutFinalizing: setIsLayoutFinalizing,
                         ...restProps
                     })
                 })
