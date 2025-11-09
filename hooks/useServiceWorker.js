@@ -22,6 +22,8 @@ const useServiceWorker = () => {
             }
           };
         }
+      }).catch(error => {
+        console.warn('Could not get Service Worker registration:', error);
       });
       
       // Listen for controller change and reload the page
