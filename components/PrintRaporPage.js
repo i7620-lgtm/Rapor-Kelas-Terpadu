@@ -660,38 +660,55 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             while (currentSubjectIndex < reportSubjects.length) {
                 let currentPageSubjects = [];
-                let spaceForTableRows = 0;
+                let availableHeight = 0;
 
                 if (isFirstAcademicPageForStudent) {
-                    spaceForTableRows = totalContentAreaHeightPx - studentInfoAndTitleHeightPx;
+                    availableHeight = totalContentAreaHeightPx - studentInfoAndTitleHeightPx - tableHeaderHeightPx;
                 } else {
-                    spaceForTableRows = totalContentAreaHeightPx;
+                    availableHeight = totalContentAreaHeightPx - tableHeaderHeightPx;
                 }
                 
-                spaceForTableRows -= tableHeaderHeightPx;
+                availableHeight = Math.max(0, availableHeight);
 
-                let remainingHeight = 0;
-                for (let i = currentSubjectIndex; i < reportSubjects.length; i++) {
-                    remainingHeight += rowHeights[i];
-                }
-
-                if (remainingHeight <= spaceForTableRows) {
-                    spaceForTableRows -= footerContentHeightPx;
-                }
-                
-                spaceForTableRows = Math.max(0, spaceForTableRows);
-
+                // --- Greedy Fill Phase ---
                 let tempRowIndex = currentSubjectIndex;
-                while (tempRowIndex < reportSubjects.length && spaceForTableRows >= rowHeights[tempRowIndex]) {
+                while (tempRowIndex < reportSubjects.length && availableHeight >= rowHeights[tempRowIndex]) {
                     currentPageSubjects.push(reportSubjects[tempRowIndex]);
-                    spaceForTableRows -= rowHeights[tempRowIndex];
+                    availableHeight -= rowHeights[tempRowIndex];
                     tempRowIndex++;
                 }
 
-                if (currentPageSubjects.length === 0 && tempRowIndex < reportSubjects.length) {
-                    currentPageSubjects.push(reportSubjects[tempRowIndex]);
-                    tempRowIndex++;
-                    console.warn(`Subject row for '${reportSubjects[tempRowIndex - 1]?.name}' is too tall for a page. It will be rendered alone.`);
+                // --- Adjustment Phase for Footer ---
+                // This adjustment only happens if the greedy fill consumed ALL remaining subjects.
+                if (tempRowIndex >= reportSubjects.length && currentPageSubjects.length > 0) {
+                    
+                    // Calculate height of subjects currently in the chunk
+                    let currentChunkSubjectsHeight = 0;
+                    currentPageSubjects.forEach((sub, i) => {
+                        currentChunkSubjectsHeight += rowHeights[currentSubjectIndex + i];
+                    });
+
+                    // Get the total available height for THIS page, to compare against
+                    let pageAvailableHeight;
+                    if (isFirstAcademicPageForStudent) {
+                        pageAvailableHeight = totalContentAreaHeightPx - studentInfoAndTitleHeightPx - tableHeaderHeightPx;
+                    } else {
+                        pageAvailableHeight = totalContentAreaHeightPx - tableHeaderHeightPx;
+                    }
+
+                    // If the subjects + footer are too big, move subjects to the next page
+                    while (currentChunkSubjectsHeight + footerContentHeightPx > pageAvailableHeight && currentPageSubjects.length > 1) {
+                        const subjectToMove = currentPageSubjects.pop();
+                        tempRowIndex--;
+                        currentChunkSubjectsHeight -= rowHeights[tempRowIndex];
+                    }
+                }
+
+                // Handle case where a single subject is too tall for an empty page
+                if (currentPageSubjects.length === 0 && currentSubjectIndex < reportSubjects.length) {
+                    currentPageSubjects.push(reportSubjects[currentSubjectIndex]);
+                    tempRowIndex = currentSubjectIndex + 1;
+                    console.warn(`Subject row for '${reportSubjects[currentSubjectIndex]?.name}' is too tall for an empty page. It will be rendered alone.`);
                 }
                 
                 allChunks.push(currentPageSubjects);
