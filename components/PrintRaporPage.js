@@ -394,9 +394,9 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
     )
 ));
 
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1 }, ref) => (
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10.5pt' } },
-        React.createElement('thead', { className: "report-header-group" },
+        React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'),
                 React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[20%]' }, 'Mata Pelajaran'),
@@ -544,6 +544,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const measurementPageRef = useRef(null); // Ref for the hidden measurement page
     const dynamicContentWrapperRef = useRef(null); // Ref for the main content area (student info, table, footer)
     const studentInfoAndTitleRef = useRef(null); // Ref for the H2 title + ReportStudentInfo
+    const tableHeaderRef = useRef(null); // Ref for the <thead> within AcademicTable
     const tableBodyRef = useRef(null); // Ref for the <tbody> within AcademicTable
     const footerContentRef = useRef(null); // Ref for ReportFooterContent
 
@@ -630,27 +631,24 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         }
 
         const calculateChunks = () => {
-            // These refs are for the *hidden measurement page*
             const dynamicContentWrapperDiv = dynamicContentWrapperRef.current;
             const studentInfoAndTitleDiv = studentInfoAndTitleRef.current;
             const footerContentDiv = footerContentRef.current;
             const tableBodyDiv = tableBodyRef.current;
+            const tableHeaderDiv = tableHeaderRef.current;
 
-            if (!dynamicContentWrapperDiv || !studentInfoAndTitleDiv || !tableBodyDiv || !footerContentDiv) {
-                // If any critical element for measurement isn't ready, retry.
-                // This typically happens on the very first render before refs are assigned.
+            if (!dynamicContentWrapperDiv || !studentInfoAndTitleDiv || !tableBodyDiv || !footerContentDiv || !tableHeaderDiv) {
                 setTimeout(calculateChunks, 50); 
                 return;
             }
 
-            // Total height available within the absolutely positioned content wrapper (i.e., after header/before page footer)
             const totalContentAreaHeightPx = dynamicContentWrapperDiv.offsetHeight; 
             const studentInfoAndTitleHeightPx = studentInfoAndTitleDiv.offsetHeight;
             const footerContentHeightPx = footerContentDiv.offsetHeight;
+            const tableHeaderHeightPx = tableHeaderDiv.offsetHeight;
             
             const tableRows = Array.from(tableBodyDiv.children);
             if (tableRows.length !== reportSubjects.length) {
-                // Number of rendered rows doesn't match subjects, meaning initial render for measurement isn't stable.
                 setTimeout(calculateChunks, 50);
                 return;
             }
@@ -662,47 +660,34 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             while (currentSubjectIndex < reportSubjects.length) {
                 let currentPageSubjects = [];
-                let availableSpaceForTableRows = 0;
+                let spaceForTableRows = 0;
 
-                // Calculate available space for table rows on the current page
                 if (isFirstAcademicPageForStudent) {
-                    // On the first academic page, subtract student info height
-                    availableSpaceForTableRows = totalContentAreaHeightPx - studentInfoAndTitleHeightPx;
+                    spaceForTableRows = totalContentAreaHeightPx - studentInfoAndTitleHeightPx;
                 } else {
-                    // On subsequent pages, full content area is available for table rows
-                    availableSpaceForTableRows = totalContentAreaHeightPx;
+                    spaceForTableRows = totalContentAreaHeightPx;
                 }
                 
-                // If this is potentially the last academic page chunk for the student, subtract footer height
-                // The condition checks if all remaining subjects will fit into the current page,
-                // considering the footer space if it's the very last academic content.
-                let tempCheckIndex = currentSubjectIndex;
-                let tempHeightSum = 0;
-                let subjectsFitWithoutFooter = true;
-                while (tempCheckIndex < reportSubjects.length) {
-                    tempHeightSum += rowHeights[tempCheckIndex];
-                    if (tempHeightSum > availableSpaceForTableRows) {
-                        subjectsFitWithoutFooter = false;
-                        break;
-                    }
-                    tempCheckIndex++;
+                spaceForTableRows -= tableHeaderHeightPx;
+
+                let remainingHeight = 0;
+                for (let i = currentSubjectIndex; i < reportSubjects.length; i++) {
+                    remainingHeight += rowHeights[i];
+                }
+
+                if (remainingHeight <= spaceForTableRows) {
+                    spaceForTableRows -= footerContentHeightPx;
                 }
                 
-                if (subjectsFitWithoutFooter) {
-                    // If all remaining subjects fit on this page, then this is the last academic page.
-                    availableSpaceForTableRows -= footerContentHeightPx;
-                }
-                
-                availableSpaceForTableRows = Math.max(0, availableSpaceForTableRows); // Ensure it doesn't go negative
+                spaceForTableRows = Math.max(0, spaceForTableRows);
 
                 let tempRowIndex = currentSubjectIndex;
-                while (tempRowIndex < reportSubjects.length && availableSpaceForTableRows >= rowHeights[tempRowIndex]) {
+                while (tempRowIndex < reportSubjects.length && spaceForTableRows >= rowHeights[tempRowIndex]) {
                     currentPageSubjects.push(reportSubjects[tempRowIndex]);
-                    availableSpaceForTableRows -= rowHeights[tempRowIndex];
+                    spaceForTableRows -= rowHeights[tempRowIndex];
                     tempRowIndex++;
                 }
 
-                // Fallback for when no subjects fit (e.g., a single row is too large)
                 if (currentPageSubjects.length === 0 && tempRowIndex < reportSubjects.length) {
                     currentPageSubjects.push(reportSubjects[tempRowIndex]);
                     tempRowIndex++;
@@ -711,13 +696,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 
                 allChunks.push(currentPageSubjects);
                 currentSubjectIndex = tempRowIndex;
-                isFirstAcademicPageForStudent = false; // Next iteration won't be the first academic page
+                isFirstAcademicPageForStudent = false;
             }
             
             setAcademicPageChunks(allChunks);
         };
         
-        // Timeout ensures all elements for measurement are rendered and have their `offsetHeight` values.
         const timer = setTimeout(calculateChunks, 100); 
         return () => clearTimeout(timer);
 
@@ -731,23 +715,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
             style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
         },
-            // Dynamic content wrapper simulates the actual content area, positioned relative to the page
-            // Top: after header, Bottom: before page number footer
             React.createElement('div', { ref: dynamicContentWrapperRef, className: 'absolute flex flex-col', style: {
                 top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
             } },
-                // This div combines the H2 title and student info for a single measurement
                 React.createElement('div', { ref: studentInfoAndTitleRef }, 
                     React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
                     React.createElement(ReportStudentInfo, { student, settings })
                 ),
-                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef }),
+                React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
                 React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars, ref: footerContentRef })
             )
         );
     }
     
-    // Calculate total academic pages for numbering, considering non-empty chunks
     const totalAcademicPages = academicPageChunks?.filter(chunk => chunk.length > 0).length || 0;
     const showAcademicFooter = totalAcademicPages > 1;
 
@@ -776,26 +756,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     startingIndex += academicPageChunks[i].length;
                 }
 
-                // Top margin for content: HEADER_HEIGHT_CM for first academic page, PAGE_TOP_MARGIN_CM for subsequent
                 const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : PAGE_TOP_MARGIN_CM;
 
                 return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                    // Render ReportHeader only on the very first academic page for the student
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
-                    // Main content area for academic pages
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
-                        // Render student info (and title) only on the very first academic page for the student
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
-                        // Academic table, using `startingIndex` for correct numbering
                         React.createElement(AcademicTable, { subjectsToRender: chunk, startingIndex: startingIndex }),
-                        // Render ReportFooterContent only on the very last academic page for the student
                         isLastAcademicPage && React.createElement(ReportFooterContent, { student, settings, attendance, notes, studentExtracurriculars, extracurriculars })
                     ),
                     
-                    // Page number footer, conditionally rendered
                     showAcademicFooter && React.createElement(PageFooter, { student: student, settings: settings, currentPage: pageIndex + 1 })
                 );
             })
