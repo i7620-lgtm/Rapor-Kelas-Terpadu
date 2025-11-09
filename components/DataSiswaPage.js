@@ -10,6 +10,14 @@ const emptyStudent = {
     alamatWali: '', teleponWali: '',
 };
 
+// Moved FormField outside of the component to prevent re-creation on every render.
+const FormField = ({name, label, value, onChange, type = 'text', required = false}) => (
+    React.createElement('div', null,
+        React.createElement('label', { htmlFor: name, className: "block text-sm font-medium text-slate-700" }, label),
+        React.createElement('input', { type: type, name: name, id: name, value: value || '', onChange: onChange, required: required, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
+    )
+);
+
 const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
     const [formData, setFormData] = useState(emptyStudent);
 
@@ -30,13 +38,6 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
         onClose();
     };
 
-    const FormField = ({name, label, type = 'text', required = false}) => (
-        React.createElement('div', null,
-            React.createElement('label', { htmlFor: name, className: "block text-sm font-medium text-slate-700" }, label),
-            React.createElement('input', { type: type, name: name, id: name, value: formData[name] || '', onChange: handleChange, required: required, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
-        )
-    );
-
     return (
         React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4", "aria-modal": "true", role: "dialog" },
             React.createElement('div', { className: "bg-slate-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" },
@@ -48,12 +49,12 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                     React.createElement('fieldset', { className: "border p-4 rounded-md" },
                         React.createElement('legend', { className: "text-lg font-semibold text-slate-700 px-2" }, "Data Pribadi Siswa"),
                         React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4" },
-                            React.createElement(FormField, { name: "namaLengkap", label: "Nama Lengkap", required: true }),
-                            React.createElement(FormField, { name: "namaPanggilan", label: "Nama Panggilan" }),
-                            React.createElement(FormField, { name: "nis", label: "NIS" }),
-                            React.createElement(FormField, { name: "nisn", label: "NISN" }),
-                            React.createElement(FormField, { name: "tempatLahir", label: "Tempat Lahir" }),
-                            React.createElement(FormField, { name: "tanggalLahir", label: "Tanggal Lahir", type: "date" }),
+                            React.createElement(FormField, { name: "namaLengkap", label: "Nama Lengkap", required: true, value: formData.namaLengkap, onChange: handleChange }),
+                            React.createElement(FormField, { name: "namaPanggilan", label: "Nama Panggilan", value: formData.namaPanggilan, onChange: handleChange }),
+                            React.createElement(FormField, { name: "nis", label: "NIS", value: formData.nis, onChange: handleChange }),
+                            React.createElement(FormField, { name: "nisn", label: "NISN", value: formData.nisn, onChange: handleChange }),
+                            React.createElement(FormField, { name: "tempatLahir", label: "Tempat Lahir", value: formData.tempatLahir, onChange: handleChange }),
+                            React.createElement(FormField, { name: "tanggalLahir", label: "Tanggal Lahir", type: "date", value: formData.tanggalLahir, onChange: handleChange }),
                              React.createElement('div', null,
                                 React.createElement('label', { htmlFor: "jenisKelamin", className: "block text-sm font-medium text-slate-700" }, "Jenis Kelamin"),
                                 React.createElement('select', { name: "jenisKelamin", id: "jenisKelamin", value: formData.jenisKelamin || '', onChange: handleChange, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" },
@@ -62,28 +63,28 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                                     React.createElement('option', { value: "Perempuan" }, "Perempuan")
                                 )
                             ),
-                            React.createElement(FormField, { name: "agama", label: "Agama" }),
-                            React.createElement(FormField, { name: "kewarganegaraan", label: "Kewarganegaraan" }),
-                            React.createElement(FormField, { name: "statusDalamKeluarga", label: "Status dalam Keluarga" }),
-                            React.createElement(FormField, { name: "anakKe", label: "Anak Ke-" }),
-                            React.createElement(FormField, { name: "asalTk", label: "Asal TK" }),
+                            React.createElement(FormField, { name: "agama", label: "Agama", value: formData.agama, onChange: handleChange }),
+                            React.createElement(FormField, { name: "kewarganegaraan", label: "Kewarganegaraan", value: formData.kewarganegaraan, onChange: handleChange }),
+                            React.createElement(FormField, { name: "statusDalamKeluarga", label: "Status dalam Keluarga", value: formData.statusDalamKeluarga, onChange: handleChange }),
+                            React.createElement(FormField, { name: "anakKe", label: "Anak Ke-", value: formData.anakKe, onChange: handleChange }),
+                            React.createElement(FormField, { name: "asalTk", label: "Asal TK", value: formData.asalTk, onChange: handleChange }),
                             React.createElement('div', { className: "md:col-span-2 lg:col-span-3" },
                                 React.createElement('label', { htmlFor: "alamatSiswa", className: "block text-sm font-medium text-slate-700" }, "Alamat Siswa"),
                                 React.createElement('textarea', { name: "alamatSiswa", id: "alamatSiswa", value: formData.alamatSiswa || '', onChange: handleChange, rows: 2, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
                             ),
-                            React.createElement(FormField, { name: "diterimaDiKelas", label: "Diterima di Kelas" }),
-                            React.createElement(FormField, { name: "diterimaTanggal", label: "Diterima Tanggal", type: "date" })
+                            React.createElement(FormField, { name: "diterimaDiKelas", label: "Diterima di Kelas", value: formData.diterimaDiKelas, onChange: handleChange }),
+                            React.createElement(FormField, { name: "diterimaTanggal", label: "Diterima Tanggal", type: "date", value: formData.diterimaTanggal, onChange: handleChange })
                         )
                     ),
                     React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
                         React.createElement('fieldset', { className: "border p-4 rounded-md" },
                             React.createElement('legend', { className: "text-lg font-semibold text-slate-700 px-2" }, "Data Orang Tua"),
                             React.createElement('div', { className: "space-y-4 mt-4" },
-                                React.createElement(FormField, { name: "namaAyah", label: "Nama Ayah" }),
-                                React.createElement(FormField, { name: "pekerjaanAyah", label: "Pekerjaan Ayah" }),
-                                React.createElement(FormField, { name: "namaIbu", label: "Nama Ibu" }),
-                                React.createElement(FormField, { name: "pekerjaanIbu", label: "Pekerjaan Ibu" }),
-                                React.createElement(FormField, { name: "teleponOrangTua", label: "Telepon Orang Tua" }),
+                                React.createElement(FormField, { name: "namaAyah", label: "Nama Ayah", value: formData.namaAyah, onChange: handleChange }),
+                                React.createElement(FormField, { name: "pekerjaanAyah", label: "Pekerjaan Ayah", value: formData.pekerjaanAyah, onChange: handleChange }),
+                                React.createElement(FormField, { name: "namaIbu", label: "Nama Ibu", value: formData.namaIbu, onChange: handleChange }),
+                                React.createElement(FormField, { name: "pekerjaanIbu", label: "Pekerjaan Ibu", value: formData.pekerjaanIbu, onChange: handleChange }),
+                                React.createElement(FormField, { name: "teleponOrangTua", label: "Telepon Orang Tua", value: formData.teleponOrangTua, onChange: handleChange }),
                                 React.createElement('div', null,
                                 React.createElement('label', { htmlFor: "alamatOrangTua", className: "block text-sm font-medium text-slate-700" }, "Alamat Orang Tua"),
                                 React.createElement('textarea', { name: "alamatOrangTua", id: "alamatOrangTua", value: formData.alamatOrangTua || '', onChange: handleChange, rows: 2, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" }))
@@ -92,9 +93,9 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                         React.createElement('fieldset', { className: "border p-4 rounded-md" },
                              React.createElement('legend', { className: "text-lg font-semibold text-slate-700 px-2" }, "Data Wali (jika ada)"),
                             React.createElement('div', { className: "space-y-4 mt-4" },
-                                React.createElement(FormField, { name: "namaWali", label: "Nama Wali" }),
-                                React.createElement(FormField, { name: "pekerjaanWali", label: "Pekerjaan Wali" }),
-                                React.createElement(FormField, { name: "teleponWali", label: "Telepon Wali" }),
+                                React.createElement(FormField, { name: "namaWali", label: "Nama Wali", value: formData.namaWali, onChange: handleChange }),
+                                React.createElement(FormField, { name: "pekerjaanWali", label: "Pekerjaan Wali", value: formData.pekerjaanWali, onChange: handleChange }),
+                                React.createElement(FormField, { name: "teleponWali", label: "Telepon Wali", value: formData.teleponWali, onChange: handleChange }),
                                 React.createElement('div', null,
                                     React.createElement('label', { htmlFor: "alamatWali", className: "block text-sm font-medium text-slate-700" }, "Alamat Wali"),
                                     React.createElement('textarea', { name: "alamatWali", id: "alamatWali", value: formData.alamatWali || '', onChange: handleChange, rows: 2, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
