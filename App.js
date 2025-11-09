@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
 import SettingsPage from './components/SettingsPage.js';
 import DataSiswaPage from './components/DataSiswaPage.js';
-import DataNilaiPage from './components/DataNilaiPage.js';
+import DataNilaiPage, { getGradeNumber } from './components/DataNilaiPage.js'; // Import getGradeNumber
 import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
 import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
@@ -92,22 +92,6 @@ const initialStudentExtracurriculars = [
     { studentId: 1, assignedActivities: ['PRAMUKA', null, null, null, null], descriptions: { 'PRAMUKA': 'Ananda Rummy sangat aktif dan antusias dalam mengikuti kegiatan Pramuka.' } }
 ];
 
-const getGradeNumber = (str) => {
-    if (!str) return null;
-    const match = str.match(/\d+/);
-    if (match) {
-        return parseInt(match[0], 10);
-    }
-    const upperStr = str.toUpperCase();
-    if (upperStr.includes('VI')) return 6;
-    if (upperStr.includes('V')) return 5;
-    if (upperStr.includes('IV')) return 4;
-    if (upperStr.includes('III')) return 3;
-    if (upperStr.includes('II')) return 2;
-    if (upperStr.includes('I')) return 1;
-    return null;
-};
-
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
@@ -189,7 +173,7 @@ const App = () => {
       try {
           const saved = localStorage.getItem('appStudentExtracurriculars');
           return saved ? JSON.parse(saved) : initialStudentExtracurriculars;
-      } catch (e) {
+    } catch (e) {
           return initialStudentExtracurriculars;
       }
   });
