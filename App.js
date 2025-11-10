@@ -10,6 +10,7 @@ import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
 import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
+import PrintLegerPage from './components/PrintLegerPage.js';
 import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 
@@ -1096,6 +1097,13 @@ useEffect(() => {
                   studentExtracurriculars: studentExtracurriculars,
                   extracurriculars: extracurriculars,
                   showToast: showToast
+                });
+      case 'PRINT_LEGER':
+        return React.createElement(PrintLegerPage, { 
+                  students: students,
+                  settings: settings,
+                  grades: grades,
+                  subjects: subjects,
                 });
       default:
         const navItem = NAV_ITEMS.find(item => item.id === activePage);
