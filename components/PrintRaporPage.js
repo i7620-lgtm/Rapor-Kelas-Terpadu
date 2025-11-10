@@ -884,21 +884,31 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 const pdfWidth = doc.internal.pageSize.getWidth();
                 const pdfHeight = doc.internal.pageSize.getHeight();
                 
-                const imgHeightRatio = pdfHeight / canvas.height;
-                const imgWidth = canvas.width * imgHeightRatio;
-                let finalImgWidth = pdfWidth;
-                let finalImgHeight = pdfHeight;
-                let x = 0;
-                
-                if (imgWidth < pdfWidth) {
-                    finalImgWidth = imgWidth;
-                    x = (pdfWidth - imgWidth) / 2;
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+                const pageAspectRatio = pdfWidth / pdfHeight;
+
+                let finalImgWidth, finalImgHeight, x, y;
+
+                if (canvasAspectRatio > pageAspectRatio) {
+                    // Canvas is wider than page, fit to width
+                    finalImgWidth = pdfWidth;
+                    finalImgHeight = pdfWidth / canvasAspectRatio;
+                    x = 0;
+                    y = (pdfHeight - finalImgHeight) / 2;
+                } else {
+                    // Canvas is taller or same aspect ratio, fit to height
+                    finalImgHeight = pdfHeight;
+                    finalImgWidth = pdfHeight * canvasAspectRatio;
+                    x = (pdfWidth - finalImgWidth) / 2;
+                    y = 0;
                 }
 
                 if (i > 0) {
                     doc.addPage();
                 }
-                doc.addImage(imgData, 'JPEG', x, 0, finalImgWidth, finalImgHeight);
+                doc.addImage(imgData, 'JPEG', x, y, finalImgWidth, finalImgHeight);
             }
             
             const pdfBlob = doc.output('blob');
