@@ -865,9 +865,14 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     
     const handleGeneratePdf = async () => {
         setIsGeneratingPdf(true);
+        showToast('Memastikan semua font dimuat...', 'success');
         try {
+            // Wait for all fonts on the page to be loaded and ready.
+            await document.fonts.ready;
+            
+            showToast('Membuat PDF, ini mungkin memakan waktu...', 'success');
+
             const { jsPDF } = window.jspdf;
-            // Initialize jsPDF with the selected paper size.
             const doc = new jsPDF('p', 'mm', [jsPDFPaperSizes[paperSize].width, jsPDFPaperSizes[paperSize].height]);
             
             const reportElements = document.querySelectorAll('#print-area .report-page');
@@ -875,17 +880,14 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             for (let i = 0; i < reportElements.length; i++) {
                 const element = reportElements[i];
                 
-                // Explicitly get the rendered dimensions of the element to avoid environmental inconsistencies.
                 const elementWidthPx = element.offsetWidth;
                 const elementHeightPx = element.offsetHeight;
                 
-                // Generate canvas using html2canvas with explicit dimensions.
                 const canvas = await html2canvas(element, { 
-                    scale: 2, // Use scale 2 for better resolution.
+                    scale: 2,
                     useCORS: true,
                     logging: false,
                     allowTaint: true,
-                    // Force canvas dimensions to match the element's rendered size.
                     width: elementWidthPx,
                     height: elementHeightPx,
                     windowWidth: elementWidthPx,
@@ -894,28 +896,22 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
                 
-                // Get PDF page dimensions in mm.
                 const pdfWidth = doc.internal.pageSize.getWidth();
                 const pdfHeight = doc.internal.pageSize.getHeight();
                 
-                // The aspect ratio of the captured canvas should now be correct.
-                // Fit the image to the PDF page while preserving aspect ratio.
                 const canvasAspectRatio = elementWidthPx / elementHeightPx;
                 const pageAspectRatio = pdfWidth / pdfHeight;
                 
                 let finalImgWidth, finalImgHeight;
     
                 if (canvasAspectRatio > pageAspectRatio) {
-                    // Image is wider than the page, so fit to width.
                     finalImgWidth = pdfWidth;
                     finalImgHeight = pdfWidth / canvasAspectRatio;
                 } else {
-                    // Image is taller or has the same ratio, so fit to height.
                     finalImgHeight = pdfHeight;
                     finalImgWidth = pdfHeight * canvasAspectRatio;
                 }
     
-                // Calculate coordinates to center the image on the PDF page.
                 const x = (pdfWidth - finalImgWidth) / 2;
                 const y = (pdfHeight - finalImgHeight) / 2;
     
