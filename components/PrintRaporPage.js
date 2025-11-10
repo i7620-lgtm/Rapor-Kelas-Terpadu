@@ -18,63 +18,85 @@ const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
         : generateInitialLayout(settings);
+    
+    // Base64 encoded 'Tinos' font for direct injection into SVG
+    const tinosRegularBase64 = "d09GMgABAAAAAAmYAAoAAAAAFWgAAAmIAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAA";
+    const tinosBoldBase64 = "d09GMgABAAAAAAoEAAoAAAAAFbAAAAnwAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAA";
 
-    return (
-        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
-            React.createElement('div', { className: "relative w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
-                    layout.map(el => {
-                        if (el.type === 'text') {
-                            let textAnchor = "start";
-                            let xPos = el.x;
-                            if (el.textAlign === 'center') {
-                                textAnchor = "middle";
-                                xPos = el.x + (el.width ?? 0) / 2;
-                            } else if (el.textAlign === 'right') {
-                                textAnchor = "end";
-                                xPos = el.x + (el.width ?? 0);
-                            }
-                            return (
-                                React.createElement('text', {
-                                    key: el.id,
-                                    x: xPos,
-                                    y: el.y + (el.fontSize ?? 14),
-                                    fontSize: el.fontSize,
-                                    fontWeight: el.fontWeight,
-                                    textAnchor: textAnchor,
-                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                                }, el.content)
-                            );
+    const fontStyleString = `
+      @font-face {
+        font-family: 'Tinos';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url(data:font/woff2;base64,${tinosRegularBase64}) format('woff2');
+      }
+      @font-face {
+        font-family: 'Tinos';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url(data:font/woff2;base64,${tinosBoldBase64}) format('woff2');
+      }
+    `;
+
+    return React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
+        React.createElement('div', { className: "relative w-full h-full" },
+            React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
+                React.createElement('defs', null,
+                    React.createElement('style', { dangerouslySetInnerHTML: { __html: fontStyleString } })
+                ),
+                layout.map(el => {
+                    if (el.type === 'text') {
+                        let textAnchor = "start";
+                        let xPos = el.x;
+                        if (el.textAlign === 'center') {
+                            textAnchor = "middle";
+                            xPos = el.x + (el.width ?? 0) / 2;
+                        } else if (el.textAlign === 'right') {
+                            textAnchor = "end";
+                            xPos = el.x + (el.width ?? 0);
                         }
-                        if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                            if (!imageUrl) return null; // Don't render image if URL is empty
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
-                        }
-                        if (el.type === 'line') {
-                            return (
-                                React.createElement('rect', {
-                                    key: el.id,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height,
-                                    fill: "black"
-                                })
-                            );
-                        }
-                        return null;
-                    })
-                )
+                        return (
+                            React.createElement('text', {
+                                key: el.id,
+                                x: xPos,
+                                y: el.y + (el.fontSize ?? 14),
+                                fontSize: el.fontSize,
+                                fontWeight: el.fontWeight,
+                                textAnchor: textAnchor,
+                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'Tinos, system-ui' // Ensure Tinos is prioritized
+                            }, el.content)
+                        );
+                    }
+                    if (el.type === 'image') {
+                        const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
+                        if (!imageUrl) return null; // Don't render image if URL is empty
+                        return (
+                            React.createElement('image', {
+                                key: el.id,
+                                href: imageUrl,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height
+                            })
+                        );
+                    }
+                    if (el.type === 'line') {
+                        return (
+                            React.createElement('rect', {
+                                key: el.id,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height,
+                                fill: "black"
+                            })
+                        );
+                    }
+                    return null;
+                })
             )
         )
     );
