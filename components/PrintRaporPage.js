@@ -867,40 +867,58 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         setIsGeneratingPdf(true);
         try {
             const { jsPDF } = window.jspdf;
+            // Initialize jsPDF with the selected paper size.
             const doc = new jsPDF('p', 'mm', [jsPDFPaperSizes[paperSize].width, jsPDFPaperSizes[paperSize].height]);
             
             const reportElements = document.querySelectorAll('#print-area .report-page');
-
+    
             for (let i = 0; i < reportElements.length; i++) {
                 const element = reportElements[i];
+                
+                // Explicitly get the rendered dimensions of the element to avoid environmental inconsistencies.
+                const elementWidthPx = element.offsetWidth;
+                const elementHeightPx = element.offsetHeight;
+                
+                // Generate canvas using html2canvas with explicit dimensions.
                 const canvas = await html2canvas(element, { 
-                    scale: 2,
+                    scale: 2, // Use scale 2 for better resolution.
                     useCORS: true,
                     logging: false,
-                    allowTaint: true
+                    allowTaint: true,
+                    // Force canvas dimensions to match the element's rendered size.
+                    width: elementWidthPx,
+                    height: elementHeightPx,
+                    windowWidth: elementWidthPx,
+                    windowHeight: elementHeightPx
                 });
-
+    
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                
+                // Get PDF page dimensions in mm.
                 const pdfWidth = doc.internal.pageSize.getWidth();
                 const pdfHeight = doc.internal.pageSize.getHeight();
                 
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-
-                // Calculate the ratios and determine the best fit
-                const widthRatio = pdfWidth / canvasWidth;
-                const heightRatio = pdfHeight / canvasHeight;
-                const ratio = Math.min(widthRatio, heightRatio);
-
-                // Calculate the new dimensions of the image
-                const finalImgWidth = canvasWidth * ratio;
-                const finalImgHeight = canvasHeight * ratio;
-
-                // Calculate the position to center the image
+                // The aspect ratio of the captured canvas should now be correct.
+                // Fit the image to the PDF page while preserving aspect ratio.
+                const canvasAspectRatio = elementWidthPx / elementHeightPx;
+                const pageAspectRatio = pdfWidth / pdfHeight;
+                
+                let finalImgWidth, finalImgHeight;
+    
+                if (canvasAspectRatio > pageAspectRatio) {
+                    // Image is wider than the page, so fit to width.
+                    finalImgWidth = pdfWidth;
+                    finalImgHeight = pdfWidth / canvasAspectRatio;
+                } else {
+                    // Image is taller or has the same ratio, so fit to height.
+                    finalImgHeight = pdfHeight;
+                    finalImgWidth = pdfHeight * canvasAspectRatio;
+                }
+    
+                // Calculate coordinates to center the image on the PDF page.
                 const x = (pdfWidth - finalImgWidth) / 2;
                 const y = (pdfHeight - finalImgHeight) / 2;
-
-
+    
                 if (i > 0) {
                     doc.addPage();
                 }
@@ -911,9 +929,9 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             const pdfUrl = URL.createObjectURL(pdfBlob);
             window.open(pdfUrl, '_blank');
             URL.revokeObjectURL(pdfUrl);
-
+    
             showToast('PDF rapor berhasil dibuat dan dibuka di tab baru!', 'success');
-
+    
         } catch (error) {
             console.error("Gagal membuat PDF:", error);
             showToast(`Gagal membuat PDF: ${error.message}`, 'error');
