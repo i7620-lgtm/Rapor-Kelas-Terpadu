@@ -18,34 +18,10 @@ const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
         : generateInitialLayout(settings);
-    
-    // Base64 encoded 'Tinos' font for direct injection into SVG
-    const tinosRegularBase64 = "d09GMgABAAAAAAmYAAoAAAAAFWgAAAmIAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAA";
-    const tinosBoldBase64 = "d09GMgABAAAAAAoEAAoAAAAAFbAAAAnwAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAA";
-
-    const fontStyleString = `
-      @font-face {
-        font-family: 'Tinos';
-        font-style: normal;
-        font-weight: 400;
-        font-display: block;
-        src: url(data:font/woff2;base64,${tinosRegularBase64}) format('woff2');
-      }
-      @font-face {
-        font-family: 'Tinos';
-        font-style: normal;
-        font-weight: 700;
-        font-display: block;
-        src: url(data:font/woff2;base64,${tinosBoldBase64}) format('woff2');
-      }
-    `;
 
     return React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
         React.createElement('div', { className: "relative w-full h-full" },
             React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
-                React.createElement('defs', null,
-                    React.createElement('style', { dangerouslySetInnerHTML: { __html: fontStyleString } })
-                ),
                 layout.map(el => {
                     if (el.type === 'text') {
                         let textAnchor = "start";
@@ -889,7 +865,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         setIsGeneratingPdf(true);
         showToast('Memastikan semua font dimuat...', 'success');
         try {
-            // Wait for all fonts on the page to be loaded and ready.
             await document.fonts.ready;
             
             showToast('Membuat PDF, ini mungkin memakan waktu...', 'success');
@@ -898,6 +873,26 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             const doc = new jsPDF('p', 'mm', [jsPDFPaperSizes[paperSize].width, jsPDFPaperSizes[paperSize].height]);
             
             const reportElements = document.querySelectorAll('#print-area .report-page');
+
+            const onCloneHandler = (clonedDoc) => {
+                const style = clonedDoc.createElement('style');
+                let fontFaces = '';
+                for (const sheet of document.styleSheets) {
+                    try {
+                        if (sheet.cssRules) {
+                            for (const rule of sheet.cssRules) {
+                                if (rule.type === CSSRule.FONT_FACE_RULE) {
+                                    fontFaces += rule.cssText;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Could not read cssRules from stylesheet:', sheet.href, e);
+                    }
+                }
+                style.appendChild(clonedDoc.createTextNode(fontFaces));
+                clonedDoc.head.appendChild(style);
+            };
     
             for (let i = 0; i < reportElements.length; i++) {
                 const element = reportElements[i];
@@ -913,7 +908,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     width: elementWidthPx,
                     height: elementHeightPx,
                     windowWidth: elementWidthPx,
-                    windowHeight: elementHeightPx
+                    windowHeight: elementHeightPx,
+                    onclone: onCloneHandler
                 });
     
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
