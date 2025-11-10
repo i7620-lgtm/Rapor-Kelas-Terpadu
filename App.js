@@ -1104,6 +1104,7 @@ useEffect(() => {
                   settings: settings,
                   grades: grades,
                   subjects: subjects,
+                  showToast: showToast,
                 });
       default:
         const navItem = NAV_ITEMS.find(item => item.id === activePage);
