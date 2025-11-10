@@ -886,24 +886,20 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 
                 const canvasWidth = canvas.width;
                 const canvasHeight = canvas.height;
-                const canvasAspectRatio = canvasWidth / canvasHeight;
-                const pageAspectRatio = pdfWidth / pdfHeight;
 
-                let finalImgWidth, finalImgHeight, x, y;
+                // Calculate the ratios and determine the best fit
+                const widthRatio = pdfWidth / canvasWidth;
+                const heightRatio = pdfHeight / canvasHeight;
+                const ratio = Math.min(widthRatio, heightRatio);
 
-                if (canvasAspectRatio > pageAspectRatio) {
-                    // Canvas is wider than page, fit to width
-                    finalImgWidth = pdfWidth;
-                    finalImgHeight = pdfWidth / canvasAspectRatio;
-                    x = 0;
-                    y = (pdfHeight - finalImgHeight) / 2;
-                } else {
-                    // Canvas is taller or same aspect ratio, fit to height
-                    finalImgHeight = pdfHeight;
-                    finalImgWidth = pdfHeight * canvasAspectRatio;
-                    x = (pdfWidth - finalImgWidth) / 2;
-                    y = 0;
-                }
+                // Calculate the new dimensions of the image
+                const finalImgWidth = canvasWidth * ratio;
+                const finalImgHeight = canvasHeight * ratio;
+
+                // Calculate the position to center the image
+                const x = (pdfWidth - finalImgWidth) / 2;
+                const y = (pdfHeight - finalImgHeight) / 2;
+
 
                 if (i > 0) {
                     doc.addPage();
