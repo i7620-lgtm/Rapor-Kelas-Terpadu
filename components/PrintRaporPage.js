@@ -872,10 +872,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             
             showToast('Membuat PDF, ini mungkin memakan waktu...', 'success');
 
-            // Add a small delay to ensure the browser has fully rendered the custom fonts before capturing.
-            // This can solve rendering inconsistencies in production environments like Vercel.
-            await new Promise(resolve => setTimeout(resolve, 300));
-
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', [jsPDFPaperSizes[paperSize].width, jsPDFPaperSizes[paperSize].height]);
             
