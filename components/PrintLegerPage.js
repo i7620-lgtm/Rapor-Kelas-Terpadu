@@ -1,14 +1,24 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 
 const PAPER_SIZES = {
-    A4: { width: '21cm', height: '29.7cm' },
-    F4: { width: '21.5cm', height: '33cm' },
-    Letter: { width: '21.59cm', height: '27.94cm' },
-    Legal: { width: '21.59cm', height: '35.56cm' },
+    A4: { width: '29.7cm', height: '21cm' },
+    F4: { width: '33cm', height: '21.5cm' },
+    Letter: { width: '27.94cm', height: '21.59cm' },
+    Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
-const PrintLegerPage = ({ students, settings, grades, subjects }) => {
+const jsPDFPaperSizes = {
+    A4: { width: 297, height: 210 }, // landscape mm
+    F4: { width: 330, height: 215 }, // landscape mm
+    Letter: { width: 279.4, height: 215.9 }, // landscape mm
+    Legal: { width: 355.6, height: 215.9 }, // landscape mm
+};
+
+
+const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const printRef = useRef(null);
 
     const activeSubjects = useMemo(() => subjects.filter(s => s.active), [subjects]);
 
@@ -104,10 +114,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
     
     const { tableFontSize, headerFontSize, signatureFontSize } = useMemo(() => {
         const subjectCount = displaySubjects.length;
-        let baseSize = 9; // pt, a more readable start
-        const threshold = 8; // Start reducing after 8 subjects
-        const reductionFactor = 0.4; // Slower reduction
-        const minSize = 7.0; // Minimum font size
+        let baseSize = 9;
+        const threshold = 8;
+        const reductionFactor = 0.4;
+        const minSize = 7.0;
 
         let newSize = baseSize;
         if (subjectCount > threshold) {
@@ -118,37 +128,64 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
 
         return {
             tableFontSize: `${finalTableSize}pt`,
-            headerFontSize: `${finalTableSize + 0.5}pt`, // Header slightly larger
-            signatureFontSize: `${Math.max(finalTableSize - 1, 6.5)}pt`, // Signature slightly smaller, with a floor
+            headerFontSize: `${finalTableSize + 0.5}pt`,
+            signatureFontSize: `${Math.max(finalTableSize - 1, 6.5)}pt`,
         };
     }, [displaySubjects]);
 
-    const handlePrint = () => { window.print(); };
-
-    const getPageSizeCss = () => {
-        if (paperSize === 'F4') {
-             // F4 landscape dimensions
-            return `size: ${PAPER_SIZES.F4.height} ${PAPER_SIZES.F4.width};`;
+    const handleGeneratePdf = async () => {
+        if (!printRef.current) {
+            showToast('Elemen pratinjau tidak ditemukan.', 'error');
+            return;
         }
-        return `size: ${paperSize} landscape;`;
+        setIsGeneratingPdf(true);
+        try {
+            const { jsPDF } = window.jspdf;
+            const element = printRef.current;
+
+            const canvas = await html2canvas(element, { 
+                scale: 2.5,
+                useCORS: true,
+                logging: false,
+            });
+
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            
+            const pdfSize = jsPDFPaperSizes[paperSize];
+            const doc = new jsPDF('l', 'mm', [pdfSize.width, pdfSize.height]);
+
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const pdfHeight = doc.internal.pageSize.getHeight();
+            
+            const imgProps = doc.getImageProperties(imgData);
+            const imgWidth = imgProps.width;
+            const imgHeight = imgProps.height;
+            
+            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+            
+            const finalWidth = imgWidth * ratio;
+            const finalHeight = imgHeight * ratio;
+            
+            const x = (pdfWidth - finalWidth) / 2;
+            const y = (pdfHeight - finalHeight) / 2;
+            
+            doc.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
+            
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+            URL.revokeObjectURL(pdfUrl);
+
+            showToast('PDF Leger berhasil dibuat!', 'success');
+
+        } catch (error) {
+            console.error("Gagal membuat PDF Leger:", error);
+            showToast(`Gagal membuat PDF: ${error.message}`, 'error');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
     };
 
-    const printStyles = `
-        @media print {
-            body { -webkit-print-color-adjust: exact; }
-            .print-hidden { display: none; }
-            .print-leger-container {
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-            }
-            @page { 
-                ${getPageSizeCss()}
-                margin: 0.5cm;
-            }
-        }
-    `;
 
     const getTanggalRapor = () => {
         if (!settings.tanggal_rapor) {
@@ -163,12 +200,16 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
 
     const subjectColWidth = `${(100 - 4 - 22 - 8 - 6 - 7 - 8) / (displaySubjects.length || 1)}%`;
 
+    const pageStyle = {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+    };
 
     return React.createElement('div', { className: "space-y-6" },
         React.createElement('div', { className: "flex justify-between items-center print-hidden" },
             React.createElement('div', null,
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Print Leger"),
-                React.createElement('p', { className: "mt-1 text-slate-600" }, "Pratinjau leger nilai akhir siswa. Gunakan tombol 'Cetak' untuk mencetak atau menyimpan sebagai PDF.")
+                React.createElement('p', { className: "mt-1 text-slate-600" }, "Pratinjau leger nilai akhir siswa. Gunakan tombol 'Generate PDF' untuk membuat file PDF.")
             ),
             React.createElement('div', { className: "flex items-end gap-4" },
                 React.createElement('div', null,
@@ -178,22 +219,32 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
                         className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                 ),
-                React.createElement('button', { onClick: handlePrint, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700" }, "Cetak")
+                React.createElement('button', { 
+                    onClick: handleGeneratePdf, 
+                    disabled: isGeneratingPdf,
+                    className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+                }, isGeneratingPdf ? 'Membuat PDF...' : 'Generate PDF')
             )
         ),
-        React.createElement('div', { className: "bg-white p-8 rounded-xl shadow-md border border-slate-200 print-leger-container" },
-            React.createElement('div', { className: "font-sans" },
-                React.createElement('h2', { className: "text-center font-bold text-lg mb-1 uppercase" }, `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[tahun ajaran]'} SEMESTER ${settings.semester || '[semester]'}`),
-                React.createElement('div', { className: "flex justify-between text-sm mb-4" },
-                    React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "SEKOLAH: "), (settings.nama_sekolah || '[nama sekolah]').toUpperCase()),
-                    React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "KELAS: "), (settings.nama_kelas || '[nama kelas]').toUpperCase())
+        React.createElement('div', { id: "print-area" },
+            React.createElement('div', {
+                ref: printRef,
+                className: "bg-white p-8 mx-auto shadow-lg flex flex-col",
+                style: pageStyle
+            },
+                React.createElement('div', { className: "font-sans flex-shrink-0" },
+                    React.createElement('h2', { className: "text-center font-bold text-lg mb-1 uppercase" }, `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[tahun ajaran]'} SEMESTER ${settings.semester || '[semester]'}`),
+                    React.createElement('div', { className: "flex justify-between text-sm mb-4" },
+                        React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "SEKOLAH: "), (settings.nama_sekolah || '[nama sekolah]').toUpperCase()),
+                        React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "KELAS: "), (settings.nama_kelas || '[nama kelas]').toUpperCase())
+                    )
                 ),
-                React.createElement('div', { className: "overflow-x-auto" },
+                React.createElement('div', { className: "overflow-x-auto flex-grow" },
                     React.createElement('table', { 
                         className: "w-full border-collapse border border-black",
                         style: { fontSize: tableFontSize, tableLayout: 'fixed' }
                     },
-                         React.createElement('colgroup', null,
+                        React.createElement('colgroup', null,
                             React.createElement('col', { style: { width: '4%' } }), // NO
                             React.createElement('col', { style: { width: '22%' } }), // NAMA
                             React.createElement('col', { style: { width: '8%' } }), // NISN
@@ -231,11 +282,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
                                 )
                             ))
                         )
-                    ),
+                    )
+                ),
+                React.createElement('div', { className: "font-sans mt-auto flex-shrink-0" },
                     React.createElement('div', { 
-                        className: "mt-8 flex justify-between",
+                        className: "pt-8 flex justify-between",
                         style: { fontSize: signatureFontSize }
-                     },
+                    },
                         React.createElement('div', { className: "text-center w-2/5" },
                             React.createElement('p', null, "Mengetahui,"),
                             React.createElement('p', null, "Kepala Sekolah,"),
@@ -253,8 +306,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects }) => {
                     )
                 )
             )
-        ),
-        React.createElement('style', null, printStyles)
+        )
     );
 };
 
