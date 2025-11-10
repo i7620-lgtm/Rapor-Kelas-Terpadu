@@ -255,30 +255,30 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                         ),
                         React.createElement('thead', null,
                             React.createElement('tr', { className: "text-center font-bold bg-slate-100", style: { fontSize: headerFontSize } },
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "NO"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "NAMA MURID"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "NISN"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "NIS"),
-                                React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black p-1 align-middle whitespace-nowrap" }, "NILAI MATA PELAJARAN"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "JUMLAH"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle whitespace-nowrap" }, "RATA-RATA")
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NO"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NAMA MURID"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NISN"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NIS"),
+                                React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NILAI MATA PELAJARAN"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "JUMLAH"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "RATA-RATA")
                             ),
                             React.createElement('tr', { className: "text-center font-bold bg-slate-100" },
-                                ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black p-1 align-middle whitespace-nowrap" }, subject.label))
+                                ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, subject.label))
                             )
                         ),
                         React.createElement('tbody', null,
                             ...processedData.map(student => (
                                 React.createElement('tr', { key: student.no },
-                                    React.createElement('td', { className: "border border-black p-1 text-center" }, student.no),
-                                    React.createElement('td', { className: "border border-black p-1" }, student.namaLengkap),
-                                    React.createElement('td', { className: "border border-black p-1 text-center" }, student.nisn),
-                                    React.createElement('td', { className: "border border-black p-1 text-center" }, student.nis),
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.no),
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px]" }, student.namaLengkap),
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.nisn),
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.nis),
                                     ...displaySubjects.map(subject => (
-                                        React.createElement('td', { key: subject.id, className: "border border-black p-1 text-center" }, student.grades[subject.id] ?? '')
+                                        React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] text-center" }, student.grades[subject.id] ?? '')
                                     )),
-                                    React.createElement('td', { className: "border border-black p-1 text-center font-bold" }, student.total),
-                                    React.createElement('td', { className: "border border-black p-1 text-center font-bold" }, student.average)
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px] text-center font-bold" }, student.total),
+                                    React.createElement('td', { className: "border border-black px-2 py-[2px] text-center font-bold" }, student.average)
                                 )
                             ))
                         )
