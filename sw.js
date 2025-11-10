@@ -18,6 +18,7 @@ const urlsToCache = [
   '/components/DataAbsensiPage.js',
   '/components/DataEkstrakurikulerPage.js',
   '/components/PrintRaporPage.js',
+  '/components/PrintLegerPage.js',
   '/components/Toast.js',
   '/components/TransliterationUtil.js',
   '/terms.html',
