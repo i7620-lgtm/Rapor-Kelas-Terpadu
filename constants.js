@@ -6,6 +6,7 @@ export const NAV_ITEMS = [
   { id: 'DATA_ABSENSI', label: 'Data Absensi' },
   { id: 'CATATAN_WALI_KELAS', label: 'Catatan Wali Kelas' },
   { id: 'PRINT_RAPOR', label: 'Print Rapor' },
+  { id: 'PRINT_LEGER', label: 'Print Leger' },
   { id: 'PENGATURAN', label: 'Pengaturan' },
 ];
 
