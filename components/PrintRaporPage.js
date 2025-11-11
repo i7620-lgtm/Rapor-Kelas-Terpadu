@@ -374,20 +374,20 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
         React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'w-[20%] py-[2px] px-2' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-[2px] px-2' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                    React.createElement('td', { className: 'w-[15%] py-[2px] px-2' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-[2px] px-2' }, `: ${settings.nama_kelas || ''}`)
+                    React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
+                    React.createElement('td', { className: 'w-[15%] py-0 px-1' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-0 px-1' }, `: ${settings.nama_kelas || ''}`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-[2px] px-2' }, 'NISN/NIS'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                    React.createElement('td', { className: 'py-[2px] px-2' }, 'Fase'), React.createElement('td', { className: 'py-[2px] px-2' }, `: C`)
+                    React.createElement('td', { className: 'py-0 px-1' }, 'NISN/NIS'), React.createElement('td', { className: 'py-0 px-1' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Fase'), React.createElement('td', { className: 'py-0 px-1' }, `: C`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-[2px] px-2' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.nama_sekolah || ''}`),
-                    React.createElement('td', { className: 'py-[2px] px-2' }, 'Semester'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.nama_sekolah || ''}`),
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-[2px] px-2' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.alamat_sekolah || ''}`),
-                    React.createElement('td', { className: 'whitespace-nowrap py-[2px] px-2' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-[2px] px-2' }, `: ${settings.tahun_ajaran || ''}`)
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.alamat_sekolah || ''}`),
+                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.tahun_ajaran || ''}`)
                 )
             )
         )
@@ -395,25 +395,25 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
 ));
 
 const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10.5pt' } },
+    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
-                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'),
-                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[20%]' }, 'Mata Pelajaran'),
-                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[67%]' }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[67%]' }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black px-2 py-[2px] align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black px-2 py-[2px] align-top text-justify' },
-                        React.createElement('p', {className: 'mb-1'}, item.description.highest),
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top text-justify leading-tight' },
+                        React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'border-t border-slate-400 my-1' }),
+                            React.createElement('hr', { className: 'border-t border-slate-300' }),
                             React.createElement('p', null, item.description.lowest)
                         )
                     )
@@ -827,13 +827,6 @@ const PAPER_SIZES = {
     Legal: { width: '21.59cm', height: '35.56cm' },
 };
 
-const jsPDFPaperSizes = {
-    A4: { width: 210, height: 297 }, // in mm
-    F4: { width: 215, height: 330 }, // in mm, commonly used F4 size
-    Letter: { width: 215.9, height: 279.4 }, // in mm
-    Legal: { width: 215.9, height: 355.6 }, // in mm
-};
-
 const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     const [paperSize, setPaperSize] = useState('A4');
     const [selectedStudentId, setSelectedStudentId] = useState('all');
@@ -864,63 +857,69 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     }, []);
     
     const handleGeneratePdf = async () => {
-        if (typeof html2pdf === 'undefined') {
-            showToast('Pustaka PDF (html2pdf.js) tidak termuat. Mohon muat ulang halaman.', 'error');
-            return;
-        }
-    
         setIsGeneratingPdf(true);
-        
         const printArea = document.getElementById('print-area');
         if (!printArea) {
             showToast('Area cetak tidak ditemukan.', 'error');
             setIsGeneratingPdf(false);
             return;
         }
-    
-        // Clone the element and remove UI-only spacing for a clean PDF output
-        const elementToPrint = printArea.cloneNode(true);
-        elementToPrint.classList.remove('space-y-8');
-        
-        // Append to body temporarily for rendering, but make it invisible
-        elementToPrint.style.position = 'absolute';
-        elementToPrint.style.left = '-9999px';
-        document.body.appendChild(elementToPrint);
-        
-        // Get paper size in mm
-        const pdfSize = jsPDFPaperSizes[paperSize];
-        
-        const options = {
-          margin: 0,
-          filename: `Rapor_Kelas_${settings.nama_kelas || ''}_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: [pdfSize.width, pdfSize.height],
-            orientation: 'portrait'
-          }
-        };
-    
+
+        // Temporarily remove spacing class to avoid gaps in PDF
+        printArea.classList.remove('space-y-8');
+
         try {
-            // html2pdf automatically handles pagination based on element height vs page height.
-            const worker = html2pdf().set(options).from(elementToPrint);
+            if (typeof pdfMake === 'undefined' || typeof html2canvas === 'undefined') {
+                throw new Error("Pustaka PDF (pdfMake/html2canvas) tidak termuat.");
+            }
+
+            const content = [];
+            const reportElements = printArea.querySelectorAll('.report-page');
+
+            const pdfPageSizePoints = {
+                A4: { width: 595.28, height: 841.89 },
+                F4: { width: 609.45, height: 935.43 },
+                Letter: { width: 612, height: 792 },
+                Legal: { width: 612, height: 1008 },
+            }[paperSize];
+
+            for (const element of reportElements) {
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    allowTaint: true
+                });
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                content.push({
+                    image: imgData,
+                    width: pdfPageSizePoints.width,
+                    height: pdfPageSizePoints.height
+                });
+            }
+
+            if (content.length === 0) {
+                throw new Error("Tidak ada konten untuk dibuat menjadi PDF.");
+            }
             
-            // To open in a new tab instead of saving
-            const pdfBlob = await worker.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-    
-            showToast('PDF rapor berhasil dibuat dan dibuka di tab baru!', 'success');
+            const docDefinition = {
+                pageSize: paperSize,
+                pageMargins: [0, 0, 0, 0],
+                content: content.map((img, index) => {
+                    return index > 0 ? { ...img, pageBreak: 'before' } : img;
+                })
+            };
+
+            pdfMake.vfs = window.pdfMake.vfs;
+            pdfMake.createPdf(docDefinition).open();
+
+            showToast('PDF rapor berhasil dibuat!', 'success');
         } catch (error) {
-            console.error("Gagal membuat PDF:", error);
+            console.error("Gagal membuat PDF dengan pdfmake:", error);
             showToast(`Gagal membuat PDF: ${error.message}`, 'error');
         } finally {
-            document.body.removeChild(elementToPrint); // Clean up the cloned element
+            // Restore spacing class
+            printArea.classList.add('space-y-8');
             setIsGeneratingPdf(false);
         }
     };
