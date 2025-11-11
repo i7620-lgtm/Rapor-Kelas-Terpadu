@@ -151,7 +151,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         style.innerHTML = `
             @page { 
                 ${paperSizeCss}
-                margin: 1.5cm 2.5cm 2.5cm 2.5cm;
+                margin: 1.5cm;
             }
         `;
         document.head.appendChild(style);
@@ -305,7 +305,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         ),
         React.createElement('div', { id: "print-area" },
             React.createElement('div', {
-                className: "leger-page bg-white mx-auto shadow-lg my-8 border box-border p-6",
+                className: "leger-page bg-white mx-auto shadow-lg my-8 border p-6",
                 style: { ...pageStyle, height: 'auto' }
             },
                 React.createElement(ReportHeader, { settings: settings }),
