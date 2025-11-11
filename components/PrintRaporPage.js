@@ -1,83 +1,80 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, loadFonts } from './TransliterationUtil.js';
-import { getGradeNumber } from './DataNilaiPage.js';
+import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
+import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 
-// Define fixed heights and margins for layout consistency in CM
-const HEADER_HEIGHT_CM = 5.2;
-const PAGE_TOP_MARGIN_CM = 1.5;
-const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
-const PAGE_BOTTOM_MARGIN_CM = 1.5;
-const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0;
+// Define fixed heights and margins for layout consistency
+const HEADER_HEIGHT_CM = 5.2; // Height of the report header area in cm
+const PAGE_TOP_MARGIN_CM = 1.5; // Standard top margin of the paper in cm
+const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5; // Standard left/right margin
+const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
+const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
+
+// New derived constant for the 'bottom' CSS property of the main content area
+// This includes the standard bottom margin, the height of the page number footer,
+// and an additional buffer (0.5cm) to ensure space between report footer content and page number footer.
 const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
 
-// Default Tut Wuri Handayani Logo (Base64)
-const TUT_WURI_HANDAYANI_LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAKACAIAAAD32F9GAAAAA3NCSVQICAjb4U/gAAAgAElEQVR4nOzdZ5Ql11nY+e/MO9XTVXV1d/fM9ExPhkHAgAyCiIiCIqAIogAFvYCK9x7RBRQFDwIRBfEgIAgBBRGQQSQMwsy0d/dUVVXV3TOz+33vV7+qunpmpntmdnd3pY+Zrq7u7jLzz/8v/s7/T//5/+W+ECAkQkAIASGEhBAQAkJACCEhBASEgBACCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgBASCQkhIASEgB-AAAAAAAAAAAAA';
-
-const ReportHeader = ({ settings, cmToPx }) => {
+const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
         : generateInitialLayout(settings);
 
-    return React.createElement('div', {
-        className: "absolute top-0 left-0 right-0",
-        style: {
-            height: `${HEADER_HEIGHT_CM * cmToPx}px`,
-            padding: `${1 * cmToPx}px ${1.5 * cmToPx}px 0 ${1.5 * cmToPx}px`
-        }
-    },
-        React.createElement('div', { className: "relative w-full h-full" },
-            React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
-                layout.map(el => {
-                    if (el.type === 'text') {
-                        let textAnchor = "start";
-                        let xPos = el.x;
-                        if (el.textAlign === 'center') {
-                            textAnchor = "middle";
-                            xPos = el.x + (el.width ?? 0) / 2;
-                        } else if (el.textAlign === 'right') {
-                            textAnchor = "end";
-                            xPos = el.x + (el.width ?? 0);
+    return (
+        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
+            React.createElement('div', { className: "relative w-full h-full" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
+                    layout.map(el => {
+                        if (el.type === 'text') {
+                            let textAnchor = "start";
+                            let xPos = el.x;
+                            if (el.textAlign === 'center') {
+                                textAnchor = "middle";
+                                xPos = el.x + (el.width ?? 0) / 2;
+                            } else if (el.textAlign === 'right') {
+                                textAnchor = "end";
+                                xPos = el.x + (el.width ?? 0);
+                            }
+                            return (
+                                React.createElement('text', {
+                                    key: el.id,
+                                    x: xPos,
+                                    y: el.y + (el.fontSize ?? 14),
+                                    fontSize: el.fontSize,
+                                    fontWeight: el.fontWeight,
+                                    textAnchor: textAnchor,
+                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
+                                }, el.content)
+                            );
                         }
-                        return (
-                            React.createElement('text', {
-                                key: el.id,
-                                x: xPos,
-                                y: el.y + (el.fontSize ?? 14),
-                                fontSize: el.fontSize,
-                                fontWeight: el.fontWeight,
-                                textAnchor: textAnchor,
-                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'Tinos, system-ui'
-                            }, el.content)
-                        );
-                    }
-                    if (el.type === 'image') {
-                        const imageUrl = String(settings[el.content] || '');
-                        if (!imageUrl) return null;
-                        return (
-                            React.createElement('image', {
-                                key: el.id,
-                                href: imageUrl,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height
-                            })
-                        );
-                    }
-                    if (el.type === 'line') {
-                        return (
-                            React.createElement('rect', {
-                                key: el.id,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height,
-                                fill: "black"
-                            })
-                        );
-                    }
-                    return null;
-                })
+                        if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
+                            if (!imageUrl) return null; // Don't render image if URL is empty
+                            return (
+                                React.createElement('image', {
+                                    key: el.id,
+                                    href: imageUrl,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height
+                                })
+                            );
+                        }
+                        if (el.type === 'line') {
+                            return (
+                                React.createElement('rect', {
+                                    key: el.id,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height,
+                                    fill: "black"
+                                })
+                            );
+                        }
+                        return null;
+                    })
+                )
             )
         )
     );
@@ -88,11 +85,12 @@ const formatDate = (dateString) => {
     if (!dateString || dateString instanceof Date && isNaN(dateString)) return '-';
     try {
         const date = new Date(dateString);
+        // add timezone offset to prevent off-by-one day errors
         const userTimezoneOffset = date.getTimezoneOffset() * 60000;
         const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
         
         if (isNaN(adjustedDate.getTime())) {
-            return String(dateString);
+            return String(dateString); // Return original string if date is invalid
         }
 
         return adjustedDate.toLocaleDateString('id-ID', {
@@ -101,7 +99,7 @@ const formatDate = (dateString) => {
             year: 'numeric',
         });
     } catch (e) {
-        return String(dateString);
+        return String(dateString); // Return original string on error
     }
 };
 
@@ -120,15 +118,25 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-    const studentName = capitalize(studentNameRaw);
+    const studentName = capitalize(studentNameRaw); // e.g., "Ariel"
 
+    // Helper to clean up TP text by replacing "Ananda [StudentName/Nickname]" or "Ananda " at the start.
     const cleanTpText = (text) => {
         if (!text) return '';
         let cleanedText = text;
+        
+        // Remove "Ananda <student's nickname/first name> "
+        // Example: "Ananda Ariel menunjukkan..." becomes "menunjukkan..."
         cleanedText = cleanedText.replace(new RegExp(`^ananda\\s+${studentNameRaw}\\s`, 'i'), '');
+        
+        // Remove generic "Ananda " if it's at the very beginning
+        // Example: "Ananda menunjukkan penguasaan..." becomes "menunjukkan penguasaan..."
         cleanedText = cleanedText.replace(/^ananda\s+/i, '');
+
         return cleanedText.trim();
     };
+
+    const defaultReturn = { highest: `${studentName} telah mencapai tujuan pembelajaran.`, lowest: '' };
 
     const currentGradeNumber = getGradeNumber(settings.nama_kelas);
     if (currentGradeNumber === null) {
@@ -150,7 +158,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
     const gradedTps = objectivesForSubject
-        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.tp?.[index] }))
+        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.tp?.[index] })) // Apply cleanTpText here!
         .filter(tp => typeof tp.score === 'number' && tp.score !== null);
     
     if (gradedTps.length === 0) {
@@ -158,6 +166,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
     
     if (gradedTps.length === 1) {
+        // Now, gradedTps[0].text is already cleaned.
         return { highest: `${studentName} menunjukkan penguasaan yang baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
     }
 
@@ -165,6 +174,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     const allScoresEqual = scores.every(s => s === scores[0]);
 
     if (allScoresEqual) {
+        // This is generic, does not use specific TP text, so it's fine.
         return { 
             highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
@@ -181,6 +191,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
         const lowestTp = gradedTps.find(tp => tp.score === minScore);
         
         if (highestTp && lowestTp) {
+            // `highestTp.text` and `lowestTp.text` are already cleaned here.
             return { 
                 highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
                 lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
@@ -191,8 +202,28 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
 };
 
-const CoverPage = ({ student, settings, cmToPx }) => {
+const CoverPage = ({ student, settings }) => {
     const year = useMemo(() => {
+        if (settings.tanggal_rapor) {
+            try {
+                // Handle format "Denpasar, 20 Desember 2024"
+                const parts = settings.tanggal_rapor.split(' ');
+                if (parts.length >= 3) {
+                    const yearPart = parts[parts.length - 1];
+                    const monthName = parts[parts.length - 2];
+                    const monthIndex = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'].indexOf(monthName.toLowerCase());
+
+                    if (!isNaN(parseInt(yearPart, 10)) && monthIndex !== -1) {
+                        const reportYear = parseInt(yearPart, 10);
+                        // If report date is in the first half of the year (Jan-June), it belongs to the previous academic year end
+                        if (monthIndex < 6) {
+                            return `${reportYear - 1}/${reportYear}`;
+                        }
+                        return `${reportYear}/${reportYear + 1}`;
+                    }
+                }
+            } catch (e) { /* Fallback below */ }
+        }
         if (settings.tahun_ajaran) {
             return settings.tahun_ajaran;
         }
@@ -203,24 +234,24 @@ const CoverPage = ({ student, settings, cmToPx }) => {
              return `${currentYear - 1}/${currentYear}`;
         }
         return `${currentYear}/${currentYear + 1}`;
-    }, [settings.tahun_ajaran]);
+    }, [settings.tanggal_rapor, settings.tahun_ajaran]);
 
-    const coverLogo = settings.logo_cover || TUT_WURI_HANDAYANI_LOGO;
+    const coverLogo = settings.logo_cover || ''; // Now falls back to empty string
 
     return React.createElement('div', {
         className: 'flex flex-col items-center text-center p-8 box-border font-times',
         style: {
             position: 'absolute',
-            top: `${PAGE_TOP_MARGIN_CM * cmToPx}px`,
-            left: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`,
-            right: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`,
-            bottom: `${PAGE_BOTTOM_MARGIN_CM * cmToPx}px`,
+            top: '1.5cm',
+            left: '1.5cm',
+            right: '1.5cm',
+            bottom: '1.5cm',
             border: '6px double #000'
         }
     },
         React.createElement('div', { className: 'w-full pt-16' },
             React.createElement('div', { className: 'flex justify-center mb-10' },
-                React.createElement('img', {
+                coverLogo && React.createElement('img', { // Only render img if coverLogo exists
                     src: coverLogo,
                     alt: "Logo Cover Rapor",
                     className: 'h-48 w-48 object-contain'
@@ -233,11 +264,11 @@ const CoverPage = ({ student, settings, cmToPx }) => {
 
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-3' },
+                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
                     React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-3' },
+                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
                     React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
                 )
             )
@@ -251,7 +282,7 @@ const CoverPage = ({ student, settings, cmToPx }) => {
     );
 };
 
-const SchoolIdentityPage = ({ settings, cmToPx }) => {
+const SchoolIdentityPage = ({ settings }) => {
     const identitasSekolah = [
         { label: "Nama Sekolah", value: settings.nama_sekolah },
         { label: "NPSN", value: settings.npsn },
@@ -286,7 +317,7 @@ const SchoolIdentityPage = ({ settings, cmToPx }) => {
     );
 };
 
-const StudentIdentityPage = ({ student, settings, cmToPx }) => {
+const StudentIdentityPage = ({ student, settings }) => {
     const identitasSiswa = [
         { no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
@@ -420,17 +451,15 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         if (!isSemesterGenap) return null;
 
         const gradeLevel = getGradeNumber(settings.nama_kelas);
-        if (gradeLevel === null) return null;
-
         let passText, passTo;
 
-        if (gradeLevel >= 6) { // Handle for grade 6 and potentially higher if misconfigured
+        if (gradeLevel === 6) {
             passText = 'LULUS';
         } else {
             passText = 'Naik ke Kelas';
-            const nextGrade = gradeLevel + 1;
-            const nextGradeRomanMap = { 1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI' };
-            passTo = `${nextGrade} (${nextGradeRomanMap[nextGrade] || ''})`;
+            const nextGrade = gradeLevel ? gradeLevel + 1 : '';
+            const nextGradeRomanPlusOne = {1: 'II', 2: 'III', 3: 'IV', 4: 'V', 5: 'VI', 6: 'VI'}[nextGrade-1];
+            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
         }
         
         return React.createElement('div', { className: 'border-2 border-black p-2 mt-2' },
@@ -481,20 +510,18 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
 });
 
 
-const PageFooter = ({ student, settings, currentPage, cmToPx }) => {
+const PageFooter = ({ student, settings, currentPage }) => {
     const className = settings.nama_kelas || '';
     const studentName = student.namaLengkap || '';
     const nisn = student.nisn || '-';
 
     return (
         React.createElement('div', { 
-            className: "absolute font-times", 
+            className: "absolute left-[1.5cm] right-[1.5cm] font-times", 
             style: { 
-                left: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`,
-                right: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`,
-                bottom: `${PAGE_BOTTOM_MARGIN_CM * cmToPx}px`,
+                bottom: `${PAGE_BOTTOM_MARGIN_CM}cm`,
                 fontSize: '10pt',
-                height: `${PAGE_NUMBER_FOOTER_HEIGHT_CM * cmToPx}px`,
+                height: `${PAGE_NUMBER_FOOTER_HEIGHT_CM}cm`,
             }
         },
             React.createElement('div', { className: "border-t border-slate-400 mb-2" }),
@@ -511,7 +538,7 @@ const PageFooter = ({ student, settings, currentPage, cmToPx }) => {
 };
 
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, cmToPx, ...restProps }) => {
+const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, ...restProps }) => {
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
@@ -524,8 +551,17 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const attendanceRef = useRef(null);
     const signaturesRef = useRef(null);
     const headmasterRef = useRef(null);
+    const cmRef = useRef(null);
+    const [cmToPx, setCmToPx] = useState(0);
+
+    useEffect(() => {
+        if (cmRef.current) {
+            setCmToPx(cmRef.current.offsetHeight);
+        }
+    }, [cmRef.current]);
 
     const reportSubjects = useMemo(() => {
+        // ... (same logic as before)
         const result = [];
         const processedGroups = new Set();
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -602,15 +638,18 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
     useEffect(() => {
-        if (!selectedPages.academic || cmToPx === 0) {
+        if (!selectedPages.academic) {
             setAcademicPageChunks([]);
             return;
         }
-        setAcademicPageChunks(null); 
+        if (cmToPx === 0) return;
+
+        setAcademicPageChunks(null); // Set to null to trigger measurement render
 
         const calculateChunks = () => {
             const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef];
             if (refs.some(ref => !ref.current)) {
+                // If any ref is not ready, retry
                 setTimeout(calculateChunks, 50);
                 return;
             }
@@ -621,11 +660,13 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             const allItems = [];
             
+            // 1. Academic Table Rows
             const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
             reportSubjects.forEach((subject, index) => {
-                allItems.push({ type: 'academic', content: subject, height: rowHeights[index] || 0 });
+                allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
             });
 
+            // 2. Footer Components
             const footerItems = [
                 { type: 'extra', ref: extraRef },
                 { type: 'notes', ref: notesRef },
@@ -641,6 +682,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     const style = window.getComputedStyle(element);
                     const marginTop = parseFloat(style.marginTop);
                     const marginBottom = parseFloat(style.marginBottom);
+                    // Only add if it has height, preventing empty/hidden elements from being paginated
                     if (height > 0) {
                          allItems.push({ type: item.type, height: height + marginTop + marginBottom });
                     }
@@ -649,7 +691,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             const allChunks = [];
             if (allItems.length === 0) {
-                setAcademicPageChunks([[]]);
+                setAcademicPageChunks([[]]); // A single empty page if no content
                 return;
             }
 
@@ -661,6 +703,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 const availableHeight = isFirstPage ? firstPageAvailableHeight : subsequentPageAvailableHeight;
                 let heightUsed = isFirstPage ? studentInfoRef.current.getBoundingClientRect().height : 0;
                 
+                // Add table header height if there are academic items in this or subsequent chunks
                 const hasAcademicItemsRemaining = allItems.slice(currentItemIndex).some(item => item.type === 'academic');
                 if (hasAcademicItemsRemaining) {
                     heightUsed += tableHeaderRef.current.getBoundingClientRect().height;
@@ -687,6 +730,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
              setAcademicPageChunks(allChunks);
         };
         
+        // Use a timeout to allow DOM to render for measurement
         const timer = setTimeout(calculateChunks, 100);
         return () => clearTimeout(timer);
 
@@ -695,12 +739,14 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     if (academicPageChunks === null && selectedPages.academic) {
         // Render the measurement layout
-        return React.createElement('div', { 
+        return React.createElement(React.Fragment, null,
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { 
                 className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
-                style: { ...pageStyle, visibility: 'hidden', position: 'absolute', left: '-9999px', top: '-9999px' } 
+                style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
             },
                  React.createElement('div', { className: 'absolute flex flex-col', style: {
-                    top: `${HEADER_HEIGHT_CM * cmToPx}px`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx}px`, fontSize: '10.5pt'
+                    top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
                 } },
                     React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
                     React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
@@ -711,35 +757,32 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         ref: { extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef }
                     })
                 )
-            );
+            )
+        );
     }
     
     let academicPageCounter = 0;
 
-    const fullPagePadding = {
-        padding: `${PAGE_TOP_MARGIN_CM * cmToPx}px ${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px ${PAGE_BOTTOM_MARGIN_CM * cmToPx}px ${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`,
-        paddingTop: `${HEADER_HEIGHT_CM * cmToPx}px`
-    };
-
     return (
         React.createElement(React.Fragment, null,
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                React.createElement(CoverPage, { student: student, settings: settings, cmToPx: cmToPx })
+                React.createElement(CoverPage, { student: student, settings: settings })
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                React.createElement(ReportHeader, { settings: settings, cmToPx: cmToPx }),
-                React.createElement('div', { style: fullPagePadding }, React.createElement(SchoolIdentityPage, { settings: settings, cmToPx: cmToPx }))
+                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
-                React.createElement(ReportHeader, { settings: settings, cmToPx: cmToPx }),
-                React.createElement('div', { style: fullPagePadding }, React.createElement(StudentIdentityPage, { student: student, settings: settings, cmToPx: cmToPx }))
+                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
             ),
             selectedPages.academic && academicPageChunks?.map((chunk, pageIndex) => {
-                if (chunk.length === 0 && pageIndex > 0) return null; // Avoid empty pages unless it's the only one
+                if (chunk.length === 0) return null;
 
                 academicPageCounter++;
                 const isFirstAcademicPage = pageIndex === 0;
-                const contentTopPx = isFirstAcademicPage ? HEADER_HEIGHT_CM * cmToPx : PAGE_TOP_MARGIN_CM * cmToPx;
+                const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : PAGE_TOP_MARGIN_CM;
                 
                 const academicItemsInChunk = chunk.filter(item => item.type === 'academic').map(item => item.content);
                 const hasAcademicItems = academicItemsInChunk.length > 0;
@@ -752,14 +795,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 const chunkItemTypes = new Set(chunk.map(item => item.type));
 
                 return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                    isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings, cmToPx: cmToPx }),
+                    isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
-                        top: `${contentTopPx}px`, 
-                        left: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`, 
-                        right: `${PAGE_LEFT_RIGHT_MARGIN_CM * cmToPx}px`, 
-                        bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx}px`, 
-                        fontSize: '10.5pt',
+                        top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
                         hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex }),
@@ -773,7 +812,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         })
                     ),
                     
-                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: academicPageCounter, cmToPx: cmToPx })
+                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: academicPageCounter })
                 );
             })
         )
@@ -789,10 +828,10 @@ const PAPER_SIZES = {
 };
 
 const jsPDFPaperSizes = {
-    A4: { width: 210, height: 297 },
-    F4: { width: 215, height: 330 },
-    Letter: { width: 215.9, height: 279.4 },
-    Legal: { width: 215.9, height: 355.6 },
+    A4: { width: 210, height: 297 }, // in mm
+    F4: { width: 215, height: 330 }, // in mm, commonly used F4 size
+    Letter: { width: 215.9, height: 279.4 }, // in mm
+    Legal: { width: 215.9, height: 355.6 }, // in mm
 };
 
 const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
@@ -805,29 +844,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    const cmRef = useRef(null);
-    const [cmToPx, setCmToPx] = useState(0);
-
-    useEffect(() => {
-        const measure = () => {
-            if (cmRef.current) {
-                setCmToPx(cmRef.current.offsetHeight);
-            }
-        };
-        // Initial measure might be 0, so we retry
-        const interval = setInterval(() => {
-            if(cmRef.current && cmRef.current.offsetHeight > 0) {
-                setCmToPx(cmRef.current.offsetHeight);
-                clearInterval(interval);
-            }
-        }, 50);
-
-        window.addEventListener('resize', measure);
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('resize', measure);
-        };
-    }, []);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -848,47 +864,63 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     }, []);
     
     const handleGeneratePdf = async () => {
+        if (typeof html2pdf === 'undefined') {
+            showToast('Pustaka PDF (html2pdf.js) tidak termuat. Mohon muat ulang halaman.', 'error');
+            return;
+        }
+    
         setIsGeneratingPdf(true);
-        showToast('Memuat aset font...', 'success');
+        
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            showToast('Area cetak tidak ditemukan.', 'error');
+            setIsGeneratingPdf(false);
+            return;
+        }
+    
+        // Clone the element and remove UI-only spacing for a clean PDF output
+        const elementToPrint = printArea.cloneNode(true);
+        elementToPrint.classList.remove('space-y-8');
+        
+        // Append to body temporarily for rendering, but make it invisible
+        elementToPrint.style.position = 'absolute';
+        elementToPrint.style.left = '-9999px';
+        document.body.appendChild(elementToPrint);
+        
+        // Get paper size in mm
+        const pdfSize = jsPDFPaperSizes[paperSize];
+        
+        const options = {
+          margin: 0,
+          filename: `Rapor_Kelas_${settings.nama_kelas || ''}_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+          },
+          jsPDF: {
+            unit: 'mm',
+            format: [pdfSize.width, pdfSize.height],
+            orientation: 'portrait'
+          }
+        };
+    
         try {
-            // Use the new programmatic font loader for maximum reliability
-            await loadFonts();
-            showToast('Membuat PDF, ini mungkin memakan waktu...', 'success');
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', [jsPDFPaperSizes[paperSize].width, jsPDFPaperSizes[paperSize].height]);
+            // html2pdf automatically handles pagination based on element height vs page height.
+            const worker = html2pdf().set(options).from(elementToPrint);
             
-            const reportElements = document.querySelectorAll('#print-area .report-page');
-    
-            for (let i = 0; i < reportElements.length; i++) {
-                const element = reportElements[i];
-                
-                const canvas = await html2canvas(element, { 
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    allowTaint: true
-                });
-    
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const pdfWidth = doc.internal.pageSize.getWidth();
-                const pdfHeight = doc.internal.pageSize.getHeight();
-                
-                if (i > 0) doc.addPage();
-                
-                doc.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            }
-            
-            const pdfBlob = doc.output('blob');
+            // To open in a new tab instead of saving
+            const pdfBlob = await worker.output('blob');
             const pdfUrl = URL.createObjectURL(pdfBlob);
             window.open(pdfUrl, '_blank');
-            
-            showToast('PDF rapor berhasil dibuat dan dibuka di tab baru!', 'success');
     
+            showToast('PDF rapor berhasil dibuat dan dibuka di tab baru!', 'success');
         } catch (error) {
             console.error("Gagal membuat PDF:", error);
-            showToast(`Gagal membuat PDF: ${error.message || 'Error tidak diketahui'}`, 'error');
+            showToast(`Gagal membuat PDF: ${error.message}`, 'error');
         } finally {
+            document.body.removeChild(elementToPrint); // Clean up the cloned element
             setIsGeneratingPdf(false);
         }
     };
@@ -900,13 +932,10 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         return students.filter(s => String(s.id) === selectedStudentId);
     }, [students, selectedStudentId]);
     
-    const pageStyle = useMemo(() => {
-        if (cmToPx === 0) return { visibility: 'hidden' };
-        return {
-            width: `${parseFloat(PAPER_SIZES[paperSize].width) * cmToPx}px`,
-            height: `${parseFloat(PAPER_SIZES[paperSize].height) * cmToPx}px`,
-        };
-    }, [paperSize, cmToPx]);
+    const pageStyle = {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+    };
 
     const pageCheckboxes = [
         { key: 'cover', label: 'Sampul' },
@@ -917,7 +946,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'fixed', left: '-9999px', top: '-9999px' } }),
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
                  React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                     React.createElement('div', null,
@@ -945,9 +973,9 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         ),
                         React.createElement('button', { 
                             onClick: handleGeneratePdf,
-                            disabled: isGeneratingPdf || cmToPx === 0,
+                            disabled: isGeneratingPdf,
                             className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        }, isGeneratingPdf ? 'Membangun PDF...' : (cmToPx === 0 ? 'Menyiapkan...' : 'Generate PDF Rapor'))
+                        }, isGeneratingPdf ? 'Membangun PDF...' : 'Generate PDF Rapor')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4" },
@@ -965,15 +993,21 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             ),
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                cmToPx > 0 && studentsToRender.map(student => {
+                studentsToRender.map(student => {
+                    const studentSelectedPages = {
+                        cover: selectedPages.cover,
+                        schoolIdentity: selectedPages.schoolIdentity,
+                        studentIdentity: selectedPages.studentIdentity,
+                        academic: selectedPages.academic
+                    };
+
                     return React.createElement(ReportPagesForStudent, { 
                         key: student.id, 
                         student: student, 
                         settings: settings,
                         pageStyle: pageStyle,
-                        selectedPages: selectedPages,
+                        selectedPages: studentSelectedPages,
                         paperSize: paperSize,
-                        cmToPx: cmToPx,
                         ...restProps
                     })
                 })
