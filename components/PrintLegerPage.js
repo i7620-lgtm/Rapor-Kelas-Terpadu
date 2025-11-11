@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -7,13 +8,160 @@ const PAPER_SIZES = {
     Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
+const HEADER_HEIGHT_CM = 5.2;
+
+const ReportHeader = ({ settings }) => {
+    const layout = settings.kop_layout && settings.kop_layout.length > 0
+        ? settings.kop_layout
+        : generateInitialLayout(settings);
+
+    return (
+        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
+            React.createElement('div', { className: "relative w-full h-full" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
+                    layout.map(el => {
+                        if (el.type === 'text') {
+                            let textAnchor = "start";
+                            let xPos = el.x;
+                            if (el.textAlign === 'center') {
+                                textAnchor = "middle";
+                                xPos = el.x + (el.width ?? 0) / 2;
+                            } else if (el.textAlign === 'right') {
+                                textAnchor = "end";
+                                xPos = el.x + (el.width ?? 0);
+                            }
+                            return (
+                                React.createElement('text', {
+                                    key: el.id,
+                                    x: xPos,
+                                    y: el.y + (el.fontSize ?? 14),
+                                    fontSize: el.fontSize,
+                                    fontWeight: el.fontWeight,
+                                    textAnchor: textAnchor,
+                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
+                                }, el.content)
+                            );
+                        }
+                        if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || '');
+                            if (!imageUrl) return null;
+                            return (
+                                React.createElement('image', {
+                                    key: el.id,
+                                    href: imageUrl,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height
+                                })
+                            );
+                        }
+                        if (el.type === 'line') {
+                            return (
+                                React.createElement('rect', {
+                                    key: el.id,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height,
+                                    fill: "black"
+                                })
+                            );
+                        }
+                        return null;
+                    })
+                )
+            )
+        )
+    );
+};
+
+const LegerHeader = ({ settings }) => (
+    React.createElement('div', { className: "font-sans" },
+        React.createElement('h2', { className: "text-center font-bold text-lg mb-1 uppercase" }, `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[tahun ajaran]'} SEMESTER ${settings.semester || '[semester]'}`),
+        React.createElement('div', { className: "flex justify-between text-sm mb-4" },
+            React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "SEKOLAH: "), (settings.nama_sekolah || '[nama sekolah]').toUpperCase()),
+            React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "KELAS: "), (settings.nama_kelas || '[nama kelas]').toUpperCase())
+        )
+    )
+);
+
+const LegerFooter = ({ settings, signatureFontSize }) => {
+    const getTanggalRapor = () => {
+        if (!settings.tanggal_rapor) {
+            return `${settings.kota_kabupaten || '[Tempat]'}, _________________`;
+        }
+        const parts = settings.tanggal_rapor.split(',');
+        if (parts.length > 1) {
+            return `${parts[0]}, ${parts.slice(1).join(',').trim()}`;
+        }
+        return `${settings.kota_kabupaten || '[Tempat]'}, ${settings.tanggal_rapor}`;
+    };
+    
+    return (
+        React.createElement('div', { className: "font-sans mt-4" },
+            React.createElement('div', { 
+                className: "pt-8 flex justify-between",
+                style: { fontSize: signatureFontSize }
+            },
+                React.createElement('div', { className: "text-center w-2/5" },
+                    React.createElement('p', null, "Mengetahui,"),
+                    React.createElement('p', null, "Kepala Sekolah,"),
+                    React.createElement('div', { style: { height: '5rem' } }),
+                    React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
+                    React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                ),
+                React.createElement('div', { className: "text-center w-2/5" },
+                    React.createElement('p', null, getTanggalRapor()),
+                    React.createElement('p', null, "Wali Kelas,"),
+                    React.createElement('div', { style: { height: '5rem' } }),
+                    React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
+                    React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
+                )
+            )
+        )
+    );
+};
 
 const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
     const [isPrinting, setIsPrinting] = useState(false);
+    
+    const handlePrint = () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan pratinjau cetak...', 'success');
+
+        const paperSizeCss = {
+            A4: 'size: A4 landscape;',
+            F4: 'size: 33cm 21.5cm landscape;',
+            Letter: 'size: letter landscape;',
+            Legal: 'size: legal landscape;',
+        }[paperSize];
+
+        const style = document.createElement('style');
+        style.id = 'print-leger-style';
+        style.innerHTML = `
+            @page { 
+                ${paperSizeCss}
+                margin: 1.5cm;
+            }
+        `;
+        document.head.appendChild(style);
+
+        setTimeout(() => {
+            window.print();
+            document.getElementById('print-leger-style')?.remove();
+            setIsPrinting(false);
+        }, 500);
+    };
+
+    const pageStyle = {
+        width: PAPER_SIZES[paperSize].width,
+        minHeight: PAPER_SIZES[paperSize].height,
+    };
 
     const activeSubjects = useMemo(() => subjects.filter(s => s.active), [subjects]);
-
+    
     const displaySubjects = useMemo(() => {
         const finalDisplaySubjects = [];
         const addedGroupPrefixes = new Set();
@@ -51,7 +199,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         const labelMap = { 'BIndo': 'B. INDO', 'BIng': 'B. ING' };
         
         return sortedAndFiltered.map(s => ({...s, label: labelMap[s.id] || s.label.toUpperCase() }));
-
     }, [activeSubjects]);
 
     const processedData = useMemo(() => {
@@ -103,7 +250,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             };
         });
     }, [students, grades, activeSubjects, displaySubjects]);
-    
+
     const { tableFontSize, headerFontSize, signatureFontSize } = useMemo(() => {
         const subjectCount = displaySubjects.length;
         let baseSize = 9;
@@ -115,9 +262,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         if (subjectCount > threshold) {
             newSize -= (subjectCount - threshold) * reductionFactor;
         }
-
         const finalTableSize = Math.max(newSize, minSize);
-
         return {
             tableFontSize: `${finalTableSize}pt`,
             headerFontSize: `${finalTableSize + 0.5}pt`,
@@ -125,62 +270,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         };
     }, [displaySubjects]);
 
-    const handlePrint = () => {
-        setIsPrinting(true);
-        showToast('Mempersiapkan pratinjau cetak...', 'success');
-
-        const paperSizeCss = {
-            A4: 'size: A4 landscape;',
-            F4: 'size: 33cm 21.5cm landscape;',
-            Letter: 'size: letter landscape;',
-            Legal: 'size: legal landscape;',
-        }[paperSize];
-
-        const style = document.createElement('style');
-        style.id = 'print-leger-style';
-        style.innerHTML = `
-            @page { 
-                ${paperSizeCss}
-                margin: 1.5cm;
-            }
-            @media print {
-                #print-area > div {
-                    box-shadow: none !important;
-                    border: none !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    width: 100%;
-                    height: 100%;
-                    box-sizing: border-box;
-                }
-            }
-        `;
-        document.head.appendChild(style);
-
-        setTimeout(() => {
-            window.print();
-            document.getElementById('print-leger-style')?.remove();
-            setIsPrinting(false);
-        }, 500);
-    };
-
-    const getTanggalRapor = () => {
-        if (!settings.tanggal_rapor) {
-            return `${settings.kota_kabupaten || '[Tempat]'}, _________________`;
-        }
-        const parts = settings.tanggal_rapor.split(',');
-        if (parts.length > 1) {
-            return `${parts[0]}, ${parts.slice(1).join(',').trim()}`;
-        }
-        return `${settings.kota_kabupaten || '[Tempat]'}, ${settings.tanggal_rapor}`;
-    };
-
     const subjectColWidth = `${(100 - 4 - 22 - 8 - 6 - 7 - 8) / (displaySubjects.length || 1)}%`;
-
-    const pageStyle = {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    };
 
     return React.createElement('div', { className: "space-y-6" },
         React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 print-hidden" },
@@ -207,54 +297,51 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         ),
         React.createElement('div', { id: "print-area" },
             React.createElement('div', {
-                className: "bg-white p-8 mx-auto shadow-lg flex flex-col",
-                style: pageStyle
+                className: "bg-white mx-auto shadow-lg my-8 border",
+                style: { ...pageStyle, height: 'auto' } // Let height grow with content
             },
-                React.createElement('div', { className: "font-sans flex-shrink-0" },
-                    React.createElement('h2', { className: "text-center font-bold text-lg mb-1 uppercase" }, `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[tahun ajaran]'} SEMESTER ${settings.semester || '[semester]'}`),
-                    React.createElement('div', { className: "flex justify-between text-sm mb-4" },
-                        React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "SEKOLAH: "), (settings.nama_sekolah || '[nama sekolah]').toUpperCase()),
-                        React.createElement('div', null, React.createElement('span', { className: "font-bold" }, "KELAS: "), (settings.nama_kelas || '[nama kelas]').toUpperCase())
+                React.createElement('div', { className: 'relative' },
+                    React.createElement(ReportHeader, { settings: settings }),
+                    React.createElement('div', { style: { paddingTop: `${HEADER_HEIGHT_CM}cm` } },
+                        React.createElement(LegerHeader, { settings: settings })
                     )
                 ),
-                React.createElement('div', { className: "overflow-x-auto flex-grow" },
-                    React.createElement('table', { 
-                        className: "w-full border-collapse border border-black",
+                React.createElement('div', { className: "overflow-x-auto" },
+                    React.createElement('table', {
+                        className: "leger-table w-full border-collapse border border-black",
                         style: { fontSize: tableFontSize, tableLayout: 'fixed' }
                     },
                         React.createElement('colgroup', null,
-                            React.createElement('col', { style: { width: '4%' } }), // NO
-                            React.createElement('col', { style: { width: '22%' } }), // NAMA
-                            React.createElement('col', { style: { width: '8%' } }), // NISN
-                            React.createElement('col', { style: { width: '6%' } }), // NIS
+                            React.createElement('col', { style: { width: '4%' } }),
+                            React.createElement('col', { style: { width: '22%' } }),
+                            React.createElement('col', { style: { width: '8%' } }),
+                            React.createElement('col', { style: { width: '6%' } }),
                             ...displaySubjects.map(subject => React.createElement('col', { key: subject.id, style: { width: subjectColWidth } })),
-                            React.createElement('col', { style: { width: '7%' } }), // JUMLAH
-                            React.createElement('col', { style: { width: '8%' } }), // RATA-RATA
+                            React.createElement('col', { style: { width: '7%' } }),
+                            React.createElement('col', { style: { width: '8%' } })
                         ),
                         React.createElement('thead', null,
                             React.createElement('tr', { className: "text-center font-bold bg-slate-100", style: { fontSize: headerFontSize } },
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NO"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NAMA MURID"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NISN"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NIS"),
-                                React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "NILAI MATA PELAJARAN"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "JUMLAH"),
-                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, "RATA-RATA")
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "NO"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "NAMA MURID"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "NISN"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "NIS"),
+                                React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black px-2 py-[2px] align-middle" }, "NILAI MATA PELAJARAN"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "JUMLAH"),
+                                React.createElement('td', { rowSpan: 2, className: "border border-black px-2 py-[2px] align-middle" }, "RATA-RATA")
                             ),
                             React.createElement('tr', { className: "text-center font-bold bg-slate-100" },
-                                ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] align-middle whitespace-nowrap" }, subject.label))
+                                ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] align-middle" }, subject.label))
                             )
                         ),
                         React.createElement('tbody', null,
-                            ...processedData.map(student => (
+                            processedData.map(student => (
                                 React.createElement('tr', { key: student.no },
                                     React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.no),
                                     React.createElement('td', { className: "border border-black px-2 py-[2px]" }, student.namaLengkap),
                                     React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.nisn),
                                     React.createElement('td', { className: "border border-black px-2 py-[2px] text-center" }, student.nis),
-                                    ...displaySubjects.map(subject => (
-                                        React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] text-center" }, student.grades[subject.id] ?? '')
-                                    )),
+                                    ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-2 py-[2px] text-center" }, student.grades[subject.id] ?? '')),
                                     React.createElement('td', { className: "border border-black px-2 py-[2px] text-center font-bold" }, student.total),
                                     React.createElement('td', { className: "border border-black px-2 py-[2px] text-center font-bold" }, student.average)
                                 )
@@ -262,27 +349,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                         )
                     )
                 ),
-                React.createElement('div', { className: "font-sans mt-auto flex-shrink-0" },
-                    React.createElement('div', { 
-                        className: "pt-8 flex justify-between",
-                        style: { fontSize: signatureFontSize }
-                    },
-                        React.createElement('div', { className: "text-center w-2/5" },
-                            React.createElement('p', null, "Mengetahui,"),
-                            React.createElement('p', null, "Kepala Sekolah,"),
-                            React.createElement('div', { style: { height: '5rem' } }),
-                            React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
-                            React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
-                        ),
-                        React.createElement('div', { className: "text-center w-2/5" },
-                            React.createElement('p', null, getTanggalRapor()),
-                            React.createElement('p', null, "Wali Kelas,"),
-                            React.createElement('div', { style: { height: '5rem' } }),
-                            React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
-                            React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
-                        )
-                    )
-                )
+                React.createElement(LegerFooter, { settings: settings, signatureFontSize: signatureFontSize })
             )
         )
     );
