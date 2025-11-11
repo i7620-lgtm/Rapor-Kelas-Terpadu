@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 
 const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -7,18 +7,10 @@ const PAPER_SIZES = {
     Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
-const jsPDFPaperSizes = {
-    A4: { width: 297, height: 210 }, // landscape mm
-    F4: { width: 330, height: 215 }, // landscape mm
-    Letter: { width: 279.4, height: 215.9 }, // landscape mm
-    Legal: { width: 355.6, height: 215.9 }, // landscape mm
-};
-
 
 const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
-    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    const printRef = useRef(null);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     const activeSubjects = useMemo(() => subjects.filter(s => s.active), [subjects]);
 
@@ -133,59 +125,44 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         };
     }, [displaySubjects]);
 
-    const handleGeneratePdf = async () => {
-        if (!printRef.current) {
-            showToast('Elemen pratinjau tidak ditemukan.', 'error');
-            return;
-        }
-        setIsGeneratingPdf(true);
-        try {
-            const { jsPDF } = window.jspdf;
-            const element = printRef.current;
+    const handlePrint = () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-            const canvas = await html2canvas(element, { 
-                scale: 2.5,
-                useCORS: true,
-                logging: false,
-            });
+        const paperSizeCss = {
+            A4: 'size: A4 landscape;',
+            F4: 'size: 33cm 21.5cm landscape;',
+            Letter: 'size: letter landscape;',
+            Legal: 'size: legal landscape;',
+        }[paperSize];
 
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            
-            const pdfSize = jsPDFPaperSizes[paperSize];
-            const doc = new jsPDF('l', 'mm', [pdfSize.width, pdfSize.height]);
+        const style = document.createElement('style');
+        style.id = 'print-leger-style';
+        style.innerHTML = `
+            @page { 
+                ${paperSizeCss}
+                margin: 1.5cm;
+            }
+            @media print {
+                #print-area > div {
+                    box-shadow: none !important;
+                    border: none !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    width: 100%;
+                    height: 100%;
+                    box-sizing: border-box;
+                }
+            }
+        `;
+        document.head.appendChild(style);
 
-            const pdfWidth = doc.internal.pageSize.getWidth();
-            const pdfHeight = doc.internal.pageSize.getHeight();
-            
-            const imgProps = doc.getImageProperties(imgData);
-            const imgWidth = imgProps.width;
-            const imgHeight = imgProps.height;
-            
-            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-            
-            const finalWidth = imgWidth * ratio;
-            const finalHeight = imgHeight * ratio;
-            
-            const x = (pdfWidth - finalWidth) / 2;
-            const y = (pdfHeight - finalHeight) / 2;
-            
-            doc.addImage(imgData, 'JPEG', x, y, finalWidth, finalHeight);
-            
-            const pdfBlob = doc.output('blob');
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-            URL.revokeObjectURL(pdfUrl);
-
-            showToast('PDF Leger berhasil dibuat!', 'success');
-
-        } catch (error) {
-            console.error("Gagal membuat PDF Leger:", error);
-            showToast(`Gagal membuat PDF: ${error.message}`, 'error');
-        } finally {
-            setIsGeneratingPdf(false);
-        }
+        setTimeout(() => {
+            window.print();
+            document.getElementById('print-leger-style')?.remove();
+            setIsPrinting(false);
+        }, 500);
     };
-
 
     const getTanggalRapor = () => {
         if (!settings.tanggal_rapor) {
@@ -206,29 +183,30 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     };
 
     return React.createElement('div', { className: "space-y-6" },
-        React.createElement('div', { className: "flex justify-between items-center print-hidden" },
-            React.createElement('div', null,
-                React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Print Leger"),
-                React.createElement('p', { className: "mt-1 text-slate-600" }, "Pratinjau leger nilai akhir siswa. Gunakan tombol 'Generate PDF' untuk membuat file PDF.")
-            ),
-            React.createElement('div', { className: "flex items-end gap-4" },
+        React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 print-hidden" },
+            React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                 React.createElement('div', null,
-                    React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
-                    React.createElement('select', {
-                        id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
-                        className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                    }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
+                    React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Leger"),
+                    React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pratinjau leger nilai akhir siswa. Gunakan tombol cetak untuk hasil berkualitas tinggi.")
                 ),
-                React.createElement('button', { 
-                    onClick: handleGeneratePdf, 
-                    disabled: isGeneratingPdf,
-                    className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                }, isGeneratingPdf ? 'Membuat PDF...' : 'Generate PDF')
+                React.createElement('div', { className: "flex items-end gap-4 mt-4 md:mt-0" },
+                    React.createElement('div', null,
+                        React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
+                        React.createElement('select', {
+                            id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
+                            className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                        }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
+                    ),
+                    React.createElement('button', { 
+                        onClick: handlePrint, 
+                        disabled: isPrinting,
+                        className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+                    }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
+                )
             )
         ),
         React.createElement('div', { id: "print-area" },
             React.createElement('div', {
-                ref: printRef,
                 className: "bg-white p-8 mx-auto shadow-lg flex flex-col",
                 style: pageStyle
             },
