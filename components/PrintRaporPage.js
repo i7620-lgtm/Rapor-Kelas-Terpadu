@@ -771,11 +771,15 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(SchoolIdentityPage, { settings: settings }))
+                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } }, 
+                    React.createElement(SchoolIdentityPage, { settings: settings })
+                )
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, paddingTop: `${HEADER_HEIGHT_CM}cm` } }, React.createElement(StudentIdentityPage, { student: student, settings: settings }))
+                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
+                    React.createElement(StudentIdentityPage, { student: student, settings: settings })
+                )
             ),
             selectedPages.academic && academicPageChunks?.map((chunk, pageIndex) => {
                 if (chunk.length === 0) return null;
