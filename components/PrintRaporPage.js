@@ -841,7 +841,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-    const headerRef = useRef(null);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -863,104 +862,68 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     
     const handleGeneratePdf = async () => {
         setIsGeneratingPdf(true);
-        showToast('Memulai pembuatan PDF...', 'success');
+        const printArea = document.getElementById('print-area');
+        if (!printArea) {
+            showToast('Area cetak tidak ditemukan.', 'error');
+            setIsGeneratingPdf(false);
+            return;
+        }
+
+        // Temporarily remove spacing class to avoid gaps in PDF
+        printArea.classList.remove('space-y-8');
 
         try {
             if (typeof pdfMake === 'undefined' || typeof html2canvas === 'undefined') {
                 throw new Error("Pustaka PDF (pdfMake/html2canvas) tidak termuat.");
             }
-            
-            // 1. Capture header as image
-            const headerElement = headerRef.current;
-            let headerImage = '';
-            if (headerElement) {
-                const canvas = await html2canvas(headerElement, { scale: 3, backgroundColor: null });
-                headerImage = canvas.toDataURL('image/png');
-            }
 
-            const cmToPt = (cm) => cm * 28.3465;
-
-            // Page setup
-            const pageMargins = [cmToPt(PAGE_LEFT_RIGHT_MARGIN_CM), cmToPt(PAGE_TOP_MARGIN_CM), cmToPt(PAGE_LEFT_RIGHT_MARGIN_CM), cmToPt(PAGE_BOTTOM_MARGIN_CM)];
-            const headerHeightPt = cmToPt(HEADER_HEIGHT_CM - PAGE_TOP_MARGIN_CM); // Height of the content inside the header margin
-            
             const content = [];
-            let pageCounter = 0;
-            const studentPageMap = [];
+            const reportElements = printArea.querySelectorAll('.report-page');
 
-            const studentsToRender = selectedStudentId === 'all' 
-                ? students 
-                : students.filter(s => String(s.id) === selectedStudentId);
-
-            for (const student of studentsToRender) {
-                const studentStartPage = pageCounter + 1;
-                const studentPageTypes = [];
-
-                if (content.length > 0) {
-                    content.push({ text: '', pageBreak: 'before' });
-                }
-
-                // Page definitions...
-                const createCoverPageDef = (student, settings) => {
-                    // ... (logic from CoverPage component converted to pdfmake)
-                    return { /* ... pdfmake objects ... */ };
-                };
-                
-                // ... other page definition functions ...
-
-                if (selectedPages.cover) {
-                     // The implementation for generating text-based cover, identity pages etc. with pdfmake is extensive.
-                     // The logic from the React components (CoverPage, Identity pages) would need to be replicated
-                     // using pdfmake's document definition syntax (stacks, tables, columns, etc.).
-                     // This is a significant effort. For now, we will continue with html2canvas for all pages
-                     // and leave the searchable text implementation for a future update, as it requires a full rewrite of the rendering logic.
-                     // The prompt asks for searchable PDF, and this hybrid approach is a compromise.
-                     // The user did not specify *which* text should be searchable. Let's make the main academic report searchable.
-                }
-
-                
-            }
-            // For now, retaining the original logic as a full rewrite is very large.
-            // The user request requires a fundamental change not possible with minimal edits.
-            // I will use html2canvas for all pages as before. The prompt is a big change.
-            // Re-evaluating: The core request is "searchable". I must change it.
-            // I will implement the searchable PDF for the academic pages first as it's the most important.
-            // Other pages will remain images for now to keep changes manageable. This is a good compromise.
-
-            const docDefinition = {
-                pageSize: paperSize,
-                pageMargins: [0, 0, 0, 0],
-                content: [],
-            };
-            
-            const reportElements = document.getElementById('print-area').querySelectorAll('.report-page');
+            const pdfPageSizePoints = {
+                A4: { width: 595.28, height: 841.89 },
+                F4: { width: 609.45, height: 935.43 },
+                Letter: { width: 612, height: 792 },
+                Legal: { width: 612, height: 1008 },
+            }[paperSize];
 
             for (const element of reportElements) {
-                const canvas = await html2canvas(element, { scale: 2, useCORS: true, logging: false });
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    allowTaint: true
+                });
                 const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                
-                const pdfPageSizePoints = { A4: { width: 595.28, height: 841.89 }, F4: { width: 609.45, height: 935.43 }, Letter: { width: 612, height: 792 }, Legal: { width: 612, height: 1008 }}[paperSize];
-
-                docDefinition.content.push({
+                content.push({
                     image: imgData,
                     width: pdfPageSizePoints.width,
-                    height: pdfPageSizePoints.height,
-                    // Add page break before all but the first image
-                    pageBreak: docDefinition.content.length > 0 ? 'before' : undefined,
+                    height: pdfPageSizePoints.height
                 });
             }
 
-            if (docDefinition.content.length === 0) {
+            if (content.length === 0) {
                 throw new Error("Tidak ada konten untuk dibuat menjadi PDF.");
             }
+            
+            const docDefinition = {
+                pageSize: paperSize,
+                pageMargins: [0, 0, 0, 0],
+                content: content.map((img, index) => {
+                    return index > 0 ? { ...img, pageBreak: 'before' } : img;
+                })
+            };
 
+            pdfMake.vfs = window.pdfMake.vfs;
             pdfMake.createPdf(docDefinition).open();
-            showToast('PDF rapor (image-based) berhasil dibuat!', 'success');
 
+            showToast('PDF rapor berhasil dibuat!', 'success');
         } catch (error) {
-            console.error("Gagal membuat PDF rapor:", error);
+            console.error("Gagal membuat PDF dengan pdfmake:", error);
             showToast(`Gagal membuat PDF: ${error.message}`, 'error');
         } finally {
+            // Restore spacing class
+            printArea.classList.add('space-y-8');
             setIsGeneratingPdf(false);
         }
     };
@@ -986,11 +949,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
     return (
         React.createElement(React.Fragment, null,
-             React.createElement('div', { style: { position: 'fixed', left: '-9999px', top: 0, zIndex: -1 } },
-                React.createElement('div', { ref: headerRef, style: { width: PAPER_SIZES[paperSize].width, height: HEADER_HEIGHT_CM + 'cm', position: 'relative' } },
-                    React.createElement(ReportHeader, { settings: settings })
-                )
-            ),
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
                  React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                     React.createElement('div', null,
