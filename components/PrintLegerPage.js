@@ -16,7 +16,15 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
+        // Changed from absolute positioning to a block in the normal flow.
+        // Height is maintained to push content down. Side padding is removed as @page margin handles it.
+        React.createElement('div', { 
+            style: { 
+                height: `${HEADER_HEIGHT_CM}cm`, 
+                paddingTop: '1cm', // Retain top padding for SVG vertical alignment.
+                boxSizing: 'border-box'
+            } 
+        },
             React.createElement('div', { className: "relative w-full h-full" },
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
                     layout.map(el => {
@@ -143,7 +151,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         style.innerHTML = `
             @page { 
                 ${paperSizeCss}
-                margin: 1.5cm;
+                margin: 1.5cm 2.5cm 2.5cm 2.5cm;
             }
         `;
         document.head.appendChild(style);
@@ -297,9 +305,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         ),
         React.createElement('div', { id: "print-area" },
             React.createElement('div', {
-                className: "leger-page bg-white mx-auto shadow-lg my-8 border p-6",
+                className: "leger-page bg-white mx-auto shadow-lg my-8 border box-border p-6",
                 style: { ...pageStyle, height: 'auto' }
             },
+                React.createElement(ReportHeader, { settings: settings }),
                 React.createElement(LegerHeader, { settings: settings }),
                 React.createElement('div', { className: "overflow-x-auto" },
                     React.createElement('table', {
