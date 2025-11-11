@@ -840,7 +840,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         studentIdentity: true,
         academic: true,
     });
-    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -860,72 +860,27 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         });
     }, []);
     
-    const handleGeneratePdf = async () => {
-        setIsGeneratingPdf(true);
-        const printArea = document.getElementById('print-area');
-        if (!printArea) {
-            showToast('Area cetak tidak ditemukan.', 'error');
-            setIsGeneratingPdf(false);
-            return;
-        }
+    const handlePrint = () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        // Temporarily remove spacing class to avoid gaps in PDF
-        printArea.classList.remove('space-y-8');
+        const paperSizeCss = {
+            A4: 'size: A4 portrait;',
+            F4: 'size: 21.5cm 33cm portrait;',
+            Letter: 'size: letter portrait;',
+            Legal: 'size: legal portrait;',
+        }[paperSize];
 
-        try {
-            if (typeof pdfMake === 'undefined' || typeof html2canvas === 'undefined') {
-                throw new Error("Pustaka PDF (pdfMake/html2canvas) tidak termuat.");
-            }
+        const style = document.createElement('style');
+        style.id = 'print-page-style';
+        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
+        document.head.appendChild(style);
 
-            const content = [];
-            const reportElements = printArea.querySelectorAll('.report-page');
-
-            const pdfPageSizePoints = {
-                A4: { width: 595.28, height: 841.89 },
-                F4: { width: 609.45, height: 935.43 },
-                Letter: { width: 612, height: 792 },
-                Legal: { width: 612, height: 1008 },
-            }[paperSize];
-
-            for (const element of reportElements) {
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    allowTaint: true
-                });
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                content.push({
-                    image: imgData,
-                    width: pdfPageSizePoints.width,
-                    height: pdfPageSizePoints.height
-                });
-            }
-
-            if (content.length === 0) {
-                throw new Error("Tidak ada konten untuk dibuat menjadi PDF.");
-            }
-            
-            const docDefinition = {
-                pageSize: paperSize,
-                pageMargins: [0, 0, 0, 0],
-                content: content.map((img, index) => {
-                    return index > 0 ? { ...img, pageBreak: 'before' } : img;
-                })
-            };
-
-            pdfMake.vfs = window.pdfMake.vfs;
-            pdfMake.createPdf(docDefinition).open();
-
-            showToast('PDF rapor berhasil dibuat!', 'success');
-        } catch (error) {
-            console.error("Gagal membuat PDF dengan pdfmake:", error);
-            showToast(`Gagal membuat PDF: ${error.message}`, 'error');
-        } finally {
-            // Restore spacing class
-            printArea.classList.add('space-y-8');
-            setIsGeneratingPdf(false);
-        }
+        setTimeout(() => {
+            window.print();
+            document.getElementById('print-page-style')?.remove();
+            setIsPrinting(false);
+        }, 500);
     };
 
     const studentsToRender = useMemo(() => {
@@ -953,7 +908,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                  React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
-                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk membuat file PDF.")
+                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.")
                     ),
                     React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
                         React.createElement('div', null,
@@ -975,10 +930,10 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                             }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
                         React.createElement('button', { 
-                            onClick: handleGeneratePdf,
-                            disabled: isGeneratingPdf,
+                            onClick: handlePrint,
+                            disabled: isPrinting,
                             className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        }, isGeneratingPdf ? 'Membangun PDF...' : 'Generate PDF Rapor')
+                        }, isPrinting ? 'Mempersiapkan...' : 'Cetak Rapor (Print)')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4" },
