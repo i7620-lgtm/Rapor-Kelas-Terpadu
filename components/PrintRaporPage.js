@@ -371,7 +371,7 @@ const StudentIdentityPage = ({ student, settings }) => {
 const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
     React.createElement('div', { ref: ref },
         React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt' } },
+        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
@@ -395,7 +395,7 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
 ));
 
 const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt' } },
+    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt', tableLayout: 'fixed' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
@@ -410,7 +410,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, startingIndex + index),
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top' }, item.name),
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top text-justify leading-tight' },
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top leading-tight' },
                         React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
                             React.createElement('hr', { className: 'border-t border-slate-300' }),
@@ -771,7 +771,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } }, 
+                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
                     React.createElement(SchoolIdentityPage, { settings: settings })
                 )
             ),
