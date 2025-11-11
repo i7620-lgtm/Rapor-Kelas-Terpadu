@@ -82,23 +82,37 @@
     border: 6px double #000;
   }
 
-  /*
-  Removed @media print block.
-  html2canvas captures visible DOM. To prevent issues,
-  rely on component's existing CSS for page layout and visibility.
-  For actual browser printing, use the 'print-hidden' class
-  on elements that should not appear in print.
-  */
+  @media print {
+    /* Aturan @page akan diinjeksikan secara dinamis oleh React */
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background-color: #fff;
+      margin: 0;
+    }
+
+    .print-hidden {
+      display: none !important;
+    }
+    
+    .report-page {
+      box-shadow: none !important;
+      border: none !important;
+      margin: 0 !important;
+      page-break-after: always;
+    }
+
+    /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
+    .report-page:last-of-type {
+      page-break-after: auto;
+    }
+  }
 
 </style>
 </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js"></script>
     <script type="module" src="./index.js"></script>
   </body>
 </html>
