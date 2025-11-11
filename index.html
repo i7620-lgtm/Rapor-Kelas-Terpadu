@@ -85,26 +85,54 @@
   @media print {
     /* Aturan @page akan diinjeksikan secara dinamis oleh React */
     body {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      background-color: #fff;
-      margin: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background-color: #fff !important;
+        margin: 0 !important;
     }
 
-    .print-hidden {
-      display: none !important;
+    /* Sembunyikan semua elemen di body secara default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* Tampilkan hanya area cetak dan isinya */
+    #print-area, #print-area * {
+        visibility: visible;
+    }
+
+    /* Posisikan area cetak di root dokumen */
+    #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    /* Tailwind's space-y-* adds margin-top. Reset this for print. */
+    #print-area > * + * {
+        margin-top: 0 !important;
     }
     
     .report-page {
       box-shadow: none !important;
       border: none !important;
       margin: 0 !important;
+      padding: 0 !important;
       page-break-after: always;
+      overflow: hidden !important;
+      position: relative !important;
     }
 
     /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
     .report-page:last-of-type {
       page-break-after: auto;
+    }
+
+    .print-hidden {
+        display: none !important;
     }
   }
 
