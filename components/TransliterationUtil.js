@@ -7,46 +7,9 @@
  *    dengan penanganan vokal pre-posed (taleng), gugus konsonan, dan konsonan akhir yang lebih baik.
  */
 
-const TINOS_REGULAR_BASE64 = 'd09GMgABAAAAAAmYAAoAAAAAFWgAAAmIAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAAAAAAAAAA';
-const TINOS_BOLD_BASE64 = 'd09GMgABAAAAAAoEAAoAAAAAFbAAAAnwAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsGAAQgBSAHIBuDAieaT8hGU09z5/m/O9n//3/y3/9/V8b/f58f4/k/P5/5/l/O5/1/j+T8v37f9z/u/H9f9/y/j8f//j/P/L9/X/b//3f/+v4/X//7/P//3f9/1/v+/7/v//3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f9/3/f-AAAAAAAAAAAAA';
-
-/**
- * Programmatically loads the Tinos font using the FontFace API.
- * This ensures the font is fully available before rendering operations like html2canvas.
- * It checks if the font is already loaded to prevent redundant operations.
- *
- * @returns {Promise<void>} A promise that resolves when the fonts are loaded and added.
- */
-export async function loadFonts() {
-    if (document.fonts.check('1em Tinos')) {
-        return Promise.resolve();
-    }
-    
-    const tinosRegular = new FontFace(
-        'Tinos',
-        `url(data:font/woff2;base64,${TINOS_REGULAR_BASE64})`,
-        { style: 'normal', weight: '400', display: 'block' }
-    );
-    const tinosBold = new FontFace(
-        'Tinos',
-        `url(data:font/woff2;base64,${TINOS_BOLD_BASE64})`,
-        { style: 'normal', weight: '700', display: 'block' }
-    );
-
-    try {
-        const loadedFonts = await Promise.all([tinosRegular.load(), tinosBold.load()]);
-        loadedFonts.forEach(font => document.fonts.add(font));
-    } catch (err) {
-        console.error("Failed to load Tinos font programmatically:", err);
-        // We still resolve so the PDF generation can attempt to proceed with system fonts.
-        return Promise.resolve();
-    }
-}
-
-
 // Kamus untuk frasa resmi dengan transliterasi yang sudah dipastikan benar.
 const officialPhrases = {
-  'pemerintah kota denpasar': 'ᬧᬫᬾᬃᬦ᭄ᬢᬄᬓᭀᬢᬤᬾᬦ᭄ᬧᬲᬃ',
+  'pemerintah kota denpasar': 'ᬧᭂᬫᭂᬭᬶᬦ᭄ᬢᬳ᭄ ᬓᭀᬢ ᬤᬾᬦ᭄ᬧᬲᬃ',
   'dinas pendidikan kepemudaan dan olahraga kota denpasar': 'ᬤᬶᬦᬲ᭄ᬧᭂᬦ᭄ᬤᬶᬤᬶᬓᬦ᭄ᬓᭂᬧᭂᬫᬸᬤᬵᬦ᭄ᬤᬦᭀᬮᬄᬭᬕᬓᭀᬢᬤᬾᬦ᭄ᬧᬲᬃ',
   'sekolah dasar negeri 2 padangsambian': 'ᬲᭂᬓᭀᬮᬄᬤᬲᬃᬦᭂᬕᭂᬭᬶ᭒ᬧᬤᬂᬲᬫ᭄ᬩ᭄ᬬᬦ᭄',
   'jalan kebo iwa banjar batuparas, telepon: (0361) 9093558': 'ᬚᬮᬦ᭄ᬓᭂᬩᭀᬇᬯᬩᬜ᭄ᬚᬃᬩᬢᬸᬧᬭᬲ᭄᭞ ᬢᬾᬮᬾᬧᭀᬦ᭄᭞ ₍᭐᭓᭖᭑₎ ᭙᭐᭙᭓᭕᭕᭘',
@@ -458,7 +421,7 @@ export function transliterate(latin) {
 
 const BALI_CITIES_REGECIES = {
   KOTA: ["denpasar"],
-  KABUPATEN: ["badung", "bangli", "buleleng", "gianyar", "jembrana", "karangasung", "klungkung", "tabanan"]
+  KABUPATEN: ["badung", "bangli", "buleleng", "gianyar", "jembrana", "karangasem", "klungkung", "tabanan"]
 };
 
 export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
