@@ -99,22 +99,22 @@ const LegerFooter = ({ settings, signatureFontSize }) => {
     };
     
     return (
-        React.createElement('div', { className: "font-sans mt-4" },
+        React.createElement('div', { className: "font-sans mt-2" },
             React.createElement('div', { 
-                className: "pt-8 flex justify-between",
+                className: "pt-4 flex justify-between",
                 style: { fontSize: signatureFontSize }
             },
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, "Mengetahui,"),
                     React.createElement('p', null, "Kepala Sekolah,"),
-                    React.createElement('div', { style: { height: '5rem' } }),
+                    React.createElement('div', { style: { height: '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, getTanggalRapor()),
                     React.createElement('p', null, "Wali Kelas,"),
-                    React.createElement('div', { style: { height: '5rem' } }),
+                    React.createElement('div', { style: { height: '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
@@ -297,15 +297,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         ),
         React.createElement('div', { id: "print-area" },
             React.createElement('div', {
-                className: "bg-white mx-auto shadow-lg my-8 border",
-                style: { ...pageStyle, height: 'auto' } // Let height grow with content
+                className: "leger-page bg-white mx-auto shadow-lg my-8 border p-6",
+                style: { ...pageStyle, height: 'auto' }
             },
-                React.createElement('div', { className: 'relative' },
-                    React.createElement(ReportHeader, { settings: settings }),
-                    React.createElement('div', { style: { paddingTop: `${HEADER_HEIGHT_CM}cm` } },
-                        React.createElement(LegerHeader, { settings: settings })
-                    )
-                ),
+                React.createElement(LegerHeader, { settings: settings }),
                 React.createElement('div', { className: "overflow-x-auto" },
                     React.createElement('table', {
                         className: "leger-table w-full border-collapse border border-black",
