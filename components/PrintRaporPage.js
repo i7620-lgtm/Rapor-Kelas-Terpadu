@@ -400,8 +400,8 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[8%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[67%]' }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir'),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[63%]' }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
