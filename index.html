@@ -134,6 +134,20 @@
     .print-hidden {
         display: none !important;
     }
+
+    /* Leger specific print styles */
+    .leger-page {
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .leger-table thead {
+      display: table-header-group; /* Repeat table header on each page */
+    }
+
+    .leger-table tr {
+      page-break-inside: avoid; /* Prevent table rows from breaking across pages */
+    }
   }
 
 </style>
