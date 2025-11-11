@@ -101,12 +101,8 @@
         visibility: visible;
     }
 
-    /* Posisikan area cetak di root dokumen */
+    /* Posisikan area cetak di root dokumen, TANPA position:absolute */
     #print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
         margin: 0 !important;
         padding: 0 !important;
     }
@@ -117,13 +113,16 @@
     }
     
     .report-page {
+      /* POSISI ABSOLUT HANYA UNTUK RAPOR */
+      position: absolute;
+      left: 0;
+      top: 0;
       box-shadow: none !important;
       border: none !important;
       margin: 0 !important;
       padding: 0 !important;
       page-break-after: always;
       overflow: hidden !important;
-      position: relative !important;
     }
 
     /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
@@ -137,7 +136,6 @@
 
     /* Leger specific print styles */
     .leger-page {
-        padding: 0 !important;
         border: none !important;
         box-shadow: none !important;
     }
