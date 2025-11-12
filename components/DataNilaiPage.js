@@ -436,7 +436,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
 
 const DataNilaiPage = ({ initialTab, ...props }) => {
     const [activeTab, setActiveTab] = useState(initialTab || 'keseluruhan');
-    const { subjects } = props;
+    const { subjects, students } = props;
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
     const selectedSubject = useMemo(() => activeSubjects.find((s) => s.id === activeTab), [activeTab, activeSubjects]);
 
@@ -456,16 +456,24 @@ const DataNilaiPage = ({ initialTab, ...props }) => {
                 React.createElement('p', { className: "mt-1 text-slate-600" }, "Kelola nilai siswa per mata pelajaran. Pengaturan dapat diakses di halaman Pengaturan.")
             ),
             
-            React.createElement('div', { className: "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4" },
-                React.createElement('button', { onClick: () => setActiveTab('keseluruhan'), className: activeTab === 'keseluruhan' ? activeButtonClass : inactiveButtonClass }, "Nilai Keseluruhan"),
-                activeSubjects.map((subject) => (
-                    React.createElement('button', { key: subject.id, onClick: () => setActiveTab(subject.id), className: activeTab === subject.id ? activeButtonClass : inactiveButtonClass }, subject.label)
-                ))
-            ),
+            students.length === 0 ? (
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-md border border-slate-200 text-center" },
+                    React.createElement('p', { className: "text-slate-500" }, "Belum ada data siswa. Silakan tambahkan siswa di halaman 'Data Siswa'.")
+                )
+            ) : (
+                React.createElement(React.Fragment, null,
+                    React.createElement('div', { className: "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4" },
+                        React.createElement('button', { onClick: () => setActiveTab('keseluruhan'), className: activeTab === 'keseluruhan' ? activeButtonClass : inactiveButtonClass }, "Nilai Keseluruhan"),
+                        activeSubjects.map((subject) => (
+                            React.createElement('button', { key: subject.id, onClick: () => setActiveTab(subject.id), className: activeTab === subject.id ? activeButtonClass : inactiveButtonClass }, subject.label)
+                        ))
+                    ),
 
-            React.createElement('div', null,
-                activeTab === 'keseluruhan' && React.createElement(NilaiKeseluruhanView, props),
-                selectedSubject && React.createElement(SubjectDetailView, { ...props, subject: selectedSubject })
+                    React.createElement('div', null,
+                        activeTab === 'keseluruhan' && React.createElement(NilaiKeseluruhanView, props),
+                        selectedSubject && React.createElement(SubjectDetailView, { ...props, subject: selectedSubject })
+                    )
+                )
             )
         )
     );
