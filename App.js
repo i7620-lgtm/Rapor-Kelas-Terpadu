@@ -46,49 +46,15 @@ const initialSettings = {
   kop_layout: []
 };
 
-const initialStudents = [
-  {
-      id: 1,
-      namaLengkap: 'DUMMY RUMMY',
-      namaPanggilan: 'DUMMY',
-      nis: '1234',
-      nisn: '12345678',
-      tempatLahir: 'Jakarta',
-      tanggalLahir: '2015-01-01',
-      jenisKelamin: 'Laki-laki',
-      agama: 'Islam',
-      asalTk: 'TK Harapan Bangsa',
-      alamatSiswa: 'Jl. Cendrawasih No. 10',
-      diterimaDiKelas: 'I (Satu)',
-      diterimaTanggal: '2021-07-12',
-      namaAyah: 'Budi Santoso',
-      namaIbu: 'Citra Lestari',
-      pekerjaanAyah: 'Wiraswasta',
-      pekerjaanIbu: 'Ibu Rumah Tangga',
-      alamatOrangTua: 'Jl. Cendrawasih No. 10',
-      teleponOrangTua: '081234567890',
-      namaWali: '',
-      pekerjaanWali: '',
-      alamatWali: '',
-      teleponWali: ''
-  }
-];
+const initialStudents = [];
 
-const initialGrades = [
-    { studentId: 1, detailedGrades: {"BIndo":{"tp":[30],"sts":null,"sas":null}}, finalGrades: {"BIndo":10} }
-];
+const initialGrades = [];
 
-const initialNotes = {
-    1: 'Siswa menunjukkan perkembangan yang baik dalam aspek akademik dan aktif dalam kegiatan kelas. Perlu meningkatkan konsentrasi saat pelajaran berlangsung.'
-};
+const initialNotes = {};
 
-const initialAttendance = [
-    { studentId: 1, sakit: null, izin: null, alpa: null } // Changed 0 to null
-];
+const initialAttendance = [];
 
-const initialStudentExtracurriculars = [
-    { studentId: 1, assignedActivities: ['PRAMUKA', null, null, null, null], descriptions: { 'PRAMUKA': 'Ananda Rummy sangat aktif dan antusias dalam mengikuti kegiatan Pramuka.' } }
-];
+const initialStudentExtracurriculars = [];
 
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
