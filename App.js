@@ -15,8 +15,8 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js'; // Import the new hook
 
-// Placeholder for process.env.GOOGLE_CLIENT_ID, assuming it's injected
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+// Placeholder for process.env.CLIENT_ID, assuming it's injected
+const GOOGLE_CLIENT_ID = process.env.CLIENT_ID;
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Define here as App.js needs it.
 
 const defaultSubjects = [
