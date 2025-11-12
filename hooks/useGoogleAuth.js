@@ -124,20 +124,26 @@ const useGoogleAuth = (clientId) => {
   }, [initializeGSI, initializeGAPIClient]);
 
   const signIn = useCallback(() => {
-    if (window.gapi && window.gapi.auth2) {
+    if (!clientId) {
+      alert('Fitur Google Sign-In tidak aktif karena konfigurasi Client ID tidak ditemukan di lingkungan ini.');
+      console.error('Cannot sign in: Google Client ID is missing.');
+      return;
+    }
+    if (window.gapi && window.gapi.auth2 && window.gapi.auth2.getAuthInstance()) {
       window.gapi.auth2.getAuthInstance().signIn();
     } else {
-      console.warn('GAPI auth2 not loaded yet.');
+      console.warn('GAPI auth2 not loaded yet. Please wait a moment and try again.');
+      alert('Layanan otentikasi Google sedang dimuat. Silakan coba beberapa saat lagi.');
     }
-  }, []);
+  }, [clientId]);
 
   const signOut = useCallback(() => {
-    if (window.gapi && window.gapi.auth2) {
+    if (clientId && window.gapi && window.gapi.auth2 && window.gapi.auth2.getAuthInstance()) {
       window.gapi.auth2.getAuthInstance().signOut();
     } else {
-      console.warn('GAPI auth2 not loaded yet.');
+      console.warn('GAPI auth2 not loaded or clientId is missing.');
     }
-  }, []);
+  }, [clientId]);
 
   // --- Google Drive API Functions ---
 
@@ -177,16 +183,18 @@ const useGoogleAuth = (clientId) => {
         } else {
             // Create folder if it doesn't exist
             const createFolderResponse = await window.gapi.client.drive.files.create({
-                name: RKT_FOLDER_NAME,
-                mimeType: 'application/vnd.google-apps.folder',
-                parents: ['root'],
+                resource: {
+                    name: RKT_FOLDER_NAME,
+                    mimeType: 'application/vnd.google-apps.folder',
+                    parents: ['root']
+                },
                 fields: 'id',
             });
             folderId = createFolderResponse.result.id;
         }
 
         return window.gapi.client.drive.files.list({
-            q: `name='${fileName}' and mimeType='${RKT_MIME_TYPE}' and '${folderId}' in parents`, // Use dynamic fileName
+            q: `name='${fileName}' and mimeType='${RKT_MIME_TYPE}' and '${folderId}' in parents and trashed = false`, // Use dynamic fileName
             fields: 'files(id, name, modifiedTime)',
         });
     });
@@ -198,7 +206,7 @@ const useGoogleAuth = (clientId) => {
     // First, ensure the RKT_App_Data folder exists and get its ID
     let folderId = null;
     const folderResponse = await executeDriveApi(async () => window.gapi.client.drive.files.list({
-        q: `name='${RKT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents`,
+        q: `name='${RKT_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed = false`,
         fields: 'files(id)',
     }));
     const folder = folderResponse.result.files[0];
@@ -206,9 +214,11 @@ const useGoogleAuth = (clientId) => {
         folderId = folder.id;
     } else {
         const createFolderResponse = await executeDriveApi(async () => window.gapi.client.drive.files.create({
-            name: RKT_FOLDER_NAME,
-            mimeType: 'application/vnd.google-apps.folder',
-            parents: ['root'],
+             resource: {
+                name: RKT_FOLDER_NAME,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: ['root'],
+            },
             fields: 'id',
         }));
         folderId = createFolderResponse.result.id;
@@ -237,12 +247,12 @@ const useGoogleAuth = (clientId) => {
       method: method,
       params: { uploadType: 'multipart' },
       headers: {
-        'Content-Type': 'multipart/related',
+        'Authorization': `Bearer ${googleToken}`,
       },
       body: form,
     }));
     return response.result;
-  }, [executeDriveApi]);
+  }, [executeDriveApi, googleToken]);
 
   // Download a file from Drive
   const downloadFile = useCallback(async (fileId) => {
