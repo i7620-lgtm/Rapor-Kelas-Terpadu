@@ -1,7 +1,20 @@
 import React from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
 
-const Sidebar = ({ activePage, setActivePage, onExport, onImport }) => {
+const Sidebar = ({ 
+  activePage, 
+  setActivePage, 
+  onExport, 
+  onImport,
+  isSignedIn,
+  userEmail,
+  isOnline,
+  lastSyncTimestamp,
+  onSignInClick,
+  onSignOutClick,
+  onSyncToDrive,
+  isSyncing
+}) => {
   const handleDataAction = (id) => {
     if (id === 'EKSPORT') {
       onExport();
@@ -9,6 +22,9 @@ const Sidebar = ({ activePage, setActivePage, onExport, onImport }) => {
       onImport();
     }
   };
+
+  const statusText = isOnline ? 'Online' : 'Offline';
+  const statusColor = isOnline ? 'text-green-600' : 'text-red-600';
   
   return (
     React.createElement('aside', { className: "w-64 bg-white shadow-lg flex flex-col print-hidden" },
@@ -44,6 +60,36 @@ const Sidebar = ({ activePage, setActivePage, onExport, onImport }) => {
               className: "w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-100 transition-colors duration-200"
             }, action.label)
           ))
+        ),
+        React.createElement('div', { className: "mt-4 pt-4 border-t border-slate-200" },
+          isSignedIn ? (
+            React.createElement('div', { className: "space-y-3" },
+              React.createElement('div', { className: "flex items-center text-sm" },
+                React.createElement('span', { className: "block w-2 h-2 rounded-full mr-2", style: { backgroundColor: isOnline ? '#22c55e' : '#ef4444' } }),
+                React.createElement('span', { className: "text-slate-600" }, statusText),
+                React.createElement('span', { className: "ml-auto text-slate-500 font-semibold truncate", title: userEmail }, userEmail)
+              ),
+              lastSyncTimestamp && React.createElement('p', { className: "text-xs text-slate-500 mt-1" }, `Terakhir disinkronkan: ${new Date(lastSyncTimestamp).toLocaleString()}`),
+              React.createElement('button', {
+                onClick: onSyncToDrive,
+                disabled: !isOnline || isSyncing,
+                className: "w-full text-left px-4 py-2.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+                "aria-label": "Sinkronkan ke Google Drive"
+              }, isSyncing ? 'Sinkronisasi...' : 'Sinkronkan ke Drive'),
+              React.createElement('button', {
+                onClick: onSignOutClick,
+                className: "w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200",
+                "aria-label": "Keluar dari Google"
+              }, "Keluar Google")
+            )
+          ) : (
+            React.createElement('button', {
+              onClick: onSignInClick,
+              disabled: !isOnline,
+              className: "w-full text-left px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
+              "aria-label": "Masuk dengan Google"
+            }, "Masuk dengan Google")
+          )
         )
       ),
       React.createElement('div', { className: "px-4 py-4 mt-auto border-t" },
