@@ -8,7 +8,7 @@ const PAPER_SIZES = {
     Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
-const HEADER_HEIGHT_CM = 5.2;
+const HEADER_HEIGHT_CM = 6.0;
 
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
@@ -26,7 +26,7 @@ const ReportHeader = ({ settings }) => {
             } 
         },
             React.createElement('div', { className: "relative w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 200", preserveAspectRatio: "xMidYMin meet" },
                     layout.map(el => {
                         if (el.type === 'text') {
                             let textAnchor = "start";
