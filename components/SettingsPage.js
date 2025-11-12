@@ -253,7 +253,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                             backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
                             backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
                         }},
-                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
+                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: "0 0 800 200", preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
                                 elements.map(el => {
                                     const isSelected = el.id === selectedElementId;
                                     const commonProps = {
@@ -379,8 +379,8 @@ const KopSuratPreview = ({ settings }) => {
 
     return (
         React.createElement('div', { className: "bg-slate-50 p-4 rounded-lg border" },
-            React.createElement('div', { className: "bg-white shadow-inner relative w-full max-w-[800px] mx-auto overflow-hidden", style: { aspectRatio: '800 / 180' } },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
+            React.createElement('div', { className: "bg-white shadow-inner relative w-full max-w-[800px] mx-auto overflow-hidden", style: { aspectRatio: '800 / 200' } },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 200", preserveAspectRatio: "xMidYMin meet", className: "absolute top-0 left-0" },
                     layout.map(el => {
                         if (el.type === 'text') {
                             let textAnchor = "start";
