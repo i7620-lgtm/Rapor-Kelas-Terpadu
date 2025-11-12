@@ -325,8 +325,32 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
     }, [activeSubjects]);
 
     const processedData = useMemo(() => {
+        const predicateCValue = parseInt(predikats?.c, 10);
+
         const dataWithCalculations = students.map((student, index) => {
             const studentGrades = grades.find((g) => g.studentId === student.id) || { studentId: student.id, detailedGrades: {}, finalGrades: {} };
+            
+            let hasFailingGrade = false;
+            if (!isNaN(predicateCValue)) {
+                const studentReligion = student.agama?.trim().toLowerCase();
+                const relevantSubjectsForCheck = activeSubjects.filter(subject => {
+                    if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+                        if (!studentReligion) return false;
+                        const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                        return subjectReligionMatch && subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                    }
+                    return true;
+                });
+
+                for (const subject of relevantSubjectsForCheck) {
+                    const grade = studentGrades.finalGrades?.[subject.id];
+                    if (grade === undefined || grade === null || grade === '' || (typeof grade === 'number' && grade < predicateCValue)) {
+                        hasFailingGrade = true;
+                        break;
+                    }
+                }
+            }
+
             let total = 0, subjectCount = 0;
             const displayGrades = displaySubjects.reduce((acc, displaySubject) => {
                 let grade;
@@ -358,20 +382,33 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                 acc[displaySubject.id] = grade;
                 return acc;
             }, {});
-            return { ...student, no: index + 1, grades: displayGrades, total, average: subjectCount > 0 ? total / subjectCount : 0 };
+
+            return { 
+                ...student, 
+                no: index + 1, 
+                grades: displayGrades, 
+                total, 
+                average: subjectCount > 0 ? total / subjectCount : 0,
+                hasFailingGrade
+            };
         });
+        
         const rankedData = [...dataWithCalculations].sort((a, b) => b.total - a.total).reduce((acc, student, index) => {
             const rank = (index > 0 && student.total === acc[index - 1].total) ? acc[index - 1].rank : index + 1;
             acc.push({ ...student, rank: student.total > 0 ? rank : '-' });
             return acc;
         }, []);
+        
         const dataWithRanks = dataWithCalculations.map(d => {
             const studentWithRank = rankedData.find(s => s.id === d.id);
             return { ...d, rank: studentWithRank?.rank || '-' };
         });
-        if (sortBy === 'rank') return dataWithRanks.sort((a, b) => (a.rank === '-' ? 1 : b.rank === '-' ? -1 : a.rank - b.rank || a.no - b.no));
+
+        if (sortBy === 'rank') {
+            return dataWithRanks.sort((a, b) => (a.rank === '-' ? 1 : b.rank === '-' ? -1 : a.rank - b.rank || a.no - b.no));
+        }
         return dataWithRanks.sort((a, b) => a.no - b.no);
-    }, [students, grades, sortBy, activeSubjects, displaySubjects]);
+    }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
 
     return (
         React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-md border border-slate-200" },
@@ -383,13 +420,13 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                         const predicateCValue = parseInt(predikats?.c, 10);
                         return (
                         React.createElement('tr', { key: data.id, className: "bg-white border-b hover:bg-slate-50" },
-                            React.createElement('td', { className: "px-3 py-2 text-center font-medium" }, sortBy === 'rank' ? data.rank : data.no), React.createElement('th', { className: "px-6 py-2 font-medium text-slate-900 whitespace-nowrap" }, data.namaLengkap),
+                            React.createElement('td', { className: "px-3 py-2 text-center font-medium" }, sortBy === 'rank' ? data.rank : data.no), React.createElement('th', { className: `px-6 py-2 font-medium whitespace-nowrap ${data.hasFailingGrade ? 'text-red-600' : 'text-slate-900'}` }, data.namaLengkap),
                             ...displaySubjects.map(subject => {
                                 const grade = data.grades[subject.id];
                                 const isBelowC = !isNaN(predicateCValue) && typeof grade === 'number' && grade < predicateCValue;
                                 return React.createElement('td', { key: subject.id, className: "px-2 py-1" }, React.createElement('input', { type: "text", value: grade ?? '', readOnly: true, className: `w-16 p-2 text-center bg-slate-100 border-slate-200 rounded-md cursor-not-allowed ${isBelowC ? 'text-red-600 font-bold' : ''}` }));
                             }),
-                            React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.total), React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.average.toFixed(2)))
+                            React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.total), React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.average))
                     )}))
                 )
             )
