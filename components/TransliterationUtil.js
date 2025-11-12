@@ -1,423 +1,241 @@
 /**
- * Catatan: Ini adalah mesin transliterasi Latin ke Aksara Bali yang telah dirombak.
- * Logika baru ini menerapkan pendekatan hibrida:
- * 1. Menggunakan kamus 'officialPhrases' untuk menjamin akurasi 100% pada teks statis
- *    dan resmi seperti pada kop surat, berdasarkan input dari pengguna.
- * 2. Menggunakan algoritma transliterasi yang disempurnakan untuk teks dinamis lainnya,
- *    dengan penanganan vokal pre-posed (taleng), gugus konsonan, dan konsonan akhir yang lebih baik.
+ * Catatan: Mesin transliterasi Latin ke Aksara Bali yang ditulis ulang sepenuhnya.
+ * Logika baru ini dirancang untuk mem-parsing suku kata dengan benar, menangani
+ * gugus konsonan (gantungan), vokal berurutan, dan aturan fonetik kompleks
+ * untuk mencapai transliterasi "per kata" yang akurat.
  */
 
-// Kamus untuk frasa resmi dengan transliterasi yang sudah dipastikan benar.
+// Kamus frasa resmi untuk akurasi 100% pada teks kop surat.
 const officialPhrases = {
-  'pemerintah kota denpasar': 'ᬧᭂᬫᭂᬭᬶᬦ᭄ᬢᬳ᭄ ᬓᭀᬢ ᬤᬾᬦ᭄ᬧᬲᬃ',
-  'dinas pendidikan kepemudaan dan olahraga kota denpasar': 'ᬤᬶᬦᬲ᭄ᬧᭂᬦ᭄ᬤᬶᬤᬶᬓᬦ᭄ᬓᭂᬧᭂᬫᬸᬤᬵᬦ᭄ᬤᬦᭀᬮᬄᬭᬕᬓᭀᬢᬤᬾᬦ᭄ᬧᬲᬃ',
-  'sekolah dasar negeri 2 padangsambian': 'ᬲᭂᬓᭀᬮᬄᬤᬲᬃᬦᭂᬕᭂᬭᬶ᭒ᬧᬤᬂᬲᬫ᭄ᬩ᭄ᬬᬦ᭄',
-  'jalan kebo iwa banjar batuparas, telepon: (0361) 9093558': 'ᬚᬮᬦ᭄ᬓᭂᬩᭀᬇᬯᬩᬜ᭄ᬚᬃᬩᬢᬸᬧᬭᬲ᭄᭞ ᬢᬾᬮᬾᬧᭀᬦ᭄᭞ ₍᭐᭓᭖᭑₎ ᭙᭐᭙᭓᭕᭕᭘',
-  'bali simbar': 'ᬩᬮᬶᬲᬶᬫ᭄ᬩᬃ', // From font2u example
+  // Kata-kata individual untuk akurasi yang lebih tinggi
+  'dinas': 'ᬤᬶᬦᬲ᭄',
+  'pendidikan': 'ᬧᭂᬦ᭄ᬤᬶᬤᬶᬓᬦ᭄',
+  'kepemudaan': 'ᬓᭂᬧᭂᬫᬸᬤᬵᬦ᭄',
+  'dan': 'ᬤᬦ᭄',
+  'olahraga': 'ᬳᭀᬮᬄᬭᬕ',
+  'kota': 'ᬓᭀᬢ',
+  'denpasar': 'ᬤᬾᬦ᭄ᬧᬲᬃ',
+  'bali': 'ᬩᬮᬶ',
+  'simbar': 'ᬲᬶᬫ᭄ᬩᬃ',
 };
 
-// Kamus untuk koreksi 'e' pepet vs 'e' taleng.
-// Expanded list for better coverage of Indonesian words
+
+// Kamus untuk koreksi 'e' pepet (ditandai dengan ĕ) vs 'e' taleng (dibiarkan sebagai e).
+// Diperluas secara signifikan untuk mencakup kosakata umum dalam konteks pendidikan.
 const pepetCorrections = {
-  'pemerintah': 'pĕmĕrintah', 'pendidikan': 'pĕndidikan', 'kepemudaan': 'kĕpĕmudaan',
-  'sekolah': 'sĕkolah', 'negeri': 'nĕgĕri', 'kebo': 'kĕbo', 'selamat': 'sĕlamat',
-  'belajar': 'bĕlajar', 'bekerja': 'bĕkĕrja', 'kesehatan': 'kĕsĕhatan',
-  'perlu': 'pĕrlu', 'semua': 'sĕmua', 'tersebut': 'tĕrsĕbut', 'dengan': 'dĕngan',
-  'besar': 'bĕsar', 'cerdas': 'cĕrdas', 'teman': 'tĕman', 'kelas': 'kĕlas',
-  'kertas': 'kĕrtas', 'mereka': 'mĕreka', 'memerlukan': 'mĕmĕrlukan',
-  'memperbaiki': 'mĕmpĕrbaiki', 'benar': 'bĕnar', 'delapan': 'dĕlapan',
-  'sembilan': 'sĕmbilan', 'sepuluh': 'sĕpuluh', 'sebelas': 'sĕbĕlas', 'kepala': 'kĕpala',
-  'perkembangan': 'pĕrkĕmbangan', 'prestasi': 'prĕstasi', 'pelajaran': 'pĕlajaran',
-  'semester': 'sĕmĕster', 'tempat': 'tĕmpat', 'tanggal': 'tanggal', 'memimpin': 'mĕmimpin',
-  'melaksanakan': 'mĕlaksanakan', 'membuat': 'mĕmbuat', 'menunjukkan': 'mĕnunjukkan',
-  'mengikuti': 'mĕngikuti', 'meningkatkan': 'mĕningkatkan', 'menulis': 'mĕnulis',
-  'menguasai': 'mĕnguasai', 'mengembangkan': 'mĕngembangkan', 'memiliki': 'mĕmiliki',
-  'sehingga': 'sĕhingga', 'bersama': 'bĕrsama', 'membantu': 'mĕmbantu',
-  'memecahkan': 'mĕmĕcahkan', 'terhadap': 'tĕrhadap', 'perhatian': 'pĕrhatian',
-  'prestasi': 'prĕstasi', 'aspek': 'aspĕk', 'terpadu': 'tĕrpadu', 'peserta': 'pĕserta',
-  'didik': 'didik', 'religius': 'rĕligius', 'mandiri': 'mandiri', 'bernalar': 'bĕrnalar',
-  'kreatif': 'krĕatif', 'gotong': 'gotong', 'royong': 'royong', 'bertanggung': 'bĕrtanggung',
-  'jawab': 'jawab', 'pengetahuan': 'pĕngetahuan', 'penilaian': 'pĕnilaian',
-  'ekstrakurikuler': 'ĕkstrakurikuler', 'aktif': 'aktif', 'sakit': 'sakit', 'izin': 'izin',
-  'alpa': 'alpa', 'menonjol': 'mĕnonjol', 'diskusi': 'diskusi', 'kolaborasi': 'kolaborasi',
-  'peningkatan': 'pĕningkatakan', 'fokus': 'fokus', 'berpikir': 'bĕrpikir', 'strategis': 'stratĕgis',
-  'antusias': 'antusias', 'percobaan': 'pĕrcobaan', 'disiplin': 'disiplin', 'motivasi': 'motivasi',
-  'tinggi': 'tinggi', 'latihan': 'latihan', 'memiliki': 'mĕmiliki', 'ide': 'idĕ', 'kreatif': 'krĕatif',
-  'kuat': 'kuat', 'pemecahan': 'pĕmĕcahan', 'masalah': 'masalah', 'analisis': 'analisis',
-  'tajam': 'tajam', 'visual': 'visual', 'menonjol': 'mĕnonjol', 'kelenturan': 'kĕlĕnturan',
-  'ekspresi': 'ĕkspresi', 'gerakan': 'gerakan', 'ketekunan': 'kĕtĕkunan', 'kemauan': 'kĕmauan',
-  'belajar': 'bĕlajar', 'kolaboratif': 'kolaboratif', 'jiwa': 'jiwa', 'kepemimpinan': 'kĕpĕmimpinan',
-  'semangat': 'sĕmangat', 'kerjasama': 'kĕrjasama', 'tim': 'tim', 'lapangan': 'lapangan',
-  'konsentrasi': 'konsĕntrasi', 'baik': 'baik', 'koleksi': 'kolĕksi', 'gambar': 'gambar',
-  'teks': 'tĕks', 'cerita': 'cĕrita', 'kalimat': 'kalimat', 'mengisi': 'mĕngisi',
-  'formulir': 'formulir', 'surat': 'surat', 'memindai': 'mĕmindai', 'wawancara': 'wawancara',
-  'pidato': 'pidato', 'argumen': 'argumĕn', 'mengambil': 'mĕngambil', 'keputusan': 'kĕputusan',
-  'anggaran': 'anggaran', 'membandingkan': 'mĕmbandingkan', 'prediksi': 'prĕdiksi',
-  'mitos': 'mitos', 'fakta': 'fakta', 'sumber': 'sumbĕr', 'tepercaya': 'tĕpĕrcaya',
-  'istilah': 'istilah', 'disabilitas': 'disabilitas', 'menyunting': 'mĕnyunting',
-  'ejaan': 'ejaan', 'tanda': 'tanda', 'baca': 'baca', 'menjelaskan': 'mĕnjelaskan',
-  'fenomena': 'fĕnomena', 'energi': 'ĕnĕrgi', 'penerapan': 'pĕnĕrapan', 'gaya': 'gaya',
-  'kemagnetan': 'kĕmagnĕtan', 'geografis': 'gĕografis', 'perubahan': 'pĕrubahan',
-  'iklim': 'iklim', 'bentang': 'bĕntang', 'alam': 'alam', 'keanekaragaman': 'kĕanĕkaragaman',
-  'hayati': 'hayati', 'profesi': 'profĕsi', 'masyarakat': 'masyarakat', 'menerapkan': 'mĕnĕrapkan',
-  'tugas': 'tugas', 'tanggung': 'tanggung', 'interaksi': 'intĕraksi', 'sosial': 'sosial',
-  'keragaman': 'kĕragaman', 'budaya': 'budaya', 'kearifan': 'kĕarifan', 'lokal': 'lokal',
-  'lingkungan': 'lingkungan', 'berkontribusi': 'bĕrkontribusi', 'mitigasi': 'mitigasi',
-  'melestarikan': 'mĕlĕstarikan', 'aktivitas': 'aktivitas', 'sederhana': 'sĕdĕrhana',
-  'kehidupan': 'kĕhidupan', 'sehari-hari': 'sĕhari-hari', 'memaknai': 'mĕmaknai',
-  'narasi': 'narasi', 'kaidah': 'kaidah', 'kebahasaan': 'kĕbahasaan', 'transitif': 'transitif',
-  'intransitif': 'intransitif', 'kosakata': 'kosakata', 'denotatif': 'dĕnotatif',
-  'tegakkk': 'tĕgak', 'bersambung': 'bĕrsambung', 'argumentasi': 'argumentasi',
-  'diskusi': 'diskusi', 'awalan': 'awalan', 'instruksi': 'instruksi', 'deskripsi': 'dĕskripsi',
-  'informatif': 'informatif', 'volume': 'volumĕ', 'intonasi': 'intonasi',
-  'prosedur': 'prosedur', 'efektif': 'ĕfektif', 'maksud': 'maksud', 'puisi': 'puisi',
-  'antarkalimat': 'antarkalimat', 'memahami': 'mĕmahami', 'ide': 'idĕ', 'pokok': 'pokok',
-  'pendukung': 'pĕndukung', 'menceritakan': 'mĕncĕritakan', 'diperankan': 'dipĕrankan',
-  'menampilkan': 'mĕnampilkan', 'pementasan': 'pĕmĕntasan', 'drama': 'drama',
-  'konsep': 'konsĕp', 'produksi': 'produksi', 'artistik': 'artistik', 'penulisan': 'pĕnulisan',
-  'evaluasi': 'ĕvaluasi', 'kritik': 'kritik', 'saran': 'saran', 'apresiasi': 'aprĕsiasi',
-  'pertunjukan': 'pĕrtunjukan', 'berkarya': 'bĕrkarya', 'tradisional': 'tradisional',
-  'modern': 'modern', 'bertahap': 'bĕrtahap', 'rutin': 'rutin', 'mengumpulkan': 'mĕngumpulkan',
-  'mendokumentasikan': 'mĕndokumentasikan', 'mengalami': 'mĕngalami', 'meniru': 'mĕniru',
-  'menghargai': 'mĕnghargai', 'beragam': 'bĕragam', 'identitas': 'idĕntitas',
-  'budaya': 'budaya', 'suku': 'suku', 'bangsa': 'bangsa', 'bahasa': 'bahasa',
-  'agama': 'agama', 'kepercayaan': 'kĕpĕrcayaan', 'masyarakat': 'masyarakat',
-  'lingkungan': 'lingkungan', 'wilayah': 'wilayah', 'negara': 'nĕgara',
-  'kesatuan': 'kĕsatuan', 'republik': 'rĕpublik', 'indonesia': 'indonesia',
-  'hak': 'hak', 'kewajiban': 'kĕwajiban', 'warga': 'warga', 'musyawarah': 'musyawarah',
-  'kesepakatan': 'kĕsĕpakatan', 'persatuan': 'pĕrsatuan', 'kesatuan': 'kĕsatuan',
-  'pancasila': 'pancasila', 'meneladani': 'mĕnĕladani', 'karakter': 'karakter',
-  'perumus': 'pĕrumus', 'modifikasi': 'modifikasi', 'keterampilan': 'kĕtĕrampilan',
-  'fundamental': 'fundamĕntal', 'situasi': 'situasi', 'strategi': 'stratĕgi',
-  'efektivitas': 'ĕfektivitas', 'inklusif': 'inklusif', 'berpartisipasi': 'bĕrpartisipasi',
-  'faktor': 'faktor', 'memengaruhi': 'mĕmĕngaruhi', 'dampak': 'dampak',
-  'rekomendasi': 'rĕkomendasi', 'penanganan': 'pĕnanganan', 'cedera': 'cĕdĕra',
-  'sering': 'sĕring', 'menggunakan': 'mĕnggunakan', 'berinteraksi': 'bĕrintĕraksi',
-  'mendesak': 'mĕndesak', 'meminta': 'mĕminta', 'ulang': 'ulang', 'perlahan': 'pĕrlahan',
-  'bertanya': 'bĕrtanya', 'arti': 'arti', 'menuliskan': 'mĕnuliskan',
-  'kebiasaan': 'kĕbiasaan', 'menjaga': 'mĕnjaga', 'diri': 'diri', 'sekolah': 'sĕkolah',
-  'mengidentifikasi': 'mĕngidĕntifikasi', 'informasi': 'informasi', 'penting': 'pĕnting',
-  'konteks': 'konteks', 'strategi': 'stratĕgi', 'pembicara': 'pĕmbicara',
-  'menjelaskan': 'mĕnjelaskan', 'topik': 'topik', 'dibaca': 'dibaca', 'dilihat': 'dilihat',
-  'berkaitan': 'bĕrkaitan', 'lingkungan': 'lingkungan', 'menggunakan': 'mĕnggunakan',
-  'ejaan': 'ejaan', 'diciptakan': 'diciptakan', 'menanggapi': 'mĕnanggapi',
-  'permintaan': 'pĕrmintaan', 'prediksi': 'prĕdiksi', 'membaca': 'mĕmbaca',
-  'digital': 'digital', 'interaktif': 'intĕraktif', 'mengomunikasikan': 'mĕngomunikasikan',
-  'pengalaman': 'pĕngalaman', 'menulis': 'mĕnulis', 'kemampuan': 'kĕmampuan',
-  'menentukan': 'mĕnentukan', 'hubungannya': 'hubungannya', 'profesinya': 'profĕsinya',
-  'memecahkan': 'mĕmĕcahkan', 'masalah': 'masalah', 'ketersediaan': 'kĕtĕrsediaan',
-  'menemukan': 'mĕnĕmukan', 'keterkaitan': 'kĕtĕrkaitan', 'sejarah': 'sĕjarah',
-  'pubertas': 'pubĕrtas', 'cahaya': 'cahaya', 'aplikasinya': 'aplikasinya',
-  'memahami': 'mĕmahami', 'rotasi': 'rotasi', 'revolusi': 'rĕvolusi', 'bumi': 'bumi',
-  'sistem': 'sistĕm', 'tata': 'tata', 'surya': 'surya', 'karakteristik': 'karaktĕristik',
-  'anggota': 'anggota', 'pentingnya': 'pĕntingnya', 'peran': 'peran', 'energi': 'ĕnĕrgi',
-  'terbarukan': 'tĕrbarukan', 'upaya': 'upaya', 'sumber': 'sumbĕr', 'terbatas': 'tĕrbatas',
-  'penghematan': 'pĕnghĕmatan', 'mempelajari': 'mĕmpĕlajari', 'pengaruh': 'pĕngaruh',
-  'permasalahan': 'pĕrmasalahan', 'diakibatkan': 'diakibatkan', 'mengusulkan': 'mĕngusulkan',
-  'mengurangi': 'mĕngurangi', 'dampak': 'dampak', 'negatif': 'nĕgatif',
-  'merancang': 'mĕrancang', 'proyek': 'proyĕk', 'akhir': 'akhir', 'pendekatan': 'pĕndekatan',
-  'inkuiri': 'inkuiri', 'mengomunikasikan': 'mĕngomunikasikan', 'hasil': 'hasil',
-  'memberikan': 'mĕmbĕrikan', 'berbagai': 'bĕrbagai', 'aspek': 'aspek',
-  'sangat': 'sangat', 'baik': 'baik', 'terutama': 'tĕrutama', 'dalam': 'dalam',
-  'beberapa': 'bĕbĕrapa', 'lain': 'lain', 'terlihat': 'tĕrlihat', 'menonjol': 'mĕnonjol',
-  'melalui': 'mĕlalui', 'diskusikan': 'diskusi', 'solusi': 'solusi',
-  'mampu': 'mampu', 'membedakan': 'mĕmbedakan', 'percaya': 'pĕrcaya',
-  'memperagakan': 'mĕmpĕragakan', 'kritis': 'kritis', 'menganalisis': 'mĕnganalisis',
-  'eksplorasi': 'ĕksplorasi', 'penelitian': 'pĕnelitian', 'informasi': 'informasi',
-  'mengidentifikasi': 'mĕngidentifikasi', 'menilai': 'mĕnilai', 'pembelajaran': 'pĕmbelajaran',
-  'pendekatan': 'pĕndekatan', 'berbasis': 'bĕrbasis', 'proyek': 'proyĕk',
-  'membuat': 'mĕmbuat', 'konsep': 'konsĕp', 'menciptakan': 'mĕnciptakan',
-  'presentasi': 'prĕsĕntasi', 'mengelola': 'mĕngelola', 'pengetahuan': 'pĕngetahuan',
-  'berkolaborasi': 'bĕrkolaborasi', 'berpikir': 'bĕrpikir', 'bertanggung': 'bĕrtanggung',
-  'jawab': 'jawab', 'mengkomunikasikan': 'mĕngkomunikasikan', 'mengatasi': 'mĕngatasi',
-  'tantangan': 'tantangan', 'memastikan': 'mĕmastikan', 'mendalam': 'mĕndalam',
-  'komprehensif': 'komprĕhĕnsif', 'memberikan': 'mĕmbĕrikan', 'penjelasan': 'pĕnjelasan',
-  'terperinci': 'tĕrpĕrincĕ', 'terkait': 'tĕrkait', 'menguasai': 'mĕnguasai',
-  'mendemonstrasikan': 'mĕdemonstrasikan', 'keterampilan': 'kĕtĕrampilan',
-  'mencapai': 'mĕncapai', 'potensi': 'potensi', 'penuh': 'pĕnuh', 'terlibat': 'tĕrlibat',
-  'memotivasi': 'mĕmotivasi', 'mendukung': 'mĕndukung', 'selama': 'sĕlama',
-  'berinteraksi': 'bĕrintĕraksi', 'menggunakan': 'mĕnggunakan', 'berbagai': 'bĕrbagai',
-  'strategi': 'stratĕgi', 'untuk': 'untuk', 'memastikan': 'mĕmastikan',
-  'komunikasi': 'komunikasi', 'efektif': 'efektif', 'memberikan': 'mĕmbĕrikan',
-  'umpan': 'umpan', 'balik': 'balik', 'konstruktif': 'konstruktif',
-  'menghargai': 'mĕnghargai', 'perbedaan': 'pĕrbedaan', 'pandangan': 'pandangan',
-  'beradaptasi': 'bĕradaptasi', 'situasi': 'situasi', 'baru': 'baru',
-  'menunjukkan': 'mĕnunjukkan', 'kematangan': 'kĕmatangan', 'emosional': 'ĕmosional',
-  'sosial': 'sosial', 'mampu': 'mampu', 'mengelola': 'mĕngelola', 'emosi': 'ĕmosi',
-  'menyelesaikan': 'mĕnyelesaikan', 'konflik': 'konflik', 'konstruktif': 'konstruktif',
-  'berempati': 'bĕrĕmpati', 'orang': 'orang', 'lain': 'lain', 'memahami': 'mĕmahami',
-  'perspektif': 'pĕrspĕktif', 'budaya': 'budaya', 'berbeda': 'bĕrbĕda',
+    // Kata-kata dari permintaan pengguna dan konteks aplikasi
+    'sebagai': 'sĕbagai', 'semua': 'sĕmua', 'sekolah': 'sĕkolah', 'selamat': 'sĕlamat', 
+    'semester': 'sĕmĕster', 'sembilan': 'sĕmbilan', 'sepuluh': 'sĕpuluh', 'sehingga': 'sĕhingga',
+    'seperti': 'sĕpĕrti', 'sederhana': 'sĕdĕrhana', 'selalu': 'sĕlalu', 'sekar': 'sĕkar', 'setia': 'sĕtia',
+    'benar': 'bĕnar', 'besar': 'bĕsar', 'bekerja': 'bĕkĕrja', 'belajar': 'bĕlajar', 'besi': 'bĕsi',
+    'ke': 'kĕ', // Preposisi umum
+    'kelas': 'kĕlas', 'kepala': 'kĕpala', 'kertas': 'kĕrtas', 'kesehatan': 'kĕsĕhatan',
+    'kebo': 'kĕbo', 'kembali': 'kĕmbali', 'kemampuan': 'kĕmampuan', 'kepemudaan': 'kĕpĕmudaan',
+    'perlu': 'pĕrlu', 'perkembangan': 'pĕrkĕmbangan', 'pengetahuan': 'pĕngĕtahuan',
+    'penilaian': 'pĕnilaian', 'perhatian': 'pĕrhatian', 'peserta': 'pĕsĕrta', 'pemerintah': 'pĕmĕrintah',
+    'pendidikan': 'pĕndidikan',
+    'memberi': 'mĕmbĕri', 'membuat': 'mĕmbuat', 'membaca': 'mĕmbaca', 'menulis': 'mĕnulis',
+    'memiliki': 'mĕmiliki', 'mereka': 'mĕreka', 'memerlukan': 'mĕmĕrlukan', 'memperbaiki': 'mĕmpĕrbaiki',
+    'menjelaskan': 'mĕnjelaskan', 'menyebutkan': 'mĕnyĕbutkan', 'menunjukkan': 'mĕnunjukkan',
+    'mengikuti': 'mĕngikuti', 'mengembangkan': 'mĕngĕmbangkan', 'meningkatkan': 'mĕningkatkan',
+    'negeri': 'nĕgĕri',
+    'tersebut': 'tĕrsĕbut', 'terpadu': 'tĕrpadu', 'teman': 'tĕman', 'tempat': 'tĕmpat',
+    'telah': 'tĕlah',
+    'delapan': 'dĕlapan', 'dengan': 'dĕngan', 'depan': 'dĕpan',
+    'gelas': 'gĕlas',
+    // Kata dengan 'e' taling (tidak diubah, ditambahkan untuk prioritas)
+    'meja': 'meja', 'merah': 'merah', 'lebar': 'lebar', 'karet': 'karet', 'bebek': 'bebek',
+    'ekstrakurikuler': 'ekstrakurikuler', 'presiden': 'presiden', 'prestasi': 'prestasi',
+    'evaluasi': 'evaluasi', 'revisi': 'revisi', 'mental': 'mental', 'leger': 'leger',
 };
 
-// Vowels for diacritics and independent vowels
-const INDEPENDENT_VOWEL_MAP = {
-  'A': 'ᬅ', 'I': 'ᬇ', 'U': 'ᬉ', 'É': 'ᬏ', 'O': 'ᬑ', 'Ĕ': 'ᬐ',
-  'a': 'ᬅ', 'i': 'ᬇ', 'u': 'ᬉ', 'e': 'ᬏ', 'o': 'ᬑ', 'ĕ': 'ᬐ',
-  'ā': 'ᬆ', 'ī': 'ᬈ', 'ū': 'ᬊ',
-  '_ai_diph_': 'ᬿ', // Token for ai diphthong
-  '_au_diph_': 'ᬾᭁ', // Token for au diphthong
+// Aksara Swara (Vokal Mandiri)
+const INDEPENDENT_VOWELS = { 'a': 'ᬅ', 'i': 'ᬇ', 'u': 'ᬉ', 'e': 'ᬏ', 'o': 'ᬑ', 'ĕ': 'ᬅᭂ' };
+
+// Aksara Wianjana (Konsonan)
+const CONSONANTS = {
+    'h': 'ᬳ', 'n': 'ᬦ', 'c': 'ᬘ', 'r': 'ᬭ', 'k': 'ᬓ', 'd': 'ᬤ', 't': 'ᬢ', 's': 'ᬲ', 'w': 'ᬯ', 'l': 'ᬮ',
+    'm': 'ᬫ', 'g': 'ᬕ', 'b': 'ᬩ', 'p': 'ᬧ', 'j': 'ᬚ', 'y': 'ᬬ', 'ny': 'ᬜ', 'ng': 'ᬗ',
+    'kh': 'ᬔ', 'gh': 'ᬖ', 'ṭ': 'ᬝ', 'ḍ': 'ᬟ', 'dh': 'ᬥ', 'th': 'ᬣ', 'bh': 'ᬪ', 'ph': 'ᬨ',
+    'z': 'ᬚ', 'f': 'ᬧ', 'v': 'ᬯ',
 };
 
-// Consonants including digraphs and special forms (case-sensitive for input processing)
-// Longer matches must come first
-const CONSONANT_MAP = {
-  // Special Retroflex/Aspirated Consonants (Lexilogos style, using internal tokens)
-  '_ṭh_': 'ᬞ', // Tha Latik
-  '_ḍh_': 'ᬕ', // Dha Latik (as per Lexilogos 'Dh' mapping for 'ga gora')
-  '_ph_': 'ᬨ', // Pa Kapal
-  '_bh_': 'ᬪ', // Ba Kembang
-  '_ś_': 'ᬰ',  // Sa Saga
-  '_ṭ_': 'ᬝ',  // Ta Latik
-  '_ḍ_': 'ᬓ',  // Dha Latik (as per Lexilogos 'D' mapping for 'ka')
-  '_ṇ_': 'ᬡ',  // Na Rambat
-  '_ṣ_': 'ᬱ',  // Sa Sapa
-
-  // Standard Digraphs
-  'ny': 'ᬜ',
-  'ng': 'ᬗ',
-  'th': 'ᬣ', // Dental aspirated, if not already handled by _ṭh_
-  'dh': 'ᬥ', // Dental aspirated, if not already handled by _ḍh_
-  'kh': 'ᬔ',
-  'gh': 'ᬖ',
-
-  // Single Consonants (case-insensitive where no special uppercase form exists)
-  'h': 'ᬳ', 'n': 'ᬦ', 'c': 'ᬘ', 'r': 'ᬭ', 'k': 'ᬓ', 'd': 'ᬤ', 't': 'ᬢ', 's': 'ᬲ', 'w': 'ᬯ', 'l': 'ᬮ',
-  'm': 'ᬫ', 'g': 'ᬕ', 'b': 'ᬩ', 'p': 'ᬧ', 'j': 'ᬚ', 'y': 'ᬬ',
+// Pangangge Swara (Diakritik Vokal)
+const VOWEL_DIACRITICS = { 
+    'i': 'ᬶ', 'u': 'ᬸ', 'ĕ': 'ᭂ', // Pepet
+    'e': 'ᬾ', // Taling
+    'tedung': 'ᬵ' 
 };
 
-// Diacritics (Sandhangan Swara)
-const DIACRITIC_MAP = {
-  'i': 'ᬶ', // ulu
-  'u': 'ᬸ', // suku
-  'ĕ': 'ᭂ', // pepet
-  'e': 'ᬾ', // taleng (pre-posed)
-  'o_post': 'ᭀ', // tedung (post-posed for 'o' combined with taleng)
-};
+// Pangangge Tengenan (Tanda Konsonan Akhir)
+const FINALS = { 'r': 'ᬃ', 'ng': 'ᬂ', 'h': 'ᬄ' };
 
-// Final Consonants (Pangangge Panyigeging Aksara)
-const FINALS_MAP = {
-  'r': 'ᬃ', // surang
-  'ng': 'ᬂ', // cecek
-  'h': 'ᬄ'  // bisah
-};
-
-// Special characters / sounds (e.g., keret for rĕ, gantungan-la-lenga for lĕ)
-const SPECIAL_CHARS_MAP = {
-  'ṛ': 'ᬺ', // keret
-  'ḷ': 'ᬼ', // gantungan-la-lenga
-};
-
-// Balinese numbers and punctuation
+// Angka dan Tanda Baca Bali
 const BALINESE_NUMBERS_PUNCTUATION = {
-  '0': '᭐', '1': '᭑', '2': '᭒', '3': '᭓', '4': '᭔',
-  '5': '᭕', '6': '᭖', '7': '᭗', '8': '᭘', '9': '᭙',
-  '(': '₍', ')': '₎', ',': '᭞', '.': '᭟', '=': '᭠', // '=' for Nukta
-  ':': '᭞', // Colon as equivalent to a comma for practical purposes
+  '0': '᭐', '1': '᭑', '2': '᭒', '3': '᭓', '4': '᭔', '5': '᭕', '6': '᭖', '7': '᭗', '8': '᭘', '9': '᭙',
+  '(': '₍', ')': '₎', ',': '᭞', '.': '᭟', ':': ':',
 };
 
 const ADEG_ADEG = '᭄';
+const VOWELS = 'aiueoĕ';
 
-// Helper to check if a character is an alphabet letter
-function isAlpha(char) {
-  if (!char) return false;
-  const code = char.charCodeAt(0);
-  return (code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A); // a-z, A-Z
-}
+const ALL_CONSONANT_KEYS = Object.keys(CONSONANTS).sort((a, b) => b.length - a.length);
 
-// Helper to check if a character is a vowel (including long vowels and ĕ, and diphthong tokens)
-function isVowel(char) {
-  return 'aiueoĕāīū'.includes(char) || char.includes('_diph_');
-}
+function isVowel(char) { return VOWELS.includes(char.toLowerCase()); }
 
-// Function to apply pepet corrections (case-insensitive for matching, output will use ĕ)
-function applyPepetCorrections(text) {
-  if (!text) return '';
-  let correctedText = text;
-  for (const [latinWord, pepetWord] of Object.entries(pepetCorrections)) {
-    // Use regex to replace whole words case-insensitively
-    const regex = new RegExp(`\\b${latinWord}\\b`, 'gi');
-    correctedText = correctedText.replace(regex, (match) => {
-      // Preserve case for first letter, then apply pepet word for the rest
-      if (match.charAt(0) === match.charAt(0).toUpperCase()) {
-        return pepetWord.charAt(0).toUpperCase() + pepetWord.slice(1);
-      }
-      return pepetWord;
+function applyCorrections(text) {
+    let correctedText = text;
+    Object.entries(pepetCorrections).forEach(([latin, corrected]) => {
+        const regex = new RegExp(`\\b${latin}\\b`, 'gi');
+        correctedText = correctedText.replace(regex, (match) => {
+            const firstChar = match.charAt(0);
+            return (firstChar === firstChar.toUpperCase() && corrected.length > 0)
+                ? corrected.charAt(0).toUpperCase() + corrected.slice(1)
+                : corrected;
+        });
     });
-  }
-  return correctedText;
+    return correctedText;
 }
 
-export function transliterate(latin) {
-  if (!latin) return '';
+/**
+ * Menerjemahkan satu kata Latin ke dalam aksara Bali.
+ * Mesin baru ini mem-parsing dari kiri ke kanan, mengidentifikasi suku kata
+ * dan gugus konsonan secara akurat, termasuk surang, cakra, dan nania.
+ * @param {string} latin Kata Latin untuk ditransliterasi.
+ * @returns {string} Skrip Bali yang ditransliterasi.
+ */
+function _transliterateWord(latin) {
+    if (!latin) return '';
+    let text = applyCorrections(latin);
+    let result = '';
+    let i = 0;
 
-  // 1. Check official phrases (case-insensitive for lookup)
-  const lowerLatinForLookup = latin.trim().toLowerCase();
-  if (officialPhrases[lowerLatinForLookup]) {
-    return officialPhrases[lowerLatinForLookup];
-  }
+    const findConsonant = (pos) => ALL_CONSONANT_KEYS.find(key => text.substring(pos, pos + key.length).toLowerCase() === key);
 
-  // 2. Apply pepet corrections while trying to preserve original casing
-  let processedLatin = applyPepetCorrections(latin);
-
-  // 3. Pre-process for long vowels, diphthongs, special consonants, and specific ligatures
-  // Order matters here to prevent partial matches
-  processedLatin = processedLatin.replace(/aa/gi, 'ā').replace(/ii/gi, 'ī').replace(/uu/gi, 'ū');
-  processedLatin = processedLatin.replace(/ai/gi, '_ai_diph_').replace(/au/gi, '_au_diph_');
-
-  // Special Consonants from Lexilogos (case-sensitive patterns first)
-  // Ensure 'Th' is matched before 'T', 'Dh' before 'D', etc.
-  processedLatin = processedLatin
-    .replace(/Th/g, '_ṭh_').replace(/Dh/g, '_ḍh_').replace(/Ph/g, '_ph_').replace(/Bh/g, '_bh_').replace(/Ś/g, '_ś_')
-    .replace(/T(?![h])/g, '_ṭ_').replace(/D(?![h])/g, '_ḍ_').replace(/N/g, '_ṇ_').replace(/S(?![h])/g, '_ṣ_');
-  
-  // Ligatures (keret, la-lenga)
-  processedLatin = processedLatin.replace(/rĕ/g, 'ṛ').replace(/lĕ/g, 'ḷ');
-
-  let result = "";
-  let i = 0;
-
-  // List of possible consonant starts (longest first for greedy matching)
-  const sortedConsonantKeys = Object.keys(CONSONANT_MAP).sort((a, b) => b.length - a.length);
-  const sortedVowelKeys = Object.keys(INDEPENDENT_VOWEL_MAP).sort((a, b) => b.length - a.length);
-
-
-  while (i < processedLatin.length) {
-    let char = processedLatin[i];
-    let matched = false;
-
-    // 4. Handle Punctuation, Numbers, and special Balinese characters/ligatures
-    if (BALINESE_NUMBERS_PUNCTUATION[char]) {
-      result += BALINESE_NUMBERS_PUNCTUATION[char];
-      i++;
-      matched = true;
-    } else if (SPECIAL_CHARS_MAP[char]) {
-      result += SPECIAL_CHARS_MAP[char];
-      i++;
-      matched = true;
-    } else if (char.includes('_diph_')) { // Handle diphthong tokens created during pre-processing
-        for (const diphKey of ['_ai_diph_', '_au_diph_']) {
-            if (processedLatin.substring(i, i + diphKey.length) === diphKey) {
-                result += INDEPENDENT_VOWEL_MAP[diphKey];
-                i += diphKey.length;
-                matched = true;
-                break;
-            }
+    while (i < text.length) {
+        // Kasus 1: Vokal di awal kata
+        if (isVowel(text[i])) {
+            result += INDEPENDENT_VOWELS[text[i].toLowerCase()];
+            i++;
+            continue;
         }
-    }
 
-    if (matched) continue;
-
-    // 5. Handle Independent Vowels (at start of word or after non-alpha characters)
-    // Check for independent vowel tokens like ā, ī, ū, and normal a, i, u, e, o, ĕ
-    for (const vowelKey of sortedVowelKeys) {
-      if (processedLatin.substring(i, i + vowelKey.length) === vowelKey) {
-        const prevChar = i > 0 ? processedLatin[i - 1] : ' ';
-        // Only if it's the start of the text or after a non-alphabetic character
-        if (!isAlpha(prevChar) && INDEPENDENT_VOWEL_MAP[vowelKey]) {
-          result += INDEPENDENT_VOWEL_MAP[vowelKey];
-          i += vowelKey.length;
-          matched = true;
-          break;
+        // Kasus 2: Harus konsonan
+        let c1 = findConsonant(i);
+        if (!c1) {
+            result += text[i]; // Karakter tidak dikenali
+            i++;
+            continue;
         }
-      }
-    }
-    if (matched) continue;
 
-    // 6. Consonant parsing
-    let currentConsonant = null;
-    let consonantLen = 0;
+        let c1_len = c1.length;
+        let c1_base = CONSONANTS[c1];
+        let next_pos = i + c1_len;
 
-    for (const cKey of sortedConsonantKeys) {
-      if (processedLatin.substring(i, i + cKey.length).toLowerCase() === cKey.toLowerCase()) {
-        currentConsonant = cKey;
-        consonantLen = cKey.length;
-        break;
-      }
-    }
-
-    if (currentConsonant) {
-      // Find following vowel (inherent 'a' if none explicit)
-      let vowelAfterConsonant = 'a'; // Default to inherent 'a'
-      let vowelLen = 0;
-      let charAfterConsonantIndex = i + consonantLen;
-
-      // Check for explicit vowel
-      for (const vKey of sortedVowelKeys) {
-        if (processedLatin.substring(charAfterConsonantIndex, charAfterConsonantIndex + vKey.length) === vKey) {
-            vowelAfterConsonant = vKey;
-            vowelLen = vKey.length;
+        // Jika c1 adalah karakter terakhir
+        if (next_pos >= text.length) {
+            result += (FINALS[c1] || c1_base + ADEG_ADEG);
             break;
         }
-      }
 
-      // Check for final consonants
-      let finalConsonant = null;
-      const afterVowelPos = charAfterConsonantIndex + vowelLen;
-      const nextTwoCharsAfterVowel = processedLatin.substring(afterVowelPos, afterVowelPos + 2).toLowerCase();
-      const nextCharAfterVowel = processedLatin[afterVowelPos]?.toLowerCase();
-      
-      if (nextTwoCharsAfterVowel === 'ng') {
-          finalConsonant = 'ng';
-      } else if (FINALS_MAP[nextCharAfterVowel]) {
-          finalConsonant = nextCharAfterVowel;
-      }
-
-      // Only apply final consonant if it's genuinely a syllable-final and not leading another syllable
-      if (finalConsonant) {
-          const charAfterFinal = processedLatin[afterVowelPos + finalConsonant.length];
-          if (isAlpha(charAfterFinal) && isVowel(charAfterFinal)) { // If followed by vowel, it's not a final
-              finalConsonant = null;
-          }
-      }
-
-      let aksara = CONSONANT_MAP[currentConsonant];
-      if (aksara) {
-        result += aksara;
-
-        // Apply vowel diacritic if present
-        if (vowelAfterConsonant && vowelAfterConsonant !== 'a') {
-          if (vowelAfterConsonant === 'e') { // 'e' for taleng
-            result = result.slice(0, -aksara.length) + DIACRITIC_MAP['e'] + aksara;
-          } else if (vowelAfterConsonant === 'o') { // 'o' for taleng + tedung
-            result = result.slice(0, -aksara.length) + DIACRITIC_MAP['e'] + aksara + DIACRITIC_MAP['o_post'];
-          } else if (DIACRITIC_MAP[vowelAfterConsonant]) {
-            result += DIACRITIC_MAP[vowelAfterConsonant];
-          }
-        }
-        
-        // Advance index past consonant and vowel
-        i += consonantLen + vowelLen;
-
-        // Apply final consonant if present
-        if (finalConsonant) {
-            result += FINALS_MAP[finalConsonant];
-            i += finalConsonant.length;
-        } else {
-            // Check for Adeg-Adeg for consonant clusters or silent final 'a'
-            const nextLogicalChar = processedLatin[i];
-            // If next is consonant and not end of string, it's a cluster. Add adeg-adeg.
-            // Exception: if current consonant had an explicit vowel, Adeg-Adeg is not typically added directly after.
-            // This is a complex rule and simplified here.
-            if (isAlpha(nextLogicalChar) && !isVowel(nextLogicalChar)) {
-                 result += ADEG_ADEG; // Implicit Adeg-Adeg for consonant cluster
+        // Lihat ke depan untuk gugus konsonan medial (-r- atau -y-)
+        let c2 = findConsonant(next_pos);
+        if (c2 && (c2 === 'r' || c2 === 'y')) {
+            let after_c2_pos = next_pos + c2.length;
+            if (after_c2_pos < text.length && isVowel(text[after_c2_pos])) {
+                // Pola C-r-V (cakra) atau C-y-V (nania)
+                let vowel = text[after_c2_pos].toLowerCase();
+                let pangangge = c2 === 'r' ? '᭄ᬭ' : '᭄ᬬ';
+                
+                let syllable = c1_base + pangangge;
+                if (vowel !== 'a') {
+                    if (vowel === 'o') {
+                        syllable += VOWEL_DIACRITICS.e + VOWEL_DIACRITICS.tedung;
+                    } else { // For i, u, e, ĕ
+                        syllable += VOWEL_DIACRITICS[vowel];
+                    }
+                }
+                result += syllable;
+                i = after_c2_pos + 1;
+                continue;
             }
         }
-      } else {
-        // If consonant not found in map, just append as is (should not happen with comprehensive map)
-        result += char;
-        i++;
-      }
-    } else {
-      // If not a recognized consonant, vowel, number, or punctuation, append as is
-      result += char;
-      i++;
-    }
-  }
 
-  // Remove any trailing Adeg-Adeg (final inherent 'a' is typically silent)
-  return result.replace(new RegExp(`${ADEG_ADEG}(?=\\s*|$)`, 'g'), '');
+        // Lihat ke depan untuk vokal (suku kata CV)
+        if (isVowel(text[next_pos])) {
+            let vowel = text[next_pos].toLowerCase();
+            let syllable = c1_base;
+            if (vowel !== 'a') {
+                if (vowel === 'o') {
+                    syllable += VOWEL_DIACRITICS.e + VOWEL_DIACRITICS.tedung;
+                } else { // For i, u, e, ĕ
+                    syllable += VOWEL_DIACRITICS[vowel];
+                }
+            }
+            result += syllable;
+            i = next_pos + 1;
+            continue;
+        }
+
+        // Lihat ke depan untuk konsonan lain (gugus konsonan)
+        if (c2) {
+            // Kasus 'r' di tengah kata (surang)
+            if (c1 === 'r') {
+                result += FINALS.r; // Tambahkan surang, akan ditempatkan di atas aksara berikutnya
+                i = next_pos; // Lanjutkan dari c2
+                continue;
+            }
+            
+            // Gugus konsonan biasa, matikan c1 dengan adeg-adeg
+            result += c1_base + ADEG_ADEG;
+            i = next_pos; // Lanjutkan dari c2 (yang akan menjadi gantungan)
+            continue;
+        }
+
+        // Jika sampai di sini, c1 diikuti oleh karakter tidak dikenal, anggap sebagai konsonan akhir
+        result += (FINALS[c1] || c1_base + ADEG_ADEG);
+        i = next_pos;
+    }
+    
+    // Pasca-pemrosesan untuk kasus khusus
+    let finalResult = result;
+    finalResult = finalResult.replace(/ᬭᭂ/g, 'ᬋ'); // ra repa
+    finalResult = finalResult.replace(/ᬮᭂ/g, 'ᬍ'); // la lenga
+    
+    return finalResult;
 }
 
+
+/**
+ * Fungsi transliterasi publik. Memisahkan teks menjadi kata dan tanda baca,
+ * lalu menerjemahkan setiap bagian.
+ * @param {string} latin Teks Latin untuk ditransliterasi.
+ * @returns {string} Skrip Bali yang ditransliterasi.
+ */
+export function transliterate(latin) {
+    if (!latin) return '';
+    const textToProcess = latin.trim();
+
+    // Hapus pemeriksaan frasa penuh, langsung ke pemrosesan per bagian
+    const parts = textToProcess.split(/(\s|[.,:()?!])/g).filter(Boolean);
+
+    return parts.map(part => {
+        const lowerPart = part.toLowerCase();
+        // Periksa kamus kata tunggal
+        if (officialPhrases[lowerPart]) return officialPhrases[lowerPart];
+        
+        // Tangani spasi dan tanda baca
+        if (part.match(/^(\s|[.,:()?!])$/)) return BALINESE_NUMBERS_PUNCTUATION[part] || part;
+        
+        // Tangani angka
+        if (part.match(/^[0-9]+$/)) {
+            return part.split('').map(digit => BALINESE_NUMBERS_PUNCTUATION[digit] || digit).join('');
+        }
+        
+        // Transliterasi kata
+        return _transliterateWord(part);
+    }).join('');
+}
 
 const BALI_CITIES_REGECIES = {
   KOTA: ["denpasar"],
@@ -434,10 +252,7 @@ export function generatePemdaText(kotaKabupatenInput, provinsiInput) {
     let provinsi = (provinsiInput || '').trim().toLowerCase();
 
     if (text.includes('kota ') || text.includes('kabupaten ')) {
-        if (text.startsWith('pemerintah')) {
-            return text.toUpperCase();
-        }
-        return `PEMERINTAH ${text}`.toUpperCase();
+        return text.startsWith('pemerintah') ? text.toUpperCase() : `PEMERINTAH ${text}`.toUpperCase();
     }
     
     if (provinsi === 'bali' || provinsi === '') {
