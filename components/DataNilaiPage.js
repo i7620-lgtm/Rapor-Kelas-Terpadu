@@ -388,7 +388,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                 no: index + 1, 
                 grades: displayGrades, 
                 total, 
-                average: subjectCount > 0 ? total / subjectCount : 0,
+                average: subjectCount > 0 ? (total / subjectCount).toFixed(2) : "0.00",
                 hasFailingGrade
             };
         });
