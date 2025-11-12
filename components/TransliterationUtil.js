@@ -112,6 +112,14 @@ function _transliterateWord(latin) {
     // Contoh: sedia -> sedya, biasa -> byasa, padangsambian -> padangsambyan
     text = text.replace(/([bcdfghjklmnpqrstvwxyz])ia/gi, '$1ya');
 
+    // Menangani rangkapan wianjana (gugus konsonan)
+    // nc -> nyc (contoh: panca -> panyca)
+    text = text.replace(/nc/gi, 'nyc');
+    // nj -> nyj (contoh: banjir -> banyjir)
+    text = text.replace(/nj/gi, 'nyj');
+    // dny -> jny (contoh: yadnya -> yajnya)
+    text = text.replace(/dny/gi, 'jny');
+
     let result = '';
     let i = 0;
 
