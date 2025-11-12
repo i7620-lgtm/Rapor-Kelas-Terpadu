@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 
 const emptyStudent = {
     namaLengkap: '', namaPanggilan: '', nis: '', nisn: '', tempatLahir: '',
-    tanggalLahir: '', jenisKelamin: '', agama: '', kewarganegaraan: 'WNI',
-    statusDalamKeluarga: '', anakKe: '', asalTk: '', alamatSiswa: '',
+    tanggalLahir: '', jenisKelamin: '', agama: '', asalTk: '', alamatSiswa: '',
     diterimaDiKelas: '', diterimaTanggal: '',
     namaAyah: '', namaIbu: '', pekerjaanAyah: '', pekerjaanIbu: '',
     alamatOrangTua: '', teleponOrangTua: '', namaWali: '', pekerjaanWali: '',
@@ -64,11 +63,8 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                                 )
                             ),
                             React.createElement(FormField, { name: "agama", label: "Agama", value: formData.agama, onChange: handleChange }),
-                            React.createElement(FormField, { name: "kewarganegaraan", label: "Kewarganegaraan", value: formData.kewarganegaraan, onChange: handleChange }),
-                            React.createElement(FormField, { name: "statusDalamKeluarga", label: "Status dalam Keluarga", value: formData.statusDalamKeluarga, onChange: handleChange }),
-                            React.createElement(FormField, { name: "anakKe", label: "Anak Ke-", value: formData.anakKe, onChange: handleChange }),
                             React.createElement(FormField, { name: "asalTk", label: "Asal TK", value: formData.asalTk, onChange: handleChange }),
-                            React.createElement('div', { className: "md:col-span-2 lg:col-span-3" },
+                            React.createElement('div', { className: "md:col-span-2" },
                                 React.createElement('label', { htmlFor: "alamatSiswa", className: "block text-sm font-medium text-slate-700" }, "Alamat Siswa"),
                                 React.createElement('textarea', { name: "alamatSiswa", id: "alamatSiswa", value: formData.alamatSiswa || '', onChange: handleChange, rows: 2, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
                             ),
