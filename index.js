@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import * as App from './App.js';
 
 // Register Service Worker
-/*
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -15,7 +14,6 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-*/
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
