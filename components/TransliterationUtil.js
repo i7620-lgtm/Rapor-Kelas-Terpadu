@@ -1,3 +1,5 @@
+import React from 'react';
+
 /**
  * Catatan: Mesin transliterasi Latin ke Aksara Bali yang ditulis ulang sepenuhnya.
  * Logika baru ini dirancang untuk mem-parsing suku kata dengan benar, menangani
@@ -308,29 +310,45 @@ export const generateInitialLayout = (appSettings) => {
         appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
     ].filter(Boolean).join(' | ');
 
+    let cumulativeShift = 0;
+    const dyLatin = 3; // Shift for major latin lines
+    const dySmall = 2; // Shift for smaller Latin lines (address/contact)
+
     return [
         // Logos
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 45, width: 85, height: 85 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 45, width: 85, height: 85 },
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 50, width: 85, height: 85 },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 50, width: 85, height: 85 },
         
         // Block 1: Pemda
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 18, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 34, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 20 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 39 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
         
+        // Cumulative shift increases after each 'latin' line that needs extra spacing
+        (() => { cumulativeShift += dyLatin; return null; })(),
+
         // Block 2: Dinas Detail
-        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 52, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 68, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 59 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 78 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        
+        (() => { cumulativeShift += dyLatin; return null; })(),
         
         // Block 3: School
-        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 88, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 108, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 98 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 121 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+
+        (() => { cumulativeShift += dyLatin; return null; })(),
 
         // Block 4: Address & Contact
-        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 130, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 143, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 155, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 141 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 154 + cumulativeShift + dySmall, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        (() => { cumulativeShift += dySmall; return null; })(),
+
+        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 167 + cumulativeShift + dySmall, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
+        
+        (() => { cumulativeShift += dySmall; return null; })(),
         
         // Separator Line
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 172, width: 780, height: 3 },
-    ];
+        { id: 'line_1', type: 'line', content: '', x: 10, y: 185 + cumulativeShift, width: 780, height: 3 },
+    ].filter(Boolean); // Filter out nulls from the IIFEs
 };
