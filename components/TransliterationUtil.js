@@ -107,6 +107,11 @@ function applyCorrections(text) {
 function _transliterateWord(latin) {
     if (!latin) return '';
     let text = applyCorrections(latin);
+
+    // Menangani diftong "ia" yang diucapkan sebagai "ya" setelah konsonan.
+    // Contoh: sedia -> sedya, biasa -> byasa, padangsambian -> padangsambyan
+    text = text.replace(/([bcdfghjklmnpqrstvwxyz])ia/gi, '$1ya');
+
     let result = '';
     let i = 0;
 
