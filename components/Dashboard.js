@@ -245,20 +245,26 @@ const Dashboard = ({
             });
         }
 
+        // 2. Data Siswa
+        const studentDataFieldsToCheck = [
+            'namaLengkap', 'namaPanggilan', 'nis', 'nisn', 'tempatLahir', 'tanggalLahir', 
+            'jenisKelamin', 'agama', 'asalTk', 'alamatSiswa', 'diterimaDiKelas', 'diterimaTanggal', 
+            'namaAyah', 'namaIbu', 'pekerjaanAyah', 'pekerjaanIbu', 'alamatOrangTua', 'teleponOrangTua'
+        ];
+        
         if (totalStudents === 0) {
-             results.push({
+            results.push({
                 category: 'Data Siswa',
                 title: 'Data Siswa',
                 status: 'bad',
                 message: 'Belum ada data siswa yang ditambahkan ke dalam aplikasi.',
                 actionText: 'Tambah Siswa',
                 onActionClick: () => setActivePage('DATA_SISWA'),
-                percentage: 0, // No students, so 0% for student-related data
+                percentage: 0,
             });
-            // If no students, all other student-related checks will also be 0% or marked as bad.
             results.push({
                 category: 'Data Nilai',
-                title: 'Kelengkapan Nilai Akhir',
+                title: 'Data Nilai',
                 status: 'bad',
                 message: 'Belum ada data siswa untuk diisi nilainya.',
                 actionText: 'Periksa Data Nilai',
@@ -295,7 +301,43 @@ const Dashboard = ({
             return results;
         }
 
-        // 2. Data Nilai
+        // Calculate student data completeness if students exist
+        const totalStudentDataFields = totalStudents * studentDataFieldsToCheck.length;
+        let filledStudentDataFields = 0;
+        currentStudents.forEach(student => {
+            studentDataFieldsToCheck.forEach(field => {
+                if (student[field] && String(student[field]).trim() !== '') {
+                    filledStudentDataFields++;
+                }
+            });
+        });
+        const studentDataPercentage = totalStudentDataFields > 0 
+            ? Math.round((filledStudentDataFields / totalStudentDataFields) * 100) 
+            : 100;
+
+        if (studentDataPercentage === 100) {
+            results.push({
+                category: 'Data Siswa',
+                title: 'Data Siswa',
+                status: 'good',
+                message: 'Data pribadi dan orang tua untuk semua siswa telah terisi lengkap.',
+                percentage: studentDataPercentage,
+            });
+        } else {
+            const missingFields = totalStudentDataFields - filledStudentDataFields;
+            results.push({
+                category: 'Data Siswa',
+                title: 'Data Siswa',
+                status: 'bad',
+                message: `Terdapat ${missingFields} data pribadi/orang tua yang belum diisi.`,
+                actionText: 'Lengkapi Data Siswa',
+                onActionClick: () => setActivePage('DATA_SISWA'),
+                percentage: studentDataPercentage,
+            });
+        }
+
+
+        // 3. Data Nilai
         let studentsWithCompleteGrades = 0;
         const minGrade = parseInt(settings.predikats?.c || '70', 10);
 
@@ -338,7 +380,7 @@ const Dashboard = ({
         if (gradesPercentage === 100) {
              results.push({
                 category: 'Data Nilai',
-                title: 'Kelengkapan Nilai Akhir',
+                title: 'Data Nilai',
                 status: 'good',
                 message: 'Semua siswa telah memiliki nilai akhir yang lengkap dan di atas KKM untuk semua mata pelajaran yang aktif.',
                 percentage: gradesPercentage,
@@ -347,7 +389,7 @@ const Dashboard = ({
             const studentsWithEmptyOrBelowKKM = totalStudents - studentsWithCompleteGrades;
             results.push({
                 category: 'Data Nilai',
-                title: 'Kelengkapan Nilai Akhir',
+                title: 'Data Nilai',
                 status: 'bad',
                 message: `Terdapat ${studentsWithEmptyOrBelowKKM} siswa dengan nilai yang belum lengkap atau di bawah KKM.`,
                 actionText: 'Periksa Data Nilai',
@@ -356,7 +398,7 @@ const Dashboard = ({
             });
         }
 
-        // 3. Data Absensi
+        // 4. Data Absensi
         let studentsWithSomeAttendance = 0;
         currentStudents.forEach(s => {
             const att = currentAttendance.find(a => a.studentId === s.id);
@@ -386,7 +428,7 @@ const Dashboard = ({
             });
         }
 
-        // 4. Catatan Wali Kelas
+        // 5. Catatan Wali Kelas
         let studentsWithNotes = 0;
         currentStudents.forEach(s => {
             if (notes[s.id] && notes[s.id].trim() !== '') {
@@ -415,7 +457,7 @@ const Dashboard = ({
             });
         }
 
-        // 5. Ekstrakurikuler
+        // 6. Ekstrakurikuler
         let studentsWithAssignedExtra = 0;
         currentStudents.forEach(s => {
             const studentExtra = currentStudentExtracurriculars.find(se => se.studentId === s.id);
