@@ -57,9 +57,6 @@ const initialStudents = [
       tanggalLahir: '2015-01-01',
       jenisKelamin: 'Laki-laki',
       agama: 'Islam',
-      kewarganegaraan: 'Indonesia',
-      statusDalamKeluarga: 'Anak Kandung',
-      anakKe: '1',
       asalTk: 'TK Harapan Bangsa',
       alamatSiswa: 'Jl. Cendrawasih No. 10',
       diterimaDiKelas: 'I (Satu)',
@@ -657,7 +654,7 @@ useEffect(() => {
 
 
         const studentHeaderMapping = [
-            ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['kewarganegaraan', "Kewarganegaraan"], ['statusDalamKeluarga', "Status dalam Keluarga"], ['anakKe', "Anak Ke-"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
+            ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
         ];
         const formattedStudents = students.map((student, index) => {
             const newStudent = {};
@@ -858,8 +855,7 @@ useEffect(() => {
                 const studentWorksheet = workbook.Sheets['Data Siswa'];
                 const studentHeaderMap = new Map([
                     ["Nama Lengkap", 'namaLengkap'], ["Nama Panggilan", 'namaPanggilan'], ["NIS", 'nis'], ["NISN", 'nisn'], ["Tempat Lahir", 'tempatLahir'], ["Tanggal Lahir", 'tanggalLahir'],
-                    ["Jenis Kelamin", 'jenisKelamin'], ["Agama", 'agama'], ["Kewarganegaraan", 'kewarganegaraan'], ["Status dalam Keluarga", 'statusDalamKeluarga'], ["Anak Ke-", 'anakKe'],
-                    ["Asal TK", 'asalTk'], ["Alamat Siswa", 'alamatSiswa'], ["Diterima di Kelas", 'diterimaDiKelas'], ["Diterima Tanggal", 'diterimaTanggal'],
+                    ["Jenis Kelamin", 'jenisKelamin'], ["Agama", 'agama'], ["Asal TK", 'asalTk'], ["Alamat Siswa", 'alamatSiswa'], ["Diterima di Kelas", 'diterimaDiKelas'], ["Diterima Tanggal", 'diterimaTanggal'],
                     ["Nama Ayah", 'namaAyah'], ["Nama Ibu", 'namaIbu'], ["Pekerjaan Ayah", 'pekerjaanAyah'], ["Pekerjaan Ibu", 'pekerjaanIbu'],
                     ["Alamat Orang Tua", 'alamatOrangTua'], ["Telepon Orang Tua", 'teleponOrangTua'], ["Nama Wali", 'namaWali'], ["Pekerjaan Wali", 'pekerjaanWali'],
                     ["Alamat Wali", 'alamatWali'], ["Telepon Wali", 'teleponWali']
