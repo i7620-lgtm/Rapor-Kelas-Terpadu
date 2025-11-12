@@ -3,7 +3,7 @@ import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, genera
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 
 // Define fixed heights and margins for layout consistency
-const HEADER_HEIGHT_CM = 5.2; // Height of the report header area in cm
+const HEADER_HEIGHT_CM = 6.0; // Height of the report header area in cm
 const PAGE_TOP_MARGIN_CM = 1.5; // Standard top margin of the paper in cm
 const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5; // Standard left/right margin
 const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
@@ -20,61 +20,77 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        React.createElement('div', { className: "absolute top-0 left-0 right-0", style: { height: `${HEADER_HEIGHT_CM}cm`, padding: '1cm 1.5cm 0 1.5cm' } },
-            React.createElement('div', { className: "relative w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 180", preserveAspectRatio: "xMidYMin meet" },
-                    layout.map(el => {
-                        if (el.type === 'text') {
-                            let textAnchor = "start";
-                            let xPos = el.x;
-                            if (el.textAlign === 'center') {
-                                textAnchor = "middle";
-                                xPos = el.x + (el.width ?? 0) / 2;
-                            } else if (el.textAlign === 'right') {
-                                textAnchor = "end";
-                                xPos = el.x + (el.width ?? 0);
-                            }
-                            return (
-                                React.createElement('text', {
-                                    key: el.id,
-                                    x: xPos,
-                                    y: el.y + (el.fontSize ?? 14),
-                                    fontSize: el.fontSize,
-                                    fontWeight: el.fontWeight,
-                                    textAnchor: textAnchor,
-                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                                }, el.content)
-                            );
+        // This container is absolutely positioned at the very top of the page.
+        // It uses internal padding to respect the page margins, which is more robust for printing.
+        React.createElement('div', {
+            className: "absolute",
+            style: {
+                top: '0',
+                left: '0',
+                right: '0',
+                height: `${HEADER_HEIGHT_CM}cm`, // Occupies the full header block
+                padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm 0 ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                boxSizing: 'border-box'
+            }
+        },
+            // The SVG now fills the padded area (100% width and height of the inner box)
+            React.createElement('svg', {
+                width: "100%",
+                height: "100%",
+                viewBox: "0 0 800 200",
+                preserveAspectRatio: "xMidYMin meet"
+            },
+                layout.map(el => {
+                    if (el.type === 'text') {
+                        let textAnchor = "start";
+                        let xPos = el.x;
+                        if (el.textAlign === 'center') {
+                            textAnchor = "middle";
+                            xPos = el.x + (el.width ?? 0) / 2;
+                        } else if (el.textAlign === 'right') {
+                            textAnchor = "end";
+                            xPos = el.x + (el.width ?? 0);
                         }
-                        if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                            if (!imageUrl) return null; // Don't render image if URL is empty
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
-                        }
-                        if (el.type === 'line') {
-                            return (
-                                React.createElement('rect', {
-                                    key: el.id,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height,
-                                    fill: "black"
-                                })
-                            );
-                        }
-                        return null;
-                    })
-                )
+                        return (
+                            React.createElement('text', {
+                                key: el.id,
+                                x: xPos,
+                                y: el.y + (el.fontSize ?? 14),
+                                fontSize: el.fontSize,
+                                fontWeight: el.fontWeight,
+                                textAnchor: textAnchor,
+                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
+                            }, el.content)
+                        );
+                    }
+                    if (el.type === 'image') {
+                        const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
+                        if (!imageUrl) return null; // Don't render image if URL is empty
+                        return (
+                            React.createElement('image', {
+                                key: el.id,
+                                href: imageUrl,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height
+                            })
+                        );
+                    }
+                    if (el.type === 'line') {
+                        return (
+                            React.createElement('rect', {
+                                key: el.id,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height,
+                                fill: "black"
+                            })
+                        );
+                    }
+                    return null;
+                })
             )
         )
     );
