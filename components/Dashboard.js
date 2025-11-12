@@ -63,22 +63,30 @@ const StatusIcon = ({ status }) => {
     );
 };
 
-const ChecklistItem = ({ title, status, message, actionText, onActionClick }) => (
-    React.createElement('div', { className: "flex items-start p-4 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4" },
-        React.createElement('div', { className: "flex-shrink-0" },
-            React.createElement(StatusIcon, { status: status })
-        ),
-        React.createElement('div', { className: "flex-1" },
-            React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
-            React.createElement('p', { className: "text-sm text-slate-600 mt-1" }, message),
-            status === 'bad' && onActionClick && (
-                 React.createElement('button', { onClick: onActionClick, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
-                    actionText, ' →'
+const ChecklistItem = ({ title, status, message, actionText, onActionClick, percentage }) => {
+    const percentageColorClass = percentage === 100 ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+    
+    return (
+        React.createElement('div', { className: "relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4" },
+            // Percentage Circle
+            React.createElement('div', { className: `absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold z-10 ${percentageColorClass}`, style: { width: '40px', height: '40px', borderRadius: '50%' } },
+                `${percentage}%`
+            ),
+            React.createElement('div', { className: "flex-shrink-0" },
+                React.createElement(StatusIcon, { status: status })
+            ),
+            React.createElement('div', { className: "flex-1" },
+                React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
+                React.createElement('p', { className: "text-sm text-slate-600 mt-1" }, message),
+                status === 'bad' && onActionClick && (
+                     React.createElement('button', { onClick: onActionClick, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
+                        actionText, ' →'
+                    )
                 )
             )
         )
-    )
-);
+    );
+};
 
 
 const Dashboard = ({ 
@@ -202,23 +210,28 @@ const Dashboard = ({
         const currentGrades = grades || [];
         const currentAttendance = attendance || [];
         const currentStudentExtracurriculars = studentExtracurriculars || [];
-
+        const totalStudents = currentStudents.length;
 
         // 1. Pengaturan Dasar
-        const missingSettings = [
-            !settings.nama_sekolah && "Nama Sekolah",
-            !settings.nama_wali_kelas && "Nama Wali Kelas",
-            !settings.nama_kelas && "Nama Kelas",
-            !settings.tahun_ajaran && "Tahun Ajaran",
-            !settings.semester && "Semester",
-        ].filter(Boolean);
+        const settingsFields = [
+            'nama_sekolah', 'nama_wali_kelas', 'nama_kelas', 'tahun_ajaran', 'semester'
+        ];
+        let filledSettingsFields = 0;
+        settingsFields.forEach(key => {
+            if (settings[key] && settings[key].trim() !== '') {
+                filledSettingsFields++;
+            }
+        });
+        const settingsPercentage = Math.round((filledSettingsFields / settingsFields.length) * 100);
 
+        const missingSettings = settingsFields.filter(key => !settings[key] || settings[key].trim() === '');
         if (missingSettings.length === 0) {
             results.push({
                 category: 'Pengaturan',
                 title: 'Informasi Dasar',
                 status: 'good',
                 message: 'Informasi dasar sekolah, kelas, dan wali kelas sudah terisi.',
+                percentage: settingsPercentage,
             });
         } else {
             results.push({
@@ -228,10 +241,11 @@ const Dashboard = ({
                 message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`,
                 actionText: 'Lengkapi di Pengaturan',
                 onActionClick: () => setActivePage('PENGATURAN'),
+                percentage: settingsPercentage,
             });
         }
 
-        if (currentStudents.length === 0) {
+        if (totalStudents === 0) {
              results.push({
                 category: 'Data Siswa',
                 title: 'Data Siswa',
@@ -239,133 +253,195 @@ const Dashboard = ({
                 message: 'Belum ada data siswa yang ditambahkan ke dalam aplikasi.',
                 actionText: 'Tambah Siswa',
                 onActionClick: () => setActivePage('DATA_SISWA'),
+                percentage: 0, // No students, so 0% for student-related data
+            });
+            // If no students, all other student-related checks will also be 0% or marked as bad.
+            results.push({
+                category: 'Data Nilai',
+                title: 'Kelengkapan Nilai Akhir',
+                status: 'bad',
+                message: 'Belum ada data siswa untuk diisi nilainya.',
+                actionText: 'Periksa Data Nilai',
+                onActionClick: () => setActivePage('DATA_NILAI'),
+                percentage: 0,
+            });
+            results.push({
+                category: 'Data Lainnya',
+                title: 'Data Absensi',
+                status: 'bad',
+                message: 'Belum ada data siswa untuk diisi absensinya.',
+                actionText: 'Periksa Data Absensi',
+                onActionClick: () => setActivePage('DATA_ABSENSI'),
+                percentage: 0,
+            });
+            results.push({
+                category: 'Data Lainnya',
+                title: 'Catatan Wali Kelas',
+                status: 'bad',
+                message: 'Belum ada data siswa untuk diisi catatan wali kelasnya.',
+                actionText: 'Isi Catatan',
+                onActionClick: () => setActivePage('CATATAN_WALI_KELAS'),
+                percentage: 0,
+            });
+            results.push({
+                category: 'Data Lainnya',
+                title: 'Ekstrakurikuler',
+                status: 'bad',
+                message: 'Belum ada data siswa untuk diatur ekstrakurikulernya.',
+                actionText: 'Atur Ekstrakurikuler',
+                onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'),
+                percentage: 0,
             });
             return results;
         }
 
         // 2. Data Nilai
-        const studentsWithEmptyGrades = new Set();
-        const studentsWithBelowKKMGrades = new Set();
+        let studentsWithCompleteGrades = 0;
         const minGrade = parseInt(settings.predikats?.c || '70', 10);
 
         currentStudents.forEach(student => {
             const studentGrade = currentGrades.find(g => g.studentId === student.id);
-            // If studentGrade is entirely missing, all subjects are effectively empty for this student
-            if (!studentGrade) {
-                studentsWithEmptyGrades.add(student.id);
-            } else {
-                activeSubjects.forEach(sub => {
-                    const grade = studentGrade.finalGrades?.[sub.id];
-                    
-                    const isMissing = grade === undefined || grade === null || grade === '';
-                    const isBelowKKM = typeof grade === 'number' && grade < minGrade;
+            const studentReligion = student.agama?.trim().toLowerCase();
 
-                    if (isMissing) {
-                        studentsWithEmptyGrades.add(student.id);
+            const relevantSubjects = activeSubjects.filter(subject => {
+                if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+                    if (!studentReligion) return false;
+                    const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                    return subjectReligionMatch && subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                }
+                return true;
+            });
+
+            if (relevantSubjects.length === 0) { // If no relevant subjects, consider it complete for this student
+                studentsWithCompleteGrades++;
+                return;
+            }
+
+            let allGradesCompleteAndAboveKkm = true;
+            if (!studentGrade || !studentGrade.finalGrades) {
+                allGradesCompleteAndAboveKkm = false;
+            } else {
+                for (const sub of relevantSubjects) {
+                    const grade = studentGrade.finalGrades[sub.id];
+                    if (grade === undefined || grade === null || grade === '' || typeof grade !== 'number' || grade < minGrade) {
+                        allGradesCompleteAndAboveKkm = false;
+                        break;
                     }
-                    if (isBelowKKM) {
-                        studentsWithBelowKKMGrades.add(student.id);
-                    }
-                });
+                }
+            }
+            if (allGradesCompleteAndAboveKkm) {
+                studentsWithCompleteGrades++;
             }
         });
-        
-        const emptyCount = studentsWithEmptyGrades.size;
-        const belowKkmCount = studentsWithBelowKKMGrades.size;
+        const gradesPercentage = Math.round((studentsWithCompleteGrades / totalStudents) * 100);
 
-        if (emptyCount > 0 || belowKkmCount > 0) {
-            let messageParts = [];
-            if (emptyCount > 0) {
-                messageParts.push(`${emptyCount} siswa dengan nilai akhir yang belum terisi`);
-            }
-            if (belowKkmCount > 0) {
-                messageParts.push(`${belowKkmCount} siswa dengan nilai akhir di bawah KKM`);
-            }
-            results.push({
-                category: 'Data Nilai',
-                title: 'Kelengkapan Nilai Akhir',
-                status: 'bad',
-                message: `Terdapat ${messageParts.join(' dan ')}.`,
-                actionText: 'Periksa Data Nilai',
-                onActionClick: () => setActivePage('DATA_NILAI'),
-            });
-        } else {
+        if (gradesPercentage === 100) {
              results.push({
                 category: 'Data Nilai',
                 title: 'Kelengkapan Nilai Akhir',
                 status: 'good',
                 message: 'Semua siswa telah memiliki nilai akhir yang lengkap dan di atas KKM untuk semua mata pelajaran yang aktif.',
+                percentage: gradesPercentage,
+            });
+        } else {
+            const studentsWithEmptyOrBelowKKM = totalStudents - studentsWithCompleteGrades;
+            results.push({
+                category: 'Data Nilai',
+                title: 'Kelengkapan Nilai Akhir',
+                status: 'bad',
+                message: `Terdapat ${studentsWithEmptyOrBelowKKM} siswa dengan nilai yang belum lengkap atau di bawah KKM.`,
+                actionText: 'Periksa Data Nilai',
+                onActionClick: () => setActivePage('DATA_NILAI'),
+                percentage: gradesPercentage,
             });
         }
 
         // 3. Data Absensi
-        const studentsWithNoAttendance = currentStudents.filter(s => {
+        let studentsWithSomeAttendance = 0;
+        currentStudents.forEach(s => {
             const att = currentAttendance.find(a => a.studentId === s.id);
-            // Considered "empty" if all attendance types (sakit, izin, alpa) are null
-            return !att || (att.sakit === null && att.izin === null && att.alpa === null);
+            if (att && (att.sakit !== null || att.izin !== null || att.alpa !== null)) {
+                studentsWithSomeAttendance++;
+            }
         });
-        if (studentsWithNoAttendance.length > 0) {
+        const attendancePercentage = Math.round((studentsWithSomeAttendance / totalStudents) * 100);
+
+        if (attendancePercentage === 100) {
              results.push({
-                category: 'Data Lainnya',
-                title: 'Data Absensi',
-                status: 'bad',
-                message: `Terdapat ${studentsWithNoAttendance.length} siswa yang belum memiliki catatan absensi.`,
-                actionText: 'Periksa Data Absensi',
-                onActionClick: () => setActivePage('DATA_ABSENSI'),
-            });
-        } else {
-            results.push({
                 category: 'Data Lainnya',
                 title: 'Data Absensi',
                 status: 'good',
                 message: 'Data absensi untuk semua siswa telah terisi.',
+                percentage: attendancePercentage,
+            });
+        } else {
+             results.push({
+                category: 'Data Lainnya',
+                title: 'Data Absensi',
+                status: 'bad',
+                message: `Terdapat ${totalStudents - studentsWithSomeAttendance} siswa yang belum memiliki catatan absensi.`,
+                actionText: 'Periksa Data Absensi',
+                onActionClick: () => setActivePage('DATA_ABSENSI'),
+                percentage: attendancePercentage,
             });
         }
 
         // 4. Catatan Wali Kelas
-        const studentsWithoutNotes = currentStudents.filter(s => !notes[s.id] || notes[s.id].trim() === '');
-        if (studentsWithoutNotes.length > 0) {
+        let studentsWithNotes = 0;
+        currentStudents.forEach(s => {
+            if (notes[s.id] && notes[s.id].trim() !== '') {
+                studentsWithNotes++;
+            }
+        });
+        const notesPercentage = Math.round((studentsWithNotes / totalStudents) * 100);
+
+        if (notesPercentage === 100) {
              results.push({
-                category: 'Data Lainnya',
-                title: 'Catatan Wali Kelas',
-                status: 'bad',
-                message: `Terdapat ${studentsWithoutNotes.length} siswa yang belum memiliki catatan wali kelas.`,
-                actionText: 'Isi Catatan',
-                onActionClick: () => setActivePage('CATATAN_WALI_KELAS'),
-            });
-        } else {
-            results.push({
                 category: 'Data Lainnya',
                 title: 'Catatan Wali Kelas',
                 status: 'good',
                 message: 'Semua siswa telah memiliki catatan wali kelas.',
+                percentage: notesPercentage,
+            });
+        } else {
+             results.push({
+                category: 'Data Lainnya',
+                title: 'Catatan Wali Kelas',
+                status: 'bad',
+                message: `Terdapat ${totalStudents - studentsWithNotes} siswa yang belum memiliki catatan wali kelas.`,
+                actionText: 'Isi Catatan',
+                onActionClick: () => setActivePage('CATATAN_WALI_KELAS'),
+                percentage: notesPercentage,
             });
         }
 
         // 5. Ekstrakurikuler
-        const studentsWithoutAnyAssignedExtra = currentStudents.filter(s => {
+        let studentsWithAssignedExtra = 0;
+        currentStudents.forEach(s => {
             const studentExtra = currentStudentExtracurriculars.find(se => se.studentId === s.id);
-            // Considered "empty" if there's no record or the assignedActivities array is null/empty/contains only nulls
-            return !studentExtra || 
-                   !studentExtra.assignedActivities || 
-                   studentExtra.assignedActivities.every(activity => activity === null);
+            if (studentExtra && studentExtra.assignedActivities && studentExtra.assignedActivities.some(activity => activity !== null)) {
+                studentsWithAssignedExtra++;
+            }
         });
+        const extraPercentage = Math.round((studentsWithAssignedExtra / totalStudents) * 100);
 
-        if (studentsWithoutAnyAssignedExtra.length > 0) {
-             results.push({
-                category: 'Data Lainnya',
-                title: 'Ekstrakurikuler',
-                status: 'bad',
-                message: `Terdapat ${studentsWithoutAnyAssignedExtra.length} siswa yang belum memiliki ekstrakurikuler.`,
-                actionText: 'Atur Ekstrakurikuler',
-                onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'),
-            });
-        } else {
+        if (extraPercentage === 100) {
              results.push({
                 category: 'Data Lainnya',
                 title: 'Ekstrakurikuler',
                 status: 'good',
                 message: 'Semua siswa telah memiliki setidaknya satu ekstrakurikuler.',
+                percentage: extraPercentage,
+            });
+        } else {
+             results.push({
+                category: 'Data Lainnya',
+                title: 'Ekstrakurikuler',
+                status: 'bad',
+                message: `Terdapat ${totalStudents - studentsWithAssignedExtra} siswa yang belum memiliki ekstrakurikuler.`,
+                actionText: 'Atur Ekstrakurikuler',
+                onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'),
+                percentage: extraPercentage,
             });
         }
 
