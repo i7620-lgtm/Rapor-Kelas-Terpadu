@@ -54,6 +54,11 @@ self.addEventListener('activate', (event) => {
 
 // Event 'fetch': Prioritaskan jaringan, gunakan cache sebagai fallback (Network-First)
 self.addEventListener('fetch', (event) => {
+  // Skip non-http/https requests. This will ignore chrome-extension://, etc.
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     // Coba ambil dari jaringan terlebih dahulu
     fetch(event.request)
