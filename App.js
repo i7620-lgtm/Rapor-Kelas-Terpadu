@@ -15,8 +15,20 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js'; // Import the new hook
 
-// Placeholder for process.env.CLIENT_ID, assuming it's injected
-const GOOGLE_CLIENT_ID = process.env.CLIENT_ID;
+// Attempt to get the Client ID from environment variables.
+// This will fail in a standard browser environment without a build step,
+// which is expected on a simple static deployment.
+let GOOGLE_CLIENT_ID = null;
+try {
+  GOOGLE_CLIENT_ID = process.env.CLIENT_ID;
+} catch (e) {
+  // This will be caught in browser environments where 'process' is not defined
+  console.warn(
+    "Gagal mengakses variabel environment (process.env.CLIENT_ID). " +
+    "Fitur sinkronisasi Google Drive akan dinonaktifkan. " +
+    "Ini adalah perilaku yang wajar untuk deployment statis tanpa build tool."
+  );
+}
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Define here as App.js needs it.
 
 const defaultSubjects = [
@@ -939,7 +951,7 @@ const App = () => {
                                 const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
                                 if (studentId) {
                                     const assignedActivities = [], descriptions = {};
-                                    for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
+                                    for (let i = 1; i <= 5; i++) {
                                         const extraName = String(row[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
                                         const extraId = extraNameMap.get(extraName);
                                         if (extraId) { assignedActivities.push(extraId); descriptions[extraId] = String(row[`Deskripsi ${i}`] || ''); }
@@ -1102,7 +1114,7 @@ const App = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [isSignedIn, googleToken, isOnline, googleDriveFileId, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile, downloadFile, importFromExcelBlob, showToast, settings, getDynamicRKTFileName]);
+    }, [isSignedIn, googleToken, isOnline, googleDriveFileId, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile, downloadFile, importFromExcelBlob, showToast, settings]);
 
 
     // --- Logic after successful Google Sign-In / Sign-Out ---
@@ -1186,7 +1198,7 @@ const App = () => {
         handleSignInAction();
     }, [isSignedIn, googleToken, userProfile, settings.nama_sekolah, settings.nama_kelas, settings.semester, settings.tahun_ajaran, // Dependencies for settings
         settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, // Dependencies for local data
-        presets, showToast, findRKTFileId, syncDataWithDrive, isDefaultAppData, getDynamicRKTFileName]);
+        presets, showToast, findRKTFileId, syncDataWithDrive, isDefaultAppData]);
 
 
     // --- Logic for Settings Change while logged in ---
@@ -1275,7 +1287,7 @@ const App = () => {
 
         handleSettingsChangeSync();
 
-    }, [currentSettingsIdentifier, isSignedIn, isOnline, activePage, settings, showToast, findRKTFileId, syncDataWithDrive, getDynamicRKTFileName, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, presets, isDefaultAppData]);
+    }, [currentSettingsIdentifier, isSignedIn, isOnline, activePage, settings, showToast, findRKTFileId, syncDataWithDrive, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, presets, isDefaultAppData]);
 
 
   const handleNavigateToNilai = useCallback((subjectId) => {
