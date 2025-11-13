@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npm exec node -- create-config.js"
+    "build": "mkdir public && cp -r components hooks public/ && cp index.html App.js constants.js index.js sw.js manifest.json icon.svg terms.html privacy.html presets.json tp*.json metadata.json public/ && node create-config.js"
   }
 }
