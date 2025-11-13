@@ -73,11 +73,14 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((networkResponse) => {
         // Jika berhasil, perbarui cache dan kembalikan respons jaringan.
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME)
-          .then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+        // PENTING: Hanya cache permintaan http/https untuk menghindari error pada 'chrome-extension://'
+        if (event.request.url.startsWith('http')) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+        }
         return networkResponse;
       })
       .catch(() => {
