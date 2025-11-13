@@ -10,10 +10,9 @@ const Sidebar = ({
   userEmail,
   isOnline,
   lastSyncTimestamp,
+  syncStatus,
   onSignInClick,
   onSignOutClick,
-  onSyncToDrive,
-  isSyncing
 }) => {
   const handleDataAction = (id) => {
     if (id === 'EKSPORT') {
@@ -24,7 +23,27 @@ const Sidebar = ({
   };
 
   const statusText = isOnline ? 'Online' : 'Offline';
-  const statusColor = isOnline ? 'text-green-600' : 'text-red-600';
+  
+  const renderSyncStatus = () => {
+    switch (syncStatus) {
+        case 'unsaved':
+            return React.createElement('p', { className: "text-xs text-yellow-600 font-medium" }, 'Perubahan belum disimpan');
+        case 'saving':
+            return React.createElement('div', { className: "flex items-center gap-2 text-xs text-slate-600 font-medium" }, 
+                React.createElement('div', { className: "animate-spin rounded-full h-3 w-3 border-b-2 border-slate-800" }),
+                'Menyimpan...'
+            );
+        case 'saved':
+            return React.createElement('p', { className: "text-xs text-green-600 font-medium" }, 'Semua perubahan disimpan');
+        case 'error':
+            return React.createElement('p', { className: "text-xs text-red-600 font-medium" }, 'Gagal menyimpan');
+        case 'offline_pending':
+            return React.createElement('p', { className: "text-xs text-blue-600 font-medium" }, 'Offline, perubahan akan disinkronkan');
+        case 'idle':
+        default:
+            return null;
+    }
+};
   
   return (
     React.createElement('aside', { className: "w-64 bg-white shadow-lg flex flex-col print-hidden" },
@@ -69,13 +88,8 @@ const Sidebar = ({
                 React.createElement('span', { className: "text-slate-600" }, statusText),
                 React.createElement('span', { className: "ml-auto text-slate-500 font-semibold truncate", title: userEmail }, userEmail)
               ),
-              lastSyncTimestamp && React.createElement('p', { className: "text-xs text-slate-500 mt-1" }, `Terakhir disinkronkan: ${new Date(lastSyncTimestamp).toLocaleString()}`),
-              React.createElement('button', {
-                onClick: onSyncToDrive,
-                disabled: !isOnline || isSyncing,
-                className: "w-full text-left px-4 py-2.5 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed",
-                "aria-label": "Sinkronkan ke Google Drive"
-              }, isSyncing ? 'Sinkronisasi...' : 'Sinkronkan ke Drive'),
+              React.createElement('div', { className: "h-4" }, renderSyncStatus()),
+              lastSyncTimestamp && React.createElement('p', { className: "text-xs text-slate-500" }, `Tersimpan: ${new Date(lastSyncTimestamp).toLocaleString()}`),
               React.createElement('button', {
                 onClick: onSignOutClick,
                 className: "w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200",
