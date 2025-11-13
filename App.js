@@ -15,20 +15,17 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js'; // Import the new hook
 
-// Attempt to get the Client ID from environment variables.
-// This will fail in a standard browser environment without a build step,
-// which is expected on a simple static deployment.
-let GOOGLE_CLIENT_ID = null;
-try {
-  GOOGLE_CLIENT_ID = process.env.CLIENT_ID;
-} catch (e) {
-  // This will be caught in browser environments where 'process' is not defined
-  console.warn(
-    "Gagal mengakses variabel environment (process.env.CLIENT_ID). " +
-    "Fitur sinkronisasi Google Drive akan dinonaktifkan. " +
-    "Ini adalah perilaku yang wajar untuk deployment statis tanpa build tool."
-  );
+// Securely get the Client ID from the config.js file injected by the build step.
+// This avoids calling `process.env` directly in the browser, which causes errors.
+const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
+if (!GOOGLE_CLIENT_ID) {
+    console.warn(
+        "Gagal mendapatkan GOOGLE_CLIENT_ID dari 'window.RKT_CONFIG'. " +
+        "Fitur sinkronisasi Google Drive akan dinonaktifkan. " +
+        "Ini biasanya berarti variabel environment 'CLIENT_ID' tidak diatur di Vercel, atau build script gagal membuat file 'config.js'."
+    );
 }
+
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Define here as App.js needs it.
 
 const defaultSubjects = [
