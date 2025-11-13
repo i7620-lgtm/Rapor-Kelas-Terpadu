@@ -14,6 +14,7 @@ import PrintLegerPage from './components/PrintLegerPage.js';
 import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js'; // Import the new hook
+import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 
 // Securely get the Client ID from the config.js file injected by the build step.
 // This avoids calling `process.env` directly in the browser, which causes errors.
@@ -107,8 +108,16 @@ const App = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const { isSignedIn, userProfile, googleToken, signIn, signOut,
-          uploadFile, downloadFile, findRKTFileId, createRKTFile } = useGoogleAuth(GOOGLE_CLIENT_ID);
+          uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles } = useGoogleAuth(GOOGLE_CLIENT_ID);
   
+  const prevIsSignedIn = useRef(isSignedIn);
+  const isImportingFromDrive = useRef(false);
+  
+  // New state for Drive modal
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [driveFiles, setDriveFiles] = useState([]);
+  const [isCheckingDrive, setIsCheckingDrive] = useState(false);
+
   // googleDriveFileId and lastSyncTimestamp now refer to the *currently active file* for the *current settings*
   const [googleDriveFileId, setGoogleDriveFileId] = useState(null);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
@@ -1113,94 +1122,90 @@ const App = () => {
         }
     }, [isSignedIn, googleToken, isOnline, googleDriveFileId, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile, downloadFile, importFromExcelBlob, showToast, settings]);
 
+    const handleDriveFileSelection = async (fileId) => {
+        if (!fileId) {
+            setIsDriveModalOpen(false);
+            return;
+        }
+
+        setIsDriveModalOpen(false);
+        setIsLoading(true);
+        showToast("Mengunduh data dari Google Drive...", 'info');
+        isImportingFromDrive.current = true;
+
+        try {
+            const blob = await downloadFile(fileId);
+            await importFromExcelBlob(blob);
+            
+            setGoogleDriveFileId(fileId);
+            const selectedFile = driveFiles.find(f => f.id === fileId);
+            setLastSyncTimestamp(selectedFile?.modifiedTime || new Date().toISOString());
+
+            showToast("Data berhasil diunduh dan dimuat!", 'success');
+        } catch (error) {
+            console.error("Gagal mengunduh file yang dipilih:", error);
+            showToast(`Gagal mengunduh: ${error.message}`, 'error');
+        } finally {
+            setIsLoading(false);
+            setTimeout(() => { isImportingFromDrive.current = false; }, 100);
+        }
+    };
 
     // --- Logic after successful Google Sign-In / Sign-Out ---
     useEffect(() => {
+        const justSignedIn = !prevIsSignedIn.current && isSignedIn;
+        prevIsSignedIn.current = isSignedIn;
+
         const handleSignInAction = async () => {
-            // This guard is updated to prevent a race condition.
-            // The effect now waits until the user profile is also loaded, not just the token.
-            if (!isSignedIn || !googleToken || !userProfile) {
-                // If the user signed out, clear the drive context.
-                if (!isSignedIn) {
-                    setGoogleDriveFileId(null);
-                    setLastSyncTimestamp(null);
-                }
-                // If signed in but profile is not yet fetched, just wait for the next effect run.
-                return;
-            }
+            if (!isSignedIn || !userProfile) return;
 
             showToast(`Selamat datang, ${userProfile.given_name || userProfile.email}!`, 'success');
-            setIsLoading(true);
+            setIsCheckingDrive(true);
+            setIsDriveModalOpen(true); // Open modal in loading state immediately
 
             try {
-                const currentFileName = getDynamicRKTFileName(settings);
-                let driveFileId = null;
-                let driveFileModifiedTime = null;
+                const allFiles = await findAllRKTFiles();
 
-                const foundFiles = await findRKTFileId(currentFileName);
-                if (foundFiles.length > 0) {
-                    driveFileId = foundFiles[0].id;
-                    driveFileModifiedTime = foundFiles[0].modifiedTime;
-                    setGoogleDriveFileId(driveFileId); // Update the state
-                    setLastSyncTimestamp(driveFileModifiedTime); // Update the state
+                if (allFiles && allFiles.length > 0) {
+                    setDriveFiles(allFiles);
+                    // Modal is already open, it will now display the files
                 } else {
-                    setGoogleDriveFileId(null); // No file for current settings
-                    setLastSyncTimestamp(null);
-                }
+                    // No files found on Drive at all.
+                    setIsDriveModalOpen(false); // Close the modal
+                    const currentLocalData = getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives);
+                    const hasLocalChanges = !isDefaultAppData(currentLocalData, presets, defaultSubjects);
 
-                const currentLocalData = getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives);
-                const hasLocalChanges = !isDefaultAppData(currentLocalData, presets, defaultSubjects); // Check for local changes
-
-                if (driveFileId) {
-                    // A Drive file matching current settings exists
-                    if (hasLocalChanges) {
-                        const confirmAction = window.confirm(
-                            "Perubahan lokal terdeteksi yang belum tersimpan untuk konfigurasi ini. Apa yang ingin Anda lakukan?\n\n" +
-                            "OK: Unggah perubahan lokal ke Google Drive (menimpa data Drive).\n" +
-                            "Batal: Batalkan unggahan dan Unduh data dari Google Drive (menimpa data lokal)."
-                        );
-                        if (confirmAction) {
-                            await syncDataWithDrive('upload');
-                        } else {
-                            await syncDataWithDrive('download');
-                        }
-                    } else {
-                        // Local data is default or hasn't been changed significantly, just download
-                        const confirmDownload = window.confirm(
-                            `Data untuk konfigurasi ini (${settings.nama_sekolah}, Kelas ${settings.nama_kelas}, Semester ${settings.semester}, Tahun Ajaran ${settings.tahun_ajaran}) ` +
-                            `ditemukan di Google Drive (terakhir diubah: ${new Date(driveFileModifiedTime).toLocaleString()}). ` +
-                            `Apakah Anda ingin mengunduhnya (ini akan menimpa data lokal Anda)?`
-                        );
-                        if (confirmDownload) {
-                            await syncDataWithDrive('download');
-                        }
-                    }
-                } else {
-                    // No Drive file found for current settings
                     if (hasLocalChanges) {
                         const confirmUpload = window.confirm(
-                            "Tidak ada file RKT ditemukan di Google Drive untuk konfigurasi ini. " +
+                            "Tidak ada file RKT ditemukan di Google Drive. " +
                             "Apakah Anda ingin mengunggah data lokal Anda dan membuat file baru di Drive?"
                         );
                         if (confirmUpload) {
-                            await syncDataWithDrive('upload'); // This will create the file
+                            await syncDataWithDrive('upload');
                         }
                     } else {
-                        showToast("Tidak ada data RKT di Google Drive atau lokal untuk konfigurasi saat ini. Anda bisa mulai bekerja.", 'info');
+                        showToast("Tidak ada data RKT ditemukan di Google Drive. Anda bisa mulai bekerja.", 'info');
                     }
                 }
             } catch (error) {
-                console.error("Error during initial sign-in sync:", error);
-                showToast(`Gagal memuat atau sinkronisasi data: ${error.message}`, 'error');
+                console.error("Error checking Drive on sign-in:", error);
+                showToast(`Gagal memeriksa Google Drive: ${error.message}`, 'error');
+                setIsDriveModalOpen(false); // Close modal on error
             } finally {
-                setIsLoading(false);
+                setIsCheckingDrive(false);
             }
         };
 
-        handleSignInAction();
-    }, [isSignedIn, googleToken, userProfile, settings.nama_sekolah, settings.nama_kelas, settings.semester, settings.tahun_ajaran, // Dependencies for settings
-        settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, // Dependencies for local data
-        presets, showToast, findRKTFileId, syncDataWithDrive, isDefaultAppData]);
+        if (justSignedIn && googleToken && userProfile) {
+            handleSignInAction();
+        } else if (!isSignedIn) {
+            setGoogleDriveFileId(null);
+            setLastSyncTimestamp(null);
+            setDriveFiles([]); // Clear file list on sign out
+        }
+    }, [isSignedIn, googleToken, userProfile, showToast, findAllRKTFiles, isDefaultAppData, presets, syncDataWithDrive, 
+        settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives
+    ]);
 
 
     // --- Logic for Settings Change while logged in ---
@@ -1211,19 +1216,21 @@ const App = () => {
     const prevSettingsIdentifierRef = useRef(currentSettingsIdentifier);
 
     useEffect(() => {
-        // Only proceed if a significant setting has actually changed
         if (currentSettingsIdentifier === prevSettingsIdentifierRef.current) {
             return;
         }
 
+        if (isImportingFromDrive.current) {
+            prevSettingsIdentifierRef.current = currentSettingsIdentifier;
+            return;
+        }
+
         // Reset Drive file context immediately when settings change.
-        // The local data is now for a *new* configuration, which might not have a Drive file yet.
         setGoogleDriveFileId(null);
         setLastSyncTimestamp(null);
 
-        // Only trigger the full Drive lookup and prompt logic if signed in, online, AND on the Settings page
         if (!isSignedIn || !isOnline || activePage !== 'PENGATURAN') {
-            prevSettingsIdentifierRef.current = currentSettingsIdentifier; // Update ref even if not syncing
+            prevSettingsIdentifierRef.current = currentSettingsIdentifier;
             return;
         }
 
@@ -1234,7 +1241,7 @@ const App = () => {
 
             try {
                 const foundFiles = await findRKTFileId(newFileName);
-                if (foundFiles.length > 0) { // <--- This is the key condition for finding a matching file
+                if (foundFiles.length > 0) {
                     const driveFileId = foundFiles[0].id;
                     const lastModified = new Date(foundFiles[0].modifiedTime);
 
@@ -1245,17 +1252,12 @@ const App = () => {
                     );
 
                     if (confirmLoad) {
-                        // syncDataWithDrive will handle updating googleDriveFileId and lastSyncTimestamp
                         await syncDataWithDrive('download'); 
                         showToast("Data lama berhasil diunduh dari Google Drive.", 'success');
                     } else {
-                        // User chose not to download, effectively starting fresh for this new context
                         showToast("Pengambilan data lama dibatalkan. Anda sedang menggunakan data lokal yang kosong atau belum terkait dengan Drive.", 'info');
                     }
                 } else {
-                    // No file found for new settings.
-                    // The googleDriveFileId and lastSyncTimestamp are already null from the initial reset in this useEffect.
-                    
                     const currentLocalData = getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives);
                     const hasLocalChanges = !isDefaultAppData(currentLocalData, presets, defaultSubjects);
 
@@ -1265,7 +1267,7 @@ const App = () => {
                             "Apakah Anda ingin mengunggah data lokal Anda dan membuat file baru di Drive?"
                         );
                         if (confirmUpload) {
-                            await syncDataWithDrive('upload'); // This will create the file
+                            await syncDataWithDrive('upload');
                         } else {
                             showToast(`Pengambilan data dibatalkan. Anda sedang menggunakan data lokal yang belum terkait dengan Drive.`, 'info');
                         }
@@ -1277,13 +1279,12 @@ const App = () => {
                 console.error("Error during settings change sync:", error);
                 showToast(`Gagal mencari atau mengunduh data: ${error.message}`, 'error');
                 if (error.message.includes("Requested entity was not found.") || (error.result && error.result.error && error.result.error.code === 404)) {
-                    // If the file was supposed to exist but got a 404, explicitly clear state
                     setGoogleDriveFileId(null);
                     setLastSyncTimestamp(null);
                 }
             } finally {
                 setIsLoading(false);
-                prevSettingsIdentifierRef.current = currentSettingsIdentifier; // Update ref after processing
+                prevSettingsIdentifierRef.current = currentSettingsIdentifier;
             }
         };
 
@@ -1407,6 +1408,13 @@ const App = () => {
           'Perbarui Sekarang'
         )
       ),
+      React.createElement(DriveDataSelectionModal, {
+          isOpen: isDriveModalOpen,
+          onClose: () => setIsDriveModalOpen(false),
+          onConfirm: handleDriveFileSelection,
+          files: driveFiles,
+          isLoading: isCheckingDrive
+      }),
       React.createElement('div', { className: "flex h-screen bg-slate-100 font-sans" },
         React.createElement(Sidebar, {
           activePage: activePage,
