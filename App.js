@@ -22,7 +22,7 @@ if (!GOOGLE_CLIENT_ID) {
     console.warn(
         "Gagal mendapatkan GOOGLE_CLIENT_ID dari 'window.RKT_CONFIG'. " +
         "Fitur sinkronisasi Google Drive akan dinonaktifkan. " +
-        "Ini biasanya berarti variabel environment 'CLIENT_ID' tidak diatur di Vercel, atau build script gagal membuat file 'config.js'."
+        "Ini biasanya berarti variabel environment 'RKT_GOOGLE_CLIENT_ID' tidak diatur dengan benar di Vercel, atau build script gagal membuat file 'config.js'."
     );
 }
 
