@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { NAV_ITEMS } from './constants.js';
 import Sidebar from './components/Sidebar.js';
 import Dashboard from './components/Dashboard.js';
@@ -22,12 +22,58 @@ const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
     console.warn(
         "Gagal mendapatkan GOOGLE_CLIENT_ID dari 'window.RKT_CONFIG'. " +
-        "Fitur sinkronisasi Google Drive akan dinonaktifkan. " +
+        "Fitur sinkronisasi Google Drive akan dinaktifkan. " +
         "Ini biasanya berarti variabel environment 'RKT_GOOGLE_CLIENT_ID' tidak diatur dengan benar di Vercel, atau build script gagal membuat file 'config.js'."
     );
 }
 
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'; // Define here as App.js needs it.
+
+// Simple IndexedDB wrapper for offline sync
+const dbPromise = new Promise((resolve, reject) => {
+    const request = indexedDB.open('RKT_OfflineDB', 1);
+    request.onerror = () => reject("Error opening IndexedDB.");
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = event => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('pendingSyncs')) {
+            db.createObjectStore('pendingSyncs', { keyPath: 'id' });
+        }
+    };
+});
+
+const db = {
+    get: async (storeName, key) => {
+        const db = await dbPromise;
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+    put: async (storeName, value) => {
+        const db = await dbPromise;
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const request = store.put(value);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    },
+    delete: async (storeName, key) => {
+        const db = await dbPromise;
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const request = store.delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+};
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
@@ -106,12 +152,16 @@ const App = () => {
   const [presets, setPresets] = useState(null);
   const [dataNilaiInitialTab, setDataNilaiInitialTab] = useState('keseluruhan');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+    
+  const isInitialMount = useRef(true);
+  const debounceTimeout = useRef(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'unsaved', 'saving', 'saved', 'error', 'offline_pending'
 
   const { isSignedIn, userProfile, googleToken, signIn, signOut,
           uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles } = useGoogleAuth(GOOGLE_CLIENT_ID);
   
   const prevIsSignedIn = useRef(isSignedIn);
-  const isImportingFromDrive = useRef(false);
   
   // New state for Drive modal
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
@@ -227,19 +277,281 @@ const App = () => {
           return {};
       }
   });
+  
+  const appData = useMemo(() => getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives), [
+      settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives
+  ]);
 
-  // Online/Offline status listener
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+  const showToast = useCallback((message, type) => {
+    setToast({ message, type });
   }, []);
 
+  // --- Export All Data to Excel Blob ---
+  const exportToExcelBlob = useCallback(() => {
+      if (typeof XLSX === 'undefined') {
+          showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
+          return null;
+      }
+      try {
+          const wb = XLSX.utils.book_new();
+
+          const petunjukData = [
+              ["Petunjuk Pengisian Template RKT"], [],
+              ["Sheet", "Keterangan"],
+              ["Pengaturan", "Isi atau ubah pengaturan dasar, daftar mata pelajaran, dan ekstrakurikuler di sheet ini. Perubahan akan diterapkan saat file diunggah."],
+              ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
+              ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa. Kosongkan jika tidak ada absensi untuk jenis tersebut."],
+              ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
+              ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
+              ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
+              ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
+              [],
+              ["PENTING:", "Pastikan nama siswa dan nama sheet tidak diubah agar proses impor berjalan lancar."]
+          ];
+          const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
+          wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
+          XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
+          
+          const settingsHeaderMapping = [
+              ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
+              ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
+              ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
+              ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
+              ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
+              ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
+              ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
+              ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
+          ];
+
+          const settingsDataAoA = [
+              ['Pengaturan Aplikasi'], [],
+              ['Pengaturan', 'Nilai'],
+          ];
+          settingsHeaderMapping.forEach(([key, header]) => {
+              let value;
+              if (key.startsWith('predikat_')) {
+                  value = settings.predikats[key.split('_')[1]];
+              } else {
+                  value = settings[key];
+              }
+              settingsDataAoA.push([header, value]);
+          });
+          
+          const CHUNK_SIZE = 32000;
+          const addChunkedData = (label, data) => {
+              const dataStr = data || '';
+              if (dataStr.length > CHUNK_SIZE) {
+                  for (let i = 0, part = 1; i < dataStr.length; i += CHUNK_SIZE, part++) {
+                      const chunk = dataStr.substring(i, i + CHUNK_SIZE);
+                      settingsDataAoA.push([`${label} - Part ${part}`, chunk]);
+                  }
+              } else {
+                  settingsDataAoA.push([label, dataStr]);
+              }
+          };
+
+          addChunkedData('Logo Sekolah (Base64)', settings.logo_sekolah);
+          addChunkedData('Logo Dinas Pendidikan (Base64)', settings.logo_dinas);
+          addChunkedData('Logo Cover Rapor (Base64)', settings.logo_cover);
+          
+          settingsDataAoA.push([]);
+          settingsDataAoA.push(['Mata Pelajaran']);
+          settingsDataAoA.push(['ID Internal (Jangan Diubah)', 'Nama Lengkap', 'Singkatan', 'Status Aktif']);
+          subjects.forEach(subject => {
+              settingsDataAoA.push([subject.id, subject.fullName, subject.label, subject.active ? 'Aktif' : 'Tidak Aktif']);
+          });
+
+          settingsDataAoA.push([]);
+          settingsDataAoA.push(['Ekstrakurikuler']);
+          settingsDataAoA.push(['ID Unik (Jangan Diubah)', 'Nama Ekstrakurikuler', 'Status Aktif']);
+          extracurriculars.forEach(extra => {
+              settingsDataAoA.push([extra.id, extra.name, extra.active ? 'Aktif' : 'Tidak Aktif']);
+          });
+
+          const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsDataAoA);
+          wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 20 }];
+          XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
+
+
+          const studentHeaderMapping = [
+              ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
+          ];
+          const formattedStudents = students.map((student, index) => {
+              const newStudent = {};
+              studentHeaderMapping.forEach(([key, header]) => {
+                  if (key === 'no') newStudent[header] = index + 1;
+                  else newStudent[header] = student[key];
+              });
+              return newStudent;
+          });
+          const wsSiswa = XLSX.utils.json_to_sheet(formattedStudents);
+          wsSiswa['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
+          XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
+
+          const dataAbsensi = students.map(student => {
+              const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
+              return { 
+                  "Nama Lengkap": student.namaLengkap, 
+                  "Sakit (S)": studentAtt.sakit ?? '',
+                  "Izin (I)": studentAtt.izin ?? '',
+                  "Alpa (A)": studentAtt.alpa ?? ''
+              };
+          });
+          const wsAbsensi = XLSX.utils.json_to_sheet(dataAbsensi);
+          wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+          XLSX.utils.book_append_sheet(wb, wsAbsensi, "Data Absensi");
+
+          const dataCatatan = students.map(student => ({ "Nama Lengkap": student.namaLengkap, "Catatan Wali Kelas": notes[student.id] || '' }));
+          const wsCatatan = XLSX.utils.json_to_sheet(dataCatatan);
+          wsCatatan['!cols'] = [{ wch: 30 }, { wch: 80 }];
+          XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
+
+          const MAX_EXTRA_FIELDS = 5;
+          const headersExtra = ["Nama Lengkap"];
+          for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
+              headersExtra.push(`Ekstrakurikuler ${i}`);
+              headersExtra.push(`Deskripsi ${i}`);
+          }
+          const dataEkstra = students.map(student => {
+              const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
+              const row = { "Nama Lengkap": student.namaLengkap };
+              for (let i = 0; i < MAX_EXTRA_FIELDS; i++) {
+                  const activityId = studentExtra?.assignedActivities?.[i] || null;
+                  const activityName = extracurriculars.find(e => e.id === activityId)?.name || '';
+                  const description = activityId ? studentExtra?.descriptions?.[activityId] || '' : '';
+                  row[`Ekstrakurikuler ${i+1}`] = activityName;
+                  row[`Deskripsi ${i+1}`] = description;
+              }
+              return row;
+          });
+          const wsEkstra = XLSX.utils.json_to_sheet(dataEkstra);
+          wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
+          XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
+          
+          const activeSubjects = subjects.filter(s => s.active);
+          const currentGradeNumber = getGradeNumber(settings.nama_kelas);
+          let objectivesForCurrentClass = {};
+          if (currentGradeNumber !== null) {
+              for (const key in learningObjectives) {
+                  if (getGradeNumber(key) === currentGradeNumber) objectivesForCurrentClass = learningObjectives[key];
+              }
+          }
+          activeSubjects.forEach(subject => {
+              const subjectTps = objectivesForCurrentClass[subject.fullName] || [];
+              const numberOfTps = subjectTps.length;
+              const perMapelData = students.map((student, index) => {
+                  const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
+                  const row = { "No": index + 1, "Nama Siswa": student.namaLengkap };
+                  for (let i = 0; i < numberOfTps; i++) row[`TP ${i + 1}`] = detailedGrade?.tp?.[i] ?? '';
+                  row["STS"] = detailedGrade?.sts ?? '';
+                  row["SAS"] = detailedGrade?.sas ?? '';
+                  return row;
+              });
+              const safeSheetName = `Nilai ${subject.label}`.substring(0, 31);
+              const wsPerMapel = XLSX.utils.json_to_sheet(perMapelData);
+              wsPerMapel['!cols'] = [ { wch: 5 }, { wch: 30 }, ...Array(numberOfTps).fill({ wch: 8 }), { wch: 8 }, { wch: 8 } ];
+              XLSX.utils.book_append_sheet(wb, wsPerMapel, safeSheetName);
+          });
+
+          const subjectsForObjectives = activeSubjects.filter(s => objectivesForCurrentClass[s.fullName]);
+          const maxObjectives = subjectsForObjectives.reduce((max, s) => Math.max(max, (objectivesForCurrentClass[s.fullName] || []).length), 0);
+          const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
+          const tpData = subjectsForObjectives.map((s, i) => {
+              const objectivesForSubject = objectivesForCurrentClass[s.fullName] || [];
+              const rowData = [i + 1, s.fullName];
+              for (let j = 0; j < maxObjectives; j++) rowData.push(objectivesForSubject[j] || '');
+              return rowData;
+          });
+          const wsTujuan = XLSX.utils.aoa_to_sheet([tpHeaders, ...tpData]);
+          wsTujuan['!cols'] = [{ wch: 5 }, { wch: 45 }, ...Array(maxObjectives).fill({ wch: 40 })];
+          XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
+          
+          const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+          return new Blob([wbout], { type: 'application/octet-stream' });
+      } catch (error) {
+          console.error("Gagal mengekspor data:", error);
+          showToast(`Gagal mengekspor data: ${error.message}`, 'error');
+          return null;
+      }
+  }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
+
+
+    const executeSync = useCallback(async () => {
+        if (!isSignedIn || !isOnline || !googleToken || syncStatus === 'saving') return;
+
+        try {
+            const pendingData = await db.get('pendingSyncs', 'unsynced_data');
+            
+            if (pendingData) {
+                console.log("Pending offline data found. Attempting to sync...");
+                setSyncStatus('saving');
+                showToast("Menyinkronkan data offline...", 'info');
+                
+                const { blob, fileName, fileId: originalFileId } = pendingData;
+                
+                let fileToOperateId = googleDriveFileId || originalFileId;
+                if (!fileToOperateId) {
+                    const foundFiles = await findRKTFileId(fileName);
+                    if (foundFiles.length > 0) fileToOperateId = foundFiles[0].id;
+                }
+
+                if (fileToOperateId) {
+                    await uploadFile(fileToOperateId, fileName, blob, RKT_MIME_TYPE);
+                } else {
+                    const newFile = await createRKTFile(fileName, blob, RKT_MIME_TYPE);
+                    fileToOperateId = newFile.id;
+                }
+
+                setGoogleDriveFileId(fileToOperateId);
+                const newTimestamp = new Date().toISOString();
+                setLastSyncTimestamp(newTimestamp);
+                
+                await db.delete('pendingSyncs', 'unsynced_data');
+                
+                setIsDirty(false); 
+                setSyncStatus('saved');
+                setTimeout(() => setSyncStatus('idle'), 3000);
+                showToast("Data offline berhasil disinkronkan!", 'success');
+            }
+        } catch (error) {
+            console.error("Failed to execute background sync:", error);
+            setSyncStatus('error');
+            showToast("Sinkronisasi data offline gagal.", 'error');
+        }
+    }, [isSignedIn, isOnline, googleToken, syncStatus, googleDriveFileId, findRKTFileId, uploadFile, createRKTFile, showToast]);
+    
+    // Effect for SW messages, online status changes, and initial check
+    useEffect(() => {
+        const handleMessage = (event) => {
+            if (event.data && event.data.type === 'EXECUTE_SYNC') {
+                console.log('Received EXECUTE_SYNC message from Service Worker.');
+                executeSync();
+            }
+        };
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', handleMessage);
+        }
+
+        const handleOnline = () => {
+          setIsOnline(true);
+          console.log("Application is back online.");
+          executeSync();
+        };
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        // Initial check on load
+        executeSync();
+
+        return () => {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.removeEventListener('message', handleMessage);
+            }
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [executeSync]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -266,7 +578,7 @@ const App = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const loadLearningObjectives = async () => {
@@ -303,34 +615,12 @@ const App = () => {
       loadLearningObjectives();
     }
   }, [settings.nama_kelas, learningObjectives]);
-
-
-  // Persist to Local Storage
-  useEffect(() => { localStorage.setItem('appSettings', JSON.stringify(settings)); }, [settings]);
-  useEffect(() => { localStorage.setItem('appStudents', JSON.stringify(students)); }, [students]);
-  useEffect(() => { localStorage.setItem('appGrades', JSON.stringify(grades)); }, [grades]);
-  useEffect(() => { localStorage.setItem('appNotes', JSON.stringify(notes)); }, [notes]);
-  useEffect(() => { localStorage.setItem('appAttendance', JSON.stringify(attendance)); }, [attendance]);
-  useEffect(() => { localStorage.setItem('appExtracurriculars', JSON.stringify(extracurriculars)); }, [extracurriculars]);
-  useEffect(() => { localStorage.setItem('appStudentExtracurriculars', JSON.stringify(studentExtracurriculars)); }, [studentExtracurriculars]);
-  useEffect(() => { localStorage.setItem('appSubjects', JSON.stringify(subjects)); }, [subjects]);
-  useEffect(() => {
-      if (Object.keys(learningObjectives).length > 0) {
-        localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives));
-      }
-  }, [learningObjectives]);
-  // googleDriveFileId and lastSyncTimestamp are not persisted to local storage anymore
-  // as they are dynamic based on current settings and presence on Drive.
   
   useEffect(() => {
     if (activePage !== 'DATA_NILAI') {
         setDataNilaiInitialTab('keseluruhan');
     }
   }, [activePage]);
-
-  const showToast = useCallback((message, type) => {
-    setToast({ message, type });
-  }, []);
 
   const handleSettingsChange = useCallback((e) => {
     const { name, value, files, type } = e.target;
@@ -588,195 +878,6 @@ const App = () => {
   const handleUpdateLearningObjectives = useCallback((newObjectives) => {
       setLearningObjectives(newObjectives);
   }, []);
-
-    // --- Export All Data to Excel Blob ---
-    const exportToExcelBlob = useCallback(() => {
-        if (typeof XLSX === 'undefined') {
-            showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
-            return null;
-        }
-        try {
-            const wb = XLSX.utils.book_new();
-
-            const petunjukData = [
-                ["Petunjuk Pengisian Template RKT"], [],
-                ["Sheet", "Keterangan"],
-                ["Pengaturan", "Isi atau ubah pengaturan dasar, daftar mata pelajaran, dan ekstrakurikuler di sheet ini. Perubahan akan diterapkan saat file diunggah."],
-                ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
-                ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa. Kosongkan jika tidak ada absensi untuk jenis tersebut."],
-                ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
-                ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
-                ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
-                ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
-                [],
-                ["PENTING:", "Pastikan nama siswa dan nama sheet tidak diubah agar proses impor berjalan lancar."]
-            ];
-            const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
-            wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
-            XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
-            
-            const settingsHeaderMapping = [
-                ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
-                ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
-                ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
-                ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
-                ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
-                ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
-                ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
-                ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
-            ];
-
-            const settingsDataAoA = [
-                ['Pengaturan Aplikasi'], [],
-                ['Pengaturan', 'Nilai'],
-            ];
-            settingsHeaderMapping.forEach(([key, header]) => {
-                let value;
-                if (key.startsWith('predikat_')) {
-                    value = settings.predikats[key.split('_')[1]];
-                } else {
-                    value = settings[key];
-                }
-                settingsDataAoA.push([header, value]);
-            });
-            
-            const CHUNK_SIZE = 32000;
-            const addChunkedData = (label, data) => {
-                const dataStr = data || '';
-                if (dataStr.length > CHUNK_SIZE) {
-                    for (let i = 0, part = 1; i < dataStr.length; i += CHUNK_SIZE, part++) {
-                        const chunk = dataStr.substring(i, i + CHUNK_SIZE);
-                        settingsDataAoA.push([`${label} - Part ${part}`, chunk]);
-                    }
-                } else {
-                    settingsDataAoA.push([label, dataStr]);
-                }
-            };
-
-            addChunkedData('Logo Sekolah (Base64)', settings.logo_sekolah);
-            addChunkedData('Logo Dinas Pendidikan (Base64)', settings.logo_dinas);
-            addChunkedData('Logo Cover Rapor (Base64)', settings.logo_cover);
-            
-            settingsDataAoA.push([]);
-            settingsDataAoA.push(['Mata Pelajaran']);
-            settingsDataAoA.push(['ID Internal (Jangan Diubah)', 'Nama Lengkap', 'Singkatan', 'Status Aktif']);
-            subjects.forEach(subject => {
-                settingsDataAoA.push([subject.id, subject.fullName, subject.label, subject.active ? 'Aktif' : 'Tidak Aktif']);
-            });
-
-            settingsDataAoA.push([]);
-            settingsDataAoA.push(['Ekstrakurikuler']);
-            settingsDataAoA.push(['ID Unik (Jangan Diubah)', 'Nama Ekstrakurikuler', 'Status Aktif']);
-            extracurriculars.forEach(extra => {
-                settingsDataAoA.push([extra.id, extra.name, extra.active ? 'Aktif' : 'Tidak Aktif']);
-            });
-
-            const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsDataAoA);
-            wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 20 }];
-            XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
-
-
-            const studentHeaderMapping = [
-                ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
-            ];
-            const formattedStudents = students.map((student, index) => {
-                const newStudent = {};
-                studentHeaderMapping.forEach(([key, header]) => {
-                    if (key === 'no') newStudent[header] = index + 1;
-                    else newStudent[header] = student[key];
-                });
-                return newStudent;
-            });
-            const wsSiswa = XLSX.utils.json_to_sheet(formattedStudents);
-            wsSiswa['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
-            XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
-
-            const dataAbsensi = students.map(student => {
-                const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
-                return { 
-                    "Nama Lengkap": student.namaLengkap, 
-                    "Sakit (S)": studentAtt.sakit ?? '',
-                    "Izin (I)": studentAtt.izin ?? '',
-                    "Alpa (A)": studentAtt.alpa ?? ''
-                };
-            });
-            const wsAbsensi = XLSX.utils.json_to_sheet(dataAbsensi);
-            wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-            XLSX.utils.book_append_sheet(wb, wsAbsensi, "Data Absensi");
-
-            const dataCatatan = students.map(student => ({ "Nama Lengkap": student.namaLengkap, "Catatan Wali Kelas": notes[student.id] || '' }));
-            const wsCatatan = XLSX.utils.json_to_sheet(dataCatatan);
-            wsCatatan['!cols'] = [{ wch: 30 }, { wch: 80 }];
-            XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
-
-            const MAX_EXTRA_FIELDS = 5;
-            const headersExtra = ["Nama Lengkap"];
-            for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
-                headersExtra.push(`Ekstrakurikuler ${i}`);
-                headersExtra.push(`Deskripsi ${i}`);
-            }
-            const dataEkstra = students.map(student => {
-                const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
-                const row = { "Nama Lengkap": student.namaLengkap };
-                for (let i = 0; i < MAX_EXTRA_FIELDS; i++) {
-                    const activityId = studentExtra?.assignedActivities?.[i] || null;
-                    const activityName = extracurriculars.find(e => e.id === activityId)?.name || '';
-                    const description = activityId ? studentExtra?.descriptions?.[activityId] || '' : '';
-                    row[`Ekstrakurikuler ${i+1}`] = activityName;
-                    row[`Deskripsi ${i+1}`] = description;
-                }
-                return row;
-            });
-            const wsEkstra = XLSX.utils.json_to_sheet(dataEkstra);
-            wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
-            XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
-            
-            const activeSubjects = subjects.filter(s => s.active);
-            const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-            let objectivesForCurrentClass = {};
-            if (currentGradeNumber !== null) {
-                for (const key in learningObjectives) {
-                    if (getGradeNumber(key) === currentGradeNumber) objectivesForCurrentClass = learningObjectives[key];
-                }
-            }
-            activeSubjects.forEach(subject => {
-                const subjectTps = objectivesForCurrentClass[subject.fullName] || [];
-                const numberOfTps = subjectTps.length;
-                const perMapelData = students.map((student, index) => {
-                    const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-                    const row = { "No": index + 1, "Nama Siswa": student.namaLengkap };
-                    for (let i = 0; i < numberOfTps; i++) row[`TP ${i + 1}`] = detailedGrade?.tp?.[i] ?? '';
-                    row["STS"] = detailedGrade?.sts ?? '';
-                    row["SAS"] = detailedGrade?.sas ?? '';
-                    return row;
-                });
-                const safeSheetName = `Nilai ${subject.label}`.substring(0, 31);
-                const wsPerMapel = XLSX.utils.json_to_sheet(perMapelData);
-                wsPerMapel['!cols'] = [ { wch: 5 }, { wch: 30 }, ...Array(numberOfTps).fill({ wch: 8 }), { wch: 8 }, { wch: 8 } ];
-                XLSX.utils.book_append_sheet(wb, wsPerMapel, safeSheetName);
-            });
-
-            const subjectsForObjectives = activeSubjects.filter(s => objectivesForCurrentClass[s.fullName]);
-            const maxObjectives = subjectsForObjectives.reduce((max, s) => Math.max(max, (objectivesForCurrentClass[s.fullName] || []).length), 0);
-            const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
-            const tpData = subjectsForObjectives.map((s, i) => {
-                const objectivesForSubject = objectivesForCurrentClass[s.fullName] || [];
-                const rowData = [i + 1, s.fullName];
-                for (let j = 0; j < maxObjectives; j++) rowData.push(objectivesForSubject[j] || '');
-                return rowData;
-            });
-            const wsTujuan = XLSX.utils.aoa_to_sheet([tpHeaders, ...tpData]);
-            wsTujuan['!cols'] = [{ wch: 5 }, { wch: 45 }, ...Array(maxObjectives).fill({ wch: 40 })];
-            XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
-            
-            const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-            return new Blob([wbout], { type: 'application/octet-stream' });
-        } catch (error) {
-            console.error("Gagal mengekspor data:", error);
-            showToast(`Gagal mengekspor data: ${error.message}`, 'error');
-            return null;
-        }
-    }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
 
     // --- Manual Local Export ---
     const handleExportAll = useCallback(() => {
@@ -1060,67 +1161,123 @@ const App = () => {
     }, [importFromExcelBlob]);
 
 
-    // --- Google Drive Sync Logic ---
-    const syncDataWithDrive = useCallback(async (action) => {
-        if (!isSignedIn || !googleToken || !isOnline) {
-            showToast("Anda harus login dan online untuk sinkronisasi dengan Google Drive.", 'error');
+    // --- Google Drive Auto-Sync Logic ---
+    const autoSaveToDrive = useCallback(async () => {
+        if (!isDirty || !isSignedIn || !googleToken) {
+            setSyncStatus(isDirty ? 'unsaved' : 'idle');
             return;
         }
 
-        setIsLoading(true);
-        showToast("Memulai sinkronisasi Google Drive...", 'info');
-        const currentDynamicFileName = getDynamicRKTFileName(settings); // Get file name based on current settings
+        if (!isOnline) {
+            setSyncStatus('offline_pending');
+            const blob = exportToExcelBlob();
+            const fileName = getDynamicRKTFileName(settings);
+            
+            if (blob && fileName) {
+                await db.put('pendingSyncs', { id: 'unsynced_data', blob, fileName, fileId: googleDriveFileId });
+                console.log("Offline: Data queued in IndexedDB.");
+                
+                if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                    navigator.serviceWorker.ready.then(sw => {
+                        sw.sync.register('sync-rkt-drive')
+                            .then(() => console.log("Background sync registered for latest changes."))
+                            .catch(err => console.error("Background sync registration failed:", err));
+                    });
+                }
+            }
+            return; 
+        }
+
+        setSyncStatus('saving');
+        const currentDynamicFileName = getDynamicRKTFileName(settings);
 
         try {
-            let fileToOperateId = googleDriveFileId; // Start with the ID currently associated with settings in state
-
-            // If we don't have a file ID yet for this context, try to find it on Drive.
+            let fileToOperateId = googleDriveFileId;
             if (!fileToOperateId) {
                 const foundFiles = await findRKTFileId(currentDynamicFileName);
                 if (foundFiles.length > 0) {
                     fileToOperateId = foundFiles[0].id;
-                    setGoogleDriveFileId(fileToOperateId); // Update state to reflect found file
-                    setLastSyncTimestamp(foundFiles[0].modifiedTime);
+                    setGoogleDriveFileId(fileToOperateId);
                 }
             }
 
-            if (action === 'upload') {
-                const blob = exportToExcelBlob();
-                if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
+            const blob = exportToExcelBlob();
+            if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
 
-                if (fileToOperateId) {
-                    await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
-                    showToast("Data berhasil diunggah dan diperbarui di Google Drive!", 'success');
-                } else {
-                    // No file ID, need to create a new file for this specific configuration
-                    const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
-                    setGoogleDriveFileId(newFile.id);
-                    showToast("Data berhasil diunggah dan file baru dibuat di Google Drive!", 'success');
-                }
-                setLastSyncTimestamp(new Date().toISOString());
-
-            } else if (action === 'download') {
-                if (!fileToOperateId) {
-                    showToast(`Tidak ada file RKT untuk diunduh untuk konfigurasi saat ini (${currentDynamicFileName}) dari Google Drive.`, 'error');
-                    return;
-                }
-                const blob = await downloadFile(fileToOperateId);
-                await importFromExcelBlob(blob);
-                setLastSyncTimestamp(new Date().toISOString());
-                showToast("Data berhasil diunduh dari Google Drive!", 'success');
+            if (fileToOperateId) {
+                await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
+            } else {
+                const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
+                setGoogleDriveFileId(newFile.id);
             }
+
+            const newTimestamp = new Date().toISOString();
+            setLastSyncTimestamp(newTimestamp);
+            setIsDirty(false);
+            setSyncStatus('saved');
+            setTimeout(() => setSyncStatus('idle'), 3000);
+
         } catch (error) {
-            console.error("Gagal sinkronisasi dengan Google Drive:", error);
-            showToast(`Gagal sinkronisasi: ${error.message}`, 'error');
-            // If the error indicates that the file might no longer exist or is inaccessible
-            if (error.message.includes("File not found") || error.message.includes("No such file or directory") || (error.result && error.result.error && error.result.error.code === 404)) {
-                setGoogleDriveFileId(null); // Clear invalid file ID for the current context
-                setLastSyncTimestamp(null);
+            console.error("Gagal sinkronisasi online dengan Google Drive:", error);
+            setSyncStatus('error');
+            setTimeout(() => setSyncStatus(isDirty ? 'unsaved' : 'idle'), 5000);
+            if (error.message.includes("File not found") || (error.result?.error?.code === 404)) {
+                setGoogleDriveFileId(null);
             }
-        } finally {
-            setIsLoading(false);
         }
-    }, [isSignedIn, googleToken, isOnline, googleDriveFileId, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile, downloadFile, importFromExcelBlob, showToast, settings]);
+    }, [isDirty, isSignedIn, isOnline, googleToken, googleDriveFileId, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
+    
+    // Effect to detect data changes, save to local storage, and trigger debounced auto-save
+    useEffect(() => {
+        // Persist all data to Local Storage
+        localStorage.setItem('appSettings', JSON.stringify(appData.settings));
+        localStorage.setItem('appStudents', JSON.stringify(appData.students));
+        localStorage.setItem('appGrades', JSON.stringify(appData.grades));
+        localStorage.setItem('appNotes', JSON.stringify(appData.notes));
+        localStorage.setItem('appAttendance', JSON.stringify(appData.attendance));
+        localStorage.setItem('appExtracurriculars', JSON.stringify(appData.extracurriculars));
+        localStorage.setItem('appStudentExtracurriculars', JSON.stringify(appData.studentExtracurriculars));
+        localStorage.setItem('appSubjects', JSON.stringify(appData.subjects));
+        if (Object.keys(appData.learningObjectives).length > 0) {
+             localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
+        }
+
+        // Auto-save logic
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
+        if (isSignedIn) {
+            setIsDirty(true);
+            setSyncStatus('unsaved');
+
+            if (debounceTimeout.current) {
+                clearTimeout(debounceTimeout.current);
+            }
+
+            debounceTimeout.current = setTimeout(() => {
+                autoSaveToDrive();
+            }, 5000); // 5-second debounce
+        }
+    }, [appData, isSignedIn, autoSaveToDrive]);
+
+    // Effect to save immediately when the tab becomes hidden
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden' && isDirty && isSignedIn) {
+                if (debounceTimeout.current) {
+                    clearTimeout(debounceTimeout.current);
+                }
+                autoSaveToDrive();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isDirty, isSignedIn, autoSaveToDrive]);
+
 
     const handleDriveFileSelection = async (fileId) => {
         if (!fileId) {
@@ -1131,7 +1288,6 @@ const App = () => {
         setIsDriveModalOpen(false);
         setIsLoading(true);
         showToast("Mengunduh data dari Google Drive...", 'info');
-        isImportingFromDrive.current = true;
 
         try {
             const blob = await downloadFile(fileId);
@@ -1147,7 +1303,6 @@ const App = () => {
             showToast(`Gagal mengunduh: ${error.message}`, 'error');
         } finally {
             setIsLoading(false);
-            setTimeout(() => { isImportingFromDrive.current = false; }, 100);
         }
     };
 
@@ -1165,32 +1320,12 @@ const App = () => {
 
             try {
                 const allFiles = await findAllRKTFiles();
-
-                if (allFiles && allFiles.length > 0) {
-                    setDriveFiles(allFiles);
-                    // Modal is already open, it will now display the files
-                } else {
-                    // No files found on Drive at all.
-                    setIsDriveModalOpen(false); // Close the modal
-                    const currentLocalData = getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives);
-                    const hasLocalChanges = !isDefaultAppData(currentLocalData, presets, defaultSubjects);
-
-                    if (hasLocalChanges) {
-                        const confirmUpload = window.confirm(
-                            "Tidak ada file RKT ditemukan di Google Drive. " +
-                            "Apakah Anda ingin mengunggah data lokal Anda dan membuat file baru di Drive?"
-                        );
-                        if (confirmUpload) {
-                            await syncDataWithDrive('upload');
-                        }
-                    } else {
-                        showToast("Tidak ada data RKT ditemukan di Google Drive. Anda bisa mulai bekerja.", 'info');
-                    }
-                }
+                setDriveFiles(allFiles || []); // Always set files, modal will handle empty state
             } catch (error) {
                 console.error("Error checking Drive on sign-in:", error);
                 showToast(`Gagal memeriksa Google Drive: ${error.message}`, 'error');
-                setIsDriveModalOpen(false); // Close modal on error
+                setDriveFiles([]); // Clear files on error
+                setIsDriveModalOpen(false); // Close modal on a critical error
             } finally {
                 setIsCheckingDrive(false);
             }
@@ -1202,95 +1337,17 @@ const App = () => {
             setGoogleDriveFileId(null);
             setLastSyncTimestamp(null);
             setDriveFiles([]); // Clear file list on sign out
+            setIsDirty(false);
+            setSyncStatus('idle');
         }
-    }, [isSignedIn, googleToken, userProfile, showToast, findAllRKTFiles, isDefaultAppData, presets, syncDataWithDrive, 
-        settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives
-    ]);
+    }, [isSignedIn, googleToken, userProfile, showToast, findAllRKTFiles]);
 
-
-    // --- Logic for Settings Change while logged in ---
-    const currentSettingsIdentifier = React.useMemo(() => {
-        return `${settings.nama_sekolah}_${settings.nama_kelas}_${settings.tahun_ajaran}_${settings.semester}`;
-    }, [settings.nama_sekolah, settings.nama_kelas, settings.tahun_ajaran, settings.semester]);
-
-    const prevSettingsIdentifierRef = useRef(currentSettingsIdentifier);
-
+    // When settings change, we should reset the Drive context as the file might be different.
+    // This simple reset prevents trying to sync to an incorrect file ID from a previous setting configuration.
     useEffect(() => {
-        if (currentSettingsIdentifier === prevSettingsIdentifierRef.current) {
-            return;
-        }
-
-        if (isImportingFromDrive.current) {
-            prevSettingsIdentifierRef.current = currentSettingsIdentifier;
-            return;
-        }
-
-        // Reset Drive file context immediately when settings change.
         setGoogleDriveFileId(null);
         setLastSyncTimestamp(null);
-
-        if (!isSignedIn || !isOnline || activePage !== 'PENGATURAN') {
-            prevSettingsIdentifierRef.current = currentSettingsIdentifier;
-            return;
-        }
-
-        const handleSettingsChangeSync = async () => {
-            setIsLoading(true);
-            const newFileName = getDynamicRKTFileName(settings);
-            showToast(`Mencari data di Google Drive untuk konfigurasi baru...`, 'info');
-
-            try {
-                const foundFiles = await findRKTFileId(newFileName);
-                if (foundFiles.length > 0) {
-                    const driveFileId = foundFiles[0].id;
-                    const lastModified = new Date(foundFiles[0].modifiedTime);
-
-                    const confirmLoad = window.confirm(
-                        `Data untuk konfigurasi ini (${settings.nama_sekolah}, Kelas ${settings.nama_kelas}, Semester ${settings.semester}, Tahun Ajaran ${settings.tahun_ajaran}) ` +
-                        `ditemukan di Google Drive (terakhir diubah: ${lastModified.toLocaleString()}). ` +
-                        `Apakah Anda ingin mengunduhnya? Ini akan menimpa data lokal Anda.`
-                    );
-
-                    if (confirmLoad) {
-                        await syncDataWithDrive('download'); 
-                        showToast("Data lama berhasil diunduh dari Google Drive.", 'success');
-                    } else {
-                        showToast("Pengambilan data lama dibatalkan. Anda sedang menggunakan data lokal yang kosong atau belum terkait dengan Drive.", 'info');
-                    }
-                } else {
-                    const currentLocalData = getAppData(settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives);
-                    const hasLocalChanges = !isDefaultAppData(currentLocalData, presets, defaultSubjects);
-
-                    if (hasLocalChanges) {
-                         const confirmUpload = window.confirm(
-                            "Tidak ada file RKT ditemukan di Google Drive untuk konfigurasi ini. " +
-                            "Apakah Anda ingin mengunggah data lokal Anda dan membuat file baru di Drive?"
-                        );
-                        if (confirmUpload) {
-                            await syncDataWithDrive('upload');
-                        } else {
-                            showToast(`Pengambilan data dibatalkan. Anda sedang menggunakan data lokal yang belum terkait dengan Drive.`, 'info');
-                        }
-                    } else {
-                        showToast(`Tidak ada data di Google Drive atau lokal untuk konfigurasi ini. Anda bisa mulai bekerja.`, 'info');
-                    }
-                }
-            } catch (error) {
-                console.error("Error during settings change sync:", error);
-                showToast(`Gagal mencari atau mengunduh data: ${error.message}`, 'error');
-                if (error.message.includes("Requested entity was not found.") || (error.result && error.result.error && error.result.error.code === 404)) {
-                    setGoogleDriveFileId(null);
-                    setLastSyncTimestamp(null);
-                }
-            } finally {
-                setIsLoading(false);
-                prevSettingsIdentifierRef.current = currentSettingsIdentifier;
-            }
-        };
-
-        handleSettingsChangeSync();
-
-    }, [currentSettingsIdentifier, isSignedIn, isOnline, activePage, settings, showToast, findRKTFileId, syncDataWithDrive, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, presets, isDefaultAppData]);
+    }, [settings.nama_sekolah, settings.nama_kelas, settings.tahun_ajaran, settings.semester]);
 
 
   const handleNavigateToNilai = useCallback((subjectId) => {
@@ -1425,10 +1482,9 @@ const App = () => {
           userEmail: userProfile?.email,
           isOnline: isOnline,
           lastSyncTimestamp: lastSyncTimestamp,
+          syncStatus: syncStatus,
           onSignInClick: signIn,
-          onSignOutClick: signOut,
-          onSyncToDrive: () => syncDataWithDrive('upload'),
-          isSyncing: isLoading // Propagate loading state to disable sync button
+          onSignOutClick: signOut
         }),
         React.createElement('main', { className: "flex-1 p-6 lg:p-8 overflow-y-auto" },
           renderPage()
