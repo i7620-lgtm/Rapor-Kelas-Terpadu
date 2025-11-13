@@ -161,7 +161,8 @@ const App = () => {
   const { isSignedIn, userProfile, googleToken, signIn, signOut,
           uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles } = useGoogleAuth(GOOGLE_CLIENT_ID);
   
-  const prevIsSignedIn = useRef(isSignedIn);
+  // Use a ref to track the previous userProfile state to detect when it gets loaded
+  const prevUserProfile = useRef(userProfile);
   
   // New state for Drive modal
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
@@ -1308,8 +1309,11 @@ const App = () => {
 
     // --- Logic after successful Google Sign-In / Sign-Out ---
     useEffect(() => {
-        const justSignedIn = !prevIsSignedIn.current && isSignedIn;
-        prevIsSignedIn.current = isSignedIn;
+        // Condition to detect when the user profile has just been loaded after a sign-in
+        const justGotProfile = !prevUserProfile.current && userProfile;
+        
+        // Update the ref for the next render cycle AFTER using its old value
+        prevUserProfile.current = userProfile;
 
         const handleSignInAction = async () => {
             if (!isSignedIn || !userProfile) return;
@@ -1331,7 +1335,8 @@ const App = () => {
             }
         };
 
-        if (justSignedIn && googleToken && userProfile) {
+        // If isSignedIn is true and we just received the user profile, it's time to act.
+        if (isSignedIn && justGotProfile) {
             handleSignInAction();
         } else if (!isSignedIn) {
             setGoogleDriveFileId(null);
@@ -1340,7 +1345,7 @@ const App = () => {
             setIsDirty(false);
             setSyncStatus('idle');
         }
-    }, [isSignedIn, googleToken, userProfile, showToast, findAllRKTFiles]);
+    }, [isSignedIn, userProfile, showToast, findAllRKTFiles]);
 
     // When settings change, we should reset the Drive context as the file might be different.
     // This simple reset prevents trying to sync to an incorrect file ID from a previous setting configuration.
