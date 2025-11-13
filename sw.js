@@ -87,3 +87,26 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// Event 'sync': Handle background sync requests
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-rkt-drive') {
+    console.log('Sync event received for RKT data.');
+    event.waitUntil(
+      // Beri tahu semua klien yang terbuka untuk mencoba melakukan sinkronisasi
+      self.clients.matchAll({
+        includeUncontrolled: true,
+        type: 'window',
+      }).then(clients => {
+        if (clients && clients.length) {
+          console.log('Notifying open clients to execute sync.');
+          clients.forEach(client => {
+            client.postMessage({ type: 'EXECUTE_SYNC' });
+          });
+        } else {
+          console.log('No open clients to notify for sync. Sync will be retried later.');
+        }
+      })
+    );
+  }
+});
