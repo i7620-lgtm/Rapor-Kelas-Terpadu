@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 console.log('Generating config.js for Vercel deployment...');
 
@@ -16,8 +17,10 @@ const content = `window.RKT_CONFIG = {
 `;
 
 try {
-  fs.writeFileSync('config.js', content);
-  console.log('config.js generated successfully!');
+  // The build script in package.json is expected to create the 'public' directory.
+  // This script writes the config file into that public directory.
+  fs.writeFileSync(path.join('public', 'config.js'), content);
+  console.log('public/config.js generated successfully!');
 } catch (error) {
   console.error('Error writing config.js:', error);
   process.exit(1);
