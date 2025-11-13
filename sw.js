@@ -56,6 +56,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
+  // PENTING: Hanya tangani permintaan http/https. Ini mencegah error dari fetch chrome-extension://.
+  if (!requestUrl.protocol.startsWith('http')) {
+    return; // Biarkan browser menangani permintaan non-http.
+  }
+
   // Abaikan semua permintaan ke domain Google untuk menghindari masalah otentikasi/CORS.
   // Service Worker tidak akan mencegat permintaan ini, membiarkan browser menanganinya secara normal.
   if (requestUrl.hostname.endsWith('google.com') || requestUrl.hostname.endsWith('googleapis.com')) {
@@ -73,14 +78,11 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request)
       .then((networkResponse) => {
         // Jika berhasil, perbarui cache dan kembalikan respons jaringan.
-        // PENTING: Hanya cache permintaan http/https untuk menghindari error pada 'chrome-extension://'
-        if (event.request.url.startsWith('http')) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME)
+          .then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
         return networkResponse;
       })
       .catch(() => {
