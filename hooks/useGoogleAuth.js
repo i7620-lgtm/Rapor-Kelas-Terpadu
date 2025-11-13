@@ -157,11 +157,12 @@ const useGoogleAuth = (clientId) => {
   }, [driveFetch]);
 
   /**
-   * Finds RKT files by name within the dedicated RKT folder.
+   * Finds RKT files by name within the dedicated RKT folder or root.
    */
   const findRKTFileId = useCallback(async (fileName) => {
     const folderId = await getOrCreateRKTFolder();
-    const q = `name='${fileName}' and mimeType='${RKT_MIME_TYPE}' and '${folderId}' in parents and trashed = false`;
+    // Search in both dedicated folder and root for an exact name match
+    const q = `name='${fileName}' and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and ('${folderId}' in parents or 'root' in parents) and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)`;
     
     const response = await driveFetch(url);
@@ -171,12 +172,45 @@ const useGoogleAuth = (clientId) => {
 
   const findAllRKTFiles = useCallback(async () => {
     const folderId = await getOrCreateRKTFolder();
-    const q = `'${folderId}' in parents and mimeType='${RKT_MIME_TYPE}' and trashed = false`;
-    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
+
+    // Query 1: Files inside the dedicated RKT folder, checking format
+    const q1 = `'${folderId}' in parents and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and trashed = false`;
+    const url1 = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q1)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
+
+    // Query 2: Files in root containing 'rkt' (case-insensitive) in their name, also checking format
+    const q2 = `'root' in parents and name contains 'rkt' and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and trashed = false`;
+    const url2 = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q2)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
     
-    const response = await driveFetch(url);
-    const data = await response.json();
-    return data.files || [];
+    try {
+        const [response1, response2] = await Promise.all([
+          driveFetch(url1),
+          driveFetch(url2)
+        ]);
+        
+        const data1 = await response1.json();
+        const data2 = await response2.json();
+
+        const filesFromFolder = data1.files || [];
+        const filesFromRoot = data2.files || [];
+
+        // Combine and deduplicate files
+        const allFilesMap = new Map();
+        [...filesFromFolder, ...filesFromRoot].forEach(file => {
+          if (!allFilesMap.has(file.id)) {
+            allFilesMap.set(file.id, file);
+          }
+        });
+
+        const combinedFiles = Array.from(allFilesMap.values());
+        
+        // Sort combined files by modification date, most recent first
+        combinedFiles.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
+
+        return combinedFiles;
+    } catch (error) {
+        console.error("Error fetching files from Drive:", error);
+        throw error; // Propagate the error to be handled by the caller.
+    }
   }, [driveFetch, getOrCreateRKTFolder]);
 
   /**
