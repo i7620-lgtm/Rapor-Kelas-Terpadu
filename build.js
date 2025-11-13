@@ -86,16 +86,23 @@ try {
 
   // 5. Generate config.js
   console.log('Generating config.js for Vercel deployment...');
-  const clientId = process.env.CLIENT_ID;
+  const clientId = process.env.RKT_GOOGLE_CLIENT_ID;
 
   if (!clientId) {
-    console.error('ERROR: CLIENT_ID environment variable is not set in Vercel.');
-    // Create a config file with null to allow the app to load but show a clear error,
-    // rather than failing the build silently.
+    console.error('ERROR: RKT_GOOGLE_CLIENT_ID environment variable is not set in Vercel.');
+    // Log available env vars for debugging
+    console.log('Available environment variables that might be relevant:');
+    Object.keys(process.env).forEach(key => {
+        // Log keys that might be relevant to help the user spot a typo
+        if (key.includes('RKT') || key.includes('CLIENT') || key.includes('GOOGLE')) {
+             console.log(`- ${key}`);
+        }
+    });
+
     const configContent = `window.RKT_CONFIG = { GOOGLE_CLIENT_ID: null }; console.error('Build Warning: GOOGLE_CLIENT_ID was not provided during build.');`;
     const configPath = path.join(outDirPath, 'config.js');
     fs.writeFileSync(configPath, configContent);
-    console.warn('Warning: config.js generated with a null CLIENT_ID. Please set it in Vercel project settings.');
+    console.warn('Warning: config.js generated with a null GOOGLE_CLIENT_ID. Please set RKT_GOOGLE_CLIENT_ID in Vercel project settings.');
   } else {
     const configContent = `window.RKT_CONFIG = {
   GOOGLE_CLIENT_ID: "${clientId}"
