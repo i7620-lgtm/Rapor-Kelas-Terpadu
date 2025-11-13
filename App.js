@@ -1117,10 +1117,15 @@ const App = () => {
     // --- Logic after successful Google Sign-In / Sign-Out ---
     useEffect(() => {
         const handleSignInAction = async () => {
-            if (!isSignedIn || !googleToken) {
-                // User signed out, clear Drive file context
-                setGoogleDriveFileId(null);
-                setLastSyncTimestamp(null);
+            // This guard is updated to prevent a race condition.
+            // The effect now waits until the user profile is also loaded, not just the token.
+            if (!isSignedIn || !googleToken || !userProfile) {
+                // If the user signed out, clear the drive context.
+                if (!isSignedIn) {
+                    setGoogleDriveFileId(null);
+                    setLastSyncTimestamp(null);
+                }
+                // If signed in but profile is not yet fetched, just wait for the next effect run.
                 return;
             }
 
