@@ -169,6 +169,16 @@ const useGoogleAuth = (clientId) => {
     return data.files || [];
   }, [driveFetch, getOrCreateRKTFolder]);
 
+  const findAllRKTFiles = useCallback(async () => {
+    const folderId = await getOrCreateRKTFolder();
+    const q = `'${folderId}' in parents and mimeType='${RKT_MIME_TYPE}' and trashed = false`;
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
+    
+    const response = await driveFetch(url);
+    const data = await response.json();
+    return data.files || [];
+  }, [driveFetch, getOrCreateRKTFolder]);
+
   /**
    * Uploads or updates a file in Google Drive using a multipart request.
    */
@@ -230,6 +240,7 @@ const useGoogleAuth = (clientId) => {
     uploadFile,
     downloadFile,
     findRKTFileId,
+    findAllRKTFiles,
     createRKTFile,
   };
 };
