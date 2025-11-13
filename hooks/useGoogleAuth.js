@@ -58,7 +58,7 @@ const useGoogleAuth = (clientId) => {
 
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/drive.file',
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           setGoogleToken(tokenResponse.access_token);
