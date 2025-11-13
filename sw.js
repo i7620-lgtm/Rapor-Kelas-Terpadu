@@ -52,42 +52,41 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Event 'fetch': Prioritaskan jaringan untuk GET, dan hanya jaringan untuk lainnya
+// Event 'fetch': Tangani permintaan jaringan dengan strategi yang tepat
 self.addEventListener('fetch', (event) => {
-  // Skip non-http/https requests.
-  if (!event.request.url.startsWith('http')) {
+  const requestUrl = new URL(event.request.url);
+
+  // Abaikan semua permintaan ke domain Google untuk menghindari masalah otentikasi/CORS.
+  // Service Worker tidak akan mencegat permintaan ini, membiarkan browser menanganinya secara normal.
+  if (requestUrl.hostname.endsWith('google.com') || requestUrl.hostname.endsWith('googleapis.com')) {
     return;
   }
 
-  // Untuk permintaan non-GET (seperti PATCH, POST), langsung ke jaringan saja.
-  // Jangan coba untuk cache. Ini akan memperbaiki error pada upload ke Google Drive.
+  // Untuk permintaan non-GET (seperti PATCH, POST), langsung ke jaringan. Jangan cache.
   if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Untuk permintaan GET, gunakan strategi network-first.
+  // Untuk permintaan GET lainnya (aset aplikasi), gunakan strategi network-first.
   event.respondWith(
-    // Coba ambil dari jaringan terlebih dahulu
     fetch(event.request)
       .then((networkResponse) => {
-        // Jika berhasil, kloning respons
+        // Jika berhasil, perbarui cache dan kembalikan respons jaringan.
         const responseToCache = networkResponse.clone();
-        // Buka cache dan simpan respons baru
         caches.open(CACHE_NAME)
           .then((cache) => {
             cache.put(event.request, responseToCache);
           });
-        // Kembalikan respons dari jaringan
         return networkResponse;
       })
       .catch(() => {
-        // Jika permintaan jaringan gagal (misalnya, offline),
-        // coba sajikan respons dari cache
+        // Jika jaringan gagal, coba sajikan dari cache.
         return caches.match(event.request);
       })
   );
 });
+
 
 // Event 'message': Dengar pesan dari klien untuk skipWaiting
 self.addEventListener('message', (event) => {
