@@ -52,13 +52,21 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Event 'fetch': Prioritaskan jaringan, gunakan cache sebagai fallback (Network-First)
+// Event 'fetch': Prioritaskan jaringan untuk GET, dan hanya jaringan untuk lainnya
 self.addEventListener('fetch', (event) => {
-  // Skip non-http/https requests. This will ignore chrome-extension://, etc.
+  // Skip non-http/https requests.
   if (!event.request.url.startsWith('http')) {
     return;
   }
 
+  // Untuk permintaan non-GET (seperti PATCH, POST), langsung ke jaringan saja.
+  // Jangan coba untuk cache. Ini akan memperbaiki error pada upload ke Google Drive.
+  if (event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Untuk permintaan GET, gunakan strategi network-first.
   event.respondWith(
     // Coba ambil dari jaringan terlebih dahulu
     fetch(event.request)
