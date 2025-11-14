@@ -19,6 +19,7 @@ const FormField = ({name, label, value, onChange, type = 'text', required = fals
 
 const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
     const [formData, setFormData] = useState(emptyStudent);
+    const religions = ["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Khonghucu"];
 
     React.useEffect(() => {
         setFormData(studentToEdit ? { ...studentToEdit } : emptyStudent);
@@ -62,7 +63,13 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                                     React.createElement('option', { value: "Perempuan" }, "Perempuan")
                                 )
                             ),
-                            React.createElement(FormField, { name: "agama", label: "Agama", value: formData.agama, onChange: handleChange }),
+                            React.createElement('div', null,
+                                React.createElement('label', { htmlFor: "agama", className: "block text-sm font-medium text-slate-700" }, "Agama"),
+                                React.createElement('select', { name: "agama", id: "agama", value: formData.agama || '', onChange: handleChange, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" },
+                                    React.createElement('option', { value: "" }, "Pilih Agama..."),
+                                    religions.map(religion => React.createElement('option', { key: religion, value: religion }, religion))
+                                )
+                            ),
                             React.createElement(FormField, { name: "asalTk", label: "Asal TK", value: formData.asalTk, onChange: handleChange }),
                             React.createElement('div', { className: "md:col-span-2" },
                                 React.createElement('label', { htmlFor: "alamatSiswa", className: "block text-sm font-medium text-slate-700" }, "Alamat Siswa"),
