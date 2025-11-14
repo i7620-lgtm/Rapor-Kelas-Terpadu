@@ -77,22 +77,21 @@ const db = {
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
-    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: false },
+    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: true },
     { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: false },
-    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: false },
+    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: true },
     { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: false },
     { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: false },
     { id: 'PP', fullName: 'Pendidikan Pancasila', label: 'PP', active: true },
     { id: 'BIndo', fullName: 'Bahasa Indonesia', label: 'B. Indo', active: true },
     { id: 'MTK', fullName: 'Matematika', label: 'MTK', active: true },
     { id: 'IPAS', fullName: 'Ilmu Pengetahuan Alam dan Sosial', label: 'IPAS', active: true },
-    { id: 'SeniMusik', fullName: 'Seni Budaya (Seni Musik)', label: 'S. Musik', active: true },
-    { id: 'SeniRupa', fullName: 'Seni Budaya (Seni Rupa)', label: 'S. Rupa', active: false },
+    { id: 'SeniMusik', fullName: 'Seni Budaya (Seni Musik)', label: 'S. Musik', active: false },
+    { id: 'SeniRupa', fullName: 'Seni Budaya (Seni Rupa)', label: 'S. Rupa', active: true },
     { id: 'SeniTari', fullName: 'Seni Budaya (Seni Tari)', label: 'S. Tari', active: false },
     { id: 'SeniTeater', fullName: 'Seni Budaya (Seni Teater)', label: 'S. Teater', active: false },
     { id: 'PJOK', fullName: 'Pendidikan Jasmani, Olahraga, dan Kesehatan', label: 'PJOK', active: true },
     { id: 'BIng', fullName: 'Bahasa Inggris', label: 'B. Ing', active: true },
-    { id: 'BSunda', fullName: 'Muatan Lokal (Bahasa Sunda)', label: 'B. Sunda', active: false },
     { id: 'BBali', fullName: 'Muatan Lokal (Bahasa Bali)', label: 'B. Bali', active: true },
 ];
 
@@ -104,6 +103,7 @@ const initialSettings = {
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   predikats: { a: '90', b: '80', c: '70' },
+  gradeCalculation: {},
   kop_layout: []
 };
 
@@ -198,7 +198,8 @@ const App = () => {
                 predikats: {
                     ...initialSettings.predikats,
                     ...(parsed.predikats || {})
-                }
+                },
+                gradeCalculation: parsed.gradeCalculation || {},
             };
         }
         return initialSettings;
@@ -244,14 +245,9 @@ const App = () => {
           return initialAttendance;
       }
   });
-  const [extracurriculars, setExtracurriculars] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appExtracurriculars');
-          return saved ? JSON.parse(saved) : [];
-      } catch (e) {
-          return [];
-      }
-  });
+
+  const [extracurriculars, setExtracurriculars] = useState([]);
+  
   const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => {
       try {
           const saved = localStorage.getItem('appStudentExtracurriculars');
@@ -286,867 +282,470 @@ const App = () => {
   const showToast = useCallback((message, type) => {
     setToast({ message, type });
   }, []);
+    
+    useEffect(() => {
+        const initializeApp = async () => {
+            try {
+                const response = await fetch('/presets.json');
+                if (!response.ok) throw new Error('Failed to fetch presets');
+                const presetsData = await response.json();
+                setPresets(presetsData);
+
+                // --- NEW ROBUST LOGIC ---
+                const savedExtracurricularsJSON = localStorage.getItem('appExtracurriculars');
+                let extrasToLoad = [];
+                if (savedExtracurricularsJSON) {
+                    try {
+                        const parsedExtras = JSON.parse(savedExtracurricularsJSON);
+                        // Only use saved data if it's a non-empty array
+                        if (Array.isArray(parsedExtras) && parsedExtras.length > 0) {
+                            extrasToLoad = parsedExtras;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing extracurriculars from localStorage", e);
+                        // If parsing fails, we'll fall back to presets
+                    }
+                }
+                
+                // If extrasToLoad is still empty (no saved data, empty saved data, or parsing error), use presets.
+                if (extrasToLoad.length === 0) {
+                    extrasToLoad = presetsData.extracurriculars || [];
+                }
+                setExtracurriculars(extrasToLoad);
+                // --- END NEW LOGIC ---
+
+            } catch (error) {
+                console.error("Error during app initialization:", error);
+                showToast('Gagal memuat data preset ekstrakurikuler.', 'error');
+                // Fallback to empty array if fetch fails entirely
+                setExtracurriculars([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeApp();
+    }, [showToast]);
 
   // --- Export All Data to Excel Blob ---
   const exportToExcelBlob = useCallback(() => {
-      if (typeof XLSX === 'undefined') {
-          showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
-          return null;
-      }
-      try {
-          const wb = XLSX.utils.book_new();
+    if (typeof XLSX === 'undefined') {
+        showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
+        return null;
+    }
+    try {
+        const wb = XLSX.utils.book_new();
 
-          const petunjukData = [
-              ["Petunjuk Pengisian Template RKT"], [],
-              ["Sheet", "Keterangan"],
-              ["Pengaturan", "Isi atau ubah pengaturan dasar, daftar mata pelajaran, dan ekstrakurikuler di sheet ini. Perubahan akan diterapkan saat file diunggah."],
-              ["Data Siswa", "Isi data lengkap siswa pada sheet ini. Kolom 'Nama Lengkap' wajib diisi."],
-              ["Data Absensi", "Isi jumlah absensi (Sakit, Izin, Alpa) untuk setiap siswa. Kosongkan jika tidak ada absensi untuk jenis tersebut."],
-              ["Catatan Wali Kelas", "Isi catatan atau feedback untuk setiap siswa."],
-              ["Data Ekstrakurikuler", "Isi ekstrakurikuler yang diikuti siswa dan deskripsinya. Nama ekstrakurikuler harus sesuai dengan yang ada di Pengaturan."],
-              ["Nilai [Nama Mapel]", "Gunakan sheet ini untuk memasukkan nilai TP, STS, dan SAS untuk setiap siswa per mata pelajaran yang aktif."],
-              ["Tujuan Pembelajaran", "Isi daftar Tujuan Pembelajaran (TP) untuk setiap mata pelajaran."],
-              [],
-              ["PENTING:", "Pastikan nama siswa dan nama sheet tidak diubah agar proses impor berjalan lancar."]
-          ];
-          const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
-          wsPetunjuk['!cols'] = [{ wch: 20 }, { wch: 100 }];
-          XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
-          
-          const settingsHeaderMapping = [
-              ['nama_dinas_pendidikan', 'Nama Dinas Pendidikan'], ['nama_sekolah', 'Nama Sekolah'], ['npsn', 'NPSN'],
-              ['alamat_sekolah', 'Alamat Sekolah'], ['desa_kelurahan', 'Desa / Kelurahan'], ['kecamatan', 'Kecamatan'],
-              ['kota_kabupaten', 'Kota/Kabupaten'], ['provinsi', 'Provinsi'], ['kode_pos', 'Kode Pos'],
-              ['email_sekolah', 'Email Sekolah'], ['telepon_sekolah', 'Telepon Sekolah'], ['website_sekolah', 'Website Sekolah'],
-              ['faksimile', 'Faksimile'], ['nama_kelas', 'Nama Kelas'], ['tahun_ajaran', 'Tahun Ajaran'],
-              ['semester', 'Semester'], ['tanggal_rapor', 'Tempat, Tanggal Rapor'], ['nama_kepala_sekolah', 'Nama Kepala Sekolah'],
-              ['nip_kepala_sekolah', 'NIP Kepala Sekolah'], ['nama_wali_kelas', 'Nama Wali Kelas'], ['nip_wali_kelas', 'NIP Wali Kelas'],
-              ['predikat_a', 'Predikat A (Mulai dari)'], ['predikat_b', 'Predikat B (Mulai dari)'], ['predikat_c', 'Predikat C (Mulai dari)'],
-          ];
+        // Sheet 1: Petunjuk
+        const petunjukData = [
+            ["Petunjuk Penggunaan Template RKT"],
+            ["1. Jangan mengubah nama-nama sheet (lembar kerja) yang sudah ada."],
+            ["2. Jangan mengubah header kolom (baris pertama) di setiap sheet."],
+            ["3. Isi data sesuai dengan kolom yang tersedia."],
+            ["4. Sheet 'Pengaturan', 'Mata Pelajaran', dan 'Ekstrakurikuler' digunakan untuk mengonfigurasi aplikasi."],
+            ["5. Sheet 'Daftar Siswa' adalah tempat untuk memasukkan semua data identitas siswa."],
+            ["6. Sheet 'Tujuan Pembelajaran' adalah tempat untuk mendefinisikan semua Sumatif Lingkup Materi (SLM) dan Tujuan Pembelajaran (TP)."],
+            ["7. Sheet 'Nilai_[ID Mapel]' (contoh: Nilai_BIndo) adalah tempat untuk menginput nilai sumatif siswa per mata pelajaran."],
+            ["8. Sheet 'Absensi' dan 'Data Ekstra' adalah untuk data pendukung rapor."],
+            ["9. Setelah selesai, simpan file ini dan unggah kembali melalui menu 'Unggah dari Template' di aplikasi."],
+        ];
+        const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
+        XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
 
-          const settingsDataAoA = [
-              ['Pengaturan Aplikasi'], [],
-              ['Pengaturan', 'Nilai'],
-          ];
-          settingsHeaderMapping.forEach(([key, header]) => {
-              let value;
-              if (key.startsWith('predikat_')) {
-                  value = settings.predikats[key.split('_')[1]];
-              } else {
-                  value = settings[key];
-              }
-              settingsDataAoA.push([header, value]);
-          });
-          
-          const CHUNK_SIZE = 32000;
-          const addChunkedData = (label, data) => {
-              const dataStr = data || '';
-              if (dataStr.length > CHUNK_SIZE) {
-                  for (let i = 0, part = 1; i < dataStr.length; i += CHUNK_SIZE, part++) {
-                      const chunk = dataStr.substring(i, i + CHUNK_SIZE);
-                      settingsDataAoA.push([`${label} - Part ${part}`, chunk]);
-                  }
-              } else {
-                  settingsDataAoA.push([label, dataStr]);
-              }
-          };
+        // Sheet 2: Pengaturan
+        const settingsData = Object.entries(initialSettings)
+            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover'].includes(key))
+            .map(([key, _]) => [key, settings[key] || '']);
+        settingsData.unshift(["Kunci Pengaturan", "Nilai"]);
+        
+        settingsData.push([]); // Spacer
+        settingsData.push(["Pengaturan Rentang Nilai (Predikat)"]);
+        settingsData.push(["Predikat", "Nilai Minimum"]);
+        settingsData.push(['A', settings.predikats.a]);
+        settingsData.push(['B', settings.predikats.b]);
+        settingsData.push(['C', settings.predikats.c]);
 
-          addChunkedData('Logo Sekolah (Base64)', settings.logo_sekolah);
-          addChunkedData('Logo Dinas Pendidikan (Base64)', settings.logo_dinas);
-          addChunkedData('Logo Cover Rapor (Base64)', settings.logo_cover);
-          
-          settingsDataAoA.push([]);
-          settingsDataAoA.push(['Mata Pelajaran']);
-          settingsDataAoA.push(['ID Internal (Jangan Diubah)', 'Nama Lengkap', 'Singkatan', 'Status Aktif']);
-          subjects.forEach(subject => {
-              settingsDataAoA.push([subject.id, subject.fullName, subject.label, subject.active ? 'Aktif' : 'Tidak Aktif']);
-          });
+        settingsData.push([]); // Spacer
+        settingsData.push(["Pengaturan Cara Pengolahan Nilai Rapor"]);
+        const gradeCalcHeader = ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot SLM (%)", "Bobot STS (%)", "Bobot SAS (%)"];
+        settingsData.push(gradeCalcHeader);
+        Object.entries(settings.gradeCalculation).forEach(([subjectId, config]) => {
+            settingsData.push([
+                subjectId,
+                config.method,
+                config.weights?.slm ?? '',
+                config.weights?.sts ?? '',
+                config.weights?.sas ?? '',
+            ]);
+        });
+        const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsData);
+        XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
 
-          settingsDataAoA.push([]);
-          settingsDataAoA.push(['Ekstrakurikuler']);
-          settingsDataAoA.push(['ID Unik (Jangan Diubah)', 'Nama Ekstrakurikuler', 'Status Aktif']);
-          extracurriculars.forEach(extra => {
-              settingsDataAoA.push([extra.id, extra.name, extra.active ? 'Aktif' : 'Tidak Aktif']);
-          });
+        // Sheet 3: Mata Pelajaran
+        const subjectsData = subjects.map(s => ({ "ID Internal (Jangan Diubah)": s.id, "Nama Lengkap": s.fullName, "Singkatan": s.label, "Status Aktif": s.active ? 'Aktif' : 'Tidak Aktif' }));
+        const wsSubjects = XLSX.utils.json_to_sheet(subjectsData);
+        XLSX.utils.book_append_sheet(wb, wsSubjects, "Mata Pelajaran");
 
-          const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsDataAoA);
-          wsPengaturan['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 20 }];
-          XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
+        // Sheet 4: Ekstrakurikuler
+        const extraData = extracurriculars.map(e => ({ "ID Unik (Jangan Diubah)": e.id, "Nama Ekstrakurikuler": e.name, "Status Aktif": e.active ? 'Aktif' : 'Tidak Aktif' }));
+        const wsExtra = XLSX.utils.json_to_sheet(extraData);
+        XLSX.utils.book_append_sheet(wb, wsExtra, "Ekstrakurikuler");
+        
+        // Sheet 5: Daftar Siswa
+        const studentsData = students.map(s => ({
+          'ID Siswa (Otomatis)': s.id, 'Nama Lengkap': s.namaLengkap, 'Nama Panggilan': s.namaPanggilan,
+          'NIS': s.nis, 'NISN': s.nisn, 'Tempat Lahir': s.tempatLahir, 'Tanggal Lahir': s.tanggalLahir,
+          'Jenis Kelamin': s.jenisKelamin, 'Agama': s.agama, 'Asal TK': s.asalTk,
+          'Alamat Siswa': s.alamatSiswa, 'Diterima di Kelas': s.diterimaDiKelas,
+          'Diterima Tanggal': s.diterimaTanggal, 'Nama Ayah': s.namaAyah, 'Nama Ibu': s.namaIbu,
+          'Pekerjaan Ayah': s.pekerjaanAyah, 'Pekerjaan Ibu': s.pekerjaanIbu,
+          'Alamat Orang Tua': s.alamatOrangTua, 'Telepon Orang Tua': s.teleponOrangTua,
+          'Nama Wali': s.namaWali, 'Pekerjaan Wali': s.pekerjaanWali, 'Alamat Wali': s.alamatWali,
+          'Telepon Wali': s.teleponWali,
+        }));
+        const wsStudents = XLSX.utils.json_to_sheet(studentsData);
+        XLSX.utils.book_append_sheet(wb, wsStudents, "Daftar Siswa");
 
+        // Sheet 6: Tujuan Pembelajaran (New Structure)
+        const tpExportData = [];
+        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
+        const objectivesForClass = learningObjectives[gradeKey] || {};
+        
+        for (const subjectFullName in objectivesForClass) {
+            const subject = subjects.find(s => s.fullName === subjectFullName);
+            if (!subject) continue;
+            
+            const slmsInGrades = grades[0]?.detailedGrades?.[subject.id]?.slm || [];
+            
+            const objectivesForSubject = objectivesForClass[subjectFullName] || [];
+            objectivesForSubject.forEach(obj => {
+                const slmInfo = slmsInGrades.find(s => s.id === obj.slmId);
+                tpExportData.push({
+                    "ID Mata Pelajaran": subject.id,
+                    "Nama Mata Pelajaran": subject.fullName,
+                    "ID SLM": obj.slmId,
+                    "Nama SLM": slmInfo?.name || "Nama SLM tidak ditemukan",
+                    "Deskripsi Tujuan Pembelajaran (TP)": obj.text
+                });
+            });
+        }
+        const wsTP = XLSX.utils.json_to_sheet(tpExportData, {header: ["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"]});
+        XLSX.utils.book_append_sheet(wb, wsTP, "Tujuan Pembelajaran");
 
-          const studentHeaderMapping = [
-              ['no', "No"], ['namaLengkap', "Nama Lengkap"], ['namaPanggilan', "Nama Panggilan"], ['nis', "NIS"], ['nisn', "NISN"], ['tempatLahir', "Tempat Lahir"], ['tanggalLahir', "Tanggal Lahir"], ['jenisKelamin', "Jenis Kelamin"], ['agama', "Agama"], ['asalTk', "Asal TK"], ['alamatSiswa', "Alamat Siswa"], ['diterimaDiKelas', "Diterima di Kelas"], ['diterimaTanggal', "Diterima Tanggal"], ['namaAyah', "Nama Ayah"], ['namaIbu', "Nama Ibu"], ['pekerjaanAyah', "Pekerjaan Ayah"], ['pekerjaanIbu', "Pekerjaan Ibu"], ['alamatOrangTua', "Alamat Orang Tua"], ['teleponOrangTua', "Telepon Orang Tua"], ['namaWali', "Nama Wali"], ['pekerjaanWali', "Pekerjaan Wali"], ['alamatWali', "Alamat Wali"], ['teleponWali', "Telepon Wali"]
-          ];
-          const formattedStudents = students.map((student, index) => {
-              const newStudent = {};
-              studentHeaderMapping.forEach(([key, header]) => {
-                  if (key === 'no') newStudent[header] = index + 1;
-                  else newStudent[header] = student[key];
-              });
-              return newStudent;
-          });
-          const wsSiswa = XLSX.utils.json_to_sheet(formattedStudents);
-          wsSiswa['!cols'] = studentHeaderMapping.map(([, header]) => ({ wch: header.length < 15 ? 15 : header.length + 2 }));
-          XLSX.utils.book_append_sheet(wb, wsSiswa, "Data Siswa");
+        // Sheets 7...N: Nilai per Mapel
+        const activeSubjects = subjects.filter(s => s.active);
+        activeSubjects.forEach(subject => {
+            const nilaiSheetData = [];
+            const header = ["ID Siswa", "Nama Siswa"];
+            
+            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
+            const objectivesForSubject = (learningObjectives[gradeKey] || {})[subject.fullName] || [];
+            const slmsForSubject = grades[0]?.detailedGrades?.[subject.id]?.slm || [];
 
-          const dataAbsensi = students.map(student => {
-              const studentAtt = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
-              return { 
-                  "Nama Lengkap": student.namaLengkap, 
-                  "Sakit (S)": studentAtt.sakit ?? '',
-                  "Izin (I)": studentAtt.izin ?? '',
-                  "Alpa (A)": studentAtt.alpa ?? ''
-              };
-          });
-          const wsAbsensi = XLSX.utils.json_to_sheet(dataAbsensi);
-          wsAbsensi['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-          XLSX.utils.book_append_sheet(wb, wsAbsensi, "Data Absensi");
+            slmsForSubject.forEach(slm => {
+                const tpCount = objectivesForSubject.filter(o => o.slmId === slm.id).length;
+                for (let i = 1; i <= tpCount; i++) {
+                    header.push(`${slm.id}_TP${i}`);
+                }
+            });
+            header.push("STS", "SAS");
+            nilaiSheetData.push(header);
 
-          const dataCatatan = students.map(student => ({ "Nama Lengkap": student.namaLengkap, "Catatan Wali Kelas": notes[student.id] || '' }));
-          const wsCatatan = XLSX.utils.json_to_sheet(dataCatatan);
-          wsCatatan['!cols'] = [{ wch: 30 }, { wch: 80 }];
-          XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
+            students.forEach(student => {
+                const row = { "ID Siswa": student.id, "Nama Siswa": student.namaLengkap };
+                const studentGrade = grades.find(g => g.studentId === student.id);
+                const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
 
-          const MAX_EXTRA_FIELDS = 5;
-          const headersExtra = ["Nama Lengkap"];
-          for (let i = 1; i <= MAX_EXTRA_FIELDS; i++) {
-              headersExtra.push(`Ekstrakurikuler ${i}`);
-              headersExtra.push(`Deskripsi ${i}`);
-          }
-          const dataEkstra = students.map(student => {
-              const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
-              const row = { "Nama Lengkap": student.namaLengkap };
-              for (let i = 0; i < MAX_EXTRA_FIELDS; i++) {
-                  const activityId = studentExtra?.assignedActivities?.[i] || null;
-                  const activityName = extracurriculars.find(e => e.id === activityId)?.name || '';
-                  const description = activityId ? studentExtra?.descriptions?.[activityId] || '' : '';
-                  row[`Ekstrakurikuler ${i+1}`] = activityName;
-                  row[`Deskripsi ${i+1}`] = description;
-              }
-              return row;
-          });
-          const wsEkstra = XLSX.utils.json_to_sheet(dataEkstra);
-          wsEkstra['!cols'] = [{ wch: 30 }, ...Array(MAX_EXTRA_FIELDS * 2).fill({ wch: 30 })];
-          XLSX.utils.book_append_sheet(wb, wsEkstra, "Data Ekstrakurikuler");
-          
-          const activeSubjects = subjects.filter(s => s.active);
-          const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-          let objectivesForCurrentClass = {};
-          if (currentGradeNumber !== null) {
-              for (const key in learningObjectives) {
-                  if (getGradeNumber(key) === currentGradeNumber) objectivesForCurrentClass = learningObjectives[key];
-              }
-          }
-          activeSubjects.forEach(subject => {
-              const subjectTps = objectivesForCurrentClass[subject.fullName] || [];
-              const numberOfTps = subjectTps.length;
-              const perMapelData = students.map((student, index) => {
-                  const detailedGrade = grades.find(g => g.studentId === student.id)?.detailedGrades?.[subject.id];
-                  const row = { "No": index + 1, "Nama Siswa": student.namaLengkap };
-                  for (let i = 0; i < numberOfTps; i++) row[`TP ${i + 1}`] = detailedGrade?.tp?.[i] ?? '';
-                  row["STS"] = detailedGrade?.sts ?? '';
-                  row["SAS"] = detailedGrade?.sas ?? '';
-                  return row;
-              });
-              const safeSheetName = `Nilai ${subject.label}`.substring(0, 31);
-              const wsPerMapel = XLSX.utils.json_to_sheet(perMapelData);
-              wsPerMapel['!cols'] = [ { wch: 5 }, { wch: 30 }, ...Array(numberOfTps).fill({ wch: 8 }), { wch: 8 }, { wch: 8 } ];
-              XLSX.utils.book_append_sheet(wb, wsPerMapel, safeSheetName);
-          });
+                slmsForSubject.forEach(slm => {
+                    const tpCount = objectivesForSubject.filter(o => o.slmId === slm.id).length;
+                    const slmData = detailedGrade?.slm?.find(s => s.id === slm.id);
+                    for (let i = 0; i < tpCount; i++) {
+                        row[`${slm.id}_TP${i + 1}`] = slmData?.scores?.[i] ?? '';
+                    }
+                });
+                row["STS"] = detailedGrade?.sts ?? '';
+                row["SAS"] = detailedGrade?.sas ?? '';
 
-          const subjectsForObjectives = activeSubjects.filter(s => objectivesForCurrentClass[s.fullName]);
-          const maxObjectives = subjectsForObjectives.reduce((max, s) => Math.max(max, (objectivesForCurrentClass[s.fullName] || []).length), 0);
-          const tpHeaders = ["No", "Nama Mapel", ...Array.from({ length: maxObjectives }, (_, i) => `TP ${i + 1}`)];
-          const tpData = subjectsForObjectives.map((s, i) => {
-              const objectivesForSubject = objectivesForCurrentClass[s.fullName] || [];
-              const rowData = [i + 1, s.fullName];
-              for (let j = 0; j < maxObjectives; j++) rowData.push(objectivesForSubject[j] || '');
-              return rowData;
-          });
-          const wsTujuan = XLSX.utils.aoa_to_sheet([tpHeaders, ...tpData]);
-          wsTujuan['!cols'] = [{ wch: 5 }, { wch: 45 }, ...Array(maxObjectives).fill({ wch: 40 })];
-          XLSX.utils.book_append_sheet(wb, wsTujuan, "Tujuan Pembelajaran");
-          
-          const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-          return new Blob([wbout], { type: 'application/octet-stream' });
-      } catch (error) {
-          console.error("Gagal mengekspor data:", error);
-          showToast(`Gagal mengekspor data: ${error.message}`, 'error');
-          return null;
-      }
+                // Convert object to array based on header order
+                const rowArray = header.map(h => row[h]);
+                nilaiSheetData.push(rowArray);
+            });
+            
+            const wsNilai = XLSX.utils.aoa_to_sheet(nilaiSheetData);
+            XLSX.utils.book_append_sheet(wb, wsNilai, `Nilai_${subject.id}`);
+        });
+
+        // Absensi, Ekstra, Catatan
+        const attendanceData = attendance.map(a => ({ studentId: a.studentId, Sakit: a.sakit, Izin: a.izin, Alpa: a.alpa }));
+        const wsAttendance = XLSX.utils.json_to_sheet(attendanceData);
+        XLSX.utils.book_append_sheet(wb, wsAttendance, "Absensi");
+
+        const studentExtraData = studentExtracurriculars.flatMap(se => {
+            return (se.assignedActivities || []).map((activityId, index) => {
+                if (!activityId) return null;
+                return {
+                    "ID Siswa": se.studentId,
+                    "Nama Siswa": students.find(s => s.id === se.studentId)?.namaLengkap || '',
+                    "Urutan Ekstra": index + 1,
+                    "ID Ekstrakurikuler": activityId,
+                    "Deskripsi": se.descriptions?.[activityId] || ''
+                };
+            }).filter(Boolean);
+        });
+        const wsStudentExtra = XLSX.utils.json_to_sheet(studentExtraData);
+        XLSX.utils.book_append_sheet(wb, wsStudentExtra, "Data Ekstra");
+
+        const notesData = Object.entries(notes).map(([studentId, note]) => ({ "ID Siswa": studentId, "Catatan Wali Kelas": note }));
+        const wsNotes = XLSX.utils.json_to_sheet(notesData);
+        XLSX.utils.book_append_sheet(wb, wsNotes, "Catatan Wali Kelas");
+
+        const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+        return new Blob([wbout], { type: 'application/octet-stream' });
+    } catch (error) {
+        console.error("Gagal mengekspor data:", error);
+        showToast(`Gagal mengekspor data: ${error.message}`, 'error');
+        return null;
+    }
   }, [settings, students, grades, notes, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
 
 
-    const executeSync = useCallback(async () => {
-        if (!isSignedIn || !isOnline || !googleToken || syncStatus === 'saving') return;
+    // --- Import from Excel Blob ---
+    const importFromExcelBlob = useCallback(async (blob) => {
+    if (typeof XLSX === 'undefined') {
+        showToast('Pustaka impor (SheetJS) tidak termuat.', 'error');
+        return;
+    }
+    setIsLoading(true); // START loading state
+    try {
+        const data = await blob.arrayBuffer();
+        const workbook = XLSX.read(data);
 
-        try {
-            const pendingData = await db.get('pendingSyncs', 'unsynced_data');
-            
-            if (pendingData) {
-                console.log("Pending offline data found. Attempting to sync...");
-                setSyncStatus('saving');
-                showToast("Menyinkronkan data offline...", 'info');
-                
-                const { blob, fileName, fileId: originalFileId } = pendingData;
-                
-                let fileToOperateId = googleDriveFileId || originalFileId;
-                if (!fileToOperateId) {
-                    const foundFiles = await findRKTFileId(fileName);
-                    if (foundFiles.length > 0) fileToOperateId = foundFiles[0].id;
+        // --- Clear existing data before import ---
+        setSettings(initialSettings);
+        setStudents(initialStudents);
+        setGrades(initialGrades);
+        setNotes(initialNotes);
+        setAttendance(initialAttendance);
+        setExtracurriculars(presets?.extracurriculars || []);
+        setStudentExtracurriculars(initialStudentExtracurriculars);
+        setSubjects(defaultSubjects);
+        setLearningObjectives({});
+        
+        // --- Parse Data ---
+        let newSettings = { ...initialSettings };
+        let newStudents = [];
+        let newSubjects = [];
+        let newExtracurriculars = [];
+        let newAttendance = [];
+        let newNotes = {};
+        let newStudentExtracurriculars = [];
+        let newLearningObjectives = {};
+        let newGrades = [];
+        const subjectStructureMap = new Map();
+
+        // 1. Parse Pengaturan
+        const wsPengaturan = workbook.Sheets["Pengaturan"];
+        if (wsPengaturan) {
+            const pengaturanData = XLSX.utils.sheet_to_json(wsPengaturan, { header: 1 });
+            let isCalcSection = false;
+            for (const row of pengaturanData) {
+                if (row[0] === 'Pengaturan Cara Pengolahan Nilai Rapor') {
+                    isCalcSection = true; continue;
                 }
-
-                if (fileToOperateId) {
-                    await uploadFile(fileToOperateId, fileName, blob, RKT_MIME_TYPE);
+                if (!isCalcSection) {
+                    if (row[0] in newSettings) newSettings[row[0]] = row[1];
+                    if (row[0] === 'A') newSettings.predikats.a = String(row[1]);
+                    if (row[0] === 'B') newSettings.predikats.b = String(row[1]);
+                    if (row[0] === 'C') newSettings.predikats.c = String(row[1]);
                 } else {
-                    const newFile = await createRKTFile(fileName, blob, RKT_MIME_TYPE);
-                    fileToOperateId = newFile.id;
-                }
-
-                setGoogleDriveFileId(fileToOperateId);
-                const newTimestamp = new Date().toISOString();
-                setLastSyncTimestamp(newTimestamp);
-                
-                await db.delete('pendingSyncs', 'unsynced_data');
-                
-                setIsDirty(false); 
-                setSyncStatus('saved');
-                setTimeout(() => setSyncStatus('idle'), 3000);
-                showToast("Data offline berhasil disinkronkan!", 'success');
-            }
-        } catch (error) {
-            console.error("Failed to execute background sync:", error);
-            setSyncStatus('error');
-            showToast("Sinkronisasi data offline gagal.", 'error');
-        }
-    }, [isSignedIn, isOnline, googleToken, syncStatus, googleDriveFileId, findRKTFileId, uploadFile, createRKTFile, showToast]);
-    
-    // Effect for SW messages, online status changes, and initial check
-    useEffect(() => {
-        const handleMessage = (event) => {
-            if (event.data && event.data.type === 'EXECUTE_SYNC') {
-                console.log('Received EXECUTE_SYNC message from Service Worker.');
-                executeSync();
-            }
-        };
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.addEventListener('message', handleMessage);
-        }
-
-        const handleOnline = () => {
-          setIsOnline(true);
-          console.log("Application is back online.");
-          executeSync();
-        };
-        const handleOffline = () => setIsOnline(false);
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-
-        // Initial check on load
-        executeSync();
-
-        return () => {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.removeEventListener('message', handleMessage);
-            }
-            window.removeEventListener('online', handleOnline);
-            window.removeEventListener('offline', handleOffline);
-        };
-    }, [executeSync]);
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/presets.json');
-            if (!response.ok) {
-                throw new Error(`Gagal mengambil presets.json: ${response.statusText}`);
-            }
-            const loadedPresets = await response.json();
-            setPresets(loadedPresets);
-            
-            const savedExtracurriculars = localStorage.getItem('appExtracurriculars');
-            if (!savedExtracurriculars || savedExtracurriculars === '[]') {
-                setExtracurriculars(loadedPresets.extracurriculars || []);
-            }
-            
-        } catch (err) {
-            console.error("Gagal memuat data preset:", err);
-            showToast("Gagal memuat data awal dari server.", 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    loadInitialData();
-  }, [showToast]);
-
-  useEffect(() => {
-    const loadLearningObjectives = async () => {
-        const gradeNumber = getGradeNumber(settings.nama_kelas);
-        if (!gradeNumber) {
-            return;
-        }
-
-        const gradeKey = `Kelas ${gradeNumber}`;
-        
-        // Only load if not already loaded for this grade
-        if (learningObjectives[gradeKey] && Object.keys(learningObjectives[gradeKey]).length > 0) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/tp${gradeNumber}.json`);
-            if (!response.ok) {
-                console.warn(`Could not load learning objectives from /tp${gradeNumber}.json. Status: ${response.statusText}`);
-                return;
-            }
-            const objectivesForClass = await response.json();
-            
-            setLearningObjectives(prev => ({
-                ...prev,
-                [gradeKey]: objectivesForClass
-            }));
-        } catch (err) {
-            console.error(`Failed to fetch and parse learning objectives for grade ${gradeNumber}:`, err);
-        }
-    };
-
-    if (settings.nama_kelas) {
-      loadLearningObjectives();
-    }
-  }, [settings.nama_kelas, learningObjectives]);
-  
-  useEffect(() => {
-    if (activePage !== 'DATA_NILAI') {
-        setDataNilaiInitialTab('keseluruhan');
-    }
-  }, [activePage]);
-
-  const handleSettingsChange = useCallback((e) => {
-    const { name, value, files, type } = e.target;
-    if (type === 'file' && files && files[0]) {
-        const fileReader = new FileReader();
-        fileReader.readAsDataURL(files[0]);
-        fileReader.onload = () => {
-            setSettings(prev => ({ ...prev, [name]: fileReader.result }));
-        };
-    } else {
-        setSettings(prev => ({ ...prev, [name]: value }));
-    }
-  }, []);
-
-  const handleUpdateKopLayout = useCallback((newLayout) => {
-    setSettings(prev => ({ ...prev, kop_layout: newLayout }));
-  }, []);
-
-  const saveSettings = useCallback(() => {
-    showToast('Pengaturan berhasil disimpan!', 'success');
-  }, [showToast]);
-
-  const handleUpdatePredikats = useCallback((newPredikats) => {
-    setSettings(prev => ({ ...prev, predikats: newPredikats }));
-  }, []);
-  
-  const handleSaveStudent = useCallback((studentData) => {
-    setStudents(prev => {
-        if (studentData.id) {
-            return prev.map(s => s.id === studentData.id ? { ...s, ...studentData } : s);
-        } else {
-            const newId = prev.length > 0 ? Math.max(...prev.map(s => s.id)) + 1 : 1;
-            const newStudent = { ...studentData, id: newId };
-            setGrades(g_prev => [...g_prev, { studentId: newId, detailedGrades: {}, finalGrades: {} }]);
-            setAttendance(a_prev => [...a_prev, { studentId: newId, sakit: null, izin: null, alpa: null }]);
-            setStudentExtracurriculars(se_prev => [...se_prev, { studentId: newId, assignedActivities: [], descriptions: {} }]);
-            return [...prev, newStudent];
-        }
-    });
-  }, []);
-  
-  const handleBulkSaveStudents = useCallback((studentsData) => {
-    let newIdCounter = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
-    
-    const newStudents = [];
-    const newGrades = [];
-    const newAttendance = [];
-    const newStudentExtracurriculars = [];
-
-    studentsData.forEach(studentData => {
-        const newId = newIdCounter++;
-        newStudents.push({ ...studentData, id: newId });
-        newGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
-        newAttendance.push({ studentId: newId, sakit: null, izin: null, alpa: null });
-        newStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
-    });
-
-    setStudents(prev => [...prev, ...newStudents]);
-    setGrades(prev => [...prev, ...newGrades]);
-    setAttendance(prev => [...prev, ...newAttendance]);
-    setStudentExtracurriculars(prev => [...prev, ...newStudentExtracurriculars]);
-
-    showToast(`${newStudents.length} siswa berhasil diimpor!`, 'success');
-  }, [students, showToast]);
-
-  const handleDeleteStudent = useCallback((studentId) => {
-    setStudents(prev => prev.filter(s => s.id !== studentId));
-    setGrades(prev => prev.filter(g => g.studentId !== studentId));
-    setNotes(prev => {
-        const newNotes = { ...prev };
-        delete newNotes[studentId];
-        return newNotes;
-    });
-    setAttendance(prev => prev.filter(a => a.studentId !== studentId));
-    setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
-  }, []);
-  
-  const handleUpdateGrade = useCallback((studentId, subject, value) => {
-    setGrades(prev => {
-        const studentGradeIndex = prev.findIndex(g => g.studentId === studentId);
-        if (studentGradeIndex > -1) {
-            const updatedGrades = [...prev];
-            const existingGrade = updatedGrades[studentGradeIndex];
-            const newGrade = { 
-                ...existingGrade, 
-                finalGrades: {
-                    ...existingGrade.finalGrades, // Fix typo here
-                    [subject]: value
-                }
-            };
-            updatedGrades[studentGradeIndex] = newGrade;
-            return updatedGrades;
-        }
-        return [...prev, { studentId, detailedGrades: {}, finalGrades: { [subject]: value } }];
-    });
-  }, []);
-
-  const handleBulkUpdateGrades = useCallback((newGrades) => {
-    setGrades(prev => {
-        const updatedGradesMap = new Map(prev.map(g => [g.studentId, g]));
-        newGrades.forEach(newGrade => {
-            if (newGrade && typeof newGrade === 'object') {
-              const existing = updatedGradesMap.get(newGrade.studentId) || { studentId: newGrade.studentId, detailedGrades: {}, finalGrades: {} };
-              updatedGradesMap.set(newGrade.studentId, Object.assign({}, existing, newGrade));
-            }
-        });
-        return Array.from(updatedGradesMap.values());
-    });
-  }, []);
-
-  const handleUpdateNote = useCallback((studentId, note) => {
-    setNotes(prev => ({ ...prev, [studentId]: note }));
-  }, []);
-
-  const handleBulkUpdateNotes = useCallback((newNotes) => {
-    setNotes(prev => ({ ...prev, ...newNotes }));
-  }, []);
-
-  const handleUpdateAttendance = useCallback((studentId, type, value) => {
-    setAttendance(prev => {
-        const studentAttIndex = prev.findIndex(a => a.studentId === studentId);
-        const updatedAttendance = [...prev];
-        
-        let numericValue = parseInt(value, 10);
-        if (value === '' || isNaN(numericValue) || numericValue < 0) {
-            numericValue = null;
-        }
-
-        if (studentAttIndex > -1) {
-            const newAtt = { ...updatedAttendance[studentAttIndex], [type]: numericValue };
-            updatedAttendance[studentAttIndex] = newAtt;
-        } else {
-            const newEntry = { studentId, sakit: null, izin: null, alpa: null, [type]: numericValue };
-            updatedAttendance.push(newEntry);
-        }
-        return updatedAttendance;
-    });
-  }, []);
-  
-  const handleBulkUpdateAttendance = useCallback((newAttendanceData) => {
-      setAttendance(prev => {
-          const updatedAttendanceMap = new Map(prev.map(a => [a.studentId, a]));
-          newAttendanceData.forEach(newAtt => {
-              if (newAtt && typeof newAtt === 'object') {
-                const existing = updatedAttendanceMap.get(newAtt.studentId) || { studentId: newAtt.studentId, sakit: null, izin: null, alpa: null };
-                updatedAttendanceMap.set(newAtt.studentId, Object.assign({}, existing, newAtt));
-              }
-          });
-          return Array.from(updatedAttendanceMap.values());
-      });
-  }, []);
-
-  const handleUpdateExtracurriculars = useCallback((newExtracurriculars) => {
-      setExtracurriculars(newExtracurriculars);
-  }, []);
-  
-  const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => {
-      setStudentExtracurriculars(newStudentExtracurriculars);
-  }, []);
-
-  const handleBulkUpdateStudentExtracurriculars = useCallback((newData) => {
-    setStudentExtracurriculars(prev => {
-      const dataMap = new Map(prev.map(item => [item.studentId, item]));
-      newData.forEach(newItem => {
-        if (newItem && typeof newItem === 'object') {
-          const existing = dataMap.get(newItem.studentId) || { studentId: newItem.studentId, assignedActivities: [], descriptions: {} };
-          dataMap.set(newItem.studentId, Object.assign({}, existing, newItem));
-        }
-      });
-      return Array.from(dataMap.values());
-    });
-  }, []);
-
-  const handleUpdateDetailedGrade = useCallback((
-      studentId,
-      subject,
-      type,
-      value,
-      tpIndex
-  ) => {
-      setGrades(prev => {
-          const studentGradeIndex = prev.findIndex(g => g.studentId === studentId);
-          const updatedGrades = [...prev];
-
-          let newGrade;
-          if (studentGradeIndex > -1) {
-              newGrade = JSON.parse(JSON.stringify(updatedGrades[studentGradeIndex]));
-          } else {
-              newGrade = { studentId, detailedGrades: {}, finalGrades: {} };
-          }
-          
-          newGrade.detailedGrades = newGrade.detailedGrades || {};
-          newGrade.detailedGrades[subject] = newGrade.detailedGrades[subject] || { tp: [], sts: null, sas: null };
-          
-          const detailedGrade = newGrade.detailedGrades[subject];
-
-          if (type === 'tp' && tpIndex !== undefined) {
-              detailedGrade.tp = detailedGrade.tp || [];
-              while (detailedGrade.tp.length <= tpIndex) {
-                  detailedGrade.tp.push(null);
-              }
-              detailedGrade.tp[tpIndex] = value;
-          } else if (type === 'sts') {
-              detailedGrade.sts = value;
-          } else if (type === 'sas') {
-              detailedGrade.sas = value;
-          }
-          
-          const subjectFullName = subjects.find(s => s.id === subject)?.fullName;
-          let numberOfActiveTps = -1; 
-
-          if (subjectFullName && settings.nama_kelas) {
-            const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-            if (currentGradeNumber !== null) {
-                let gradeKey = '';
-                for (const key in learningObjectives) {
-                    if (getGradeNumber(key) === currentGradeNumber) {
-                        gradeKey = key;
-                        break;
+                    if (row[0] === 'ID Mata Pelajaran') continue;
+                    const [subjectId, method, slm, sts, sas] = row;
+                    if (subjectId) {
+                        newSettings.gradeCalculation[subjectId] = {
+                            method: method || 'rata-rata',
+                            weights: { slm: slm || 0, sts: sts || 0, sas: sas || 0 }
+                        };
                     }
                 }
-                if (gradeKey && learningObjectives[gradeKey]?.[subjectFullName]) {
-                    numberOfActiveTps = learningObjectives[gradeKey][subjectFullName].length;
-                }
             }
-          }
-          
-          const tpsToConsider = (numberOfActiveTps !== -1)
-            ? (detailedGrade.tp || []).slice(0, numberOfActiveTps)
-            : (detailedGrade.tp || []);
+        }
 
-          const validTps = tpsToConsider.filter((t) => typeof t === 'number');
-          const averageTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
-          const sts = detailedGrade.sts ?? 0;
-          const sas = detailedGrade.sas ?? 0;
-          const finalGrade = (averageTp + sts + sas) / 3;
-          
-          newGrade.finalGrades = newGrade.finalGrades || {};
-          newGrade.finalGrades[subject] = isNaN(finalGrade) ? null : Math.round(finalGrade);
+        // 2. Parse Mata Pelajaran
+        const wsSubjects = workbook.Sheets["Mata Pelajaran"];
+        if (wsSubjects) newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => ({ id: s["ID Internal (Jangan Diubah)"], fullName: s["Nama Lengkap"], label: s["Singkatan"], active: (s["Status Aktif"] || '').toLowerCase() === 'aktif' }));
+        
+        // 3. Parse Ekstrakurikuler
+        const wsExtra = workbook.Sheets["Ekstrakurikuler"];
+        if (wsExtra) newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({ id: e["ID Unik (Jangan Diubah)"], name: e["Nama Ekstrakurikuler"], active: (e["Status Aktif"] || '').toLowerCase() === 'aktif' }));
 
-          if (studentGradeIndex > -1) {
-              updatedGrades[studentGradeIndex] = newGrade;
-          } else {
-              updatedGrades.push(newGrade);
-          }
-          
-          return updatedGrades;
-      });
-  }, [subjects, settings.nama_kelas, learningObjectives]);
+        // 4. Parse Daftar Siswa
+        const wsStudents = workbook.Sheets["Daftar Siswa"];
+        if (wsStudents) {
+            newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => ({
+                id: s['ID Siswa (Otomatis)'], namaLengkap: s['Nama Lengkap'], namaPanggilan: s['Nama Panggilan'],
+                nis: s['NIS'], nisn: s['NISN'], tempatLahir: s['Tempat Lahir'], tanggalLahir: s['Tanggal Lahir'],
+                jenisKelamin: s['Jenis Kelamin'], agama: s['Agama'], asalTk: s['Asal TK'],
+                alamatSiswa: s['Alamat Siswa'], diterimaDiKelas: s['Diterima di Kelas'],
+                diterimaTanggal: s['Diterima Tanggal'], namaAyah: s['Nama Ayah'], namaIbu: s['Nama Ibu'],
+                pekerjaanAyah: s['Pekerjaan Ayah'], pekerjaanIbu: s['Pekerjaan Ibu'],
+                alamatOrangTua: s['Alamat Orang Tua'], teleponOrangTua: s['Telepon Orang Tua'],
+                namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], alamatWali: s['Alamat Wali'],
+                teleponWali: s['Telepon Wali'],
+            }));
+        }
+        
+        // 5. Parse Tujuan Pembelajaran (to build structure)
+        const gradeKey = `Kelas ${getGradeNumber(newSettings.nama_kelas)}`;
+        newLearningObjectives[gradeKey] = {};
+        const wsTP = workbook.Sheets["Tujuan Pembelajaran"];
+        if (wsTP) {
+            const tpData = XLSX.utils.sheet_to_json(wsTP);
+            tpData.forEach(row => {
+                const subjectId = row["ID Mata Pelajaran"];
+                const subjectFullName = row["Nama Mata Pelajaran"];
+                const slmId = row["ID SLM"];
+                const slmName = row["Nama SLM"];
+                const tpText = row["Deskripsi Tujuan Pembelajaran (TP)"];
 
-  const handleUpdateSubjects = useCallback((newSubjects) => {
-      setSubjects(newSubjects);
-  }, []);
+                if (!newLearningObjectives[gradeKey][subjectFullName]) newLearningObjectives[gradeKey][subjectFullName] = [];
+                newLearningObjectives[gradeKey][subjectFullName].push({ slmId: slmId, text: tpText });
+                
+                if (!subjectStructureMap.has(subjectId)) subjectStructureMap.set(subjectId, { slms: new Map() });
+                const slmsMap = subjectStructureMap.get(subjectId).slms;
+                if (!slmsMap.has(slmId)) slmsMap.set(slmId, { id: slmId, name: slmName, tpCount: 0 });
+                slmsMap.get(slmId).tpCount++;
+            });
+        }
+        
+        // 6. Initialize Grades structure from students and TP structure
+        newGrades = newStudents.map(student => {
+            const gradeEntry = { studentId: student.id, detailedGrades: {}, finalGrades: {} };
+            newSubjects.filter(s => s.active).forEach(subject => {
+                const structure = subjectStructureMap.get(subject.id);
+                const slms = structure ? Array.from(structure.slms.values()).map(slm => ({
+                    id: slm.id,
+                    name: slm.name,
+                    scores: Array(slm.tpCount).fill(null)
+                })) : [];
+                gradeEntry.detailedGrades[subject.id] = { slm: slms, sts: null, sas: null };
+            });
+            return gradeEntry;
+        });
+        const gradesMap = new Map(newGrades.map(g => [g.studentId, g]));
 
-  const handleUpdateLearningObjectives = useCallback((newObjectives) => {
-      setLearningObjectives(newObjectives);
-  }, []);
+        // 7. Parse Nilai sheets
+        workbook.SheetNames.forEach(sheetName => {
+            if (sheetName.startsWith("Nilai_")) {
+                const subjectId = sheetName.split('_')[1];
+                const wsNilai = workbook.Sheets[sheetName];
+                const nilaiData = XLSX.utils.sheet_to_json(wsNilai);
+
+                nilaiData.forEach(row => {
+                    const studentId = row["ID Siswa"];
+                    const studentGrade = gradesMap.get(studentId);
+                    if (!studentGrade) return;
+
+                    const detailedGrade = studentGrade.detailedGrades[subjectId];
+                    if (!detailedGrade) return;
+                    
+                    Object.keys(row).forEach(header => {
+                        if (header.startsWith("slm_")) {
+                            const [slmId, tpPart] = header.split('_TP');
+                            const tpIndex = parseInt(tpPart, 10) - 1;
+                            const slmEntry = detailedGrade.slm.find(s => s.id === slmId);
+                            if (slmEntry && tpIndex >= 0) {
+                                slmEntry.scores[tpIndex] = row[header] === '' ? null : Number(row[header]);
+                            }
+                        } else if (header === 'STS') {
+                            detailedGrade.sts = row[header] === '' ? null : Number(row[header]);
+                        } else if (header === 'SAS') {
+                            detailedGrade.sas = row[header] === '' ? null : Number(row[header]);
+                        }
+                    });
+                });
+            }
+        });
+        newGrades = Array.from(gradesMap.values());
+
+        // 8. Re-calculate final grades based on imported data
+        const kkm = parseInt(newSettings.predikats.c, 10);
+        newGrades = newGrades.map(studentGrade => {
+            const newFinalGrades = {};
+            for (const subjectId in studentGrade.detailedGrades) {
+                const detailed = studentGrade.detailedGrades[subjectId];
+                const config = newSettings.gradeCalculation[subjectId] || { method: 'rata-rata' };
+                let finalScore = null;
+                // ... (Duplicating calculation logic from handleUpdateDetailedGrade)
+                const slmAvgScores = (detailed.slm || []).map(slm => { const valid = (slm.scores || []).filter(s => typeof s === 'number'); return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : null; }).filter(avg => avg !== null);
+                const stsScore = detailed.sts; const sasScore = detailed.sas;
+                if (config.method === 'rata-rata') { const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null; const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number'); if (components.length > 0) finalScore = components.reduce((a, b) => a + b, 0) / components.length; } 
+                else if (config.method === 'pembobotan') { let totalW = 0, weightedS = 0; const weights = config.weights || {}; if (slmAvgScores.length > 0 && (weights.slm || 0) > 0) { const avgOfSlms = slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length; weightedS += avgOfSlms * weights.slm; totalW += weights.slm; } if (typeof stsScore === 'number' && (weights.sts || 0) > 0) { weightedS += stsScore * weights.sts; totalW += weights.sts; } if (typeof sasScore === 'number' && (weights.sas || 0) > 0) { weightedS += sasScore * weights.sas; totalW += weights.sas; } if (totalW > 0) finalScore = weightedS / totalW; }
+                else if (config.method === 'persentase' && !isNaN(kkm)) { const allSummatives = [...slmAvgScores]; if(typeof stsScore === 'number') allSummatives.push(stsScore); if(typeof sasScore === 'number') allSummatives.push(sasScore); if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100; }
+                newFinalGrades[subjectId] = finalScore === null ? null : Math.round(finalScore);
+            }
+            return { ...studentGrade, finalGrades: newFinalGrades };
+        });
+
+        // 9. Parse other sheets
+        const wsAttendance = workbook.Sheets["Absensi"];
+        if (wsAttendance) newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ studentId: a.studentId, sakit: a.Sakit, izin: a.Izin, alpa: a.Alpa }));
+        
+        const wsNotes = workbook.Sheets["Catatan Wali Kelas"];
+        if (wsNotes) newNotes = XLSX.utils.sheet_to_json(wsNotes).reduce((acc, n) => { acc[n["ID Siswa"]] = n["Catatan Wali Kelas"]; return acc; }, {});
+
+        const wsStudentExtra = workbook.Sheets["Data Ekstra"];
+        if (wsStudentExtra) {
+            const tempStudentExtra = {};
+            XLSX.utils.sheet_to_json(wsStudentExtra).forEach(row => {
+                const sid = row["ID Siswa"];
+                if (!tempStudentExtra[sid]) tempStudentExtra[sid] = { studentId: sid, assignedActivities: [], descriptions: {} };
+                const activityId = row["ID Ekstrakurikuler"];
+                if (activityId) {
+                    tempStudentExtra[sid].assignedActivities.push(activityId);
+                    tempStudentExtra[sid].descriptions[activityId] = row["Deskripsi"];
+                }
+            });
+            newStudentExtracurriculars = Object.values(tempStudentExtra);
+        }
+
+        // --- Set State ---
+        setSettings(newSettings);
+        setSubjects(newSubjects);
+        setExtracurriculars(newExtracurriculars);
+        setStudents(newStudents);
+        setLearningObjectives(newLearningObjectives);
+        setGrades(newGrades);
+        setAttendance(newAttendance);
+        setNotes(newNotes);
+        setStudentExtracurriculars(newStudentExtracurriculars);
+        
+        showToast('Data berhasil diimpor dari file!', 'success');
+        
+    } catch (error) {
+        console.error("Gagal mengimpor data:", error);
+        showToast(`Format file tidak valid atau rusak: ${error.message}`, 'error');
+    } finally {
+        setIsLoading(false); // END loading state
+    }
+    }, [showToast, presets]);
 
     // --- Manual Local Export ---
     const handleExportAll = useCallback(() => {
         const blob = exportToExcelBlob();
-        if (blob) {
-            const fileName = getDynamicRKTFileName(settings);
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            showToast('Template lengkap berhasil diekspor!', 'success');
+        if (!blob) {
+            showToast('Gagal membuat file ekspor.', 'error');
+            return;
         }
-    }, [exportToExcelBlob, showToast, settings]);
-
-    // --- Import from Excel Blob ---
-    const importFromExcelBlob = useCallback((blob) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = event.target?.result;
-                    const workbook = XLSX.read(data, { type: 'binary', cellDates: true });
-                    let processedSheetCount = 0;
-                    
-                    let tempSettings = JSON.parse(JSON.stringify(initialSettings)); // Start from fresh initial settings
-                    let tempSubjects = JSON.parse(JSON.stringify(defaultSubjects));
-                    let tempExtracurriculars = JSON.parse(JSON.stringify(presets?.extracurriculars || [])); // Start with presets or empty
-                    let tempStudents = [];
-                    let tempGrades = [];
-                    let tempNotes = {};
-                    let tempAttendance = [];
-                    let tempStudentExtracurriculars = [];
-                    let tempLearningObjectives = {};
-
-                    const settingsWorksheet = workbook.Sheets['Pengaturan'];
-                    if (settingsWorksheet) {
-                        const rows = XLSX.utils.sheet_to_json(settingsWorksheet, { header: 1 });
-                        const settingsHeaderMap = new Map([
-                            ['Nama Dinas Pendidikan', 'nama_dinas_pendidikan'], ['Nama Sekolah', 'nama_sekolah'], ['NPSN', 'npsn'], ['Alamat Sekolah', 'alamat_sekolah'],
-                            ['Desa / Kelurahan', 'desa_kelurahan'], ['Kecamatan', 'kecamatan'], ['Kota/Kabupaten', 'kota_kabupaten'], ['Provinsi', 'provinsi'], ['Kode Pos', 'kode_pos'],
-                            ['Email Sekolah', 'email_sekolah'], ['Telepon Sekolah', 'telepon_sekolah'], ['Website Sekolah', 'website_sekolah'], ['Faksimile', 'faksimile'],
-                            ['Nama Kelas', 'nama_kelas'], ['Tahun Ajaran', 'tahun_ajaran'], ['Semester', 'semester'], ['Tempat, Tanggal Rapor', 'tanggal_rapor'],
-                            ['Nama Kepala Sekolah', 'nama_kepala_sekolah'], ['NIP Kepala Sekolah', 'nip_kepala_sekolah'], ['Nama Wali Kelas', 'nama_wali_kelas'], ['NIP Wali Kelas', 'nip_wali_kelas']
-                        ]);
-                        const predikatMap = new Map([ ['Predikat A (Mulai dari)', 'a'], ['Predikat B (Mulai dari)', 'b'], ['Predikat C (Mulai dari)', 'c'] ]);
-                        
-                        let section = null;
-                        const logoSekolahParts = {};
-                        const logoDinasParts = {};
-                        const logoCoverParts = {};
-
-                        tempSettings.predikats = { a: '90', b: '80', c: '70' }; // Ensure predikats exist
-
-                        rows.forEach(row => {
-                            const header = String(row[0] || '').trim();
-                            if (header === 'Mata Pelajaran') { section = 'subjects'; return; }
-                            if (header === 'Ekstrakurikuler') { section = 'extras'; return; }
-
-                            if (settingsHeaderMap.has(header)) tempSettings[settingsHeaderMap.get(header)] = row[1];
-                            if (predikatMap.has(header)) tempSettings.predikats[predikatMap.get(header)] = String(row[1]);
-                            
-                            if (header === 'Logo Sekolah (Base64)') tempSettings.logo_sekolah = row[1] || null;
-                            if (header.startsWith('Logo Sekolah (Base64) - Part ')) {
-                                const partMatch = header.match(/Part (\d+)/);
-                                if (partMatch) logoSekolahParts[parseInt(partMatch[1], 10)] = row[1] || '';
-                            }
-                            if (header === 'Logo Dinas Pendidikan (Base64)') tempSettings.logo_dinas = row[1] || null;
-                            if (header.startsWith('Logo Dinas Pendidikan (Base64) - Part ')) {
-                                const partMatch = header.match(/Part (\d+)/);
-                                if (partMatch) logoDinasParts[parseInt(partMatch[1], 10)] = row[1] || '';
-                            }
-                            if (header === 'Logo Cover Rapor (Base64)') tempSettings.logo_cover = row[1] || null;
-                            if (header.startsWith('Logo Cover Rapor (Base64) - Part ')) {
-                                const partMatch = header.match(/Part (\d+)/);
-                                if (partMatch) logoCoverParts[parseInt(partMatch[1], 10)] = row[1] || '';
-                            }
-
-                            if (section === 'subjects' && header !== 'ID Internal (Jangan Diubah)') {
-                                const [id, fullName, label, status] = row;
-                                if (id && fullName) {
-                                    const existing = tempSubjects.find(s => s.id === id);
-                                    const subjectData = { id: String(id), fullName: String(fullName), label: String(label), active: String(status).toLowerCase() === 'aktif' };
-                                    if (existing) Object.assign(existing, subjectData); else tempSubjects.push(subjectData);
-                                }
-                            }
-                            if (section === 'extras' && header !== 'ID Unik (Jangan Diubah)') {
-                                const [id, name, status] = row;
-                                if (id && name) {
-                                    const existing = tempExtracurriculars.find(e => e.id === id);
-                                    const extraData = { id: String(id), name: String(name), active: String(status).toLowerCase() === 'aktif' };
-                                    if (existing) Object.assign(existing, extraData); else tempExtracurriculars.push(extraData);
-                                }
-                            }
-                        });
-
-                        const schoolKeys = Object.keys(logoSekolahParts).map(Number).sort((a, b) => a - b);
-                        if (schoolKeys.length > 0) tempSettings.logo_sekolah = schoolKeys.map(key => logoSekolahParts[key]).join('');
-
-                        const dinasKeys = Object.keys(logoDinasParts).map(Number).sort((a, b) => a - b);
-                        if (dinasKeys.length > 0) tempSettings.logo_dinas = dinasKeys.map(key => logoDinasParts[key]).join('');
-
-                        const coverKeys = Object.keys(logoCoverParts).map(Number).sort((a, b) => a - b);
-                        if (coverKeys.length > 0) tempSettings.logo_cover = coverKeys.map(key => logoCoverParts[key]).join('');
-                        
-                        processedSheetCount++;
-                    }
-
-                    const studentWorksheet = workbook.Sheets['Data Siswa'];
-                    const studentHeaderMap = new Map([
-                        ["Nama Lengkap", 'namaLengkap'], ["Nama Panggilan", 'namaPanggilan'], ["NIS", 'nis'], ["NISN", 'nisn'], ["Tempat Lahir", 'tempatLahir'], ["Tanggal Lahir", 'tanggalLahir'],
-                        ["Jenis Kelamin", 'jenisKelamin'], ["Agama", 'agama'], ["Asal TK", 'asalTk'], ["Alamat Siswa", 'alamatSiswa'], ["Diterima di Kelas", 'diterimaDiKelas'], ["Diterima Tanggal", 'diterimaTanggal'],
-                        ["Nama Ayah", 'namaAyah'], ["Nama Ibu", 'namaIbu'], ["Pekerjaan Ayah", 'pekerjaanAyah'], ["Pekerjaan Ibu", 'pekerjaanIbu'],
-                        ["Alamat Orang Tua", 'alamatOrangTua'], ["Telepon Orang Tua", 'teleponOrangTua'], ["Nama Wali", 'namaWali'], ["Pekerjaan Wali", 'pekerjaanWali'],
-                        ["Alamat Wali", 'alamatWali'], ["Telepon Wali", 'teleponWali']
-                    ]);
-
-                    if (studentWorksheet) {
-                        const studentJson = XLSX.utils.sheet_to_json(studentWorksheet);
-                        let maxId = 0; // Reset maxId for imported students
-
-                        studentJson.forEach(row => {
-                            const studentData = {};
-                            for (const header in row) if (studentHeaderMap.has(header)) studentData[studentHeaderMap.get(header)] = row[header];
-                            if (!studentData.namaLengkap) return;
-
-                            const newId = ++maxId; // Assign new IDs to all imported students
-                            tempStudents.push({ ...studentData, id: newId });
-                            tempGrades.push({ studentId: newId, detailedGrades: {}, finalGrades: {} });
-                            tempAttendance.push({ studentId: newId, sakit: null, izin: null, alpa: null });
-                            tempStudentExtracurriculars.push({ studentId: newId, assignedActivities: [], descriptions: {} });
-                        });
-                        processedSheetCount++;
-                    }
-                    const studentMap = new Map(tempStudents.map(s => [s.namaLengkap.trim().toLowerCase(), s.id]));
-
-                    const subjectLabelMap = new Map(tempSubjects.map(s => [s.label.trim().toLowerCase(), s]));
-                    const extraNameMap = new Map(tempExtracurriculars.map(e => [e.name.trim().toLowerCase(), e.id]));
-
-                    workbook.SheetNames.forEach(sheetName => {
-                        const worksheet = workbook.Sheets[sheetName];
-                        const json = XLSX.utils.sheet_to_json(worksheet);
-                        
-                        if (sheetName === 'Data Siswa' || sheetName === 'Pengaturan' || sheetName === 'Petunjuk') return;
-
-                        if (sheetName === 'Data Absensi') {
-                            const parseAttendanceValue = (value) => {
-                                if (value === '' || value === undefined || value === null) return null;
-                                const num = parseInt(String(value), 10);
-                                return isNaN(num) ? null : num;
-                            };
-
-                            json.forEach(row => {
-                                const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
-                                if (studentId) {
-                                    const attendanceRecord = tempAttendance.find(a => a.studentId === studentId);
-                                    const newAtt = {
-                                        sakit: parseAttendanceValue(row["Sakit (S)"]),
-                                        izin: parseAttendanceValue(row["Izin (I)"]),
-                                        alpa: parseAttendanceValue(row["Alpa (A)"])
-                                    };
-                                    if (attendanceRecord) Object.assign(attendanceRecord, newAtt);
-                                    else tempAttendance.push({ studentId, ...newAtt });
-                                }
-                            });
-                            processedSheetCount++;
-                        } else if (sheetName === 'Catatan Wali Kelas') {
-                            json.forEach(row => {
-                            const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
-                            if (studentId != null) tempNotes[studentId] = String(row["Catatan Wali Kelas"] || '');
-                            });
-                            processedSheetCount++;
-                        } else if (sheetName === 'Data Ekstrakurikuler') {
-                            json.forEach(row => {
-                                const studentId = studentMap.get(String(row["Nama Lengkap"] || '').trim().toLowerCase());
-                                if (studentId) {
-                                    const assignedActivities = [], descriptions = {};
-                                    for (let i = 1; i <= 5; i++) {
-                                        const extraName = String(row[`Ekstrakurikuler ${i}`] || '').trim().toLowerCase();
-                                        const extraId = extraNameMap.get(extraName);
-                                        if (extraId) { assignedActivities.push(extraId); descriptions[extraId] = String(row[`Deskripsi ${i}`] || ''); }
-                                    }
-                                    const studentExtraRecord = tempStudentExtracurriculars.find(se => se.studentId === studentId);
-                                    if (studentExtraRecord) Object.assign(studentExtraRecord, { assignedActivities, descriptions });
-                                }
-                            });
-                            processedSheetCount++;
-                        } else if (sheetName.startsWith('Nilai ')) {
-                            const subjectLabel = sheetName.replace('Nilai ', '').trim().toLowerCase();
-                            const subject = subjectLabelMap.get(subjectLabel);
-                            if (!subject) return;
-
-                            json.forEach(row => {
-                                const studentId = studentMap.get(String(row["Nama Siswa"] || '').trim().toLowerCase());
-                                if (studentId) {
-                                    const gradeRecord = tempGrades.find(g => g.studentId === studentId);
-                                    if (!gradeRecord) return; // Should not happen if tempGrades initialized with tempStudents
-
-                                    if (!gradeRecord.detailedGrades) gradeRecord.detailedGrades = {};
-                                    if (!gradeRecord.detailedGrades[subject.id]) gradeRecord.detailedGrades[subject.id] = { tp: [], sts: null, sas: null };
-
-                                    const detailed = gradeRecord.detailedGrades[subject.id];
-                                    const tps = [];
-                                    Object.keys(row).forEach(key => { if(key.startsWith('TP ')) tps[parseInt(key.replace('TP ','')) - 1] = row[key] === '' ? null : Number(row[key]); });
-                                    detailed.tp = tps;
-                                    detailed.sts = row['STS'] === '' ? null : Number(row['STS']);
-                                    detailed.sas = row['SAS'] === '' ? null : Number(row['SAS']);
-                                    
-                                    const tpsToConsider = (detailed.tp || []);
-                                    const validTps = tpsToConsider.filter(t => typeof t === 'number');
-                                    const avgTp = validTps.length > 0 ? validTps.reduce((a, b) => a + b, 0) / validTps.length : 0;
-                                    const finalGrade = (avgTp + (detailed.sts || 0) + (detailed.sas || 0)) / 3;
-                                    gradeRecord.finalGrades[subject.id] = isNaN(finalGrade) ? null : Math.round(finalGrade);
-                                }
-                            });
-                            processedSheetCount++;
-                        } else if (sheetName === 'Tujuan Pembelajaran') {
-                            const gradeNum = getGradeNumber(tempSettings.nama_kelas);
-                            if (gradeNum) {
-                                const gradeKey = `Kelas ${gradeNum}`;
-                                const newObjectivesForClass = {};
-                                const subjectFullNameMap = new Map(tempSubjects.map(s => [s.fullName.toLowerCase(), s]));
-                                json.forEach(row => {
-                                    const subjectName = String(row['Nama Mapel'] || '').trim().toLowerCase();
-                                    const subject = subjectFullNameMap.get(subjectName);
-                                    if (subject) {
-                                        const objectives = [];
-                                        Object.keys(row).forEach(key => { if(key.startsWith('TP ')) objectives.push(row[key]); });
-                                        newObjectivesForClass[subject.fullName] = objectives.filter(Boolean);
-                                    }
-                                });
-                                tempLearningObjectives[gradeKey] = newObjectivesForClass;
-                                processedSheetCount++;
-                            }
-                        }
-                    });
-
-                    // Update states
-                    setSettings(tempSettings);
-                    setSubjects(tempSubjects);
-                    setExtracurriculars(tempExtracurriculars); // Ensure this is correctly set from imported or presets
-                    setStudents(tempStudents);
-                    setGrades(tempGrades);
-                    setNotes(tempNotes);
-                    setAttendance(tempAttendance);
-                    setStudentExtracurriculars(tempStudentExtracurriculars);
-                    setLearningObjectives(tempLearningObjectives);
-
-                    showToast(`${processedSheetCount} sheet berhasil diimpor!`, 'success');
-                    resolve(true);
-
-                } catch (error) {
-                    console.error("Gagal mengimpor data:", error);
-                    showToast(`Gagal membaca file: ${error.message}`, 'error');
-                    reject(error);
-                }
-            };
-            reader.onerror = (error) => {
-                console.error("FileReader error:", error);
-                showToast(`Gagal membaca file: ${error.message}`, 'error');
-                reject(error);
-            };
-            reader.readAsBinaryString(blob);
-        });
-    }, [showToast, presets]);
+        const fileName = getDynamicRKTFileName(settings);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        showToast('File template berhasil diunduh!', 'success');
+    }, [exportToExcelBlob, settings, showToast]);
 
     // --- Manual Local Import ---
     const handleImportAll = useCallback(() => {
@@ -1279,6 +878,182 @@ const App = () => {
         };
     }, [isDirty, isSignedIn, autoSaveToDrive]);
 
+  // --- State Update Handlers ---
+
+    const handleSettingsChange = useCallback((e) => {
+        const { name, value, type, files } = e.target;
+        if (type === 'file') {
+            if (files && files[0]) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setSettings(prev => ({ ...prev, [name]: reader.result }));
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        } else {
+            setSettings(prev => ({ ...prev, [name]: value }));
+        }
+    }, []);
+
+    const saveSettings = useCallback(() => {
+        // This function now primarily serves as an explicit onBlur trigger
+        // for inputs that might not trigger it automatically on mobile.
+        // The main saving logic is now handled by the useEffect hook.
+        console.log("Settings saved to state.");
+    }, []);
+    
+    const onUpdateSubjects = useCallback((newSubjects) => {
+        setSubjects(newSubjects);
+    }, []);
+    
+    const onUpdateExtracurriculars = useCallback((newExtracurriculars) => {
+        setExtracurriculars(newExtracurriculars);
+    }, []);
+
+    const handleSaveStudent = useCallback((studentData) => {
+        if (studentData.id) { // Edit existing
+            setStudents(prev => prev.map(s => s.id === studentData.id ? studentData : s));
+            showToast('Data siswa berhasil diperbarui.', 'success');
+        } else { // Add new
+            const newStudent = { ...studentData, id: `student_${Date.now()}` };
+            setStudents(prev => [...prev, newStudent]);
+            setGrades(prev => [...prev, { studentId: newStudent.id, detailedGrades: {}, finalGrades: {} }]);
+            setAttendance(prev => [...prev, { studentId: newStudent.id, sakit: null, izin: null, alpa: null }]);
+            showToast('Siswa baru berhasil ditambahkan.', 'success');
+        }
+    }, [showToast]);
+
+    const handleBulkSaveStudents = useCallback((newStudents) => {
+        setStudents(newStudents);
+    }, []);
+
+    const handleDeleteStudent = useCallback((studentId) => {
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+        setGrades(prev => prev.filter(g => g.studentId !== studentId));
+        setNotes(prev => { const newNotes = {...prev}; delete newNotes[studentId]; return newNotes; });
+        setAttendance(prev => prev.filter(a => a.studentId !== studentId));
+        setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
+    }, []);
+
+    const handleUpdateAttendance = useCallback((studentId, type, value) => {
+        setAttendance(prev => {
+            const index = prev.findIndex(a => a.studentId === studentId);
+            const numValue = value === '' ? null : parseInt(value, 10); // Treat empty string as null
+            if (index > -1) {
+                const newAttendance = [...prev];
+                newAttendance[index] = { ...newAttendance[index], [type]: isNaN(numValue) ? null : numValue };
+                return newAttendance;
+            }
+            return [...prev, { studentId, sakit: null, izin: null, alpa: null, [type]: isNaN(numValue) ? null : numValue }];
+        });
+    }, []);
+
+    const handleBulkUpdateAttendance = useCallback((newAttendance) => {
+        setAttendance(newAttendance);
+    }, []);
+    
+    const handleUpdateNote = useCallback((studentId, note) => {
+        setNotes(prev => ({ ...prev, [studentId]: note }));
+    }, []);
+
+    const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => {
+        setStudentExtracurriculars(newStudentExtracurriculars);
+    }, []);
+
+    const handleUpdatePredikats = useCallback((newPredikats) => {
+        setSettings(prev => ({ ...prev, predikats: newPredikats }));
+    }, []);
+
+    const handleUpdateGradeCalculation = useCallback((subjectId, config) => {
+        setSettings(prev => ({
+            ...prev,
+            gradeCalculation: {
+                ...prev.gradeCalculation,
+                [subjectId]: config
+            }
+        }));
+    }, []);
+
+    const handleUpdateDetailedGrade = useCallback((studentId, subjectId, { type, value }) => {
+        setGrades(prevGrades => {
+            const studentGradeIndex = prevGrades.findIndex(g => g.studentId === studentId);
+            const newGrades = [...prevGrades];
+            let studentGrade = studentGradeIndex > -1 ? { ...newGrades[studentGradeIndex] } : { studentId, detailedGrades: {}, finalGrades: {} };
+            
+            studentGrade.detailedGrades = { ...studentGrade.detailedGrades };
+            studentGrade.detailedGrades[subjectId] = { ...(studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null }), [type]: value };
+
+            // Recalculate Final Grade for this subject
+            const detailed = studentGrade.detailedGrades[subjectId];
+            const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
+            const kkm = parseInt(settings.predikats.c, 10);
+            let finalScore = null;
+
+            const slmAvgScores = (detailed.slm || []).map(slm => {
+                const validScores = (slm.scores || []).filter(s => typeof s === 'number');
+                return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
+            }).filter(avg => avg !== null);
+            
+            const stsScore = detailed.sts;
+            const sasScore = detailed.sas;
+
+            if (config.method === 'rata-rata') {
+                const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null;
+                const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number');
+                if (components.length > 0) {
+                    finalScore = components.reduce((a, b) => a + b, 0) / components.length;
+                }
+            } else if (config.method === 'pembobotan') {
+                let totalWeight = 0;
+                let weightedScore = 0;
+                const weights = config.weights || { slm: 0, sts: 0, sas: 0 };
+
+                if (slmAvgScores.length > 0 && weights.slm > 0) {
+                    const avgOfSlms = slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length;
+                    weightedScore += avgOfSlms * weights.slm;
+                    totalWeight += weights.slm;
+                }
+                if (typeof stsScore === 'number' && weights.sts > 0) {
+                    weightedScore += stsScore * weights.sts;
+                    totalWeight += weights.sts;
+                }
+                if (typeof sasScore === 'number' && weights.sas > 0) {
+                    weightedScore += sasScore * weights.sas;
+                    totalWeight += weights.sas;
+                }
+                if (totalWeight > 0) {
+                    finalScore = weightedScore / totalWeight;
+                }
+            } else if (config.method === 'persentase' && !isNaN(kkm)) {
+                const allSummatives = [...slmAvgScores];
+                if(typeof stsScore === 'number') allSummatives.push(stsScore);
+                if(typeof sasScore === 'number') allSummatives.push(sasScore);
+                
+                if (allSummatives.length > 0) {
+                    const passedCount = allSummatives.filter(s => s >= kkm).length;
+                    finalScore = (passedCount / allSummatives.length) * 100;
+                }
+            }
+
+            studentGrade.finalGrades = { ...studentGrade.finalGrades };
+            studentGrade.finalGrades[subjectId] = finalScore === null ? null : Math.round(finalScore);
+
+            if (studentGradeIndex > -1) {
+                newGrades[studentGradeIndex] = studentGrade;
+            } else {
+                newGrades.push(studentGrade);
+            }
+            return newGrades;
+        });
+    }, [settings.gradeCalculation, settings.predikats.c]);
+
+    const handleUpdateLearningObjectives = useCallback((newObjectives) => {
+        setLearningObjectives(newObjectives);
+    }, []);
+
+    const handleUpdateKopLayout = useCallback((newLayout) => {
+        setSettings(prev => ({ ...prev, kop_layout: newLayout }));
+    }, []);
 
     const handleDriveFileSelection = async (fileId) => {
         if (!fileId) {
@@ -1362,7 +1137,16 @@ const App = () => {
 
   const renderPage = () => {
     if (isLoading) {
-        return React.createElement('div', { className: "flex items-center justify-center h-full" }, React.createElement('p', null, 'Memuat data awal...'));
+        return React.createElement(
+            'div',
+            { className: "flex items-center justify-center h-full w-full" },
+            React.createElement(
+                'div',
+                { className: 'flex flex-col items-center gap-4' },
+                React.createElement('div', { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" }),
+                React.createElement('p', { className: 'text-slate-600' }, 'Memuat data...')
+            )
+        );
     }
 
     switch (activePage) {
@@ -1385,9 +1169,8 @@ const App = () => {
         return React.createElement(DataNilaiPage, { 
                   students: students, 
                   grades: grades, 
-                  namaKelas: settings.nama_kelas, 
-                  onUpdateGrade: handleUpdateGrade, 
-                  onBulkUpdateGrades: handleBulkUpdateGrades,
+                  settings: settings,
+                  onUpdateGradeCalculation: handleUpdateGradeCalculation,
                   onUpdateDetailedGrade: handleUpdateDetailedGrade,
                   learningObjectives: learningObjectives,
                   onUpdateLearningObjectives: handleUpdateLearningObjectives,
@@ -1424,9 +1207,9 @@ const App = () => {
                   onSave: saveSettings, 
                   onUpdateKopLayout: handleUpdateKopLayout,
                   subjects: subjects,
-                  onUpdateSubjects: handleUpdateSubjects,
+                  onUpdateSubjects: onUpdateSubjects,
                   extracurriculars: extracurriculars,
-                  onUpdateExtracurriculars: handleUpdateExtracurriculars
+                  onUpdateExtracurriculars: onUpdateExtracurriculars
                 });
       case 'PRINT_RAPOR':
         return React.createElement(PrintRaporPage, { 
