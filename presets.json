@@ -3,13 +3,13 @@
     { "id": "CATUR", "name": "Catur", "active": true },
     { "id": "IPA", "name": "IPA", "active": true },
     { "id": "KARATE", "name": "Karate", "active": true },
-    { "id": "KEWIRAUSAHAAN", "name": "Kewirausahaan", "active": false },
-    { "id": "KODING", "name": "Koding", "active": false },
-    { "id": "MADING", "name": "Mading", "active": false },
-    { "id": "MATEMATIKA", "name": "Matematika", "active": false },
+    { "id": "KEWIRAUSAHAAN", "name": "Kewirausahaan", "active": true },
+    { "id": "KODING", "name": "Koding", "active": true },
+    { "id": "MADING", "name": "Mading", "active": true },
+    { "id": "MATEMATIKA", "name": "Matematika", "active": true },
     { "id": "MENGGAMBAR", "name": "Menggambar", "active": true },
-    { "id": "MENARI", "name": "Menari", "active": false },
-    { "id": "NYURAT_AKSARA_BALI", "name": "Nyurat Aksara Bali", "active": false },
+    { "id": "MENARI", "name": "Menari", "active": true },
+    { "id": "NYURAT_AKSARA_BALI", "name": "Nyurat Aksara Bali", "active": true },
     { "id": "PRAMUKA", "name": "Pramuka", "active": true },
     { "id": "SILAT", "name": "Silat", "active": true },
     { "id": "VOLI", "name": "Voli", "active": true },
@@ -35,20 +35,6 @@
       "id": "template_4",
       "title": "Aktif di Kelas",
       "content": "Ananda [Nama Siswa] sangat antusias dan aktif bertanya selama kegiatan belajar mengajar. Keberaniannya untuk berpendapat patut diapresiasi dan menjadi contoh bagi teman-temannya. Teruslah menjadi siswa yang kritis dan kreatif."
-    }
-  ],
-  "p5Projects": [
-    {
-      "id": "P5_BHINNEKA",
-      "title": "Bhinneka Tunggal Ika",
-      "description": "Proyek yang bertujuan untuk mengenal dan merayakan keragaman budaya di Indonesia melalui kegiatan seperti pameran budaya, pentas seni, dan kuliner tradisional.",
-      "dimensions": ["Beriman, bertakwa kepada Tuhan YME, dan berakhlak mulia", "Berkebinekaan global", "Bergotong-royong"]
-    },
-    {
-      "id": "P5_KEWIRAUSAHAAN",
-      "title": "Kewirausahaan",
-      "description": "Proyek untuk menumbuhkan jiwa kewirausahaan siswa melalui pembuatan dan penjualan produk kreatif hasil karya sendiri.",
-      "dimensions": ["Mandiri", "Kreatif", "Bergotong-royong"]
     }
   ]
 }
