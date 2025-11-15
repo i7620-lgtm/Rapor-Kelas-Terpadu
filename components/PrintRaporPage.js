@@ -453,10 +453,33 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
 const ReportFooterContent = React.forwardRef((props, ref) => {
     const { 
         student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
-        showCocurricular, showExtra, showNotes, showAttendance, showDecision, showParentTeacherSignature, showHeadmasterSignature,
-        showParentFeedback
+        rank, rankingOption, // New props
+        showCocurricular, showExtra, showNotes, showAttendance, showDecision, 
+        showParentFeedback, showParentTeacherSignature, showHeadmasterSignature,
     } = props;
-    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef, parentFeedbackRef } = ref || {};
+    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = ref || {};
+
+    const shouldDisplayRank = rank && rankingOption !== 'none' && (
+        (rankingOption === 'top3' && rank <= 3) ||
+        (rankingOption === 'top10' && rank <= 10)
+    );
+    
+    const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+
+    const originalNote = notes[student.id] || '';
+    let studentNoteContent;
+    if (shouldDisplayRank) {
+        const rankMessageStart = `Selamat! Ananda ${nickname} berhasil meraih `;
+        const rankText = `Peringkat ${rank}`;
+        const rankMessageEnd = ` di kelas. `;
+        studentNoteContent = React.createElement(React.Fragment, null, 
+            React.createElement('span', null, rankMessageStart),
+            React.createElement('strong', null, rankText),
+            React.createElement('span', null, rankMessageEnd + originalNote)
+        );
+    } else {
+        studentNoteContent = originalNote || 'Tidak ada catatan.';
+    }
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
@@ -464,7 +487,6 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const alpaCount = attendanceData.alpa ?? 0;
 
     const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
-    const studentNote = notes[student.id] || '';
     
     const extraActivities = (studentExtraData?.assignedActivities || [])
         .map(activityId => {
@@ -477,7 +499,6 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const cocurricularDescription = useMemo(() => {
         const studentCoData = cocurricularData?.[student.id];
         const theme = settings.cocurricular_theme;
-        const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
 
         const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
             ? studentCoData.dimensionRatings
@@ -523,14 +544,13 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         }
         
         return description.trim();
-    }, [student, settings, cocurricularData]);
+    }, [student, settings, cocurricularData, nickname]);
 
     const renderDecision = () => {
         const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
         if (!isSemesterGenap) return null;
 
         const gradeLevel = getGradeNumber(settings.nama_kelas);
-        const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
 
         let promotionText;
         if (gradeLevel === 6) {
@@ -582,7 +602,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 ),
                 showNotes && React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt', width: '11.5cm' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
-                    React.createElement('div', { className: 'min-h-[3rem]' }, studentNote || 'Tidak ada catatan.')
+                    React.createElement('div', { className: 'min-h-[3rem]' }, studentNoteContent)
                 )
             ),
             showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-2' }, renderDecision()),
@@ -636,7 +656,7 @@ const PageFooter = ({ student, settings, currentPage }) => {
 };
 
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, ...restProps }) => {
+const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, rank, rankingOption, ...restProps }) => {
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
@@ -654,6 +674,24 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const cmRef = useRef(null);
     const [cmToPx, setCmToPx] = useState(0);
 
+    const shouldDisplayRank = useMemo(() => rank && rankingOption !== 'none' && (
+        (rankingOption === 'top3' && rank <= 3) ||
+        (rankingOption === 'top10' && rank <= 10)
+    ), [rank, rankingOption]);
+
+    const notesForMeasurement = useMemo(() => {
+        if (shouldDisplayRank) {
+            const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+            const rankMessage = `Selamat! Ananda ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
+            const originalNote = notes[student.id] || '';
+            return {
+                ...notes,
+                [student.id]: rankMessage + originalNote
+            };
+        }
+        return notes;
+    }, [shouldDisplayRank, student, rank, notes]);
+
     useEffect(() => {
         if (cmRef.current) {
             setCmToPx(cmRef.current.offsetHeight);
@@ -661,7 +699,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     }, [cmRef.current]);
 
     const reportSubjects = useMemo(() => {
-        // ... (same logic as before)
         const result = [];
         const processedGroups = new Set();
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -760,13 +797,11 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             const allItems = [];
             
-            // 1. Academic Table Rows
             const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
             reportSubjects.forEach((subject, index) => {
                 allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
             });
 
-            // 2. Footer Components
             const footerItems = [
                 { type: 'cocurricular', ref: cocurricularRef },
                 { type: 'extra', ref: extraRef },
@@ -784,7 +819,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     const style = window.getComputedStyle(element);
                     const marginTop = parseFloat(style.marginTop);
                     const marginBottom = parseFloat(style.marginBottom);
-                    // Only add if it has height, preventing empty/hidden elements from being paginated
                     if (height > 0) {
                          allItems.push({ type: item.type, height: height + marginTop + marginBottom });
                     }
@@ -793,7 +827,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             const allChunks = [];
             if (allItems.length === 0) {
-                setAcademicPageChunks([[]]); // A single empty page if no content
+                setAcademicPageChunks([[]]);
                 return;
             }
 
@@ -805,7 +839,6 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 const availableHeight = isFirstPage ? firstPageAvailableHeight : subsequentPageAvailableHeight;
                 let heightUsed = isFirstPage ? studentInfoRef.current.getBoundingClientRect().height : 0;
                 
-                // Add table header height if there are academic items in this or subsequent chunks
                 const hasAcademicItemsRemaining = allItems.slice(currentItemIndex).some(item => item.type === 'academic');
                 if (hasAcademicItemsRemaining) {
                     heightUsed += tableHeaderRef.current.getBoundingClientRect().height;
@@ -832,11 +865,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
              setAcademicPageChunks(allChunks);
         };
         
-        // Use a timeout to allow DOM to render for measurement
         const timer = setTimeout(calculateChunks, 100);
         return () => clearTimeout(timer);
 
-    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx]);
+    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx, shouldDisplayRank]);
 
 
     if (academicPageChunks === null && selectedPages.academic) {
@@ -853,7 +885,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
                     React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
                     React.createElement(ReportFooterContent, { 
-                        student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+                        student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
+                        rank: rank, rankingOption: rankingOption,
                         showCocurricular: true, showExtra: true, showNotes: true, showAttendance: true, showDecision: true,
                         showParentFeedback: true, showParentTeacherSignature: true, showHeadmasterSignature: true,
                         ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef }
@@ -912,6 +945,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex }),
                         React.createElement(ReportFooterContent, { 
                             student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+                            rank: rank, rankingOption: rankingOption,
                             showCocurricular: chunkItemTypes.has('cocurricular'),
                             showExtra: chunkItemTypes.has('extra'),
                             showNotes: chunkItemTypes.has('attendanceAndNotes'),
@@ -939,8 +973,10 @@ const PAPER_SIZES = {
 };
 
 const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
+    const { grades, subjects } = restProps;
     const [paperSize, setPaperSize] = useState('A4');
     const [selectedStudentId, setSelectedStudentId] = useState('all');
+    const [rankingOption, setRankingOption] = useState('none');
     const [selectedPages, setSelectedPages] = useState({
         cover: true,
         schoolIdentity: true,
@@ -948,6 +984,58 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isPrinting, setIsPrinting] = useState(false);
+
+    const studentRanks = useMemo(() => {
+        if (rankingOption === 'none' || !students.length || !grades.length || !subjects.length) {
+            return new Map();
+        }
+
+        const allActiveSubjects = subjects.filter(s => s.active);
+
+        const studentsWithTotals = students.map(student => {
+            const gradeData = grades.find(g => g.studentId === student.id);
+            if (!gradeData || !gradeData.finalGrades) {
+                return { studentId: student.id, totalScore: 0 };
+            }
+
+            const studentReligion = student.agama?.trim().toLowerCase();
+            
+            const totalScore = Object.entries(gradeData.finalGrades)
+                .reduce((sum, [subjectId, score]) => {
+                    const subjectInfo = allActiveSubjects.find(s => s.id === subjectId);
+                    if (subjectInfo && typeof score === 'number') {
+                        if (subjectInfo.fullName.startsWith('Pendidikan Agama')) {
+                            if (studentReligion && subjectInfo.fullName.toLowerCase().includes(`(${studentReligion})`)) {
+                                return sum + score;
+                            }
+                            return sum; 
+                        }
+                        return sum + score;
+                    }
+                    return sum;
+                }, 0);
+            
+            return { studentId: student.id, totalScore };
+        });
+
+        const sortedStudents = studentsWithTotals.sort((a, b) => b.totalScore - a.totalScore);
+
+        const ranksMap = new Map();
+        if (sortedStudents.length > 0) {
+            let currentRank = 1;
+            ranksMap.set(sortedStudents[0].studentId, currentRank);
+            for (let i = 1; i < sortedStudents.length; i++) {
+                if (sortedStudents[i].totalScore < sortedStudents[i - 1].totalScore) {
+                    currentRank = i + 1;
+                }
+                if (sortedStudents[i].totalScore > 0) {
+                    ranksMap.set(sortedStudents[i].studentId, currentRank);
+                }
+            }
+        }
+        
+        return ranksMap;
+    }, [rankingOption, students, grades, subjects]);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -1019,6 +1107,18 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     ),
                     React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
                         React.createElement('div', null,
+                            React.createElement('label', { htmlFor: 'rankingSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Tampilkan Peringkat'),
+                            React.createElement('select', { 
+                                id: "rankingSelector",
+                                value: rankingOption,
+                                onChange: (e) => setRankingOption(e.target.value),
+                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
+                                React.createElement('option', { value: "none" }, "Tidak Tampilkan"),
+                                React.createElement('option', { value: "top3" }, "Peringkat 1-3"),
+                                React.createElement('option', { value: "top10" }, "Peringkat 1-10")
+                            )
+                        ),
+                        React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'studentSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Pilih Murid'),
                             React.createElement('select', { 
                                 id: "studentSelector",
@@ -1059,20 +1159,16 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
                 studentsToRender.map(student => {
-                    const studentSelectedPages = {
-                        cover: selectedPages.cover,
-                        schoolIdentity: selectedPages.schoolIdentity,
-                        studentIdentity: selectedPages.studentIdentity,
-                        academic: selectedPages.academic,
-                    };
-
+                    const rank = studentRanks.get(student.id);
                     return React.createElement(ReportPagesForStudent, { 
                         key: student.id, 
                         student: student, 
                         settings: settings,
                         pageStyle: pageStyle,
-                        selectedPages: studentSelectedPages,
+                        selectedPages: selectedPages,
                         paperSize: paperSize,
+                        rank: rank,
+                        rankingOption: rankingOption,
                         ...restProps
                     })
                 })
