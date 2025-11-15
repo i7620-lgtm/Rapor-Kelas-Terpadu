@@ -453,9 +453,10 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
 const ReportFooterContent = React.forwardRef((props, ref) => {
     const { 
         student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
-        showCocurricular, showExtra, showNotes, showAttendance, showDecision, showParentTeacherSignature, showHeadmasterSignature
+        showCocurricular, showExtra, showNotes, showAttendance, showDecision, showParentTeacherSignature, showHeadmasterSignature,
+        showParentFeedback
     } = props;
-    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef } = ref || {};
+    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef, parentFeedbackRef } = ref || {};
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
@@ -585,6 +586,12 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 )
             ),
             showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-2' }, renderDecision()),
+            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-2' },
+                React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
+                    React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
+                    React.createElement('div', { style: { minHeight: '2cm' } })
+                )
+            ),
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center' }, 
@@ -641,6 +648,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const extraRef = useRef(null);
     const attendanceAndNotesRef = useRef(null);
     const decisionRef = useRef(null);
+    const parentFeedbackRef = useRef(null);
     const signaturesRef = useRef(null);
     const headmasterRef = useRef(null);
     const cmRef = useRef(null);
@@ -739,7 +747,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         setAcademicPageChunks(null); // Set to null to trigger measurement render
 
         const calculateChunks = () => {
-            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef];
+            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef];
             if (refs.some(ref => !ref.current)) {
                 // If any ref is not ready, retry
                 setTimeout(calculateChunks, 50);
@@ -764,6 +772,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 { type: 'extra', ref: extraRef },
                 { type: 'attendanceAndNotes', ref: attendanceAndNotesRef },
                 { type: 'decision', ref: decisionRef },
+                { type: 'parentFeedback', ref: parentFeedbackRef },
                 { type: 'signatures', ref: signaturesRef },
                 { type: 'headmaster', ref: headmasterRef }
             ];
@@ -846,8 +855,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
                         showCocurricular: true, showExtra: true, showNotes: true, showAttendance: true, showDecision: true,
-                        showParentTeacherSignature: true, showHeadmasterSignature: true,
-                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef }
+                        showParentFeedback: true, showParentTeacherSignature: true, showHeadmasterSignature: true,
+                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef }
                     })
                 )
             )
@@ -908,6 +917,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                             showNotes: chunkItemTypes.has('attendanceAndNotes'),
                             showAttendance: chunkItemTypes.has('attendanceAndNotes'),
                             showDecision: chunkItemTypes.has('decision') && isSemesterGenap,
+                            showParentFeedback: chunkItemTypes.has('parentFeedback'),
                             showParentTeacherSignature: chunkItemTypes.has('signatures'),
                             showHeadmasterSignature: chunkItemTypes.has('headmaster'),
                         })
