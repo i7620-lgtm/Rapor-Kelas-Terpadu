@@ -2,6 +2,7 @@ export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'DATA_SISWA', label: 'Data Siswa' },
   { id: 'DATA_NILAI', label: 'Data Nilai' },
+  { id: 'DATA_KOKURIKULER', label: 'Data Kokurikuler' },
   { id: 'DATA_EKSTRAKURIKULER', label: 'Data Ekstrakurikuler' },
   { id: 'DATA_ABSENSI', label: 'Data Absensi' },
   { id: 'CATATAN_WALI_KELAS', label: 'Catatan Wali Kelas' },
@@ -39,3 +40,21 @@ export const studentFieldDefinitions = [
     { key: 'alamatWali', label: 'Alamat Wali', description: 'Alamat tempat tinggal wali siswa.' },
     { key: 'teleponWali', label: 'Telepon Wali', description: 'Nomor telepon wali siswa.' },
 ];
+
+export const COCURRICULAR_DIMENSIONS = [
+    { id: 'keimanan', label: 'Keimanan dan Ketakwaan' },
+    { id: 'kewargaan', label: 'Kewargaan' },
+    { id: 'penalaran_kritis', label: 'Penalaran Kritis' },
+    { id: 'kreativitas', label: 'Kreativitas' },
+    { id: 'kolaborasi', label: 'Kolaborasi' },
+    { id: 'kemandirian', label: 'Kemandirian' },
+    { id: 'kesehatan', label: 'Kesehatan' },
+    { id: 'komunikasi', label: 'Komunikasi' },
+];
+
+export const COCURRICULAR_RATINGS = {
+    BB: 'Belum Berkembang',
+    MB: 'Mulai Berkembang',
+    BSH: 'Berkembang Sesuai Harapan',
+    SB: 'Sudah Berkembang',
+};
