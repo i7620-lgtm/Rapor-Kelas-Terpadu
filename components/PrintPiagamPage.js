@@ -21,22 +21,14 @@ const toRoman = (num) => {
     return str;
 };
 
-const rankToWords = (num) => {
-    const words = ["", "SATU", "DUA", "TIGA", "EMPAT", "LIMA", "ENAM", "TUJUH", "DELAPAN", "SEMBILAN", "SEPULUH"];
-    if (num > 0 && num <= 10) return words[num];
-    return num;
-};
-
 const generateInitialPiagamLayout = (settings) => {
     const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 ? settings.kop_layout : generateInitialLayout(settings);
     
-    // Adapt kop layout elements for landscape view
-    const yOffset = 20;
-    const xOffset = (1123 - 800) / 2; // Center the 800px width content in a 1123px viewbox
-
+    const yOffset = 50;
+    const xOffset = (1123 - 800) / 2;
     const adaptedKopElements = kopLayout.map(el => {
         let newElement = { ...el, id: `kop_${el.id}` };
-
+        
         if (el.type === 'line') {
             const newWidth = 1000;
             newElement.x = (1123 - newWidth) / 2;
@@ -44,7 +36,7 @@ const generateInitialPiagamLayout = (settings) => {
         } else if (el.textAlign === 'center') {
             newElement.x = (1123 - el.width) / 2;
         } else {
-            newElement.x = el.x + xOffset;
+            newElement.x = (el.id === 'logo_sekolah_img') ? (1123 - xOffset - el.width) : (el.x + xOffset);
         }
         
         newElement.y = el.y + yOffset;
@@ -52,30 +44,46 @@ const generateInitialPiagamLayout = (settings) => {
         return newElement;
     });
     
-    // Find the bottom of the header to position the rest of the content
-    const kopBottomY = Math.max(...adaptedKopElements.map(el => (el.y + (el.height || 0))), 150) + 10;
+    // REQUEST: move horizontal line closer to header text
+    const lineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
+    if (lineEl) {
+        lineEl.y -= 25; // Move up 25px
+    }
+
+    const kopBottomY = Math.max(...adaptedKopElements.map(el => (el.y + (el.height || el.fontSize || 0))), 150) + 5; // Reduced buffer from 10 to 5
+
+    // REQUEST: Adjust vertical spacing for main content to be more balanced and avoid overlapping background
+    const contentStartY = kopBottomY + 40; // Start content lower, reduced from 60
+    const rankBoxWidth = 300;
+    const rankBoxHeight = 50;
+    const rankBoxX = (1123 - rankBoxWidth) / 2;
+    const rankBoxY = contentStartY + 160;
+
+    const paragraphY = rankBoxY + rankBoxHeight + 30; // Reduced gap from 40
+    const signatureY = paragraphY + 90; // Reduced gap from 100
 
     return [
         ...adaptedKopElements,
-        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: kopBottomY + 30, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'diberikan_kepada', type: 'text', content: 'diberikan kepada:', x: 61.5, y: kopBottomY + 90, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'student_name', type: 'text', content: '[NAMA LENGKAP SISWA]', x: 61.5, y: kopBottomY + 160, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: kopBottomY + 220, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'rank_text', type: 'text', content: '[PERINGKAT SATU]', x: 61.5, y: kopBottomY + 270, width: 1000, fontSize: 32, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [Nama Kelas] Semester [Semester] Tahun Pelajaran [Tahun Ajaran]', x: 61.5, y: kopBottomY + 320, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'detail_text_2', type: 'text', content: 'dengan rata-rata nilai [Rata-rata]', x: 61.5, y: kopBottomY + 345, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_1', type: 'text', content: 'Semoga prestasi yang diraih menjadi motivasi untuk meraih kesuksesan', x: 61.5, y: kopBottomY + 390, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_2', type: 'text', content: 'di masa yang akan datang.', x: 61.5, y: kopBottomY + 415, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 50, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 140, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
-        // Signatures for landscape (wider separation)
-        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah,', x: 150, y: 620, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'headmaster_name', type: 'text', content: '[Nama Kepala Sekolah]', x: 150, y: 720, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'headmaster_nip', type: 'text', content: 'NIP. [NIP Kepala Sekolah]', x: 150, y: 745, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
+        { id: 'rank_text', type: 'text', content: 'PERINGKAT [RANK]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
 
-        { id: 'teacher_date_place', type: 'text', content: '[Tempat], [Tanggal Rapor]', x: 673, y: 600, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_label', type: 'text', content: 'Wali Kelas,', x: 673, y: 620, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_name', type: 'text', content: '[Nama Wali Kelas]', x: 673, y: 720, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_nip', type: 'text', content: 'NIP. [NIP Wali Kelas]', x: 673, y: 745, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        
+        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+
+        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
     ];
 };
 
@@ -185,19 +193,22 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                         let textAnchor = "start", xPos = el.x;
                                         if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                                         else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                        elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none' } }, el.content);
+                                        elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
                                     } else if (el.type === 'image') {
                                         const imageUrl = String(settings[el.content] || '');
                                         elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                                    } else if (el.type === 'line') {
-                                        elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black" });
+                                    } else if (el.type === 'rect' || el.type === 'line') { // Support for rect type
+                                        elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
                                     } else {
                                         return null;
                                     }
                                     
+                                    const selectionBoxHeight = (el.type === 'text') ? (el.fontSize || 14) * 1.2 : (el.height || 0);
+                                    const selectionBoxY = (el.type === 'text') ? el.y - (el.fontSize || 14) : el.y;
+
                                     return React.createElement('g', commonProps,
                                         elementRender,
-                                        isSelected && React.createElement('rect', { x: el.x, y: el.y - (el.fontSize || 14), width: el.width, height: (el.fontSize || 14) * 1.2, fill: "none", stroke: "#4f46e5", strokeWidth: "2", strokeDasharray: "4 4", style: { pointerEvents: 'none' } })
+                                        isSelected && React.createElement('rect', { x: el.x, y: selectionBoxY, width: el.width, height: selectionBoxHeight, fill: "none", stroke: "#4f46e5", strokeWidth: "2", strokeDasharray: "4 4", style: { pointerEvents: 'none' } })
                                     );
                                 })
                            )
@@ -206,7 +217,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                     React.createElement('div', { className: "w-72 bg-white p-4 border-l overflow-y-auto" },
                         React.createElement('h3', { className: "font-semibold mb-2" }, "Alat"),
                         React.createElement('button', { onClick: addElement, className: "w-full text-left p-2 rounded hover:bg-slate-100 mb-4" }, "Tambah Teks"),
-                         selectedElement ? (
+                         selectedElement && selectedElement.type === 'text' ? (
                              React.createElement('div', { className: "space-y-4 pt-4 border-t" },
                                 React.createElement('h3', { className: "font-semibold" }, "Properti Teks"),
                                 React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Teks"), React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 })),
@@ -215,6 +226,13 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                 React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), React.createElement('option', { value: "system-ui" }, "System UI (Modern)"))),
                                 React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId, { fontWeight: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
                                 React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId, { textAlign: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan"))),
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: "text-sm" }, "Garis Bawah"),
+                                    React.createElement('select', { value: selectedElement.textDecoration || 'none', onChange: e => updateElement(selectedElementId, { textDecoration: e.target.value }), className: "w-full p-1 border rounded" },
+                                        React.createElement('option', { value: "none" }, "Tidak"),
+                                        React.createElement('option', { value: "underline" }, "Ya")
+                                    )
+                                ),
                                 React.createElement('button', { onClick: deleteElement, className: "w-full text-left p-2 rounded text-red-600 hover:bg-red-100 mt-4" }, "Hapus Elemen")
                              )
                          ) : React.createElement('p', { className: "text-sm text-slate-500 pt-4 border-t" }, "Pilih sebuah elemen teks untuk melihat propertinya.")
@@ -225,43 +243,56 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
     );
 };
 
-const DefaultPiagamBackground = () => (
-    React.createElement('g', { 'data-name': "default-background" },
-        // Outer Frame (Thick, Dark Blue)
-        React.createElement('rect', { x: "60", y: "60", width: "1003", height: "674", fill: "none", stroke: "#0d3d56", strokeWidth: "6" }),
-        // Inner Frame (Thin, Gold)
-        React.createElement('rect', { x: "68", y: "68", width: "987", height: "658", fill: "none", stroke: "#bda147", strokeWidth: "2" }),
-        
-        // Top-Left Corner
-        React.createElement('g', { transform: "translate(60, 60)" },
-            React.createElement('path', { d: "M0,150 Q 60,60 150,0", stroke: "#0d3d56", strokeWidth: "8", fill: "none" }),
-            React.createElement('path', { d: "M15,145 Q 65,65 145,15", stroke: "#bda147", strokeWidth: "3", fill: "none" }),
-            React.createElement('path', { d: "M0,80 C 30,50 50,30 80,0", stroke: "#0d3d56", strokeWidth: "2", fill: "none" }),
-            React.createElement('path', { d: "M20,90 C 45,65 65,45 90,20", stroke: "#bda147", strokeWidth: "1", fill: "none" })
-        ),
-        // Top-Right Corner
-        React.createElement('g', { transform: "translate(1063, 60) scale(-1, 1)" },
-            React.createElement('path', { d: "M0,150 Q 60,60 150,0", stroke: "#0d3d56", strokeWidth: "8", fill: "none" }),
-            React.createElement('path', { d: "M15,145 Q 65,65 145,15", stroke: "#bda147", strokeWidth: "3", fill: "none" }),
-            React.createElement('path', { d: "M0,80 C 30,50 50,30 80,0", stroke: "#0d3d56", strokeWidth: "2", fill: "none" }),
-            React.createElement('path', { d: "M20,90 C 45,65 65,45 90,20", stroke: "#bda147", strokeWidth: "1", fill: "none" })
-        ),
-        // Bottom-Left Corner
-        React.createElement('g', { transform: "translate(60, 734) scale(1, -1)" },
-            React.createElement('path', { d: "M0,150 Q 60,60 150,0", stroke: "#0d3d56", strokeWidth: "8", fill: "none" }),
-            React.createElement('path', { d: "M15,145 Q 65,65 145,15", stroke: "#bda147", strokeWidth: "3", fill: "none" }),
-            React.createElement('path', { d: "M0,80 C 30,50 50,30 80,0", stroke: "#0d3d56", strokeWidth: "2", fill: "none" }),
-            React.createElement('path', { d: "M20,90 C 45,65 65,45 90,20", stroke: "#bda147", strokeWidth: "1", fill: "none" })
-        ),
-        // Bottom-Right Corner
-        React.createElement('g', { transform: "translate(1063, 734) scale(-1, -1)" },
-            React.createElement('path', { d: "M0,150 Q 60,60 150,0", stroke: "#0d3d56", strokeWidth: "8", fill: "none" }),
-            React.createElement('path', { d: "M15,145 Q 65,65 145,15", stroke: "#bda147", strokeWidth: "3", fill: "none" }),
-            React.createElement('path', { d: "M0,80 C 30,50 50,30 80,0", stroke: "#0d3d56", strokeWidth: "2", fill: "none" }),
-            React.createElement('path', { d: "M20,90 C 45,65 65,45 90,20", stroke: "#bda147", strokeWidth: "1", fill: "none" })
+const DefaultPiagamBackground = () => {
+    const s = 24; // block size
+    const margin = 0;
+    const blue = "#00B2FF"; // A bright, sky blue
+    const yellow = "#FFD700"; // A golden yellow
+    const darkBlue = "#005F88"; // A darker, coordinating blue
+    const width = 1123;
+    const height = 794;
+    const cornerSize = s * 3;
+
+    // A reusable component for the new corner design, inspired by the user's image
+    const CornerPattern = ({ transform }) => (
+        React.createElement('g', { transform: transform },
+            // This pattern creates the stepped corner from the user's image idea
+            React.createElement('rect', { x: 0, y: 0, width: s, height: s, fill: darkBlue }),
+            React.createElement('rect', { x: s, y: 0, width: s * 2, height: s, fill: blue }),
+            React.createElement('rect', { x: 0, y: s, width: s, height: s * 2, fill: blue }),
+            React.createElement('rect', { x: s, y: s, width: s, height: s, fill: yellow }),
+            React.createElement('rect', { x: s, y: s * 2, width: s, height: s, fill: yellow }),
+            React.createElement('rect', { x: s * 2, y: s, width: s, height: s, fill: yellow })
         )
-    )
-);
+    );
+
+    return (
+        React.createElement('g', { 'data-name': "default-background" },
+            // Long connecting bars
+            // Top bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin + cornerSize, y: margin, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: margin + s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
+            
+            // Bottom bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s*2, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
+
+            // Left bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: margin + s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
+
+            // Right bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: width - margin - s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: width - margin - s*2, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
+            
+            // Corner patterns placed at the four corners, transformed appropriately
+            React.createElement(CornerPattern, { transform: `translate(${margin}, ${margin})` }), // Top-Left
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` }), // Top-Right
+            React.createElement(CornerPattern, { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` }), // Bottom-Left
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` }) // Bottom-Right
+        )
+    );
+};
 
 
 const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
@@ -271,27 +302,27 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
 
     const replacePlaceholders = (text) => {
         if (!text) return '';
-        const rankString = rank ? `PERINGKAT ${rankToWords(rank)}` : '';
+        const rankString = rank ? `${toRoman(rank)}` : '';
         const classRoman = toRoman(parseInt(settings.nama_kelas, 10)) || settings.nama_kelas;
         
         return text
-            .replace(/\[NAMA LENGKAP SISWA\]/gi, (student.namaLengkap || '').toUpperCase())
-            .replace(/\[PERINGKAT SATU\]/gi, rankString)
-            .replace(/\[Nama Kelas\]/gi, classRoman)
-            .replace(/\[Semester\]/gi, settings.semester || '')
-            .replace(/\[Tahun Ajaran\]/gi, settings.tahun_ajaran || '')
-            .replace(/\[Rata-rata\]/gi, average || '')
-            .replace(/\[Nama Kepala Sekolah\]/gi, settings.nama_kepala_sekolah || '')
-            .replace(/\[NIP Kepala Sekolah\]/gi, settings.nip_kepala_sekolah || '-')
-            .replace(/\[Nama Wali Kelas\]/gi, settings.nama_wali_kelas || '')
-            .replace(/\[NIP Wali Kelas\]/gi, settings.nip_wali_kelas || '-')
-            .replace(/\[Tempat\], \[Tanggal Rapor\]/gi, settings.tanggal_rapor || '');
+            .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '').toUpperCase())
+            .replace(/\[RANK\]/gi, rankString)
+            .replace(/\[nama kelas\]/gi, classRoman)
+            .replace(/\[semester\]/gi, settings.semester || '')
+            .replace(/\[tahun pelajaran\]/gi, settings.tahun_ajaran || '')
+            .replace(/\[nilai rata-rata\]/gi, average || '')
+            .replace(/\[nama kepala sekolah\]/gi, settings.nama_kepala_sekolah || '')
+            .replace(/\[nip kepala sekolah\]/gi, settings.nip_kepala_sekolah || '')
+            .replace(/\[nama wali kelas\]/gi, settings.nama_wali_kelas || '')
+            .replace(/\[nip wali kelas\]/gi, settings.nip_wali_kelas || '')
+            .replace(/Tempat, Tanggal Rapor/gi, settings.tanggal_rapor || 'Tempat, Tanggal Rapor');
     };
 
     return (
         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
             settings.piagam_background && React.createElement('img', { src: settings.piagam_background, alt: "Piagam Background", className: 'absolute top-0 left-0 w-full h-full object-cover' }),
-            React.createElement('div', { className: "absolute w-full h-full", style: { padding: '1.5cm', boxSizing: 'border-box' } },
+            React.createElement('div', { className: "absolute w-full h-full" },
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
                     !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
                     layout.map(el => {
@@ -300,12 +331,12 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                             let textAnchor = "start", xPos = el.x;
                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily }, replacePlaceholders(el.content));
+                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
                         } else if (el.type === 'image') {
                             const imageUrl = String(settings[el.content] || '');
                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                        } else if (el.type === 'line') {
-                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black" });
+                        } else if (el.type === 'rect' || el.type === 'line') {
+                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
                         } else {
                             return null;
                         }
