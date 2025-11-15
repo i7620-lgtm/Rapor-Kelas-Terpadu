@@ -693,9 +693,23 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                              React.createElement('section', null,
                                 React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Periode Akademik"),
                                  React.createElement('div', { className: "space-y-4" },
-                                    React.createElement(FormField, { label: "Nama Kelas", id: "nama_kelas", value: settings.nama_kelas, onChange: onSettingsChange, onBlur: onSave }),
+                                    React.createElement(FormField, { label: "Nama Kelas", id: "nama_kelas", placeholder: "e.g. 6a atau 6A atau VIA", value: settings.nama_kelas, onChange: onSettingsChange, onBlur: onSave }),
                                     React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Semester", id: "semester", placeholder: "e.g. Ganjil atau Genap", value: settings.semester, onChange: onSettingsChange, onBlur: onSave}),
+                                    React.createElement('div', null,
+                                        React.createElement('label', { htmlFor: 'semester', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Semester'),
+                                        React.createElement('select', { 
+                                            id: 'semester', 
+                                            name: 'semester', 
+                                            value: settings.semester || '', 
+                                            onChange: onSettingsChange, 
+                                            onBlur: onSave, 
+                                            className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
+                                        },
+                                            React.createElement('option', { value: '' }, 'Pilih Semester...'),
+                                            React.createElement('option', { value: 'Ganjil' }, 'Ganjil'),
+                                            React.createElement('option', { value: 'Genap' }, 'Genap')
+                                        )
+                                    ),
                                     React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave})
                                 )
                             ),
