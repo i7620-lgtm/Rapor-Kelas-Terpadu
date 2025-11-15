@@ -680,6 +680,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                     React.createElement(FileInputField, { label: "Logo Sekolah", id: "logo_sekolah", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null }),
                                     React.createElement(FileInputField, { label: "Logo Dinas Pendidikan", id: "logo_dinas", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null }),
                                     React.createElement(FileInputField, { label: "Logo Cover Rapor", id: "logo_cover", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_cover === 'string' ? settings.logo_cover : null }),
+                                    React.createElement(FileInputField, { label: "Background Piagam", id: "piagam_background", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.piagam_background === 'string' ? settings.piagam_background : null }),
                                     React.createElement('div', { className: "pt-4" },
                                         React.createElement('h4', { className: "text-lg font-semibold text-slate-700" }, "Pratinjau Kop Surat"),
                                         React.createElement('p', { className: "text-sm text-slate-500 mb-4" }, "Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah."),
