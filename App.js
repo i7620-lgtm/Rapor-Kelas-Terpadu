@@ -11,6 +11,7 @@ import CatatanWaliKelasPage from './components/CatatanWaliKelasPage.js';
 import DataAbsensiPage from './components/DataAbsensiPage.js';
 import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
+import PrintPiagamPage from './components/PrintPiagamPage.js';
 import PrintLegerPage from './components/PrintLegerPage.js';
 import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
@@ -98,13 +99,14 @@ const initialSettings = {
   nama_dinas_pendidikan: '', nama_sekolah: '', npsn: '', alamat_sekolah: '', desa_kelurahan: '',
   kecamatan: '', kota_kabupaten: '', provinsi: '', kode_pos: '', email_sekolah: '',
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
-  logo_dinas: null, logo_cover: null,
+  logo_dinas: null, logo_cover: null, piagam_background: null,
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   cocurricular_theme: '',
   predikats: { a: '90', b: '80', c: '70' },
   gradeCalculation: {},
-  kop_layout: []
+  kop_layout: [],
+  piagam_layout: [],
 };
 
 const initialStudents = [];
@@ -317,7 +319,7 @@ const App = () => {
 
         // Sheet 2: Pengaturan
         const settingsData = Object.entries(initialSettings)
-            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover'].includes(key))
+            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout'].includes(key))
             .map(([key, _]) => [key, settings[key] || '']);
         settingsData.unshift(["Kunci Pengaturan", "Nilai"]);
         
@@ -872,6 +874,7 @@ const App = () => {
     }, [settings.gradeCalculation, settings.predikats.c]);
     const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
     const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
+    const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
     const handleDriveFileSelection = async (fileId) => {
         if (!fileId) { setIsDriveModalOpen(false); return; }
         setIsDriveModalOpen(false);
@@ -944,6 +947,7 @@ const App = () => {
       case 'DATA_EKSTRAKURIKULER': return React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: handleUpdateStudentExtracurriculars, showToast: showToast });
       case 'PENGATURAN': return React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: saveSettings, onUpdateKopLayout: handleUpdateKopLayout, subjects, onUpdateSubjects: onUpdateSubjects, extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars });
       case 'PRINT_RAPOR': return React.createElement(PrintRaporPage, { students, settings, grades, attendance, notes, cocurricularData, subjects, learningObjectives, studentExtracurriculars, extracurriculars, showToast: showToast });
+      case 'PRINT_PIAGAM': return React.createElement(PrintPiagamPage, { students, settings, grades, subjects, onUpdatePiagamLayout: handleUpdatePiagamLayout, showToast: showToast });
       case 'PRINT_LEGER': return React.createElement(PrintLegerPage, { students, settings, grades, subjects, showToast: showToast });
       default:
         const navItem = NAV_ITEMS.find(item => item.id === activePage);
