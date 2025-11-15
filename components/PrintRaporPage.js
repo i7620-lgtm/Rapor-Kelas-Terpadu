@@ -130,7 +130,7 @@ const formatDate = (dateString) => {
 const capitalize = (s) => {
     if (typeof s !== 'string' || !s) return '';
     const trimmed = s.trim().replace(/[.,;]$/, '');
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 };
 
 const lowercaseFirst = (s) => {
@@ -182,7 +182,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
     const gradedTps = objectivesForSubject
-        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.tp?.[index] })) // Apply cleanTpText here!
+        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.slm?.[index]?.scores?.[index] })) // Apply cleanTpText here!
         .filter(tp => typeof tp.score === 'number' && tp.score !== null);
     
     if (gradedTps.length === 0) {
@@ -191,7 +191,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     
     if (gradedTps.length === 1) {
         // Now, gradedTps[0].text is already cleaned.
-        return { highest: `${studentName} menunjukkan penguasaan yang baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
+        return { highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
     }
 
     const scores = gradedTps.map(tp => tp.score);
@@ -410,7 +410,7 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
                 ),
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'py-0 px-1' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.nama_sekolah || ''}`),
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : ''}`)
+                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : ''}`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'py-0 px-1' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.alamat_sekolah || ''}`),
@@ -453,9 +453,9 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
 const ReportFooterContent = React.forwardRef((props, ref) => {
     const { 
         student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
-        showCocurricular, showExtra, showNotes, showAttendance, showParentTeacherSignature, showHeadmasterSignature, showDecision
+        showCocurricular, showExtra, showNotes, showAttendance, showDecision, showParentTeacherSignature, showHeadmasterSignature
     } = props;
-    const { cocurricularRef, extraRef, attendanceAndNotesRef, signaturesRef, headmasterRef, decisionRef } = ref || {};
+    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef } = ref || {};
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
@@ -563,27 +563,23 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 )
             ),
             (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-2 items-stretch' },
-                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '37%' } },
+                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '6.5cm' } },
                     React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
-                     React.createElement('div', { className: 'flex-grow flex flex-col justify-around' },
-                        React.createElement('div', { className: 'flex items-center border-b border-black px-2 py-1' },
-                            React.createElement('span', { className: 'w-28' }, 'Sakit'),
-                            React.createElement('span', { className: 'px-1' }, ':'),
-                            React.createElement('span', { className: 'flex-1 text-left' }, `${sakitCount} hari`)
-                        ),
-                        React.createElement('div', { className: 'flex items-center border-b border-black px-2 py-1' },
-                            React.createElement('span', { className: 'w-28' }, 'Izin'),
-                            React.createElement('span', { className: 'px-1' }, ':'),
-                            React.createElement('span', { className: 'flex-1 text-left' }, `${izinCount} hari`)
-                        ),
-                        React.createElement('div', { className: 'flex items-center px-2 py-1' },
-                            React.createElement('span', { className: 'w-28' }, 'Tanpa Keterangan'),
-                            React.createElement('span', { className: 'px-1' }, ':'),
-                            React.createElement('span', { className: 'flex-1 text-left' }, `${alpaCount} hari`)
-                        )
+                     React.createElement('div', { className: 'flex-grow flex flex-col' },
+                        ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
+                            const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
+                            return React.createElement('div', {
+                                key: item,
+                                className: `flex items-center px-2 py-1 flex-1 ${index < arr.length - 1 ? 'border-b border-black' : ''}`
+                            },
+                                React.createElement('span', { className: 'w-28' }, item),
+                                React.createElement('span', { className: 'px-1' }, ':'),
+                                React.createElement('span', { className: 'flex-1 text-left' }, `${value} hari`)
+                            )
+                        })
                     )
                 ),
-                showNotes && React.createElement('div', { className: 'border-2 border-black p-2 flex-grow', style: { fontSize: '10pt' } },
+                showNotes && React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt', width: '11.5cm' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
                     React.createElement('div', { className: 'min-h-[3rem]' }, studentNote || 'Tidak ada catatan.')
                 )
@@ -1057,7 +1053,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         cover: selectedPages.cover,
                         schoolIdentity: selectedPages.schoolIdentity,
                         studentIdentity: selectedPages.studentIdentity,
-                        academic: selectedPages.academic
+                        academic: selectedPages.academic,
                     };
 
                     return React.createElement(ReportPagesForStudent, { 
