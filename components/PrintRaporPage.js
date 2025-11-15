@@ -1,6 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
+import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
+
+const getPhase = (gradeNumber) => {
+    if (gradeNumber >= 5) return 'C'; // Kelas 5 & 6
+    if (gradeNumber >= 3) return 'B'; // Kelas 3 & 4
+    if (gradeNumber >= 1) return 'A'; // Kelas 1 & 2
+    return '';
+};
 
 // Define fixed heights and margins for layout consistency
 const HEADER_HEIGHT_CM = 6.0; // Height of the report header area in cm
@@ -122,7 +130,7 @@ const formatDate = (dateString) => {
 const capitalize = (s) => {
     if (typeof s !== 'string' || !s) return '';
     const trimmed = s.trim().replace(/[.,;]$/, '');
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 };
 
 const lowercaseFirst = (s) => {
@@ -134,17 +142,30 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-    const studentName = capitalize(studentNameRaw);
+    const studentName = capitalize(studentNameRaw); // e.g., "Ariel"
 
+    // Helper to clean up TP text by replacing "Ananda [StudentName/Nickname]" or "Ananda " at the start.
     const cleanTpText = (text) => {
         if (!text) return '';
-        let cleanedText = text.replace(new RegExp(`^ananda\\s+${studentNameRaw}\\s`, 'i'), '');
+        let cleanedText = text;
+        
+        // Remove "Ananda <student's nickname/first name> "
+        // Example: "Ananda Ariel menunjukkan..." becomes "menunjukkan..."
+        cleanedText = cleanedText.replace(new RegExp(`^ananda\\s+${studentNameRaw}\\s`, 'i'), '');
+        
+        // Remove generic "Ananda " if it's at the very beginning
+        // Example: "Ananda menunjukkan penguasaan..." becomes "menunjukkan penguasaan..."
         cleanedText = cleanedText.replace(/^ananda\s+/i, '');
+
         return cleanedText.trim();
     };
 
+    const defaultReturn = { highest: `${studentName} telah mencapai tujuan pembelajaran.`, lowest: '' };
+
     const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-    if (currentGradeNumber === null) return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
+    if (currentGradeNumber === null) {
+        return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
+    }
     
     let objectivesForCurrentClass = null;
     for (const key in learningObjectives) {
@@ -155,37 +176,29 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
 
     const objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
-    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
-
-    if (!detailedGrade || !detailedGrade.slm || objectivesForSubject.length === 0) {
+    if (!objectivesForSubject || objectivesForSubject.length === 0) {
         return { highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" };
     }
-    
-    const allGradedTps = [];
-    detailedGrade.slm.forEach(slm => {
-        const slmObjectives = objectivesForSubject.filter(obj => obj.slmId === slm.id);
-        (slm.scores || []).forEach((score, index) => {
-            if (typeof score === 'number' && slmObjectives[index]) {
-                allGradedTps.push({
-                    text: cleanTpText(slmObjectives[index].text),
-                    score: score
-                });
-            }
-        });
-    });
 
-    if (allGradedTps.length === 0) {
+    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    const gradedTps = objectivesForSubject
+        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.tp?.[index] })) // Apply cleanTpText here!
+        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
+    
+    if (gradedTps.length === 0) {
         return { highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" };
     }
     
-    if (allGradedTps.length === 1) {
-        return { highest: `${studentName} menunjukkan penguasaan yang baik dalam ${lowercaseFirst(allGradedTps[0].text)}.`, lowest: '' };
+    if (gradedTps.length === 1) {
+        // Now, gradedTps[0].text is already cleaned.
+        return { highest: `${studentName} menunjukkan penguasaan yang baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
     }
 
-    const scores = allGradedTps.map(tp => tp.score);
+    const scores = gradedTps.map(tp => tp.score);
     const allScoresEqual = scores.every(s => s === scores[0]);
 
     if (allScoresEqual) {
+        // This is generic, does not use specific TP text, so it's fine.
         return { 
             highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
@@ -193,15 +206,16 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     } else {
         let maxScore = -1;
         let minScore = 101;
-        allGradedTps.forEach(tp => {
-            if (tp.score > maxScore) maxScore = tp.score;
-            if (tp.score < minScore) minScore = tp.score;
+        scores.forEach(s => {
+            if (s > maxScore) maxScore = s;
+            if (s < minScore) minScore = s;
         });
         
-        const highestTp = allGradedTps.find(tp => tp.score === maxScore);
-        const lowestTp = allGradedTps.find(tp => tp.score === minScore);
+        const highestTp = gradedTps.find(tp => tp.score === maxScore);
+        const lowestTp = gradedTps.find(tp => tp.score === minScore);
         
         if (highestTp && lowestTp) {
+            // `highestTp.text` and `lowestTp.text` are already cleaned here.
             return { 
                 highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
                 lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
@@ -378,8 +392,11 @@ const StudentIdentityPage = ({ student, settings }) => {
     );
 };
 
-const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
-    React.createElement('div', { ref: ref },
+const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
+    const gradeNumber = getGradeNumber(settings.nama_kelas);
+    const phase = getPhase(gradeNumber);
+    
+    return React.createElement('div', { ref: ref },
         React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
         React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
             React.createElement('tbody', null,
@@ -389,11 +406,11 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
                 ),
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'py-0 px-1' }, 'NISN/NIS'), React.createElement('td', { className: 'py-0 px-1' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Fase'), React.createElement('td', { className: 'py-0 px-1' }, `: C`)
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Fase'), React.createElement('td', { className: 'py-0 px-1' }, `: ${phase}`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'py-0 px-1' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.nama_sekolah || ''}`),
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : '2'}`)
+                    React.createElement('td', { className: 'py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : ''}`)
                 ),
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'py-0 px-1' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.alamat_sekolah || ''}`),
@@ -402,16 +419,16 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => (
             )
         )
     )
-));
+});
 
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideScores }, ref) => (
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt', tableLayout: 'fixed' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
-                !hideScores && React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: `border-2 border-black px-1 py-0 ${hideScores ? 'w-[75%]' : 'w-[63%]'}` }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir'),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[63%]' }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
@@ -419,7 +436,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                 React.createElement('tr', { key: item.id },
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, startingIndex + index),
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top' }, item.name),
-                    !hideScores && React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top leading-tight' },
                         React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
@@ -435,10 +452,10 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
 
 const ReportFooterContent = React.forwardRef((props, ref) => {
     const { 
-        student, settings, attendance, notes, studentExtracurriculars, extracurriculars,
-        showExtra, showNotes, showAttendance, showParentTeacherSignature, showHeadmasterSignature 
+        student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+        showCocurricular, showExtra, showNotes, showAttendance, showParentTeacherSignature, showHeadmasterSignature, showDecision
     } = props;
-    const { extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef } = ref || {};
+    const { cocurricularRef, extraRef, attendanceAndNotesRef, signaturesRef, headmasterRef, decisionRef } = ref || {};
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
@@ -455,55 +472,123 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
             return { name: activity?.name, description };
         }).filter(Boolean);
+        
+    const cocurricularDescription = useMemo(() => {
+        const studentCoData = cocurricularData?.[student.id];
+        const theme = settings.cocurricular_theme;
+        const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+
+        const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
+            ? studentCoData.dimensionRatings
+            : {};
+        
+        const hasRatings = Object.values(ratings).some(r => r && r !== "---");
+
+        if (!theme && !hasRatings) {
+            return "Data kokurikuler belum diisi.";
+        }
+
+        let description = '';
+        if (theme) {
+            description = `Ananda ${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}". `;
+        }
+
+        if (hasRatings) {
+            const strongDimensions = COCURRICULAR_DIMENSIONS
+                .filter(dim => ['SB', 'BSH'].includes(ratings[dim.id]))
+                .map(dim => dim.label.toLowerCase());
+
+            if (strongDimensions.length > 0) {
+                const last = strongDimensions.pop();
+                const first = strongDimensions.join(', ');
+                const dimensionText = strongDimensions.length > 0 ? `${first}, dan ${last}` : last;
+                description += `Ia menunjukkan perkembangan yang sangat baik dalam aspek ${dimensionText}.`;
+            } else {
+                const developingDimensions = COCURRICULAR_DIMENSIONS
+                    .filter(dim => ['MB'].includes(ratings[dim.id]))
+                    .map(dim => dim.label.toLowerCase());
+                
+                if (developingDimensions.length > 0) {
+                     const last = developingDimensions.pop();
+                     const first = developingDimensions.join(', ');
+                     const dimensionText = developingDimensions.length > 0 ? `${first}, dan ${last}` : last;
+                     description += `Ia mulai menunjukkan perkembangan dalam aspek ${dimensionText}.`;
+                } else {
+                    description += `Perlu bimbingan lebih lanjut untuk mengembangkan dimensi profil lulusan.`;
+                }
+            }
+        } else if (theme) {
+            description += 'Penilaian dimensi profil lulusan perlu ditambahkan.';
+        }
+        
+        return description.trim();
+    }, [student, settings, cocurricularData]);
 
     const renderDecision = () => {
         const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
         if (!isSemesterGenap) return null;
 
         const gradeLevel = getGradeNumber(settings.nama_kelas);
-        let passText, passTo;
+        const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
 
+        let promotionText;
         if (gradeLevel === 6) {
-            passText = 'LULUS';
+            promotionText = 'LULUS';
         } else {
-            passText = 'Naik ke Kelas';
             const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRomanPlusOne = {1: 'II', 2: 'III', 3: 'IV', 4: 'V', 5: 'VI', 6: 'VI'}[nextGrade-1];
-            passTo = `${nextGrade} (${nextGradeRomanPlusOne})`;
+            const nextGradeRoman = {1: 'II', 2: 'III', 3: 'IV', 4: 'V', 5: 'VI'}[nextGrade - 1] || '';
+            promotionText = `Naik ke Kelas ${nextGrade} (${nextGradeRoman})`;
         }
         
-        return React.createElement('div', { className: 'border-2 border-black p-2 mt-2' },
-            React.createElement('div', { className: 'font-bold' }, 'Keputusan: '),
-            React.createElement('div', null, 'Berdasarkan pencapaian seluruh kompetensi, murid dinyatakan:'),
-            React.createElement('div', { className: 'font-bold mt-1 border-y-2 border-black text-center py-1' }, 
-                `${passText} ${passTo || ''}`.trim()
+        return React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
+            React.createElement('div', { className: 'font-bold border-y-2 border-black text-center py-1' }, 
+                `Berdasarkan hasil belajar yang dicapai, ${nickname} dinyatakan:`
+            ),
+            React.createElement('div', { className: 'font-bold mt-1 text-center py-1' },
+                promotionText
             )
         );
     };
 
     return (
         React.createElement('div', { className: 'mt-2' },
+            showCocurricular && cocurricularDescription && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
+                React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
+                React.createElement('div', { className: 'min-h-[2rem]' }, cocurricularDescription)
+            ),
             showExtra && React.createElement('div', { ref: extraRef, className: 'mt-2' },
-                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10.5pt' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[25%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[70%]' }, 'Keterangan'))),
+                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
+                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[32%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[63%]' }, 'Keterangan'))),
                     React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
                 )
             ),
-            showNotes && React.createElement('div', { ref: notesRef, className: 'border-2 border-black p-2 mt-2', style: { fontSize: '10.5pt' } },
-                React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
-                React.createElement('div', { className: 'min-h-[3rem]' }, studentNote || 'Tidak ada catatan.')
-            ),
-            showAttendance && React.createElement('div', { ref: attendanceRef, className: 'grid grid-cols-2 gap-4 mt-2' },
-                React.createElement('table', { className: 'border-collapse border-2 border-black', style: { fontSize: '10.5pt' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold' }, React.createElement('td', { colSpan: 2, className: 'border-2 border-black px-2 py-1' }, 'Ketidakhadiran'))),
-                    React.createElement('tbody', null,
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] w-2/3 pl-4' }, 'Sakit'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${sakitCount} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] pl-4' }, 'Izin'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${izinCount} hari`)),
-                        React.createElement('tr', null, React.createElement('td', { className: 'border border-black px-2 py-[2px] pl-4' }, 'Tanpa Keterangan'), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, `: ${alpaCount} hari`))
+            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-2 items-stretch' },
+                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '37%' } },
+                    React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
+                     React.createElement('div', { className: 'flex-grow flex flex-col justify-around' },
+                        React.createElement('div', { className: 'flex items-center border-b border-black px-2 py-1' },
+                            React.createElement('span', { className: 'w-28' }, 'Sakit'),
+                            React.createElement('span', { className: 'px-1' }, ':'),
+                            React.createElement('span', { className: 'flex-1 text-left' }, `${sakitCount} hari`)
+                        ),
+                        React.createElement('div', { className: 'flex items-center border-b border-black px-2 py-1' },
+                            React.createElement('span', { className: 'w-28' }, 'Izin'),
+                            React.createElement('span', { className: 'px-1' }, ':'),
+                            React.createElement('span', { className: 'flex-1 text-left' }, `${izinCount} hari`)
+                        ),
+                        React.createElement('div', { className: 'flex items-center px-2 py-1' },
+                            React.createElement('span', { className: 'w-28' }, 'Tanpa Keterangan'),
+                            React.createElement('span', { className: 'px-1' }, ':'),
+                            React.createElement('span', { className: 'flex-1 text-left' }, `${alpaCount} hari`)
+                        )
                     )
                 ),
-                React.createElement('div', null, renderDecision())
+                showNotes && React.createElement('div', { className: 'border-2 border-black p-2 flex-grow', style: { fontSize: '10pt' } },
+                    React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
+                    React.createElement('div', { className: 'min-h-[3rem]' }, studentNote || 'Tidak ada catatan.')
+                )
             ),
+            showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-2' }, renderDecision()),
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center' }, 
@@ -548,17 +633,18 @@ const PageFooter = ({ student, settings, currentPage }) => {
 };
 
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, hideScores, ...restProps }) => {
-    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars } = restProps;
+const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, ...restProps }) => {
+    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
 
     const studentInfoRef = useRef(null);
     const tableHeaderRef = useRef(null);
     const tableBodyRef = useRef(null);
+    const cocurricularRef = useRef(null);
     const extraRef = useRef(null);
-    const notesRef = useRef(null);
-    const attendanceRef = useRef(null);
+    const attendanceAndNotesRef = useRef(null);
+    const decisionRef = useRef(null);
     const signaturesRef = useRef(null);
     const headmasterRef = useRef(null);
     const cmRef = useRef(null);
@@ -657,7 +743,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         setAcademicPageChunks(null); // Set to null to trigger measurement render
 
         const calculateChunks = () => {
-            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef];
+            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef];
             if (refs.some(ref => !ref.current)) {
                 // If any ref is not ready, retry
                 setTimeout(calculateChunks, 50);
@@ -678,9 +764,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             // 2. Footer Components
             const footerItems = [
+                { type: 'cocurricular', ref: cocurricularRef },
                 { type: 'extra', ref: extraRef },
-                { type: 'notes', ref: notesRef },
-                { type: 'attendance', ref: attendanceRef },
+                { type: 'attendanceAndNotes', ref: attendanceAndNotesRef },
+                { type: 'decision', ref: decisionRef },
                 { type: 'signatures', ref: signaturesRef },
                 { type: 'headmaster', ref: headmasterRef }
             ];
@@ -759,12 +846,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
                 } },
                     React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideScores: hideScores }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
                     React.createElement(ReportFooterContent, { 
-                        student, settings, attendance, notes, studentExtracurriculars, extracurriculars,
-                        showExtra: true, showNotes: true, showAttendance: true, 
+                        student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+                        showCocurricular: true, showExtra: true, showNotes: true, showAttendance: true, showDecision: true,
                         showParentTeacherSignature: true, showHeadmasterSignature: true,
-                        ref: { extraRef, notesRef, attendanceRef, signaturesRef, headmasterRef }
+                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, signaturesRef, headmasterRef }
                     })
                 )
             )
@@ -807,6 +894,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 }
 
                 const chunkItemTypes = new Set(chunk.map(item => item.type));
+                const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
+
 
                 return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
@@ -815,12 +904,14 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideScores: hideScores }),
+                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex }),
                         React.createElement(ReportFooterContent, { 
-                            student, settings, attendance, notes, studentExtracurriculars, extracurriculars,
+                            student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+                            showCocurricular: chunkItemTypes.has('cocurricular'),
                             showExtra: chunkItemTypes.has('extra'),
-                            showNotes: chunkItemTypes.has('notes'),
-                            showAttendance: chunkItemTypes.has('attendance'),
+                            showNotes: chunkItemTypes.has('attendanceAndNotes'),
+                            showAttendance: chunkItemTypes.has('attendanceAndNotes'),
+                            showDecision: chunkItemTypes.has('decision') && isSemesterGenap,
                             showParentTeacherSignature: chunkItemTypes.has('signatures'),
                             showHeadmasterSignature: chunkItemTypes.has('headmaster'),
                         })
@@ -851,12 +942,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isPrinting, setIsPrinting] = useState(false);
-    const [hideScores, setHideScores] = useState(false);
-    
-    const isFaseA = useMemo(() => {
-        const gradeNum = getGradeNumber(settings.nama_kelas);
-        return gradeNum === 1 || gradeNum === 2;
-    }, [settings.nama_kelas]);
 
     const handlePageSelectionChange = useCallback((e) => {
         const { name, checked } = e.target;
@@ -961,13 +1046,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                                 React.createElement('input', { type: "checkbox", name: page.key, checked: selectedPages[page.key] || false, onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                                 React.createElement('span', { className: "text-sm" }, page.label)
                             )
-                        )),
-                         isFaseA && (
-                            React.createElement('label', { className: "flex items-center space-x-2 pl-4 border-l ml-2" },
-                                React.createElement('input', { type: "checkbox", name: "hideScores", checked: hideScores, onChange: (e) => setHideScores(e.target.checked), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                                React.createElement('span', { className: "text-sm text-indigo-700 font-medium" }, "Cetak tanpa Nilai (Fase A)")
-                            )
-                        )
+                        ))
                     )
                 )
             ),
@@ -988,7 +1067,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         pageStyle: pageStyle,
                         selectedPages: studentSelectedPages,
                         paperSize: paperSize,
-                        hideScores: isFaseA && hideScores,
                         ...restProps
                     })
                 })
