@@ -2,17 +2,24 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 
 export const getGradeNumber = (str) => {
     if (!str) return null;
-    const match = str.match(/\d+/);
-    if (match) {
-        return parseInt(match[0], 10);
+    const trimmedStr = str.trim();
+    
+    // Priority 1: Check for an Arabic numeral at the beginning. Handles "6", "6A", "1 B".
+    const arabicMatch = trimmedStr.match(/^\d+/);
+    if (arabicMatch) {
+        return parseInt(arabicMatch[0], 10);
     }
-    const upperStr = str.toUpperCase();
-    if (upperStr.includes('VI')) return 6;
-    if (upperStr.includes('V')) return 5;
-    if (upperStr.includes('IV')) return 4;
-    if (upperStr.includes('III')) return 3;
-    if (upperStr.includes('II')) return 2;
-    if (upperStr.includes('I')) return 1;
+
+    // Priority 2: Check for Roman numerals at the beginning.
+    // Order is crucial: check for longer strings first (VI before V, IV before I).
+    const upperStr = trimmedStr.toUpperCase();
+    if (upperStr.startsWith('VI')) return 6;
+    if (upperStr.startsWith('V')) return 5;
+    if (upperStr.startsWith('IV')) return 4;
+    if (upperStr.startsWith('III')) return 3;
+    if (upperStr.startsWith('II')) return 2;
+    if (upperStr.startsWith('I')) return 1;
+
     return null;
 };
 
