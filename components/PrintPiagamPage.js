@@ -342,8 +342,16 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                 alt: "Piagam Background", 
                 className: 'absolute top-0 left-0 w-full h-full object-cover' 
             }),
-            React.createElement('div', { className: "absolute top-0 left-0 w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "none" },
+            React.createElement('div', {
+                style: {
+                    position: 'absolute',
+                    top: '1.5cm',
+                    left: '1.5cm',
+                    right: '1.5cm',
+                    bottom: '1.5cm',
+                }
+            },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMid meet" },
                     !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
                     layout.map(el => {
                         let elementRender;
@@ -418,29 +426,14 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         showToast('Mempersiapkan pratinjau cetak...', 'success');
         
         const styleId = 'print-piagam-style';
-        document.getElementById(styleId)?.remove(); // Hapus style lama jika ada
+        document.getElementById(styleId)?.remove();
         
         const style = document.createElement('style');
         style.id = styleId;
-        // Gunakan @page untuk margin, dan @media print untuk memastikan ukuran halaman diterapkan
         style.innerHTML = `
             @page {
                 size: ${paperSize} landscape;
-                margin: 1.5cm;
-            }
-            @media print {
-                html, body {
-                    width: ${PAPER_SIZES[paperSize].width};
-                    height: ${PAPER_SIZES[paperSize].height};
-                }
-                .report-page {
-                    width: 100%;
-                    height: 100%;
-                    margin: 0;
-                    padding: 0;
-                    box-shadow: none;
-                    border: none;
-                }
+                margin: 0;
             }
         `;
         document.head.appendChild(style);
@@ -448,8 +441,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
-            // Consider leaving the style tag for a bit in case print dialog is slow, or manage its removal better.
-            // For now, let's remove it after a short delay post-print call.
             setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
