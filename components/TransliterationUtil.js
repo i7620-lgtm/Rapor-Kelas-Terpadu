@@ -358,3 +358,57 @@ export const generateInitialLayout = (appSettings) => {
 
     return [...contentElements, lineElement];
 };
+
+/**
+ * Removes the background from a base64 encoded image.
+ * Assumes the background color is the color of the top-left pixel.
+ * @param {string} base64String The base64 string of the image.
+ * @param {number} tolerance A value from 0-255 to determine how close a color must be to the background color to be removed.
+ * @returns {Promise<string>} A promise that resolves with the base64 string of the new transparent PNG image.
+ */
+export function removeImageBackground(base64String, tolerance = 20) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Get the color of the top-left pixel as the background color
+            const bgR = data[0];
+            const bgG = data[1];
+            const bgB = data[2];
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Calculate the "distance" between the current pixel's color and the background color
+                const distance = Math.sqrt(Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2));
+
+                if (distance <= tolerance) {
+                    // Make the pixel transparent
+                    data[i + 3] = 0;
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+
+        img.onerror = (error) => {
+            reject(new Error("Gagal memuat gambar untuk diproses. Pastikan file gambar valid."));
+        };
+
+        img.src = base64String;
+    });
+}
