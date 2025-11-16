@@ -297,12 +297,9 @@ export const generateInitialLayout = (appSettings) => {
     const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
     const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
     const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
-    
     const alamatText = appSettings.alamat_sekolah || "Jalan Kebo Iwa Banjar Batuparas";
-
     const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
     const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
-
     const contactLine2 = [
         appSettings.kode_pos ? `Kode Pos: ${appSettings.kode_pos}` : null,
         appSettings.email_sekolah ? `Email: ${appSettings.email_sekolah}` : null,
@@ -310,45 +307,33 @@ export const generateInitialLayout = (appSettings) => {
         appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
     ].filter(Boolean).join(' | ');
 
-    let cumulativeShift = 0;
-    const dyLatin = 3; // Shift for major latin lines
-    const dySmall = 2; // Shift for smaller Latin lines (address/contact)
+    const contentElements = [];
 
-    return [
-        // Logos
+    contentElements.push(
         { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 50, width: 85, height: 85 },
         { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 50, width: 85, height: 85 },
-        
-        // Block 1: Pemda
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 20 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 39 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        
-        // Cumulative shift increases after each 'latin' line that needs extra spacing
-        (() => { cumulativeShift += dyLatin; return null; })(),
+        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 23, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 45, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 67, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 89, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
+        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 111, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 138, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 160, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
+        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 173, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 }
+    );
+    
+    if (contactLine2) {
+        contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 186, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+    }
 
-        // Block 2: Dinas Detail
-        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 59 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 78 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        
-        (() => { cumulativeShift += dyLatin; return null; })(),
-        
-        // Block 3: School
-        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 98 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 121 + cumulativeShift + dyLatin, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
+    const contentBottomY = Math.max(...contentElements.map(el => {
+        if (el.type === 'image') return (el.y || 0) + (el.height || 0);
+        if (el.type === 'text') return (el.y || 0) + (el.fontSize || 0);
+        return 0;
+    }));
 
-        (() => { cumulativeShift += dyLatin; return null; })(),
+    const lineBuffer = 5;
+    const lineElement = { id: 'line_1', type: 'line', content: '', x: 10, y: contentBottomY + lineBuffer, width: 780, height: 3 };
 
-        // Block 4: Address & Contact
-        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 141 + cumulativeShift, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 154 + cumulativeShift + dySmall, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        
-        (() => { cumulativeShift += dySmall; return null; })(),
-
-        { id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 167 + cumulativeShift + dySmall, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 },
-        
-        (() => { cumulativeShift += dySmall; return null; })(),
-        
-        // Separator Line
-        { id: 'line_1', type: 'line', content: '', x: 10, y: 185 + cumulativeShift, width: 780, height: 3 },
-    ].filter(Boolean); // Filter out nulls from the IIFEs
+    return [...contentElements, lineElement];
 };
