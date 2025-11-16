@@ -574,11 +574,25 @@ const App = () => {
         const wsExtra = workbook.Sheets["Ekstrakurikuler"];
         if (wsExtra) newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({ id: e["ID Unik (Jangan Diubah)"], name: e["Nama Ekstrakurikuler"], active: (e["Status Aktif"] || '').toLowerCase() === 'aktif' }));
 
-        // 4. Parse Daftar Siswa
+        // 4. Parse Daftar Siswa and ensure unique IDs
         const wsStudents = workbook.Sheets["Daftar Siswa"];
-        if (wsStudents) newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => ({
-            id: s['ID Siswa (Otomatis)'], namaLengkap: s['Nama Lengkap'], namaPanggilan: s['Nama Panggilan'], nis: s['NIS'], nisn: s['NISN'], tempatLahir: s['Tempat Lahir'], tanggalLahir: s['Tanggal Lahir'], jenisKelamin: s['Jenis Kelamin'], agama: s['Agama'], asalTk: s['Asal TK'], alamatSiswa: s['Alamat Siswa'], diterimaDiKelas: s['Diterima di Kelas'], diterimaTanggal: s['Diterima Tanggal'], namaAyah: s['Nama Ayah'], namaIbu: s['Nama Ibu'], pekerjaanAyah: s['Pekerjaan Ayah'], pekerjaanIbu: s['Pekerjaan Ibu'], alamatOrangTua: s['Alamat Orang Tua'], teleponOrangTua: s['Telepon Orang Tua'], namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], alamatWali: s['Alamat Wali'], teleponWali: s['Telepon Wali'],
-        }));
+        if (wsStudents) {
+            let importCounter = 0;
+            newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => {
+                importCounter++;
+                return {
+                    id: s['ID Siswa (Otomatis)'] || `imported_student_${Date.now()}_${importCounter}`,
+                    namaLengkap: s['Nama Lengkap'], namaPanggilan: s['Nama Panggilan'], nis: s['NIS'], nisn: s['NISN'], 
+                    tempatLahir: s['Tempat Lahir'], tanggalLahir: s['Tanggal Lahir'], jenisKelamin: s['Jenis Kelamin'], 
+                    agama: s['Agama'], asalTk: s['Asal TK'], alamatSiswa: s['Alamat Siswa'], 
+                    diterimaDiKelas: s['Diterima di Kelas'], diterimaTanggal: s['Diterima Tanggal'], 
+                    namaAyah: s['Nama Ayah'], namaIbu: s['Nama Ibu'], pekerjaanAyah: s['Pekerjaan Ayah'], 
+                    pekerjaanIbu: s['Pekerjaan Ibu'], alamatOrangTua: s['Alamat Orang Tua'], 
+                    teleponOrangTua: s['Telepon Orang Tua'], namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], 
+                    alamatWali: s['Alamat Wali'], teleponWali: s['Telepon Wali'],
+                };
+            });
+        }
         
         // 5. Parse Tujuan Pembelajaran
         const gradeKey = `Kelas ${getGradeNumber(newSettings.nama_kelas)}`;
@@ -964,6 +978,34 @@ const App = () => {
             return newGrades;
         });
     }, [settings.gradeCalculation, settings.predikats.c]);
+    
+    const handleBulkAddSlm = useCallback((subjectId, slmTemplate) => {
+        setGrades(prevGrades => {
+            const newState = prevGrades.map(g => ({...g})); // Shallow copy students
+    
+            return newState.map(studentGrade => {
+                const newStudentGrade = {...studentGrade};
+                newStudentGrade.detailedGrades = {...newStudentGrade.detailedGrades};
+    
+                const subjectGrades = newStudentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null };
+                
+                // If this SLM already exists for this student, do nothing for this student
+                if (subjectGrades.slm && subjectGrades.slm.some(s => s.id === slmTemplate.id)) {
+                    return newStudentGrade;
+                }
+                
+                const newSubjectGrades = {...subjectGrades};
+                newSubjectGrades.slm = [...(newSubjectGrades.slm || [])];
+    
+                // Crucially, create a deep copy of the template for EACH student
+                newSubjectGrades.slm.push(JSON.parse(JSON.stringify(slmTemplate)));
+    
+                newStudentGrade.detailedGrades[subjectId] = newSubjectGrades;
+                return newStudentGrade;
+            });
+        });
+    }, []);
+
     const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
     const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
     const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
@@ -1032,7 +1074,7 @@ const App = () => {
     switch (activePage) {
       case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
       case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
-      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onUpdateDetailedGrade: handleUpdateDetailedGrade, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, predikats: settings.predikats, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
+      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onUpdateDetailedGrade: handleUpdateDetailedGrade, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, predikats: settings.predikats, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
       case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
       case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
       case 'CATATAN_WALI_KELAS': return React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: handleUpdateNote, grades, subjects, settings, showToast: showToast });
