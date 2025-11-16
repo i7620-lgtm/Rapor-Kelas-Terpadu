@@ -434,7 +434,8 @@ const SubjectDetailView = (props) => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
                 const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
                 if (!detailedGrade.slm.some(s => s.id === slmId)) {
-                    const updatedSlms = [...detailedGrade.slm, slmToOpen];
+                    const newSlmForStudent = { ...slmToOpen, scores: [...slmToOpen.scores] };
+                    const updatedSlms = [...detailedGrade.slm, newSlmForStudent];
                     onUpdateDetailedGrade(student.id, subject.id, { type: 'slm', value: updatedSlms });
                 }
             });
@@ -461,14 +462,17 @@ const SubjectDetailView = (props) => {
 
     const handleAddCustomSlm = () => {
         const newSlmId = `slm_custom_${Date.now()}`;
-        const newSlm = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
+        const newSlmForModal = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
+
         students.forEach(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
-            const updatedSlms = [...detailedGrade.slm, newSlm];
+            
+            const newSlmForStudent = { ...newSlmForModal, scores: [] };
+            const updatedSlms = [...detailedGrade.slm, newSlmForStudent];
             onUpdateDetailedGrade(student.id, subject.id, { type: 'slm', value: updatedSlms });
         });
-        handleOpenModal('slm', newSlm);
+        handleOpenModal('slm', newSlmForModal);
     };
 
     const customSlms = (existingSlms || []).filter(s => !s.id.startsWith(`slm_predefined_${subject.id}_`));
