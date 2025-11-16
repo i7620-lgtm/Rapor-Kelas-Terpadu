@@ -295,7 +295,7 @@ export function expandAndCapitalizeSchoolName(name) {
 
 export const generateInitialLayout = (appSettings) => {
     const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
-    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
+    const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA").toUpperCase();
     const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
     const alamatText = appSettings.alamat_sekolah || "Jalan Kebo Iwa Banjar Batuparas";
     const telpText = appSettings.telepon_sekolah ? `Telepon: ${appSettings.telepon_sekolah}` : "Telepon: (0361) 9093558";
@@ -308,29 +308,50 @@ export const generateInitialLayout = (appSettings) => {
     ].filter(Boolean).join(' | ');
 
     const contentElements = [];
+    let currentY = 23; // Start Y position for the first text line
 
-    contentElements.push(
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: 50, width: 85, height: 85 },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: 50, width: 85, height: 85 },
-        { id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: 23, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: 45, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        { id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: 67, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: 89, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 },
-        { id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: 111, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: 138, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 },
-        { id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: 160, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' },
-        { id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: 173, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 }
-    );
-    
+    // Add elements sequentially, updating currentY after each one
+    contentElements.push({ id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
+    currentY += 22; // Space for next line
+
+    contentElements.push({ id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
+    currentY += 22;
+
+    contentElements.push({ id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
+    currentY += 22;
+
+    contentElements.push({ id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
+    currentY += 22;
+
+    contentElements.push({ id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' });
+    currentY += 27; // Larger font requires more space
+
+    contentElements.push({ id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 });
+    currentY += 22;
+
+    contentElements.push({ id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' });
+    currentY += 13; // Smaller font, less space
+
+    contentElements.push({ id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+    currentY += 13;
+
     if (contactLine2) {
-        contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: 186, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+        contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+        currentY += 13; // Add space even after the last element for line calculation
     }
+    
+    // Add logos with fixed Y, but use their bottom for line calculation
+    const logoY = 50;
+    const logoHeight = 85;
+    contentElements.push(
+        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: logoY, width: 85, height: logoHeight },
+        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: logoY, width: 85, height: logoHeight }
+    );
 
-    const contentBottomY = Math.max(...contentElements.map(el => {
-        if (el.type === 'image') return (el.y || 0) + (el.height || 0);
-        if (el.type === 'text') return (el.y || 0) + (el.fontSize || 0);
-        return 0;
-    }));
+    // The line should be below the lowest of the text block or logos
+    const textBlockBottom = currentY; // currentY is now the baseline for the *next* element
+    const logoBlockBottom = logoY + logoHeight;
+    const contentBottomY = Math.max(textBlockBottom, logoBlockBottom);
 
     const lineBuffer = 5;
     const lineElement = { id: 'line_1', type: 'line', content: '', x: 10, y: contentBottomY + lineBuffer, width: 780, height: 3 };
