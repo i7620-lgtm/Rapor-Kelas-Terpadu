@@ -308,7 +308,7 @@ export const generateInitialLayout = (appSettings) => {
     ].filter(Boolean).join(' | ');
 
     const contentElements = [];
-    let currentY = 23; // Start Y position for the first text line
+    let currentY = 13; // Start Y position for the first text line's baseline
 
     // Add elements sequentially, updating currentY after each one
     contentElements.push({ id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
@@ -330,7 +330,7 @@ export const generateInitialLayout = (appSettings) => {
     currentY += 22;
 
     contentElements.push({ id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' });
-    currentY += 13; // Smaller font, less space
+    currentY += 18; // Increased from 13 to provide space for Balinese script hangers
 
     contentElements.push({ id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
     currentY += 13;
