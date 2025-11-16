@@ -194,13 +194,9 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                     React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-center items-start" },
                         React.createElement('div', { className: "bg-white shadow-lg relative", style: { width: '29.7cm', height: '21cm' } },
                             React.createElement('div', {
-                                className: "absolute",
+                                className: "absolute w-full h-full",
                                 onClick: handleDeselect,
                                 style: {
-                                    top: '1.5cm',
-                                    left: '1.5cm',
-                                    right: '1.5cm',
-                                    bottom: '1.5cm',
                                     backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
                                     backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
                                 }
@@ -342,45 +338,33 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
             .replace(/Tempat, Tanggal Rapor/gi, settings.tanggal_rapor || 'Tempat, Tanggal Rapor');
     };
 
-    const marginCm = '1.5cm';
-
     return (
         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
-            React.createElement('div', {
-                className: 'absolute',
-                style: {
-                    top: marginCm,
-                    left: marginCm,
-                    right: marginCm,
-                    bottom: marginCm,
-                }
-            },
-                settings.piagam_background && React.createElement('img', { 
-                    src: settings.piagam_background, 
-                    alt: "Piagam Background", 
-                    className: 'absolute top-0 left-0 w-full h-full object-cover' 
-                }),
-                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full" },
-                    React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
-                        !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
-                        layout.map(el => {
-                            let elementRender;
-                            if (el.type === 'text') {
-                                let textAnchor = "start", xPos = el.x;
-                                if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
-                                else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
-                            } else if (el.type === 'image') {
-                                const imageUrl = String(settings[el.content] || '');
-                                elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                            } else if (el.type === 'rect' || el.type === 'line') {
-                                elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
-                            } else {
-                                return null;
-                            }
-                            return React.createElement('g', { key: el.id }, elementRender);
-                        })
-                    )
+            settings.piagam_background && React.createElement('img', { 
+                src: settings.piagam_background, 
+                alt: "Piagam Background", 
+                className: 'absolute top-0 left-0 w-full h-full object-cover' 
+            }),
+            React.createElement('div', { className: "absolute top-0 left-0 w-full h-full" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
+                    !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
+                    layout.map(el => {
+                        let elementRender;
+                        if (el.type === 'text') {
+                            let textAnchor = "start", xPos = el.x;
+                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
+                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
+                        } else if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || '');
+                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
+                        } else if (el.type === 'rect' || el.type === 'line') {
+                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                        } else {
+                            return null;
+                        }
+                        return React.createElement('g', { key: el.id }, elementRender);
+                    })
                 )
             )
         )
@@ -438,7 +422,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
         const style = document.createElement('style');
         style.id = 'print-piagam-style';
-        style.innerHTML = `@page { size: ${paperSize === 'F4' ? '33cm 21.5cm' : paperSize.toLowerCase()} landscape; margin: 0; }`;
+        style.innerHTML = `@page { size: ${paperSize === 'F4' ? '33cm 21.5cm' : paperSize.toLowerCase()} landscape; margin: 1.5cm; }`;
         document.head.appendChild(style);
 
         setTimeout(() => {
