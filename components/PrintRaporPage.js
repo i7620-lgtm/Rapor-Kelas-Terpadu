@@ -168,19 +168,31 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
         return { highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" };
     }
 
-    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    // New, more robust logic for assembling TPs and scores
     const gradedTps = [];
-
+    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    
     if (detailedGrade && detailedGrade.slm) {
+        // Create a lookup map for faster access to TP texts, grouped by slmId.
+        const tpTextMap = new Map();
+        objectivesForSubject.forEach(obj => {
+            if (!tpTextMap.has(obj.slmId)) {
+                tpTextMap.set(obj.slmId, []);
+            }
+            tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
+        });
+
+        // Iterate over the student's graded SLMs.
         detailedGrade.slm.forEach(slm => {
-            const tpTextsForSlm = objectivesForSubject
-                .filter(obj => obj.slmId === slm.id)
-                .map(obj => cleanTpText(obj.text));
-            
-            if (slm.scores) {
-                slm.scores.forEach((score, tpIndex) => {
-                    if (typeof score === 'number' && tpTextsForSlm[tpIndex]) {
-                        gradedTps.push({ text: tpTextsForSlm[tpIndex], score: score });
+            const tpTextsForThisSlm = tpTextMap.get(slm.id);
+            if (tpTextsForThisSlm && slm.scores) {
+                slm.scores.forEach((score, index) => {
+                    // Ensure the score is a valid number and a corresponding TP text exists.
+                    if (typeof score === 'number' && index < tpTextsForThisSlm.length) {
+                        gradedTps.push({
+                            text: tpTextsForThisSlm[index],
+                            score: score
+                        });
                     }
                 });
             }
@@ -204,25 +216,24 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
         };
     } else {
-        let maxScore = -1;
-        let minScore = 101;
-        scores.forEach(s => {
-            if (s > maxScore) maxScore = s;
-            if (s < minScore) minScore = s;
-        });
-        
-        const highestTp = gradedTps.find(tp => tp.score === maxScore);
-        const lowestTp = gradedTps.find(tp => tp.score === minScore);
-        
-        if (highestTp && lowestTp) {
-            return { 
-                highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
-                lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
-            };
-        }
-    }
+        // Find the single highest and single lowest scored TPs
+        let highestTp = gradedTps[0];
+        let lowestTp = gradedTps[0];
 
-    return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
+        for (let i = 1; i < gradedTps.length; i++) {
+            if (gradedTps[i].score > highestTp.score) {
+                highestTp = gradedTps[i];
+            }
+            if (gradedTps[i].score < lowestTp.score) {
+                lowestTp = gradedTps[i];
+            }
+        }
+        
+        return { 
+            highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
+            lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
+        };
+    }
 };
 
 const CoverPage = ({ student, settings }) => {
