@@ -355,23 +355,59 @@ const App = () => {
         const wsStudents = XLSX.utils.json_to_sheet(studentsData);
         XLSX.utils.book_append_sheet(wb, wsStudents, "Daftar Siswa");
 
-        // Sheet 6: Tujuan Pembelajaran
+        // Sheet 6: Tujuan Pembelajaran (Hanya yang ada nilainya)
         const tpExportData = [];
         const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
         const objectivesForClass = learningObjectives[gradeKey] || {};
+
+        // 1. Find all TPs that have been graded for at least one student
+        const gradedTpIdentifiers = new Set();
+        grades.forEach(studentGrade => {
+            Object.entries(studentGrade.detailedGrades).forEach(([subjectId, subjectData]) => {
+                (subjectData.slm || []).forEach(slm => {
+                    (slm.scores || []).forEach((score, tpIndex) => {
+                        if (score !== null && score !== undefined && score !== '') {
+                            const identifier = `${subjectId}|${slm.id}|${tpIndex}`;
+                            gradedTpIdentifiers.add(identifier);
+                        }
+                    });
+                });
+            });
+        });
         
+        // 2. Build export data based on the set of graded TPs
         for (const subjectFullName in objectivesForClass) {
             const subject = subjects.find(s => s.fullName === subjectFullName);
             if (!subject) continue;
-            
-            const slmsInGrades = grades[0]?.detailedGrades?.[subject.id]?.slm || [];
-            
+
             const objectivesForSubject = objectivesForClass[subjectFullName] || [];
-            objectivesForSubject.forEach(obj => {
-                const slmInfo = slmsInGrades.find(s => s.id === obj.slmId);
-                tpExportData.push({ "ID Mata Pelajaran": subject.id, "Nama Mata Pelajaran": subject.fullName, "ID SLM": obj.slmId, "Nama SLM": slmInfo?.name || "Nama SLM tidak ditemukan", "Deskripsi Tujuan Pembelajaran (TP)": obj.text });
-            });
+            const slmsInGrades = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []) : [];
+
+            // Group TPs by SLM to correctly determine their index
+            const tpsBySlm = objectivesForSubject.reduce((acc, obj) => {
+                if (!acc[obj.slmId]) acc[obj.slmId] = [];
+                acc[obj.slmId].push(obj.text);
+                return acc;
+            }, {});
+
+            for (const slmId in tpsBySlm) {
+                const tpTexts = tpsBySlm[slmId];
+                tpTexts.forEach((tpText, tpIndex) => {
+                    const identifier = `${subject.id}|${slmId}|${tpIndex}`;
+                    if (gradedTpIdentifiers.has(identifier)) {
+                        const slmInfo = slmsInGrades.find(s => s.id === slmId);
+                        tpExportData.push({
+                            "ID Mata Pelajaran": subject.id,
+                            "Nama Mata Pelajaran": subject.fullName,
+                            "ID SLM": slmId,
+                            "Nama SLM": slmInfo?.name || "Nama SLM tidak ditemukan",
+                            "Deskripsi Tujuan Pembelajaran (TP)": tpText,
+                        });
+                    }
+                });
+            }
         }
+        
         const wsTP = XLSX.utils.json_to_sheet(tpExportData, {header: ["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"]});
         XLSX.utils.book_append_sheet(wb, wsTP, "Tujuan Pembelajaran");
 
@@ -381,9 +417,8 @@ const App = () => {
             const nilaiSheetData = [];
             const header = ["ID Siswa", "Nama Siswa"];
             
-            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
-            const objectivesForSubject = (learningObjectives[gradeKey] || {})[subject.fullName] || [];
-            const slmsForSubject = grades[0]?.detailedGrades?.[subject.id]?.slm || [];
+            const objectivesForSubject = (objectivesForClass || {})[subject.fullName] || [];
+            const slmsForSubject = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []) : [];
 
             slmsForSubject.forEach(slm => {
                 const tpCount = objectivesForSubject.filter(o => o.slmId === slm.id).length;
@@ -589,7 +624,7 @@ const App = () => {
                     
                     const detailedGrade = studentGrade.detailedGrades[subjectId];
                     Object.keys(row).forEach(header => {
-                        if (header.startsWith("slm_")) {
+                        if (header.includes("_TP")) {
                             const [slmId, tpPart] = header.split('_TP');
                             const tpIndex = parseInt(tpPart, 10) - 1;
                             const slmEntry = detailedGrade.slm.find(s => s.id === slmId);
