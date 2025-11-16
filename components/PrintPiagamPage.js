@@ -8,7 +8,7 @@ const PAPER_SIZES = {
 };
 
 const PIAGAM_WIDTH = 1115;
-const PIAGAM_HEIGHT = 754; // Reduced from 788 to prevent spilling
+const PIAGAM_HEIGHT = 753; // Further reduced to prevent spilling
 const PIAGAM_VIEWBOX = `0 0 ${PIAGAM_WIDTH} ${PIAGAM_HEIGHT}`;
 
 const toRoman = (num) => {
