@@ -57,21 +57,21 @@ const generateInitialPiagamLayout = (settings) => {
     const adaptedLineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
     const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
     
-    const contentStartY = kopBottomY + 45; // Reduced spacing after header
+    const contentStartY = kopBottomY + 35; 
     const rankBoxWidth = 300;
     const rankBoxHeight = 50;
     const rankBoxX = (1123 - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 160; // Pulled up
+    const rankBoxY = contentStartY + 130; 
 
-    const paragraphY = rankBoxY + rankBoxHeight + 30; // Reduced spacing
-    const signatureY = paragraphY + 95; // Increased spacing for better balance
+    const paragraphY = rankBoxY + rankBoxHeight + 20; 
+    const signatureY = paragraphY + 105;
 
     return [
         ...adaptedKopElements,
         { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 50, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 140, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 115, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
         { id: 'rank_text', type: 'text', content: 'PERINGKAT [RANK]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
