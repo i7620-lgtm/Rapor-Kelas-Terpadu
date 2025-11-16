@@ -22,45 +22,39 @@ const toRoman = (num) => {
 };
 
 const generateInitialPiagamLayout = (settings) => {
-    const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 ? settings.kop_layout : generateInitialLayout(settings);
+    // Generate the base layout first, which now has dynamically correct Y positions.
+    const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 
+        ? JSON.parse(JSON.stringify(settings.kop_layout)) 
+        : generateInitialLayout(settings);
     
     const yOffset = 50;
     const xOffset = (1123 - 800) / 2;
 
-    const lineElOriginal = kopLayout.find(el => el.id.includes('line_1'));
-    const otherKopElementsOriginal = kopLayout.filter(el => !el.id.includes('line_1'));
-    
-    const adaptedKopElements = otherKopElementsOriginal.map(el => {
+    const adaptedKopElements = kopLayout.map(el => {
         let newElement = { ...el, id: `kop_${el.id}` };
         
+        // Adapt X position for the wider piagam format
         if (el.textAlign === 'center') {
             newElement.x = (1123 - el.width) / 2;
+        } else if (el.id === 'logo_sekolah_img') { // Check original ID
+             newElement.x = (1123 - xOffset - el.width);
+        } else if (el.id === 'line_1') { // Check original ID
+             newElement.x = (1123 - 1000) / 2;
+             newElement.width = 1000;
         } else {
-            newElement.x = (el.id === 'logo_sekolah_img') ? (1123 - xOffset - el.width) : (el.x + xOffset);
+             // Default for left-aligned things like logo_dinas_img
+             newElement.x = el.x + xOffset;
         }
         
+        // Adapt Y position uniformly
         newElement.y = el.y + yOffset;
         
         return newElement;
     });
     
-    const kopContentBottomY = Math.max(0, ...adaptedKopElements.map(el => {
-        if (el.type === 'image') return (el.y || 0) + (el.height || 0);
-        // The y attribute for text is the baseline, so add font size to get the approximate bottom
-        if (el.type === 'text') return (el.y || 0) + (el.fontSize || 0);
-        return 0;
-    }));
-
-    const lineBuffer = 5;
-    const adaptedLineEl = {
-        ...(lineElOriginal || { type: 'line', height: 3 }), // Fallback if line somehow doesn't exist
-        id: `kop_${lineElOriginal?.id || 'line_1'}`,
-        y: kopContentBottomY + lineBuffer,
-        x: (1123 - 1000) / 2, // Center the wider line for piagam
-        width: 1000
-    };
-    
-    const allAdaptedKop = [...adaptedKopElements, adaptedLineEl];
+    // The line position is already correct relative to the other elements.
+    // We just need to find its Y position to place the rest of the piagam content.
+    const adaptedLineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
     const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
     
     const contentStartY = kopBottomY + 40;
@@ -73,7 +67,7 @@ const generateInitialPiagamLayout = (settings) => {
     const signatureY = paragraphY + 120; // Increased from 90 to add more space
 
     return [
-        ...allAdaptedKop,
+        ...adaptedKopElements,
         { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 50, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
@@ -419,16 +413,43 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
-
+        
+        const styleId = 'print-piagam-style';
+        document.getElementById(styleId)?.remove(); // Hapus style lama jika ada
+        
+        const paperCss = paperSize === 'F4' ? '33cm 21.5cm' : `${PAPER_SIZES[paperSize].width} ${PAPER_SIZES[paperSize].height}`;
+        
         const style = document.createElement('style');
-        style.id = 'print-piagam-style';
-        style.innerHTML = `@page { size: ${paperSize === 'F4' ? '33cm 21.5cm' : paperSize.toLowerCase()} landscape; margin: 1.5cm; }`;
+        style.id = styleId;
+        // Gunakan @page untuk margin, dan @media print untuk memastikan ukuran halaman diterapkan
+        style.innerHTML = `
+            @page {
+                size: ${paperSize} landscape;
+                margin: 1.5cm;
+            }
+            @media print {
+                html, body {
+                    width: ${PAPER_SIZES[paperSize].width};
+                    height: ${PAPER_SIZES[paperSize].height};
+                }
+                .report-page {
+                    width: 100%;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                    box-shadow: none;
+                    border: none;
+                }
+            }
+        `;
         document.head.appendChild(style);
 
         setTimeout(() => {
             window.print();
-            document.getElementById('print-piagam-style')?.remove();
             setIsPrinting(false);
+            // Consider leaving the style tag for a bit in case print dialog is slow, or manage its removal better.
+            // For now, let's remove it after a short delay post-print call.
+            setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
 
@@ -439,7 +460,19 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         return rankedStudents.filter(s => String(s.id) === selectedStudentId);
     }, [students, selectedStudentId, studentRankings]);
     
-    const pageStyle = isPrinting ? {} : {
+    const [isPrintingState, setIsPrintingState] = useState(false);
+    useEffect(() => {
+        const beforePrint = () => setIsPrintingState(true);
+        const afterPrint = () => setIsPrintingState(false);
+        window.addEventListener('beforeprint', beforePrint);
+        window.addEventListener('afterprint', afterPrint);
+        return () => {
+            window.removeEventListener('beforeprint', beforePrint);
+            window.removeEventListener('afterprint', afterPrint);
+        };
+    }, []);
+
+    const pageStyle = isPrintingState ? {} : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
     };
