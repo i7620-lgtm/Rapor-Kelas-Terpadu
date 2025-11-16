@@ -16,69 +16,66 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        // Changed from absolute positioning to a block in the normal flow.
-        // Height is maintained to push content down. Side padding is removed as @page margin handles it.
-        React.createElement('div', { 
-            style: { 
-                height: `${HEADER_HEIGHT_CM}cm`, 
-                paddingTop: '1cm', // Retain top padding for SVG vertical alignment.
-                boxSizing: 'border-box'
-            } 
+        React.createElement('div', {
+            className: "relative w-full",
+            style: { aspectRatio: '800 / 200' }
         },
-            React.createElement('div', { className: "relative w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: "0 0 800 200", preserveAspectRatio: "xMidYMin meet" },
-                    layout.map(el => {
-                        if (el.type === 'text') {
-                            let textAnchor = "start";
-                            let xPos = el.x;
-                            if (el.textAlign === 'center') {
-                                textAnchor = "middle";
-                                xPos = el.x + (el.width ?? 0) / 2;
-                            } else if (el.textAlign === 'right') {
-                                textAnchor = "end";
-                                xPos = el.x + (el.width ?? 0);
-                            }
-                            return (
-                                React.createElement('text', {
-                                    key: el.id,
-                                    x: xPos,
-                                    y: el.y + (el.fontSize ?? 14),
-                                    fontSize: el.fontSize,
-                                    fontWeight: el.fontWeight,
-                                    textAnchor: textAnchor,
-                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                                }, el.content)
-                            );
+            React.createElement('svg', {
+                className: "absolute top-0 left-0 w-full h-full",
+                viewBox: "0 0 800 200",
+                preserveAspectRatio: "none"
+            },
+                layout.map(el => {
+                    if (el.type === 'text') {
+                        let textAnchor = "start";
+                        let xPos = el.x;
+                        if (el.textAlign === 'center') {
+                            textAnchor = "middle";
+                            xPos = el.x + (el.width ?? 0) / 2;
+                        } else if (el.textAlign === 'right') {
+                            textAnchor = "end";
+                            xPos = el.x + (el.width ?? 0);
                         }
-                        if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || '');
-                            if (!imageUrl) return null;
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
-                        }
-                        if (el.type === 'line') {
-                            return (
-                                React.createElement('rect', {
-                                    key: el.id,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height,
-                                    fill: "black"
-                                })
-                            );
-                        }
-                        return null;
-                    })
-                )
+                        return (
+                            React.createElement('text', {
+                                key: el.id,
+                                x: xPos,
+                                y: el.y + (el.fontSize ?? 14),
+                                fontSize: el.fontSize,
+                                fontWeight: el.fontWeight,
+                                textAnchor: textAnchor,
+                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
+                            }, el.content)
+                        );
+                    }
+                    if (el.type === 'image') {
+                        const imageUrl = String(settings[el.content] || '');
+                        if (!imageUrl) return null;
+                        return (
+                            React.createElement('image', {
+                                key: el.id,
+                                href: imageUrl,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height
+                            })
+                        );
+                    }
+                    if (el.type === 'line') {
+                        return (
+                            React.createElement('rect', {
+                                key: el.id,
+                                x: el.x,
+                                y: el.y,
+                                width: el.width,
+                                height: el.height,
+                                fill: "black"
+                            })
+                        );
+                    }
+                    return null;
+                })
             )
         )
     );
