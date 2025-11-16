@@ -439,6 +439,11 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         return rankedStudents.filter(s => String(s.id) === selectedStudentId);
     }, [students, selectedStudentId, studentRankings]);
     
+    const pageStyle = isPrinting ? {} : {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+    };
+
     return (
         React.createElement(React.Fragment, null,
             React.createElement(PiagamEditorModal, { isOpen: isEditorOpen, onClose: () => setIsEditorOpen(false), settings: settings, onSaveLayout: onUpdatePiagamLayout }),
@@ -473,7 +478,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         key: student.id, 
                         student: student, 
                         settings: settings,
-                        pageStyle: { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height },
+                        pageStyle: pageStyle,
                         rank: studentData?.rank,
                         average: studentData?.average
                     });
