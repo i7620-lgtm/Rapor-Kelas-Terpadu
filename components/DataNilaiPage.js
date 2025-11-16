@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 export const getGradeNumber = (str) => {
@@ -381,7 +380,7 @@ const SummativeCard = ({ title, subtitle, onClick }) => (
 );
 
 const SubjectDetailView = (props) => {
-    const { subject, students, grades, settings, onUpdateGradeCalculation, onUpdateDetailedGrade, onUpdateLearningObjectives, onUpdatePredikats } = props;
+    const { subject, students, grades, settings, onUpdateGradeCalculation, onUpdateDetailedGrade, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats } = props;
     
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
@@ -408,8 +407,9 @@ const SubjectDetailView = (props) => {
 
     // Use the first student's data as a representative structure for existing SLMs.
     const existingSlms = useMemo(() => {
-        if (!students || students.length === 0) return [];
-        return grades.find(g => g.studentId === students[0].id)?.detailedGrades?.[subject.id]?.slm || [];
+        if (!students || students.length === 0 || !grades || grades.length === 0) return [];
+        const representativeGrade = grades.find(g => g.studentId === students[0].id) || grades[0];
+        return representativeGrade?.detailedGrades?.[subject.id]?.slm || [];
     }, [grades, students, subject.id]);
 
     const handleOpenModal = (type, item = null) => {
@@ -421,29 +421,19 @@ const SubjectDetailView = (props) => {
         const slmId = `slm_predefined_${subject.id}_${index}`;
         const slmExists = existingSlms.some(s => s.id === slmId);
         
-        let slmToOpen;
+        const slmTemplate = {
+            id: slmId,
+            name: predefinedSlm.slm,
+            scores: Array(predefinedSlm.tp.length).fill(null),
+        };
 
         if (!slmExists) {
-            slmToOpen = {
-                id: slmId,
-                name: predefinedSlm.slm,
-                scores: Array(predefinedSlm.tp.length).fill(null),
-            };
-
-            students.forEach(student => {
-                const studentGrade = grades.find(g => g.studentId === student.id);
-                const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
-                if (!detailedGrade.slm.some(s => s.id === slmId)) {
-                    const newSlmForStudent = { ...slmToOpen, scores: [...slmToOpen.scores] };
-                    const updatedSlms = [...detailedGrade.slm, newSlmForStudent];
-                    onUpdateDetailedGrade(student.id, subject.id, { type: 'slm', value: updatedSlms });
-                }
-            });
+            onBulkAddSlm(subject.id, slmTemplate);
 
             const gradeKey = `Kelas ${gradeNumber}`;
             const existingObjectives = props.learningObjectives[gradeKey]?.[subject.fullName] || [];
-            const newSlmObjectives = predefinedSlm.tp.map(tpText => ({ slmId: slmToOpen.id, text: tpText }));
-            const otherObjectives = existingObjectives.filter(o => o.slmId !== slmToOpen.id);
+            const newSlmObjectives = predefinedSlm.tp.map(tpText => ({ slmId: slmTemplate.id, text: tpText }));
+            const otherObjectives = existingObjectives.filter(o => o.slmId !== slmTemplate.id);
             const newObjectivesForSubject = [...otherObjectives, ...newSlmObjectives];
             const newObjectivesObject = {
                 ...props.learningObjectives,
@@ -453,26 +443,17 @@ const SubjectDetailView = (props) => {
                 }
             };
             onUpdateLearningObjectives(newObjectivesObject);
-        } else {
-            slmToOpen = existingSlms.find(s => s.id === slmId);
         }
         
-        handleOpenModal('slm', slmToOpen);
+        handleOpenModal('slm', slmTemplate);
     };
 
     const handleAddCustomSlm = () => {
         const newSlmId = `slm_custom_${Date.now()}`;
-        const newSlmForModal = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
+        const newSlmTemplate = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
 
-        students.forEach(student => {
-            const studentGrade = grades.find(g => g.studentId === student.id);
-            const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
-            
-            const newSlmForStudent = { ...newSlmForModal, scores: [] };
-            const updatedSlms = [...detailedGrade.slm, newSlmForStudent];
-            onUpdateDetailedGrade(student.id, subject.id, { type: 'slm', value: updatedSlms });
-        });
-        handleOpenModal('slm', newSlmForModal);
+        onBulkAddSlm(subject.id, newSlmTemplate);
+        handleOpenModal('slm', newSlmTemplate);
     };
 
     const customSlms = (existingSlms || []).filter(s => !s.id.startsWith(`slm_predefined_${subject.id}_`));
