@@ -57,14 +57,14 @@ const generateInitialPiagamLayout = (settings) => {
     const adaptedLineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
     const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
     
-    const contentStartY = kopBottomY + 40;
+    const contentStartY = kopBottomY + 45; // Reduced spacing after header
     const rankBoxWidth = 300;
     const rankBoxHeight = 50;
     const rankBoxX = (1123 - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 160;
+    const rankBoxY = contentStartY + 160; // Pulled up
 
-    const paragraphY = rankBoxY + rankBoxHeight + 30;
-    const signatureY = paragraphY + 120; // Increased from 90 to add more space
+    const paragraphY = rankBoxY + rankBoxHeight + 30; // Reduced spacing
+    const signatureY = paragraphY + 95; // Increased spacing for better balance
 
     return [
         ...adaptedKopElements,
@@ -81,13 +81,13 @@ const generateInitialPiagamLayout = (settings) => {
         { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
 
         { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
     ];
 };
 
@@ -416,8 +416,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         
         const styleId = 'print-piagam-style';
         document.getElementById(styleId)?.remove(); // Hapus style lama jika ada
-        
-        const paperCss = paperSize === 'F4' ? '33cm 21.5cm' : `${PAPER_SIZES[paperSize].width} ${PAPER_SIZES[paperSize].height}`;
         
         const style = document.createElement('style');
         style.id = styleId;
