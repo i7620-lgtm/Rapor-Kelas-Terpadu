@@ -251,7 +251,8 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                     React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-center items-center" },
                         React.createElement('div', { className: "w-full max-w-[800px] bg-white shadow-lg relative", onClick: handleDeselect, style: {
                             backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
-                            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
+                            backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+                            aspectRatio: '800 / 200'
                         }},
                            React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: "0 0 800 200", preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
                                 elements.map(el => {
@@ -277,7 +278,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                         elementRender = (
                                             React.createElement('text', {
                                                 x: xPos,
-                                                y: el.y + (el.fontSize ?? 14),
+                                                y: el.y,
                                                 fontSize: el.fontSize,
                                                 fontWeight: el.fontWeight,
                                                 textAnchor: textAnchor,
@@ -314,7 +315,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             isSelected && (
                                                 React.createElement('rect', {
                                                     x: el.x,
-                                                    y: el.y,
+                                                    y: el.y - (el.fontSize ?? 14),
                                                     width: el.width,
                                                     height: el.type === 'text' ? (el.fontSize ?? 14) * 1.2 : el.height,
                                                     fill: "none",
@@ -396,7 +397,7 @@ const KopSuratPreview = ({ settings }) => {
                                 React.createElement('text', {
                                     key: el.id,
                                     x: xPos,
-                                    y: el.y + (el.fontSize ?? 14),
+                                    y: el.y,
                                     fontSize: el.fontSize,
                                     fontWeight: el.fontWeight,
                                     textAnchor: textAnchor,
@@ -681,7 +682,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                     React.createElement(FileInputField, { label: "Logo Dinas Pendidikan", id: "logo_dinas", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null }),
                                     React.createElement(FileInputField, { label: "Logo Cover Rapor", id: "logo_cover", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_cover === 'string' ? settings.logo_cover : null }),
                                     React.createElement(FileInputField, { label: "Background Piagam", id: "piagam_background", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.piagam_background === 'string' ? settings.piagam_background : null }),
-                                    React.createElement('div', { className: "pt-4" },
+                                    React.createElement('div', null,
                                         React.createElement('h4', { className: "text-lg font-semibold text-slate-700" }, "Pratinjau Kop Surat"),
                                         React.createElement('p', { className: "text-sm text-slate-500 mb-4" }, "Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah."),
                                         React.createElement(KopSuratPreview, { settings: settings })
