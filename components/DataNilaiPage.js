@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 export const getGradeNumber = (str) => {
@@ -109,6 +110,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
                     const response = await fetch(`/tp${gradeNumber}.json`);
                     if (!response.ok) throw new Error('File not found');
                     const data = await response.json();
+                    // Data is now an array of { slm: "...", tp: [...] }
                     setAvailableTPs(data[subject.fullName] || []);
                 } catch (error) {
                     console.error("Error fetching TP data:", error);
@@ -144,11 +146,18 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
                 React.createElement('div', { className: "p-6 overflow-y-auto" },
                     isLoading ? React.createElement('p', null, "Memuat data TP...") :
                     availableTPs.length > 0 ? (
-                        React.createElement('div', { className: "space-y-3" },
-                            availableTPs.map((tp, index) => (
-                                React.createElement('label', { key: index, className: "flex items-start p-3 border rounded-md cursor-pointer hover:bg-slate-50" },
-                                    React.createElement('input', { type: "checkbox", checked: selectedTPs.includes(tp), onChange: () => handleCheckboxChange(tp), className: "mt-1 h-4 w-4 text-indigo-600" }),
-                                    React.createElement('span', { className: "ml-3 text-sm text-slate-700" }, tp)
+                        React.createElement('div', { className: "space-y-4" },
+                            availableTPs.map((slmGroup, index) => (
+                                React.createElement('div', { key: index, className: "border rounded-lg" },
+                                    React.createElement('h4', { className: "text-md font-semibold text-slate-800 p-3 bg-slate-50 rounded-t-lg border-b" }, slmGroup.slm),
+                                    React.createElement('div', { className: "p-3 space-y-3" },
+                                        slmGroup.tp.map((tp, tpIndex) => (
+                                            React.createElement('label', { key: tpIndex, className: "flex items-start p-2 rounded-md cursor-pointer hover:bg-slate-100" },
+                                                React.createElement('input', { type: "checkbox", checked: selectedTPs.includes(tp), onChange: () => handleCheckboxChange(tp), className: "mt-1 h-4 w-4 text-indigo-600" }),
+                                                React.createElement('span', { className: "ml-3 text-sm text-slate-700" }, tp)
+                                            )
+                                        ))
+                                    )
                                 )
                             ))
                         )
@@ -178,6 +187,8 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         if (isSLM && item) {
             const gradeKey = `Kelas ${gradeNumber}`;
             const objectivesForSubject = objectives[gradeKey]?.[subject.fullName] || [];
+            // This logic is now more complex because objectives are grouped.
+            // We need to find the TPs that belong to this SLM ID.
             const initialTps = objectivesForSubject
                 .filter(obj => obj.slmId === item.id)
                 .map((obj, index) => ({ id: `tp_${index}_${item.id}`, text: obj.text }));
@@ -188,8 +199,15 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
     const handleSave = () => {
         if (isSLM) {
             const gradeKey = `Kelas ${gradeNumber}`;
+            // The objectives structure is now [{slm: "...", tp: [...]}]
+            // The logic for updating objectives needs to change
+            // The current `objectives` state is a flat array of {slmId, text}
             const existingObjectives = objectives[gradeKey]?.[subject.fullName] || [];
+            
+            // Remove old TPs for this SLM
             const otherSlmObjectives = existingObjectives.filter(obj => obj.slmId !== item.id);
+            
+            // Create new TPs for this SLM
             const newSlmObjectives = localObjectives.map(tp => ({ slmId: item.id, text: tp.text }));
 
             const newObjectivesForSubject = [...otherSlmObjectives, ...newSlmObjectives];
@@ -369,20 +387,81 @@ const SubjectDetailView = (props) => {
     const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
     const [modalData, setModalData] = useState(null);
     const gradeNumber = getGradeNumber(settings.nama_kelas);
+    const [predefinedSlms, setPredefinedSlms] = useState([]);
 
-    const detailedGrade = useMemo(() => {
-        return grades.find(g => g.detailedGrades?.[subject.id])?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
-    }, [grades, subject.id]);
+    useEffect(() => {
+        if (gradeNumber) {
+            const fetchPredefinedSLMs = async () => {
+                try {
+                    const response = await fetch(`/tp${gradeNumber}.json`);
+                    if (!response.ok) throw new Error(`tp${gradeNumber}.json not found`);
+                    const data = await response.json();
+                    setPredefinedSlms(data[subject.fullName] || []);
+                } catch (error) {
+                    console.warn(`Could not fetch predefined SLMs for ${subject.fullName}:`, error);
+                    setPredefinedSlms([]);
+                }
+            };
+            fetchPredefinedSLMs();
+        }
+    }, [gradeNumber, subject.fullName]);
+
+    // Use the first student's data as a representative structure for existing SLMs.
+    const existingSlms = useMemo(() => {
+        if (!students || students.length === 0) return [];
+        return grades.find(g => g.studentId === students[0].id)?.detailedGrades?.[subject.id]?.slm || [];
+    }, [grades, students, subject.id]);
 
     const handleOpenModal = (type, item = null) => {
         setModalData({ type, item });
         setIsSummativeModalOpen(true);
     };
-
-    const handleAddSlm = () => {
-        const newSlmId = `slm_${Date.now()}`;
-        const newSlm = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
+    
+    const handleOpenPredefinedSlm = (predefinedSlm, index) => {
+        const slmId = `slm_predefined_${subject.id}_${index}`;
+        const slmExists = existingSlms.some(s => s.id === slmId);
         
+        let slmToOpen;
+
+        if (!slmExists) {
+            slmToOpen = {
+                id: slmId,
+                name: predefinedSlm.slm,
+                scores: Array(predefinedSlm.tp.length).fill(null),
+            };
+
+            students.forEach(student => {
+                const studentGrade = grades.find(g => g.studentId === student.id);
+                const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
+                if (!detailedGrade.slm.some(s => s.id === slmId)) {
+                    const updatedSlms = [...detailedGrade.slm, slmToOpen];
+                    onUpdateDetailedGrade(student.id, subject.id, { type: 'slm', value: updatedSlms });
+                }
+            });
+
+            const gradeKey = `Kelas ${gradeNumber}`;
+            const existingObjectives = props.learningObjectives[gradeKey]?.[subject.fullName] || [];
+            const newSlmObjectives = predefinedSlm.tp.map(tpText => ({ slmId: slmToOpen.id, text: tpText }));
+            const otherObjectives = existingObjectives.filter(o => o.slmId !== slmToOpen.id);
+            const newObjectivesForSubject = [...otherObjectives, ...newSlmObjectives];
+            const newObjectivesObject = {
+                ...props.learningObjectives,
+                [gradeKey]: {
+                    ...(props.learningObjectives[gradeKey] || {}),
+                    [subject.fullName]: newObjectivesForSubject
+                }
+            };
+            onUpdateLearningObjectives(newObjectivesObject);
+        } else {
+            slmToOpen = existingSlms.find(s => s.id === slmId);
+        }
+        
+        handleOpenModal('slm', slmToOpen);
+    };
+
+    const handleAddCustomSlm = () => {
+        const newSlmId = `slm_custom_${Date.now()}`;
+        const newSlm = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
         students.forEach(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null };
@@ -391,6 +470,8 @@ const SubjectDetailView = (props) => {
         });
         handleOpenModal('slm', newSlm);
     };
+
+    const customSlms = (existingSlms || []).filter(s => !s.id.startsWith(`slm_predefined_${subject.id}_`));
 
     return (
         React.createElement(React.Fragment, null,
@@ -404,10 +485,29 @@ const SubjectDetailView = (props) => {
 
                 React.createElement('div', { className: "space-y-4" },
                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2" }, "Sumatif Lingkup Materi (SLM)"),
-                    (detailedGrade.slm || []).map(slm => 
-                        React.createElement(SummativeCard, { key: slm.id, title: slm.name, subtitle: "Klik untuk mengisi nilai TP", onClick: () => handleOpenModal('slm', slm) })
+                    
+                    predefinedSlms.map((pSlm, index) => {
+                        const slmId = `slm_predefined_${subject.id}_${index}`;
+                        const existingSlm = existingSlms.find(s => s.id === slmId);
+                        const slmName = existingSlm ? existingSlm.name : pSlm.slm;
+                        return React.createElement(SummativeCard, { 
+                            key: slmId, 
+                            title: slmName, 
+                            subtitle: "Klik untuk mengisi nilai TP (Kurikulum)", 
+                            onClick: () => handleOpenPredefinedSlm(pSlm, index)
+                        });
+                    }),
+                    
+                    customSlms.map(slm => 
+                        React.createElement(SummativeCard, { 
+                            key: slm.id, 
+                            title: slm.name, 
+                            subtitle: "Klik untuk mengisi nilai TP (Kustom)", 
+                            onClick: () => handleOpenModal('slm', slm) 
+                        })
                     ),
-                    React.createElement('button', { onClick: handleAddSlm, className: "w-full p-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400" }, "+ Tambah Lingkup Materi")
+                    
+                    React.createElement('button', { onClick: handleAddCustomSlm, className: "w-full p-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400" }, "+ Tambah Lingkup Materi (Di Luar Kurikulum)")
                 ),
                 React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
                     React.createElement(SummativeCard, { title: "Sumatif Tengah Semester (STS)", subtitle: "Klik untuk mengisi nilai STS", onClick: () => handleOpenModal('sts') }),
