@@ -70,7 +70,7 @@ const generateInitialPiagamLayout = (settings) => {
     const rankBoxY = contentStartY + 160;
 
     const paragraphY = rankBoxY + rankBoxHeight + 30;
-    const signatureY = paragraphY + 90;
+    const signatureY = paragraphY + 120; // Increased from 90 to add more space
 
     return [
         ...allAdaptedKop,
@@ -192,36 +192,49 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 ),
                 React.createElement('div', { className: "flex flex-1 overflow-hidden" },
                     React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-center items-start" },
-                        React.createElement('div', { className: "bg-white shadow-lg relative", style: { width: '29.7cm', height: '21cm', backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`, backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px` } },
-                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
-                                elements.map(el => {
-                                    const isSelected = el.id === selectedElementId;
-                                    const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(e, el), style: { cursor: 'move' } };
-                                    
-                                    let elementRender;
-                                    if (el.type === 'text') {
-                                        let textAnchor = "start", xPos = el.x;
-                                        if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
-                                        else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                        elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
-                                    } else if (el.type === 'image') {
-                                        const imageUrl = String(settings[el.content] || '');
-                                        elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                                    } else if (el.type === 'rect' || el.type === 'line') { // Support for rect type
-                                        elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
-                                    } else {
-                                        return null;
-                                    }
-                                    
-                                    const selectionBoxHeight = (el.type === 'text') ? (el.fontSize || 14) * 1.2 : (el.height || 0);
-                                    const selectionBoxY = (el.type === 'text') ? el.y - (el.fontSize || 14) : el.y;
+                        React.createElement('div', { className: "bg-white shadow-lg relative", style: { width: '29.7cm', height: '21cm' } },
+                            React.createElement('div', {
+                                className: "absolute",
+                                onClick: handleDeselect,
+                                style: {
+                                    top: '1.5cm',
+                                    left: '1.5cm',
+                                    right: '1.5cm',
+                                    bottom: '1.5cm',
+                                    backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
+                                    backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
+                                }
+                            },
+                               React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
+                                    elements.map(el => {
+                                        const isSelected = el.id === selectedElementId;
+                                        const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(e, el), style: { cursor: 'move' } };
+                                        
+                                        let elementRender;
+                                        if (el.type === 'text') {
+                                            let textAnchor = "start", xPos = el.x;
+                                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
+                                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
+                                        } else if (el.type === 'image') {
+                                            const imageUrl = String(settings[el.content] || '');
+                                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
+                                        } else if (el.type === 'rect' || el.type === 'line') { // Support for rect type
+                                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                                        } else {
+                                            return null;
+                                        }
+                                        
+                                        const selectionBoxHeight = (el.type === 'text') ? (el.fontSize || 14) * 1.2 : (el.height || 0);
+                                        const selectionBoxY = (el.type === 'text') ? el.y - (el.fontSize || 14) : el.y;
 
-                                    return React.createElement('g', commonProps,
-                                        elementRender,
-                                        isSelected && React.createElement('rect', { x: el.x, y: selectionBoxY, width: el.width, height: selectionBoxHeight, fill: "none", stroke: "#4f46e5", strokeWidth: "2", strokeDasharray: "4 4", style: { pointerEvents: 'none' } })
-                                    );
-                                })
-                           )
+                                        return React.createElement('g', commonProps,
+                                            elementRender,
+                                            isSelected && React.createElement('rect', { x: el.x, y: selectionBoxY, width: el.width, height: selectionBoxHeight, fill: "none", stroke: "#4f46e5", strokeWidth: "2", strokeDasharray: "4 4", style: { pointerEvents: 'none' } })
+                                        );
+                                    })
+                               )
+                            )
                         )
                     ),
                     React.createElement('div', { className: "w-72 bg-white p-4 border-l overflow-y-auto" },
@@ -329,29 +342,45 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
             .replace(/Tempat, Tanggal Rapor/gi, settings.tanggal_rapor || 'Tempat, Tanggal Rapor');
     };
 
+    const marginCm = '1.5cm';
+
     return (
         React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
-            settings.piagam_background && React.createElement('img', { src: settings.piagam_background, alt: "Piagam Background", className: 'absolute top-0 left-0 w-full h-full object-cover' }),
-            React.createElement('div', { className: "absolute w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
-                    !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
-                    layout.map(el => {
-                        let elementRender;
-                        if (el.type === 'text') {
-                            let textAnchor = "start", xPos = el.x;
-                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
-                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
-                        } else if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || '');
-                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                        } else if (el.type === 'rect' || el.type === 'line') {
-                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
-                        } else {
-                            return null;
-                        }
-                        return React.createElement('g', { key: el.id }, elementRender);
-                    })
+            React.createElement('div', {
+                className: 'absolute',
+                style: {
+                    top: marginCm,
+                    left: marginCm,
+                    right: marginCm,
+                    bottom: marginCm,
+                }
+            },
+                settings.piagam_background && React.createElement('img', { 
+                    src: settings.piagam_background, 
+                    alt: "Piagam Background", 
+                    className: 'absolute top-0 left-0 w-full h-full object-cover' 
+                }),
+                React.createElement('div', { className: "absolute top-0 left-0 w-full h-full" },
+                    React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
+                        !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
+                        layout.map(el => {
+                            let elementRender;
+                            if (el.type === 'text') {
+                                let textAnchor = "start", xPos = el.x;
+                                if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
+                                else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                                elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
+                            } else if (el.type === 'image') {
+                                const imageUrl = String(settings[el.content] || '');
+                                elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
+                            } else if (el.type === 'rect' || el.type === 'line') {
+                                elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                            } else {
+                                return null;
+                            }
+                            return React.createElement('g', { key: el.id }, elementRender);
+                        })
+                    )
                 )
             )
         )
