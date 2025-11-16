@@ -444,6 +444,31 @@ const App = () => {
         const wsCocurricular = XLSX.utils.aoa_to_sheet(cocurricularSheetData);
         XLSX.utils.book_append_sheet(wb, wsCocurricular, "Data Kokurikuler");
 
+        // Sheet Tambahan: Aset Gambar (untuk menyimpan gambar base64 dengan chunking)
+        const imageAssetsData = [];
+        const imageKeys = ['logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background'];
+        const CHUNK_SIZE = 32000; // Ukuran aman untuk sel Excel
+
+        imageKeys.forEach(key => {
+            const base64String = settings[key];
+            if (base64String && typeof base64String === 'string') {
+                if (base64String.length > CHUNK_SIZE) {
+                    for (let i = 0; i < base64String.length; i += CHUNK_SIZE) {
+                        const chunk = base64String.substring(i, i + CHUNK_SIZE);
+                        const partKey = `${key}_part_${Math.floor(i / CHUNK_SIZE) + 1}`;
+                        imageAssetsData.push([partKey, chunk]);
+                    }
+                } else {
+                    imageAssetsData.push([key, base64String]);
+                }
+            }
+        });
+
+        if (imageAssetsData.length > 0) {
+            imageAssetsData.unshift(["Kunci Aset", "Data Base64"]);
+            const wsImageAssets = XLSX.utils.aoa_to_sheet(imageAssetsData);
+            XLSX.utils.book_append_sheet(wb, wsImageAssets, "Aset Gambar");
+        }
 
         const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
         return new Blob([wbout], { type: 'application/octet-stream' });
@@ -632,6 +657,38 @@ const App = () => {
             });
             newStudentExtracurriculars = Object.values(tempStudentExtra);
         }
+
+        // 10. Parse Aset Gambar (dengan rekombinasi chunk)
+        const wsImageAssets = workbook.Sheets["Aset Gambar"];
+        if (wsImageAssets) {
+            const imageAssets = XLSX.utils.sheet_to_json(wsImageAssets, { header: 1 });
+            const reconstructedAssets = {};
+            const partRegex = /^(.*)_part_(\d+)$/;
+
+            imageAssets.slice(1).forEach(([key, data]) => {
+                if (!key || !data) return;
+                const match = key.match(partRegex);
+                if (match) {
+                    const baseKey = match[1];
+                    const partNumber = parseInt(match[2], 10);
+                    if (!reconstructedAssets[baseKey]) {
+                        reconstructedAssets[baseKey] = [];
+                    }
+                    reconstructedAssets[baseKey][partNumber - 1] = data;
+                } else {
+                    if (key in newSettings) {
+                         newSettings[key] = data;
+                    }
+                }
+            });
+
+            for (const baseKey in reconstructedAssets) {
+                if (reconstructedAssets[baseKey] && baseKey in newSettings) {
+                    newSettings[baseKey] = reconstructedAssets[baseKey].join('');
+                }
+            }
+        }
+
 
         setSettings(newSettings);
         setSubjects(newSubjects);
