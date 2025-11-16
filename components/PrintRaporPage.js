@@ -140,25 +140,15 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-    const studentName = capitalize(studentNameRaw); // e.g., "Ariel"
+    const studentName = capitalize(studentNameRaw);
 
-    // Helper to clean up TP text by replacing "Ananda [StudentName/Nickname]" or "Ananda " at the start.
     const cleanTpText = (text) => {
         if (!text) return '';
-        let cleanedText = text;
-        
-        // Remove "Ananda <student's nickname/first name> "
-        // Example: "Ananda Ariel menunjukkan..." becomes "menunjukkan..."
+        let cleanedText = text.trim();
         cleanedText = cleanedText.replace(new RegExp(`^ananda\\s+${studentNameRaw}\\s`, 'i'), '');
-        
-        // Remove generic "Ananda " if it's at the very beginning
-        // Example: "Ananda menunjukkan penguasaan..." becomes "menunjukkan penguasaan..."
         cleanedText = cleanedText.replace(/^ananda\s+/i, '');
-
         return cleanedText.trim();
     };
-
-    const defaultReturn = { highest: `${studentName} telah mencapai tujuan pembelajaran.`, lowest: '' };
 
     const currentGradeNumber = getGradeNumber(settings.nama_kelas);
     if (currentGradeNumber === null) {
@@ -179,16 +169,29 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
 
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
-    const gradedTps = objectivesForSubject
-        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.slm?.[index]?.scores?.[index] })) // Apply cleanTpText here!
-        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
+    const gradedTps = [];
+
+    if (detailedGrade && detailedGrade.slm) {
+        detailedGrade.slm.forEach(slm => {
+            const tpTextsForSlm = objectivesForSubject
+                .filter(obj => obj.slmId === slm.id)
+                .map(obj => cleanTpText(obj.text));
+            
+            if (slm.scores) {
+                slm.scores.forEach((score, tpIndex) => {
+                    if (typeof score === 'number' && tpTextsForSlm[tpIndex]) {
+                        gradedTps.push({ text: tpTextsForSlm[tpIndex], score: score });
+                    }
+                });
+            }
+        });
+    }
     
     if (gradedTps.length === 0) {
         return { highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" };
     }
     
     if (gradedTps.length === 1) {
-        // Now, gradedTps[0].text is already cleaned.
         return { highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
     }
 
@@ -196,7 +199,6 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     const allScoresEqual = scores.every(s => s === scores[0]);
 
     if (allScoresEqual) {
-        // This is generic, does not use specific TP text, so it's fine.
         return { 
             highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
@@ -213,7 +215,6 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
         const lowestTp = gradedTps.find(tp => tp.score === minScore);
         
         if (highestTp && lowestTp) {
-            // `highestTp.text` and `lowestTp.text` are already cleaned here.
             return { 
                 highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
                 lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
