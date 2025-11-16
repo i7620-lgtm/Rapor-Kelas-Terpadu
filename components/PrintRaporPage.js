@@ -28,77 +28,75 @@ const ReportHeader = ({ settings }) => {
         : generateInitialLayout(settings);
 
     return (
-        // This container is absolutely positioned at the very top of the page.
-        // It uses internal padding to respect the page margins, which is more robust for printing.
         React.createElement('div', {
             className: "absolute",
             style: {
-                top: '0',
-                left: '0',
-                right: '0',
-                height: `${HEADER_HEIGHT_CM}cm`, // Occupies the full header block
-                padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm 0 ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                boxSizing: 'border-box'
+                top: `${PAGE_TOP_MARGIN_CM}cm`,
+                left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
             }
         },
-            // The SVG now fills the padded area (100% width and height of the inner box)
-            React.createElement('svg', {
-                width: "100%",
-                height: "100%",
-                viewBox: "0 0 800 200",
-                preserveAspectRatio: "xMidYMin meet"
+            React.createElement('div', {
+                className: "relative w-full",
+                style: { aspectRatio: '800 / 200' }
             },
-                layout.map(el => {
-                    if (el.type === 'text') {
-                        let textAnchor = "start";
-                        let xPos = el.x;
-                        if (el.textAlign === 'center') {
-                            textAnchor = "middle";
-                            xPos = el.x + (el.width ?? 0) / 2;
-                        } else if (el.textAlign === 'right') {
-                            textAnchor = "end";
-                            xPos = el.x + (el.width ?? 0);
+                React.createElement('svg', {
+                    className: "absolute top-0 left-0 w-full h-full",
+                    viewBox: "0 0 800 200",
+                    preserveAspectRatio: "none"
+                },
+                    layout.map(el => {
+                        if (el.type === 'text') {
+                            let textAnchor = "start";
+                            let xPos = el.x;
+                            if (el.textAlign === 'center') {
+                                textAnchor = "middle";
+                                xPos = el.x + (el.width ?? 0) / 2;
+                            } else if (el.textAlign === 'right') {
+                                textAnchor = "end";
+                                xPos = el.x + (el.width ?? 0);
+                            }
+                            return (
+                                React.createElement('text', {
+                                    key: el.id,
+                                    x: xPos,
+                                    y: el.y + (el.fontSize ?? 14),
+                                    fontSize: el.fontSize,
+                                    fontWeight: el.fontWeight,
+                                    textAnchor: textAnchor,
+                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
+                                }, el.content)
+                            );
                         }
-                        return (
-                            React.createElement('text', {
-                                key: el.id,
-                                x: xPos,
-                                y: el.y + (el.fontSize ?? 14),
-                                fontSize: el.fontSize,
-                                fontWeight: el.fontWeight,
-                                textAnchor: textAnchor,
-                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                            }, el.content)
-                        );
-                    }
-                    if (el.type === 'image') {
-                        const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                        if (!imageUrl) return null; // Don't render image if URL is empty
-                        return (
-                            React.createElement('image', {
-                                key: el.id,
-                                href: imageUrl,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height
-                            })
-                        );
-                    }
-                    if (el.type === 'line') {
-                        return (
-                            React.createElement('rect', {
-                                key: el.id,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height,
-                                fill: "black"
-                            })
-                        );
-                    }
-                    return null;
-                })
+                        if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
+                            if (!imageUrl) return null; // Don't render image if URL is empty
+                            return (
+                                React.createElement('image', {
+                                    key: el.id,
+                                    href: imageUrl,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height
+                                })
+                            );
+                        }
+                        if (el.type === 'line') {
+                            return (
+                                React.createElement('rect', {
+                                    key: el.id,
+                                    x: el.x,
+                                    y: el.y,
+                                    width: el.width,
+                                    height: el.height,
+                                    fill: "black"
+                                })
+                            );
+                        }
+                        return null;
+                    })
+                )
             )
         )
     );
