@@ -7,7 +7,9 @@ const PAPER_SIZES = {
     Letter: { width: '27.94cm', height: '21.59cm' },
 };
 
-const PIAGAM_VIEWBOX = "0 0 1123 794"; // A4 Landscape at 96 DPI
+const PIAGAM_WIDTH = 1115;
+const PIAGAM_HEIGHT = 788;
+const PIAGAM_VIEWBOX = `0 0 ${PIAGAM_WIDTH} ${PIAGAM_HEIGHT}`; // A4 Landscape at 96 DPI, with a small margin
 
 const toRoman = (num) => {
     if (isNaN(num)) return num;
@@ -28,18 +30,18 @@ const generateInitialPiagamLayout = (settings) => {
         : generateInitialLayout(settings);
     
     const yOffset = 50;
-    const xOffset = (1123 - 800) / 2;
+    const xOffset = (PIAGAM_WIDTH - 800) / 2;
 
     const adaptedKopElements = kopLayout.map(el => {
         let newElement = { ...el, id: `kop_${el.id}` };
         
         // Adapt X position for the wider piagam format
         if (el.textAlign === 'center') {
-            newElement.x = (1123 - el.width) / 2;
+            newElement.x = (PIAGAM_WIDTH - el.width) / 2;
         } else if (el.id === 'logo_sekolah_img') { // Check original ID
-             newElement.x = (1123 - xOffset - el.width);
+             newElement.x = (PIAGAM_WIDTH - xOffset - el.width);
         } else if (el.id === 'line_1') { // Check original ID
-             newElement.x = (1123 - 1000) / 2;
+             newElement.x = (PIAGAM_WIDTH - 1000) / 2;
              newElement.width = 1000;
         } else {
              // Default for left-aligned things like logo_dinas_img
@@ -60,34 +62,34 @@ const generateInitialPiagamLayout = (settings) => {
     const contentStartY = kopBottomY + 35; 
     const rankBoxWidth = 300;
     const rankBoxHeight = 50;
-    const rankBoxX = (1123 - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 120; 
+    const rankBoxX = (PIAGAM_WIDTH - rankBoxWidth) / 2;
+    const rankBoxY = contentStartY + 130; 
 
-    const paragraphY = rankBoxY + rankBoxHeight + 15; 
-    const signatureY = paragraphY + 95;
+    const paragraphY = rankBoxY + rankBoxHeight + 20; 
+    const signatureY = paragraphY + 105;
 
     return [
         ...adaptedKopElements,
-        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 40, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 75, width: 1000, fontSize: 32, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 115, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
         { id: 'rank_text', type: 'text', content: 'PERINGKAT [RANK]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
 
-        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 20, width: 1000, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 40, width: 1000, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         
-        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 70, width: 300, fontSize: 14, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 85, width: 300, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
 
-        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 70, width: 300, fontSize: 14, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 85, width: 300, fontSize: 14, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
     ];
 };
 
@@ -262,8 +264,8 @@ const DefaultPiagamBackground = () => {
     const blue = "#00B2FF"; // A bright, sky blue
     const yellow = "#FFD700"; // A golden yellow
     const darkBlue = "#005F88"; // A darker, coordinating blue
-    const width = 1123;
-    const height = 794;
+    const width = PIAGAM_WIDTH;
+    const height = PIAGAM_HEIGHT;
     const cornerSize = s * 3;
 
     // A reusable component for the new corner design, inspired by the user's image
@@ -415,16 +417,21 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         showToast('Mempersiapkan pratinjau cetak...', 'success');
         
         const styleId = 'print-piagam-style';
-        document.getElementById(styleId)?.remove();
+        document.getElementById(styleId)?.remove(); // Hapus style lama jika ada
         
         const style = document.createElement('style');
         style.id = styleId;
+        // Gunakan @page untuk margin, dan @media print untuk memastikan ukuran halaman diterapkan
         style.innerHTML = `
             @page {
                 size: ${paperSize} landscape;
                 margin: 1.5cm;
             }
             @media print {
+                html, body {
+                    width: ${PAPER_SIZES[paperSize].width};
+                    height: ${PAPER_SIZES[paperSize].height};
+                }
                 .report-page {
                     width: 100%;
                     height: 100%;
@@ -440,6 +447,8 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
+            // Consider leaving the style tag for a bit in case print dialog is slow, or manage its removal better.
+            // For now, let's remove it after a short delay post-print call.
             setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
