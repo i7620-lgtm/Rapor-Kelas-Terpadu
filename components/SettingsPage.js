@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
@@ -456,7 +456,7 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
     )
 );
 
-const FileInputField = ({ label, id, onChange, onSave, imagePreview }) => {
+const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTransparent }) => {
     const handleFileChange = (e) => {
         onChange(e);
         onSave();
@@ -464,23 +464,31 @@ const FileInputField = ({ label, id, onChange, onSave, imagePreview }) => {
     
     return (
      React.createElement('div', { className: "col-span-1" },
-        React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
+        React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-1" },
             label
         ),
-        React.createElement('div', { className: "mt-1 flex items-center gap-4 p-2 border-2 border-slate-300 border-dashed rounded-md" },
-            imagePreview ? (
-                React.createElement('img', { src: imagePreview, alt: "Logo preview", className: "w-16 h-16 object-contain rounded-md bg-slate-100" })
-            ) : (
-                React.createElement('div', { className: "w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs text-center" }, "Pratinjau")
-            ),
-            React.createElement('div', { className: "text-center flex-1" },
-                React.createElement('div', { className: "flex text-sm text-slate-600 justify-center" },
-                    React.createElement('label', { htmlFor: String(id), className: "relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none" },
-                        React.createElement('span', null, "Unggah file"),
-                        React.createElement('input', { id: String(id), name: String(id), type: "file", className: "sr-only", onChange: handleFileChange, accept: "image/*" })
-                    )
+        React.createElement('div', { className: "mt-1 flex flex-col gap-2 p-2 border-2 border-slate-300 border-dashed rounded-md" },
+            React.createElement('div', { className: "flex items-center gap-4" },
+                imagePreview ? (
+                    React.createElement('img', { src: imagePreview, alt: "Logo preview", className: "w-16 h-16 object-contain rounded-md bg-slate-100" })
+                ) : (
+                    React.createElement('div', { className: "w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs text-center" }, "Pratinjau")
                 ),
-                 React.createElement('p', { className: "text-xs text-slate-500" }, "PNG atau JPG")
+                React.createElement('div', { className: "text-center flex-1" },
+                    React.createElement('div', { className: "flex text-sm text-slate-600 justify-center" },
+                        React.createElement('label', { htmlFor: String(id), className: "relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none" },
+                            React.createElement('span', null, "Unggah file"),
+                            React.createElement('input', { id: String(id), name: String(id), type: "file", className: "sr-only", onChange: handleFileChange, accept: "image/*" })
+                        )
+                    ),
+                     React.createElement('p', { className: "text-xs text-slate-500" }, "PNG atau JPG")
+                )
+            ),
+            imagePreview && (
+                React.createElement('button', {
+                    onClick: () => onMakeTransparent(id),
+                    className: "w-full text-center py-1.5 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-md hover:bg-indigo-200 transition-colors"
+                }, "Buat Transparan")
             )
         )
     )
@@ -634,8 +642,36 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
     );
 };
 
-const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars }) => {
+const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+    const handleMakeTransparent = useCallback(async (logoKey) => {
+        const base64String = settings[logoKey];
+        if (!base64String) {
+            showToast('Tidak ada gambar untuk diproses.', 'error');
+            return;
+        }
+
+        showToast('Memproses gambar...', 'info');
+        try {
+            const transparentBase64 = await removeImageBackground(base64String);
+            // Simulate the event object expected by onSettingsChange
+            const syntheticEvent = {
+                target: {
+                    name: logoKey,
+                    value: transparentBase64,
+                    type: 'file_processed', // Custom type to indicate it's not a real file input
+                    files: null
+                }
+            };
+            onSettingsChange(syntheticEvent);
+            showToast('Latar belakang logo berhasil dihapus.', 'success');
+        } catch (error) {
+            console.error('Gagal membuat latar belakang transparan:', error);
+            showToast(`Gagal memproses gambar: ${error.message}`, 'error');
+        }
+    }, [settings, onSettingsChange, showToast]);
+
     return (
         React.createElement(React.Fragment, null,
             React.createElement(KopSuratEditorModal, { 
@@ -678,10 +714,10 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                     React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Faksimile", id: "faksimile", value: settings.faksimile, onChange: onSettingsChange, onBlur: onSave }))
                                 ),
                                 React.createElement('div', { className: "lg:col-span-1 space-y-4" },
-                                    React.createElement(FileInputField, { label: "Logo Sekolah", id: "logo_sekolah", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null }),
-                                    React.createElement(FileInputField, { label: "Logo Dinas Pendidikan", id: "logo_dinas", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null }),
-                                    React.createElement(FileInputField, { label: "Logo Cover Rapor", id: "logo_cover", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_cover === 'string' ? settings.logo_cover : null }),
-                                    React.createElement(FileInputField, { label: "Background Piagam", id: "piagam_background", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.piagam_background === 'string' ? settings.piagam_background : null }),
+                                    React.createElement(FileInputField, { label: "Logo Sekolah", id: "logo_sekolah", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null, onMakeTransparent: handleMakeTransparent }),
+                                    React.createElement(FileInputField, { label: "Logo Dinas Pendidikan", id: "logo_dinas", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_dinas === 'string' ? settings.logo_dinas : null, onMakeTransparent: handleMakeTransparent }),
+                                    React.createElement(FileInputField, { label: "Logo Cover Rapor", id: "logo_cover", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_cover === 'string' ? settings.logo_cover : null, onMakeTransparent: handleMakeTransparent }),
+                                    React.createElement(FileInputField, { label: "Background Piagam", id: "piagam_background", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.piagam_background === 'string' ? settings.piagam_background : null, onMakeTransparent: handleMakeTransparent }),
                                     React.createElement('div', null,
                                         React.createElement('h4', { className: "text-lg font-semibold text-slate-700" }, "Pratinjau Kop Surat"),
                                         React.createElement('p', { className: "text-sm text-slate-500 mb-4" }, "Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah."),
