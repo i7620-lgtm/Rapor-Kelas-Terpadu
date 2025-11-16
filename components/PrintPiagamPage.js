@@ -57,14 +57,14 @@ const generateInitialPiagamLayout = (settings) => {
     const adaptedLineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
     const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
     
-    const contentStartY = kopBottomY + 35; 
+    const contentStartY = kopBottomY + 25; 
     const rankBoxWidth = 300;
     const rankBoxHeight = 50;
     const rankBoxX = (1123 - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 130; 
+    const rankBoxY = contentStartY + 125; 
 
-    const paragraphY = rankBoxY + rankBoxHeight + 20; 
-    const signatureY = paragraphY + 105;
+    const paragraphY = rankBoxY + rankBoxHeight + 15; 
+    const signatureY = paragraphY + 80;
 
     return [
         ...adaptedKopElements,
@@ -415,21 +415,16 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         showToast('Mempersiapkan pratinjau cetak...', 'success');
         
         const styleId = 'print-piagam-style';
-        document.getElementById(styleId)?.remove(); // Hapus style lama jika ada
+        document.getElementById(styleId)?.remove();
         
         const style = document.createElement('style');
         style.id = styleId;
-        // Gunakan @page untuk margin, dan @media print untuk memastikan ukuran halaman diterapkan
         style.innerHTML = `
             @page {
                 size: ${paperSize} landscape;
                 margin: 1.5cm;
             }
             @media print {
-                html, body {
-                    width: ${PAPER_SIZES[paperSize].width};
-                    height: ${PAPER_SIZES[paperSize].height};
-                }
                 .report-page {
                     width: 100%;
                     height: 100%;
@@ -437,6 +432,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     padding: 0;
                     box-shadow: none;
                     border: none;
+                    box-sizing: border-box;
                 }
             }
         `;
@@ -445,8 +441,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
-            // Consider leaving the style tag for a bit in case print dialog is slow, or manage its removal better.
-            // For now, let's remove it after a short delay post-print call.
             setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
