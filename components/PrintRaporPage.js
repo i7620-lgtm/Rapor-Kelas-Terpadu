@@ -1,1180 +1,473 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
-import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
-import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
+import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 
-const getPhase = (gradeNumber) => {
-    if (gradeNumber >= 5) return 'C'; // Kelas 5 & 6
-    if (gradeNumber >= 3) return 'B'; // Kelas 3 & 4
-    if (gradeNumber >= 1) return 'A'; // Kelas 1 & 2
-    return '';
+const PAPER_SIZES = {
+    A4: { width: '29.7cm', height: '21cm' },
+    F4: { width: '33cm', height: '21.5cm' },
+    Letter: { width: '27.94cm', height: '21.59cm' },
 };
 
-// Define fixed heights and margins for layout consistency
-const HEADER_HEIGHT_CM = 6.0; // Height of the report header area in cm
-const PAGE_TOP_MARGIN_CM = 1.5; // Standard top margin of the paper in cm
-const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5; // Standard left/right margin
-const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
-const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
+const PIAGAM_VIEWBOX = "0 0 1123 794"; // A4 Landscape at 96 DPI
 
-// New derived constant for the 'bottom' CSS property of the main content area
-// This includes the standard bottom margin, the height of the page number footer,
-// and an additional buffer (0.5cm) to ensure space between report footer content and page number footer.
-const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
-
-const ReportHeader = ({ settings }) => {
-    const layout = settings.kop_layout && settings.kop_layout.length > 0
-        ? settings.kop_layout
-        : generateInitialLayout(settings);
-
-    return (
-        // This container is absolutely positioned at the very top of the page.
-        // It uses internal padding to respect the page margins, which is more robust for printing.
-        React.createElement('div', {
-            className: "absolute",
-            style: {
-                top: '0',
-                left: '0',
-                right: '0',
-                height: `${HEADER_HEIGHT_CM}cm`, // Occupies the full header block
-                padding: `${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm 0 ${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                boxSizing: 'border-box'
-            }
-        },
-            // The SVG now fills the padded area (100% width and height of the inner box)
-            React.createElement('svg', {
-                width: "100%",
-                height: "100%",
-                viewBox: "0 0 800 200",
-                preserveAspectRatio: "xMidYMin meet"
-            },
-                layout.map(el => {
-                    if (el.type === 'text') {
-                        let textAnchor = "start";
-                        let xPos = el.x;
-                        if (el.textAlign === 'center') {
-                            textAnchor = "middle";
-                            xPos = el.x + (el.width ?? 0) / 2;
-                        } else if (el.textAlign === 'right') {
-                            textAnchor = "end";
-                            xPos = el.x + (el.width ?? 0);
-                        }
-                        return (
-                            React.createElement('text', {
-                                key: el.id,
-                                x: xPos,
-                                y: el.y + (el.fontSize ?? 14),
-                                fontSize: el.fontSize,
-                                fontWeight: el.fontWeight,
-                                textAnchor: textAnchor,
-                                fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                            }, el.content)
-                        );
-                    }
-                    if (el.type === 'image') {
-                        const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                        if (!imageUrl) return null; // Don't render image if URL is empty
-                        return (
-                            React.createElement('image', {
-                                key: el.id,
-                                href: imageUrl,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height
-                            })
-                        );
-                    }
-                    if (el.type === 'line') {
-                        return (
-                            React.createElement('rect', {
-                                key: el.id,
-                                x: el.x,
-                                y: el.y,
-                                width: el.width,
-                                height: el.height,
-                                fill: "black"
-                            })
-                        );
-                    }
-                    return null;
-                })
-            )
-        )
-    );
-};
-
-
-const formatDate = (dateString) => {
-    if (!dateString || dateString instanceof Date && isNaN(dateString)) return '-';
-    try {
-        const date = new Date(dateString);
-        // add timezone offset to prevent off-by-one day errors
-        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-        const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
-        
-        if (isNaN(adjustedDate.getTime())) {
-            return String(dateString); // Return original string if date is invalid
-        }
-
-        return adjustedDate.toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-        });
-    } catch (e) {
-        return String(dateString); // Return original string on error
+const toRoman = (num) => {
+    if (isNaN(num)) return num;
+    const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
+    let str = '';
+    for (let i of Object.keys(roman)) {
+        let q = Math.floor(num / roman[i]);
+        num -= q * roman[i];
+        str += i.repeat(q);
     }
+    return str;
 };
 
-const capitalize = (s) => {
-    if (typeof s !== 'string' || !s) return '';
-    const trimmed = s.trim().replace(/[.,;]$/, '');
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-};
-
-const lowercaseFirst = (s) => {
-    if (typeof s !== 'string' || !s) return '';
-    const trimmed = s.trim().replace(/[.,;]$/, '');
-    return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);
-};
-
-
-const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
-    const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-    const studentName = capitalize(studentNameRaw); // e.g., "Ariel"
-
-    // Helper to clean up TP text by replacing "Ananda [StudentName/Nickname]" or "Ananda " at the start.
-    const cleanTpText = (text) => {
-        if (!text) return '';
-        let cleanedText = text;
-        
-        // Remove "Ananda <student's nickname/first name> "
-        // Example: "Ananda Ariel menunjukkan..." becomes "menunjukkan..."
-        cleanedText = cleanedText.replace(new RegExp(`^ananda\\s+${studentNameRaw}\\s`, 'i'), '');
-        
-        // Remove generic "Ananda " if it's at the very beginning
-        // Example: "Ananda menunjukkan penguasaan..." becomes "menunjukkan penguasaan..."
-        cleanedText = cleanedText.replace(/^ananda\s+/i, '');
-
-        return cleanedText.trim();
-    };
-
-    const defaultReturn = { highest: `${studentName} telah mencapai tujuan pembelajaran.`, lowest: '' };
-
-    const currentGradeNumber = getGradeNumber(settings.nama_kelas);
-    if (currentGradeNumber === null) {
-        return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
-    }
+const generateInitialPiagamLayout = (settings) => {
+    const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 ? settings.kop_layout : generateInitialLayout(settings);
     
-    let objectivesForCurrentClass = null;
-    for (const key in learningObjectives) {
-        if (getGradeNumber(key) === currentGradeNumber) {
-            objectivesForCurrentClass = learningObjectives[key];
-            break;
-        }
-    }
+    const yOffset = 50;
+    const xOffset = (1123 - 800) / 2;
 
-    const objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
-    if (!objectivesForSubject || objectivesForSubject.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" };
-    }
-
-    const detailedGrade = gradeData?.detailedGrades?.[subject.id];
-    const gradedTps = objectivesForSubject
-        .map((text, index) => ({ text: cleanTpText(text), score: detailedGrade?.slm?.[index]?.scores?.[index] })) // Apply cleanTpText here!
-        .filter(tp => typeof tp.score === 'number' && tp.score !== null);
+    const lineElOriginal = kopLayout.find(el => el.id.includes('line_1'));
+    const otherKopElementsOriginal = kopLayout.filter(el => !el.id.includes('line_1'));
     
-    if (gradedTps.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" };
-    }
-    
-    if (gradedTps.length === 1) {
-        // Now, gradedTps[0].text is already cleaned.
-        return { highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
-    }
-
-    const scores = gradedTps.map(tp => tp.score);
-    const allScoresEqual = scores.every(s => s === scores[0]);
-
-    if (allScoresEqual) {
-        // This is generic, does not use specific TP text, so it's fine.
-        return { 
-            highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
-            lowest: `Terus pertahankan prestasi dan semangat belajar.` 
-        };
-    } else {
-        let maxScore = -1;
-        let minScore = 101;
-        scores.forEach(s => {
-            if (s > maxScore) maxScore = s;
-            if (s < minScore) minScore = s;
-        });
+    const adaptedKopElements = otherKopElementsOriginal.map(el => {
+        let newElement = { ...el, id: `kop_${el.id}` };
         
-        const highestTp = gradedTps.find(tp => tp.score === maxScore);
-        const lowestTp = gradedTps.find(tp => tp.score === minScore);
-        
-        if (highestTp && lowestTp) {
-            // `highestTp.text` and `lowestTp.text` are already cleaned here.
-            return { 
-                highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
-                lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
-            };
-        }
-    }
-
-    return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
-};
-
-const CoverPage = ({ student, settings }) => {
-    const year = useMemo(() => {
-        if (settings.tanggal_rapor) {
-            try {
-                // Handle format "Denpasar, 20 Desember 2024"
-                const parts = settings.tanggal_rapor.split(' ');
-                if (parts.length >= 3) {
-                    const yearPart = parts[parts.length - 1];
-                    const monthName = parts[parts.length - 2];
-                    const monthIndex = ['januari', 'februari', 'maret', 'april', 'mei', 'juni', 'juli', 'agustus', 'september', 'oktober', 'november', 'desember'].indexOf(monthName.toLowerCase());
-
-                    if (!isNaN(parseInt(yearPart, 10)) && monthIndex !== -1) {
-                        const reportYear = parseInt(yearPart, 10);
-                        // If report date is in the first half of the year (Jan-June), it belongs to the previous academic year end
-                        if (monthIndex < 6) {
-                            return `${reportYear - 1}/${reportYear}`;
-                        }
-                        return `${reportYear}/${reportYear + 1}`;
-                    }
-                }
-            } catch (e) { /* Fallback below */ }
-        }
-        if (settings.tahun_ajaran) {
-            return settings.tahun_ajaran;
-        }
-
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth();
-        if (currentMonth < 6) {
-             return `${currentYear - 1}/${currentYear}`;
-        }
-        return `${currentYear}/${currentYear + 1}`;
-    }, [settings.tanggal_rapor, settings.tahun_ajaran]);
-
-    const coverLogo = settings.logo_cover || ''; // Now falls back to empty string
-
-    return React.createElement('div', {
-        className: 'flex flex-col items-center text-center p-8 box-border font-times',
-        style: {
-            position: 'absolute',
-            top: '1.5cm',
-            left: '1.5cm',
-            right: '1.5cm',
-            bottom: '1.5cm',
-            border: '6px double #000'
-        }
-    },
-        React.createElement('div', { className: 'w-full pt-16' },
-            React.createElement('div', { className: 'flex justify-center mb-10' },
-                coverLogo && React.createElement('img', { // Only render img if coverLogo exists
-                    src: coverLogo,
-                    alt: "Logo Cover Rapor",
-                    className: 'h-48 w-48 object-contain'
-                })
-            ),
-            React.createElement('h1', { className: 'text-2xl font-bold tracking-widest' }, 'RAPOR'),
-            React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'MURID'),
-            React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, 'SEKOLAH DASAR'),
-            React.createElement('h2', { className: 'text-2xl font-bold tracking-widest' }, '(SD)'),
-
-            React.createElement('div', { className: 'mt-24 w-full px-8' },
-                React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
-                ),
-                React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
-                )
-            )
-        ),
-        React.createElement('div', { className: 'flex-grow' }),
-        React.createElement('div', { className: 'mb-8 space-y-2' },
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH'),
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, 'REPUBLIK INDONESIA'),
-            React.createElement('p', { className: 'text-xl font-bold tracking-wider' }, year)
-        )
-    );
-};
-
-const SchoolIdentityPage = ({ settings }) => {
-    const identitasSekolah = [
-        { label: "Nama Sekolah", value: settings.nama_sekolah },
-        { label: "NPSN", value: settings.npsn },
-        { label: "NIS/NSS/NDS", value: '-'},
-        { label: "Alamat Sekolah", value: settings.alamat_sekolah },
-        { label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
-        { label: 'Kecamatan', value: settings.kecamatan },
-        { label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
-        { label: 'Provinsi', value: settings.provinsi },
-        { label: 'Website', value: settings.website_sekolah },
-        { label: 'E-mail', value: settings.email_sekolah },
-        { label: 'Kode Pos', value: settings.kode_pos },
-        { label: 'Telepon', value: settings.telepon_sekolah },
-    ];
-
-    return(
-        React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS SEKOLAH'),
-             React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
-                React.createElement('tbody', null,
-                    identitasSekolah.map((item, index) => (
-                        React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, `${index + 1}.`),
-                            React.createElement('td', { className: 'w-[30%] py-[2px]' }, item.label),
-                            React.createElement('td', { className: 'w-[5%] py-[2px]' }, ':'),
-                            React.createElement('td', { className: 'w-[60%] py-[2px]' }, item.value || '-')
-                        )
-                    ))
-                )
-            )
-        )
-    );
-};
-
-const StudentIdentityPage = ({ student, settings }) => {
-    const identitasSiswa = [
-        { no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
-        { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
-        { no: '3.', label: 'Tempat, Tanggal Lahir', value: `${student.tempatLahir || ''}, ${formatDate(student.tanggalLahir)}` },
-        { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
-        { no: '5.', label: 'Agama', value: student.agama },
-        { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
-        { no: '7.', 'label': 'Alamat Murid', value: student.alamatSiswa },
-        { no: '8.', label: 'Nama Orang Tua' },
-        { sub: true, label: 'a. Ayah', value: student.namaAyah },
-        { sub: true, label: 'b. Ibu', value: student.namaIbu },
-        { no: '9.', label: 'Pekerjaan Orang Tua' },
-        { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
-        { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
-        { no: '10.', label: 'Alamat Orang Tua', value: student.alamatOrangTua },
-        { no: '11.', label: 'Wali Murid' },
-        { sub: true, label: 'a. Nama', value: student.namaWali },
-        { sub: true, label: 'b. Pekerjaan', value: student.pekerjaanWali },
-        { sub: true, label: 'c. Alamat', value: student.alamatWali },
-    ];
-    
-    return (
-        React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS MURID'),
-            React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
-                React.createElement('tbody', null,
-                    identitasSiswa.map((item, index) => (
-                        React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-[1.5px]' }, item.no || ''),
-                            React.createElement('td', { className: `w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[3%] py-[1.5px] text-center' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[57%] py-[1.5px]' }, item.value || (item.sub ? '-' : ''))
-                        )
-                    ))
-                )
-            ),
-            React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
-                React.createElement('div', { className: 'text-center' },
-                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
-                    React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
-                    React.createElement('div', { className: 'h-20' }),
-                    React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'),
-                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
-                )
-            )
-        )
-    );
-};
-
-const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
-    const gradeNumber = getGradeNumber(settings.nama_kelas);
-    const phase = getPhase(gradeNumber);
-    
-    return React.createElement('div', { ref: ref },
-        React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
-            React.createElement('tbody', null,
-                React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                    React.createElement('td', { className: 'w-[15%] py-0 px-1' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-0 px-1' }, `: ${settings.nama_kelas || ''}`)
-                ),
-                React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'NISN/NIS'), React.createElement('td', { className: 'py-0 px-1' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Fase'), React.createElement('td', { className: 'py-0 px-1' }, `: ${phase}`)
-                ),
-                React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.nama_sekolah || ''}`),
-                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : ''}`)
-                ),
-                React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.alamat_sekolah || ''}`),
-                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.tahun_ajaran || ''}`)
-                )
-            )
-        )
-    )
-});
-
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt', tableLayout: 'fixed' } },
-        React.createElement('thead', { ref: headerRef, className: "report-header-group" },
-            React.createElement('tr', { className: 'font-bold text-center' },
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[63%]' }, 'Capaian Kompetensi')
-            )
-        ),
-        React.createElement('tbody', { ref: ref },
-            subjectsToRender.map((item, index) => (
-                React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top leading-tight' },
-                        React.createElement('p', null, item.description.highest),
-                        item.description.lowest && React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'border-t border-slate-300' }),
-                            React.createElement('p', null, item.description.lowest)
-                        )
-                    )
-                )
-            ))
-        )
-    )
-));
-
-const ReportFooterContent = React.forwardRef((props, ref) => {
-    const { 
-        student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
-        rank, rankingOption, // New props
-        showCocurricular, showExtra, showNotes, showAttendance, showDecision, 
-        showParentFeedback, showParentTeacherSignature, showHeadmasterSignature,
-    } = props;
-    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = ref || {};
-
-    const shouldDisplayRank = rank && rankingOption !== 'none' && (
-        (rankingOption === 'top3' && rank <= 3) ||
-        (rankingOption === 'top10' && rank <= 10)
-    );
-    
-    const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
-
-    const originalNote = notes[student.id] || '';
-    let studentNoteContent;
-    if (shouldDisplayRank) {
-        const rankMessageStart = `Selamat! Ananda ${nickname} berhasil meraih `;
-        const rankText = `Peringkat ${rank}`;
-        const rankMessageEnd = ` di kelas. `;
-        studentNoteContent = React.createElement(React.Fragment, null, 
-            React.createElement('span', null, rankMessageStart),
-            React.createElement('strong', null, rankText),
-            React.createElement('span', null, rankMessageEnd + originalNote)
-        );
-    } else {
-        studentNoteContent = originalNote || 'Tidak ada catatan.';
-    }
-
-    const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
-    const sakitCount = attendanceData.sakit ?? 0;
-    const izinCount = attendanceData.izin ?? 0;
-    const alpaCount = attendanceData.alpa ?? 0;
-
-    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
-    
-    const extraActivities = (studentExtraData?.assignedActivities || [])
-        .map(activityId => {
-            if (!activityId) return null;
-            const activity = extracurriculars.find(e => e.id === activityId);
-            const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
-            return { name: activity?.name, description };
-        }).filter(Boolean);
-        
-    const cocurricularDescription = useMemo(() => {
-        const studentCoData = cocurricularData?.[student.id];
-        const theme = settings.cocurricular_theme;
-
-        const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
-            ? studentCoData.dimensionRatings
-            : {};
-        
-        const hasRatings = Object.values(ratings).some(r => r && r !== "---");
-
-        if (!theme && !hasRatings) {
-            return "Data kokurikuler belum diisi.";
-        }
-
-        let description = '';
-        if (theme) {
-            description = `Ananda ${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}". `;
-        }
-
-        if (hasRatings) {
-            const strongDimensions = COCURRICULAR_DIMENSIONS
-                .filter(dim => ['SB', 'BSH'].includes(ratings[dim.id]))
-                .map(dim => dim.label.toLowerCase());
-
-            if (strongDimensions.length > 0) {
-                const last = strongDimensions.pop();
-                const first = strongDimensions.join(', ');
-                const dimensionText = strongDimensions.length > 0 ? `${first}, dan ${last}` : last;
-                description += `Ia menunjukkan perkembangan yang sangat baik dalam aspek ${dimensionText}.`;
-            } else {
-                const developingDimensions = COCURRICULAR_DIMENSIONS
-                    .filter(dim => ['MB'].includes(ratings[dim.id]))
-                    .map(dim => dim.label.toLowerCase());
-                
-                if (developingDimensions.length > 0) {
-                     const last = developingDimensions.pop();
-                     const first = developingDimensions.join(', ');
-                     const dimensionText = developingDimensions.length > 0 ? `${first}, dan ${last}` : last;
-                     description += `Ia mulai menunjukkan perkembangan dalam aspek ${dimensionText}.`;
-                } else {
-                    description += `Perlu bimbingan lebih lanjut untuk mengembangkan dimensi profil lulusan.`;
-                }
-            }
-        } else if (theme) {
-            description += 'Penilaian dimensi profil lulusan perlu ditambahkan.';
-        }
-        
-        return description.trim();
-    }, [student, settings, cocurricularData, nickname]);
-
-    const renderDecision = () => {
-        const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
-        if (!isSemesterGenap) return null;
-
-        const gradeLevel = getGradeNumber(settings.nama_kelas);
-
-        let promotionText;
-        if (gradeLevel === 6) {
-            promotionText = 'LULUS';
+        if (el.textAlign === 'center') {
+            newElement.x = (1123 - el.width) / 2;
         } else {
-            const nextGrade = gradeLevel ? gradeLevel + 1 : '';
-            const nextGradeRoman = {1: 'II', 2: 'III', 3: 'IV', 4: 'V', 5: 'VI'}[nextGrade - 1] || '';
-            promotionText = `Naik ke Kelas ${nextGrade} (${nextGradeRoman})`;
+            newElement.x = (el.id === 'logo_sekolah_img') ? (1123 - xOffset - el.width) : (el.x + xOffset);
         }
         
-        return React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
-            React.createElement('div', { className: 'font-bold border-y-2 border-black text-center py-1' }, 
-                `Berdasarkan hasil belajar yang dicapai, ${nickname} dinyatakan:`
-            ),
-            React.createElement('div', { className: 'font-bold mt-1 text-center py-1' },
-                promotionText
-            )
-        );
+        newElement.y = el.y + yOffset;
+        
+        return newElement;
+    });
+    
+    const kopContentBottomY = Math.max(0, ...adaptedKopElements.map(el => {
+        if (el.type === 'image') return (el.y || 0) + (el.height || 0);
+        // The y attribute for text is the baseline, so add font size to get the approximate bottom
+        if (el.type === 'text') return (el.y || 0) + (el.fontSize || 0);
+        return 0;
+    }));
+
+    const lineBuffer = 5;
+    const adaptedLineEl = {
+        ...(lineElOriginal || { type: 'line', height: 3 }), // Fallback if line somehow doesn't exist
+        id: `kop_${lineElOriginal?.id || 'line_1'}`,
+        y: kopContentBottomY + lineBuffer,
+        x: (1123 - 1000) / 2, // Center the wider line for piagam
+        width: 1000
+    };
+    
+    const allAdaptedKop = [...adaptedKopElements, adaptedLineEl];
+    const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
+    
+    const contentStartY = kopBottomY + 40;
+    const rankBoxWidth = 300;
+    const rankBoxHeight = 50;
+    const rankBoxX = (1123 - rankBoxWidth) / 2;
+    const rankBoxY = contentStartY + 160;
+
+    const paragraphY = rankBoxY + rankBoxHeight + 30;
+    const signatureY = paragraphY + 120; // Increased from 90 to add more space
+
+    return [
+        ...allAdaptedKop,
+        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 50, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 140, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        
+        { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
+        { id: 'rank_text', type: 'text', content: 'PERINGKAT [RANK]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
+
+        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        
+        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+
+        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 70, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
+        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 90, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+    ];
+};
+
+const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
+    const [elements, setElements] = useState([]);
+    const [selectedElementId, setSelectedElementId] = useState(null);
+    const svgRef = useRef(null);
+    const dragInfo = useRef(null);
+    const GRID_SIZE = 10;
+
+    useEffect(() => {
+        if (isOpen) {
+            const layoutToLoad = settings.piagam_layout && settings.piagam_layout.length > 0
+                ? JSON.parse(JSON.stringify(settings.piagam_layout))
+                : generateInitialPiagamLayout(settings);
+            setElements(layoutToLoad);
+            setSelectedElementId(null);
+        }
+    }, [isOpen, settings]);
+
+    const handleSelectElement = (id, e) => {
+        e.stopPropagation();
+        setSelectedElementId(id);
     };
 
+    const handleDeselect = () => setSelectedElementId(null);
+    
+    const updateElement = (id, updates) => {
+        setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
+    };
+
+    const handleMouseDown = (e, el) => {
+        if (!svgRef.current) return;
+        const svg = svgRef.current;
+        const ctm = svg.getScreenCTM()?.inverse();
+        if (!ctm) return;
+        
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const transformedPt = pt.matrixTransform(ctm);
+        
+        dragInfo.current = {
+            elementId: el.id,
+            offset: { x: transformedPt.x - el.x, y: transformedPt.y - el.y },
+            ctm: ctm,
+        };
+
+        const handleMouseMove = (moveEvent) => {
+            if (!dragInfo.current) return;
+            const pt = svg.createSVGPoint();
+            pt.x = moveEvent.clientX;
+            pt.y = moveEvent.clientY;
+            const newTransformedPt = pt.matrixTransform(dragInfo.current.ctm);
+            let newX = newTransformedPt.x - dragInfo.current.offset.x;
+            let newY = newTransformedPt.y - dragInfo.current.offset.y;
+            newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+            newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+            updateElement(dragInfo.current.elementId, { x: newX, y: newY });
+        };
+        const handleMouseUp = () => {
+            dragInfo.current = null;
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    };
+    
+    const addElement = () => {
+        const newId = `text_${Date.now()}`;
+        setElements(prev => [...prev, { id: newId, type: 'text', content: 'Teks Baru', x: 50, y: 100, width: 200, fontSize: 14, fontWeight: 'normal', textAlign: 'left', fontFamily: 'Tinos' }]);
+        setSelectedElementId(newId);
+    };
+    
+    const deleteElement = () => {
+        if (selectedElementId) {
+            setElements(prev => prev.filter(el => el.id !== selectedElementId));
+            setSelectedElementId(null);
+        }
+    };
+    
+    if (!isOpen) return null;
+
+    const selectedElement = elements.find(el => el.id === selectedElementId);
+
     return (
-        React.createElement('div', { className: 'mt-2' },
-            showCocurricular && cocurricularDescription && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
-                React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
-                React.createElement('div', { className: 'min-h-[2rem]' }, cocurricularDescription)
-            ),
-            showExtra && React.createElement('div', { ref: extraRef, className: 'mt-2' },
-                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[32%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[63%]' }, 'Keterangan'))),
-                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
-                )
-            ),
-            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-2 items-stretch' },
-                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '6.5cm' } },
-                    React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
-                     React.createElement('div', { className: 'flex-grow flex flex-col' },
-                        ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
-                            const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
-                            return React.createElement('div', {
-                                key: item,
-                                className: `flex items-center px-2 py-1 flex-1 ${index < arr.length - 1 ? 'border-b border-black' : ''}`
-                            },
-                                React.createElement('span', { className: 'w-28' }, item),
-                                React.createElement('span', { className: 'px-1' }, ':'),
-                                React.createElement('span', { className: 'flex-1 text-left' }, `${value} hari`)
-                            )
-                        })
+        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4", onClick: handleDeselect },
+            React.createElement('div', { className: "bg-slate-100 rounded-lg shadow-xl w-full max-w-7xl h-[95vh] flex flex-col", onClick: e => e.stopPropagation() },
+                React.createElement('div', { className: "flex justify-between items-center p-4 border-b bg-white rounded-t-lg" },
+                    React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Editor Visual Tata Letak Piagam"),
+                    React.createElement('div', null,
+                        React.createElement('button', { onClick: onClose, className: "text-slate-600 hover:text-slate-900 mr-4" }, "Batal"),
+                        React.createElement('button', { onClick: () => { onSaveLayout(elements); onClose(); }, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Simpan Desain")
                     )
                 ),
-                showNotes && React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt', width: '11.5cm' } },
-                    React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
-                    React.createElement('div', { className: 'min-h-[3rem]' }, studentNoteContent)
-                )
-            ),
-            showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-2' }, renderDecision()),
-            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-2' },
-                React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
-                    React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
-                    React.createElement('div', { style: { minHeight: '2cm' } })
-                )
-            ),
-            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
-                React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', null, '.........................')),
-                React.createElement('div', { className: 'text-center' }, 
-                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
-                    React.createElement('div', null, 'Wali Kelas,'), 
-                    React.createElement('div', { className: 'h-14' }), 
-                    React.createElement('div', { className: 'font-bold underline' }, settings.nama_wali_kelas || '_________________'), 
-                    React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
-                )
-            ),
-            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-2 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
-        )
-    );
-});
+                React.createElement('div', { className: "flex flex-1 overflow-hidden" },
+                    React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-center items-start" },
+                        React.createElement('div', { className: "bg-white shadow-lg relative", style: { width: '29.7cm', height: '21cm', backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`, backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px` } },
+                           React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
+                                elements.map(el => {
+                                    const isSelected = el.id === selectedElementId;
+                                    const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(e, el), style: { cursor: 'move' } };
+                                    
+                                    let elementRender;
+                                    if (el.type === 'text') {
+                                        let textAnchor = "start", xPos = el.x;
+                                        if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
+                                        else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                                        elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
+                                    } else if (el.type === 'image') {
+                                        const imageUrl = String(settings[el.content] || '');
+                                        elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
+                                    } else if (el.type === 'rect' || el.type === 'line') { // Support for rect type
+                                        elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                                    } else {
+                                        return null;
+                                    }
+                                    
+                                    const selectionBoxHeight = (el.type === 'text') ? (el.fontSize || 14) * 1.2 : (el.height || 0);
+                                    const selectionBoxY = (el.type === 'text') ? el.y - (el.fontSize || 14) : el.y;
 
-
-const PageFooter = ({ student, settings, currentPage }) => {
-    const className = settings.nama_kelas || '';
-    const studentName = student.namaLengkap || '';
-    const nisn = student.nisn || '-';
-
-    return (
-        React.createElement('div', { 
-            className: "absolute left-[1.5cm] right-[1.5cm] font-times", 
-            style: { 
-                bottom: `${PAGE_BOTTOM_MARGIN_CM}cm`,
-                fontSize: '10pt',
-                height: `${PAGE_NUMBER_FOOTER_HEIGHT_CM}cm`,
-            }
-        },
-            React.createElement('div', { className: "border-t border-slate-400 mb-2" }),
-            React.createElement('div', { className: "flex justify-between items-center" },
-                React.createElement('div', null,
-                    `${className} | ${studentName} | ${nisn}`
-                ),
-                React.createElement('div', null,
-                    `Halaman ${currentPage}`
+                                    return React.createElement('g', commonProps,
+                                        elementRender,
+                                        isSelected && React.createElement('rect', { x: el.x, y: selectionBoxY, width: el.width, height: selectionBoxHeight, fill: "none", stroke: "#4f46e5", strokeWidth: "2", strokeDasharray: "4 4", style: { pointerEvents: 'none' } })
+                                    );
+                                })
+                           )
+                        )
+                    ),
+                    React.createElement('div', { className: "w-72 bg-white p-4 border-l overflow-y-auto" },
+                        React.createElement('h3', { className: "font-semibold mb-2" }, "Alat"),
+                        React.createElement('button', { onClick: addElement, className: "w-full text-left p-2 rounded hover:bg-slate-100 mb-4" }, "Tambah Teks"),
+                         selectedElement && selectedElement.type === 'text' ? (
+                             React.createElement('div', { className: "space-y-4 pt-4 border-t" },
+                                React.createElement('h3', { className: "font-semibold" }, "Properti Teks"),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Teks"), React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 })),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Lebar (Width)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), React.createElement('option', { value: "system-ui" }, "System UI (Modern)"))),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId, { fontWeight: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
+                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId, { textAlign: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan"))),
+                                React.createElement('div', null,
+                                    React.createElement('label', { className: "text-sm" }, "Garis Bawah"),
+                                    React.createElement('select', { value: selectedElement.textDecoration || 'none', onChange: e => updateElement(selectedElementId, { textDecoration: e.target.value }), className: "w-full p-1 border rounded" },
+                                        React.createElement('option', { value: "none" }, "Tidak"),
+                                        React.createElement('option', { value: "underline" }, "Ya")
+                                    )
+                                ),
+                                React.createElement('button', { onClick: deleteElement, className: "w-full text-left p-2 rounded text-red-600 hover:bg-red-100 mt-4" }, "Hapus Elemen")
+                             )
+                         ) : React.createElement('p', { className: "text-sm text-slate-500 pt-4 border-t" }, "Pilih sebuah elemen teks untuk melihat propertinya.")
+                    )
                 )
             )
         )
     );
 };
 
+const DefaultPiagamBackground = () => {
+    const s = 24; // block size
+    const margin = 0;
+    const blue = "#00B2FF"; // A bright, sky blue
+    const yellow = "#FFD700"; // A golden yellow
+    const darkBlue = "#005F88"; // A darker, coordinating blue
+    const width = 1123;
+    const height = 794;
+    const cornerSize = s * 3;
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, rank, rankingOption, ...restProps }) => {
-    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData } = restProps;
-    const gradeData = grades.find(g => g.studentId === student.id);
-    const [academicPageChunks, setAcademicPageChunks] = useState(null);
+    // A reusable component for the new corner design, inspired by the user's image
+    const CornerPattern = ({ transform }) => (
+        React.createElement('g', { transform: transform },
+            // This pattern creates the stepped corner from the user's image idea
+            React.createElement('rect', { x: 0, y: 0, width: s, height: s, fill: darkBlue }),
+            React.createElement('rect', { x: s, y: 0, width: s * 2, height: s, fill: blue }),
+            React.createElement('rect', { x: 0, y: s, width: s, height: s * 2, fill: blue }),
+            React.createElement('rect', { x: s, y: s, width: s, height: s, fill: yellow }),
+            React.createElement('rect', { x: s, y: s * 2, width: s, height: s, fill: yellow }),
+            React.createElement('rect', { x: s * 2, y: s, width: s, height: s, fill: yellow })
+        )
+    );
 
-    const studentInfoRef = useRef(null);
-    const tableHeaderRef = useRef(null);
-    const tableBodyRef = useRef(null);
-    const cocurricularRef = useRef(null);
-    const extraRef = useRef(null);
-    const attendanceAndNotesRef = useRef(null);
-    const decisionRef = useRef(null);
-    const parentFeedbackRef = useRef(null);
-    const signaturesRef = useRef(null);
-    const headmasterRef = useRef(null);
-    const cmRef = useRef(null);
-    const [cmToPx, setCmToPx] = useState(0);
-
-    const shouldDisplayRank = useMemo(() => rank && rankingOption !== 'none' && (
-        (rankingOption === 'top3' && rank <= 3) ||
-        (rankingOption === 'top10' && rank <= 10)
-    ), [rank, rankingOption]);
-
-    const notesForMeasurement = useMemo(() => {
-        if (shouldDisplayRank) {
-            const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
-            const rankMessage = `Selamat! Ananda ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
-            const originalNote = notes[student.id] || '';
-            return {
-                ...notes,
-                [student.id]: rankMessage + originalNote
-            };
-        }
-        return notes;
-    }, [shouldDisplayRank, student, rank, notes]);
-
-    useEffect(() => {
-        if (cmRef.current) {
-            setCmToPx(cmRef.current.offsetHeight);
-        }
-    }, [cmRef.current]);
-
-    const reportSubjects = useMemo(() => {
-        const result = [];
-        const processedGroups = new Set();
-        const allActiveSubjects = subjects.filter(s => s.active);
-        
-        const groupConfigs = {
-            'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
-                const studentReligion = student.agama?.trim().toLowerCase();
-                const representative = groupSubjects.find(s => {
-                    const match = s.fullName.match(/\(([^)]+)\)/);
-                    return match && match[1].trim().toLowerCase() === studentReligion;
-                });
-                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
-            },
-            'Seni Budaya': (groupSubjects) => {
-                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
-                return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
-            },
-            'Muatan Lokal': (groupSubjects) => {
-                const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
-                if (chosen) {
-                    const match = chosen.fullName.match(/\(([^)]+)\)/);
-                    return { subject: chosen, name: match ? match[1] : 'Muatan Lokal' };
-                }
-                return null;
-            }
-        };
-
-        Object.keys(groupConfigs).forEach(groupName => {
-            if (processedGroups.has(groupName)) return;
-            const groupSubjects = allActiveSubjects.filter(s => s.fullName.startsWith(groupName));
-            if (groupSubjects.length > 0) {
-                const config = groupConfigs[groupName](groupSubjects);
-                if (config && config.subject) {
-                     const grade = gradeData?.finalGrades?.[config.subject.id];
-                     const description = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
-                     result.push({ id: config.subject.id, name: config.name, grade: grade, description: description });
-                }
-                processedGroups.add(groupName);
-            }
-        });
-        
-        allActiveSubjects.forEach(subject => {
-            const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
-            if (!isGrouped) {
-                const grade = gradeData?.finalGrades?.[subject.id];
-                const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
-                result.push({ id: subject.id, name: subject.fullName, grade: grade, description: description });
-            }
-        });
-        
-        const sortOrder = [
-            'Pendidikan Agama dan Budi Pekerti', 'Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 
-            'Ilmu Pengetahuan Alam dan Sosial', 'Seni Budaya', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 
-            'Bahasa Inggris', 'Muatan Lokal'
-        ];
-        
-        const findOriginalFullName = (subjectId) => subjects.find(s => s.id === subjectId)?.fullName || '';
-
-        result.sort((a, b) => {
-            const getSortKey = (item) => {
-                const originalFullName = findOriginalFullName(item.id);
-                if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
-                if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
-                if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
-                return item.name;
-            };
-            const aSortKey = getSortKey(a);
-            const bSortKey = getSortKey(b);
-            const aIndex = sortOrder.findIndex(key => aSortKey.startsWith(key));
-            const bIndex = sortOrder.findIndex(key => bSortKey.startsWith(key));
-            return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
-        });
-        return result;
-    }, [student, subjects, gradeData, learningObjectives, settings]);
-
-    useEffect(() => {
-        if (!selectedPages.academic) {
-            setAcademicPageChunks([]);
-            return;
-        }
-        if (cmToPx === 0) return;
-
-        setAcademicPageChunks(null); // Set to null to trigger measurement render
-
-        const calculateChunks = () => {
-            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef];
-            if (refs.some(ref => !ref.current)) {
-                // If any ref is not ready, retry
-                setTimeout(calculateChunks, 50);
-                return;
-            }
-
-            const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
-            const firstPageAvailableHeight = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
-            const subsequentPageAvailableHeight = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx);
-
-            const allItems = [];
+    return (
+        React.createElement('g', { 'data-name': "default-background" },
+            // Long connecting bars
+            // Top bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin + cornerSize, y: margin, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: margin + s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
             
-            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
-            reportSubjects.forEach((subject, index) => {
-                allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
-            });
+            // Bottom bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s*2, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
 
-            const footerItems = [
-                { type: 'cocurricular', ref: cocurricularRef },
-                { type: 'extra', ref: extraRef },
-                { type: 'attendanceAndNotes', ref: attendanceAndNotesRef },
-                { type: 'decision', ref: decisionRef },
-                { type: 'parentFeedback', ref: parentFeedbackRef },
-                { type: 'signatures', ref: signaturesRef },
-                { type: 'headmaster', ref: headmasterRef }
-            ];
+            // Left bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: margin, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: margin + s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
 
-            footerItems.forEach(item => {
-                const element = item.ref.current;
-                if (element) {
-                    const height = element.getBoundingClientRect().height;
-                    const style = window.getComputedStyle(element);
-                    const marginTop = parseFloat(style.marginTop);
-                    const marginBottom = parseFloat(style.marginBottom);
-                    if (height > 0) {
-                         allItems.push({ type: item.type, height: height + marginTop + marginBottom });
-                    }
-                }
-            });
+            // Right bars (blue is outer, yellow is inner)
+            React.createElement('rect', { x: width - margin - s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: width - margin - s*2, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
+            
+            // Corner patterns placed at the four corners, transformed appropriately
+            React.createElement(CornerPattern, { transform: `translate(${margin}, ${margin})` }), // Top-Left
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` }), // Top-Right
+            React.createElement(CornerPattern, { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` }), // Bottom-Left
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` }) // Bottom-Right
+        )
+    );
+};
 
-            const allChunks = [];
-            if (allItems.length === 0) {
-                setAcademicPageChunks([[]]);
-                return;
-            }
 
-            let currentItemIndex = 0;
-            let isFirstPage = true;
+const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
+    const layout = settings.piagam_layout && settings.piagam_layout.length > 0
+        ? settings.piagam_layout
+        : generateInitialPiagamLayout(settings);
 
-            while (currentItemIndex < allItems.length) {
-                let currentChunk = [];
-                const availableHeight = isFirstPage ? firstPageAvailableHeight : subsequentPageAvailableHeight;
-                let heightUsed = isFirstPage ? studentInfoRef.current.getBoundingClientRect().height : 0;
-                
-                const hasAcademicItemsRemaining = allItems.slice(currentItemIndex).some(item => item.type === 'academic');
-                if (hasAcademicItemsRemaining) {
-                    heightUsed += tableHeaderRef.current.getBoundingClientRect().height;
-                }
-
-                for (let i = currentItemIndex; i < allItems.length; i++) {
-                    const item = allItems[i];
-                    if (heightUsed + item.height <= availableHeight) {
-                        currentChunk.push(item);
-                        heightUsed += item.height;
-                    } else {
-                        break;
-                    }
-                }
-
-                if (currentChunk.length === 0 && currentItemIndex < allItems.length) {
-                    currentChunk.push(allItems[currentItemIndex]);
-                }
-
-                currentItemIndex += currentChunk.length;
-                allChunks.push(currentChunk);
-                isFirstPage = false;
-            }
-             setAcademicPageChunks(allChunks);
-        };
+    const replacePlaceholders = (text) => {
+        if (!text) return '';
+        const rankString = rank ? `${toRoman(rank)}` : '';
+        const classRoman = toRoman(parseInt(settings.nama_kelas, 10)) || settings.nama_kelas;
         
-        const timer = setTimeout(calculateChunks, 100);
-        return () => clearTimeout(timer);
+        return text
+            .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '').toUpperCase())
+            .replace(/\[RANK\]/gi, rankString)
+            .replace(/\[nama kelas\]/gi, classRoman)
+            .replace(/\[semester\]/gi, settings.semester || '')
+            .replace(/\[tahun pelajaran\]/gi, settings.tahun_ajaran || '')
+            .replace(/\[nilai rata-rata\]/gi, average || '')
+            .replace(/\[nama kepala sekolah\]/gi, settings.nama_kepala_sekolah || '')
+            .replace(/\[nip kepala sekolah\]/gi, settings.nip_kepala_sekolah || '')
+            .replace(/\[nama wali kelas\]/gi, settings.nama_wali_kelas || '')
+            .replace(/\[nip wali kelas\]/gi, settings.nip_wali_kelas || '')
+            .replace(/Tempat, Tanggal Rapor/gi, settings.tanggal_rapor || 'Tempat, Tanggal Rapor');
+    };
 
-    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx, shouldDisplayRank]);
-
-
-    if (academicPageChunks === null && selectedPages.academic) {
-        // Render the measurement layout
-        return React.createElement(React.Fragment, null,
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
-            React.createElement('div', { 
-                className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
-                style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
-            },
-                 React.createElement('div', { className: 'absolute flex flex-col', style: {
-                    top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
-                } },
-                    React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
-                    React.createElement(ReportFooterContent, { 
-                        student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
-                        rank: rank, rankingOption: rankingOption,
-                        showCocurricular: true, showExtra: true, showNotes: true, showAttendance: true, showDecision: true,
-                        showParentFeedback: true, showParentTeacherSignature: true, showHeadmasterSignature: true,
-                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef }
+    return (
+        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
+            settings.piagam_background && React.createElement('img', { src: settings.piagam_background, alt: "Piagam Background", className: 'absolute top-0 left-0 w-full h-full object-cover' }),
+            React.createElement('div', { className: "absolute w-full h-full" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
+                    !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
+                    layout.map(el => {
+                        let elementRender;
+                        if (el.type === 'text') {
+                            let textAnchor = "start", xPos = el.x;
+                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
+                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
+                        } else if (el.type === 'image') {
+                            const imageUrl = String(settings[el.content] || '');
+                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
+                        } else if (el.type === 'rect' || el.type === 'line') {
+                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                        } else {
+                            return null;
+                        }
+                        return React.createElement('g', { key: el.id }, elementRender);
                     })
                 )
             )
-        );
-    }
-    
-    let academicPageCounter = 0;
-
-    return (
-        React.createElement(React.Fragment, null,
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
-            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                React.createElement(CoverPage, { student: student, settings: settings })
-            ),
-            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
-                React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
-                    React.createElement(SchoolIdentityPage, { settings: settings })
-                )
-            ),
-            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
-                React.createElement(ReportHeader, { settings: settings }),
-                React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
-                    React.createElement(StudentIdentityPage, { student: student, settings: settings })
-                )
-            ),
-            selectedPages.academic && academicPageChunks?.map((chunk, pageIndex) => {
-                if (chunk.length === 0) return null;
-
-                academicPageCounter++;
-                const isFirstAcademicPage = pageIndex === 0;
-                const contentTopCm = isFirstAcademicPage ? HEADER_HEIGHT_CM : PAGE_TOP_MARGIN_CM;
-                
-                const academicItemsInChunk = chunk.filter(item => item.type === 'academic').map(item => item.content);
-                const hasAcademicItems = academicItemsInChunk.length > 0;
-                
-                let startingIndex = 1;
-                for (let i = 0; i < pageIndex; i++) {
-                    startingIndex += academicPageChunks[i].filter(item => item.type === 'academic').length;
-                }
-
-                const chunkItemTypes = new Set(chunk.map(item => item.type));
-                const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
-
-
-                return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
-                    isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
-                    
-                    React.createElement('div', { className: 'absolute flex flex-col', style: {
-                        top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
-                    }},
-                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex }),
-                        React.createElement(ReportFooterContent, { 
-                            student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
-                            rank: rank, rankingOption: rankingOption,
-                            showCocurricular: chunkItemTypes.has('cocurricular'),
-                            showExtra: chunkItemTypes.has('extra'),
-                            showNotes: chunkItemTypes.has('attendanceAndNotes'),
-                            showAttendance: chunkItemTypes.has('attendanceAndNotes'),
-                            showDecision: chunkItemTypes.has('decision') && isSemesterGenap,
-                            showParentFeedback: chunkItemTypes.has('parentFeedback'),
-                            showParentTeacherSignature: chunkItemTypes.has('signatures'),
-                            showHeadmasterSignature: chunkItemTypes.has('headmaster'),
-                        })
-                    ),
-                    
-                    React.createElement(PageFooter, { student: student, settings: settings, currentPage: academicPageCounter })
-                );
-            })
         )
     );
 };
 
-
-const PAPER_SIZES = {
-    A4: { width: '21cm', height: '29.7cm' },
-    F4: { width: '21.5cm', height: '33cm' },
-    Letter: { width: '21.59cm', height: '27.94cm' },
-    Legal: { width: '21.59cm', height: '35.56cm' },
-};
-
-const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
-    const { grades, subjects } = restProps;
+const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamLayout, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
     const [selectedStudentId, setSelectedStudentId] = useState('all');
-    const [rankingOption, setRankingOption] = useState('none');
-    const [selectedPages, setSelectedPages] = useState({
-        cover: true,
-        schoolIdentity: true,
-        studentIdentity: true,
-        academic: true,
-    });
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
 
-    const studentRanks = useMemo(() => {
-        if (rankingOption === 'none' || !students.length || !grades.length || !subjects.length) {
-            return new Map();
-        }
-
+    const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
-
-        const studentsWithTotals = students.map(student => {
+        const studentsWithScores = students.map(student => {
             const gradeData = grades.find(g => g.studentId === student.id);
-            if (!gradeData || !gradeData.finalGrades) {
-                return { studentId: student.id, totalScore: 0 };
-            }
+            if (!gradeData || !gradeData.finalGrades) return { studentId: student.id, total: 0, count: 0 };
 
             const studentReligion = student.agama?.trim().toLowerCase();
+            let total = 0, count = 0;
             
-            const totalScore = Object.entries(gradeData.finalGrades)
-                .reduce((sum, [subjectId, score]) => {
-                    const subjectInfo = allActiveSubjects.find(s => s.id === subjectId);
-                    if (subjectInfo && typeof score === 'number') {
-                        if (subjectInfo.fullName.startsWith('Pendidikan Agama')) {
-                            if (studentReligion && subjectInfo.fullName.toLowerCase().includes(`(${studentReligion})`)) {
-                                return sum + score;
-                            }
-                            return sum; 
+            Object.entries(gradeData.finalGrades).forEach(([subjectId, score]) => {
+                const subjectInfo = allActiveSubjects.find(s => s.id === subjectId);
+                if (subjectInfo && typeof score === 'number') {
+                    if (subjectInfo.fullName.startsWith('Pendidikan Agama')) {
+                        if (studentReligion && subjectInfo.fullName.toLowerCase().includes(`(${studentReligion})`)) {
+                            total += score;
+                            count++;
                         }
-                        return sum + score;
+                    } else {
+                        total += score;
+                        count++;
                     }
-                    return sum;
-                }, 0);
-            
-            return { studentId: student.id, totalScore };
+                }
+            });
+            return { studentId: student.id, total, count, average: count > 0 ? (total / count).toFixed(2) : "0.00" };
         });
 
-        const sortedStudents = studentsWithTotals.sort((a, b) => b.totalScore - a.totalScore);
-
-        const ranksMap = new Map();
+        const sortedStudents = [...studentsWithScores].sort((a, b) => b.total - a.total);
+        const rankMap = new Map();
         if (sortedStudents.length > 0) {
             let currentRank = 1;
-            ranksMap.set(sortedStudents[0].studentId, currentRank);
+            rankMap.set(sortedStudents[0].studentId, { ...sortedStudents[0], rank: sortedStudents[0].total > 0 ? currentRank : null });
             for (let i = 1; i < sortedStudents.length; i++) {
-                if (sortedStudents[i].totalScore < sortedStudents[i - 1].totalScore) {
-                    currentRank = i + 1;
-                }
-                if (sortedStudents[i].totalScore > 0) {
-                    ranksMap.set(sortedStudents[i].studentId, currentRank);
-                }
+                if (sortedStudents[i].total < sortedStudents[i - 1].total) currentRank = i + 1;
+                rankMap.set(sortedStudents[i].studentId, { ...sortedStudents[i], rank: sortedStudents[i].total > 0 ? currentRank : null });
             }
         }
-        
-        return ranksMap;
-    }, [rankingOption, students, grades, subjects]);
+        return rankMap;
+    }, [students, grades, subjects]);
 
-    const handlePageSelectionChange = useCallback((e) => {
-        const { name, checked } = e.target;
-        setSelectedPages(prev => {
-            if (name === 'all') {
-                return {
-                    cover: checked,
-                    schoolIdentity: checked,
-                    studentIdentity: checked,
-                    academic: checked,
-                };
-            }
-            return {
-                ...prev,
-                [name]: checked,
-            };
-        });
-    }, []);
-    
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm portrait;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
-        }[paperSize];
-
         const style = document.createElement('style');
-        style.id = 'print-page-style';
-        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
+        style.id = 'print-piagam-style';
+        style.innerHTML = `@page { size: ${paperSize === 'F4' ? '33cm 21.5cm' : paperSize.toLowerCase()} landscape; margin: 0; }`;
         document.head.appendChild(style);
 
         setTimeout(() => {
             window.print();
-            document.getElementById('print-page-style')?.remove();
+            document.getElementById('print-piagam-style')?.remove();
             setIsPrinting(false);
         }, 500);
     };
 
     const studentsToRender = useMemo(() => {
-        if (selectedStudentId === 'all') {
-            return students;
-        }
-        return students.filter(s => String(s.id) === selectedStudentId);
-    }, [students, selectedStudentId]);
+        const rankedStudents = students.filter(s => studentRankings.has(s.id) && studentRankings.get(s.id).rank !== null)
+                                     .sort((a, b) => studentRankings.get(a.id).rank - studentRankings.get(b.id).rank);
+        if (selectedStudentId === 'all') return rankedStudents;
+        return rankedStudents.filter(s => String(s.id) === selectedStudentId);
+    }, [students, selectedStudentId, studentRankings]);
     
-    const pageStyle = {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    };
-
-    const pageCheckboxes = [
-        { key: 'cover', label: 'Sampul' },
-        { key: 'schoolIdentity', label: 'Identitas Sekolah' },
-        { key: 'studentIdentity', label: 'Identitas Murid' },
-        { key: 'academic', label: 'Laporan Hasil Belajar' },
-    ];
-
     return (
         React.createElement(React.Fragment, null,
-            React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
+            React.createElement(PiagamEditorModal, { isOpen: isEditorOpen, onClose: () => setIsEditorOpen(false), settings: settings, onSaveLayout: onUpdatePiagamLayout }),
+            React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
                  React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                     React.createElement('div', null,
-                        React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
-                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.")
+                        React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Piagam Penghargaan"),
+                        React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Buat dan cetak piagam untuk siswa berprestasi.")
                     ),
                     React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
                         React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'rankingSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Tampilkan Peringkat'),
-                            React.createElement('select', { 
-                                id: "rankingSelector",
-                                value: rankingOption,
-                                onChange: (e) => setRankingOption(e.target.value),
-                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
-                                React.createElement('option', { value: "none" }, "Tidak Tampilkan"),
-                                React.createElement('option', { value: "top3" }, "Peringkat 1-3"),
-                                React.createElement('option', { value: "top10" }, "Peringkat 1-10")
-                            )
-                        ),
-                        React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'studentSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Pilih Murid'),
-                            React.createElement('select', { 
-                                id: "studentSelector",
-                                value: selectedStudentId,
-                                onChange: (e) => setSelectedStudentId(e.target.value),
-                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
-                                React.createElement('option', { value: "all" }, "Cetak Semua Murid"),
+                            React.createElement('select', { id: "studentSelector", value: selectedStudentId, onChange: (e) => setSelectedStudentId(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm" },
+                                React.createElement('option', { value: "all" }, "Cetak Semua Peringkat"),
                                 students.map(s => React.createElement('option', { key: s.id, value: String(s.id) }, s.namaLengkap))
                             )
                         ),
                         React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
-                            React.createElement('select', {
-                                id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value),
-                                className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
+                            React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm" },
+                                Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
-                        React.createElement('button', { 
-                            onClick: handlePrint,
-                            disabled: isPrinting,
-                            className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        }, isPrinting ? 'Mempersiapkan...' : 'Cetak Rapor (Print)')
-                    )
-                ),
-                React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Pilih Halaman untuk Dicetak:"),
-                    React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
-                        React.createElement('label', { className: "flex items-center space-x-2" }, React.createElement('input', { type: "checkbox", name: "all", checked: Object.values(selectedPages).every(Boolean), onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }), React.createElement('span', { className: "text-sm font-bold" }, "Pilih Semua")),
-                        ...pageCheckboxes.map(page => (
-                            React.createElement('label', { key: page.key, className: "flex items-center space-x-2" },
-                                React.createElement('input', { type: "checkbox", name: page.key, checked: selectedPages[page.key] || false, onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                                React.createElement('span', { className: "text-sm" }, page.label)
-                            )
-                        ))
+                        React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
+                        React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
                     )
                 )
             ),
-            
             React.createElement('div', { id: "print-area", className: "space-y-8" },
-                studentsToRender.map(student => {
-                    const rank = studentRanks.get(student.id);
-                    return React.createElement(ReportPagesForStudent, { 
+                studentsToRender.length > 0 ? studentsToRender.map(student => {
+                    const studentData = studentRankings.get(student.id);
+                    return React.createElement(PiagamPage, { 
                         key: student.id, 
                         student: student, 
                         settings: settings,
-                        pageStyle: pageStyle,
-                        selectedPages: selectedPages,
-                        paperSize: paperSize,
-                        rank: rank,
-                        rankingOption: rankingOption,
-                        ...restProps
-                    })
-                })
+                        pageStyle: { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height },
+                        rank: studentData?.rank,
+                        average: studentData?.average
+                    });
+                }) : React.createElement('p', {className: "text-center text-slate-500 py-10"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak.")
             )
         )
     );
 };
 
-export default PrintRaporPage;
+export default PrintPiagamPage;
