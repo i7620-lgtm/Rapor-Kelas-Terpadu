@@ -4,14 +4,14 @@ export const getGradeNumber = (str) => {
     if (!str) return null;
     const trimmedStr = str.trim();
     
-    // Priority 1: Check for an Arabic numeral at the beginning. Handles "6", "6A", "1 B".
-    const arabicMatch = trimmedStr.match(/^\d+/);
+    // Priority 1: Check for any Arabic numeral within the string.
+    const arabicMatch = trimmedStr.match(/\d+/);
     if (arabicMatch) {
         return parseInt(arabicMatch[0], 10);
     }
 
-    // Priority 2: Check for Roman numerals at the beginning.
-    // Order is crucial: check for longer strings first (VI before V, IV before I).
+    // Priority 2: Check for Roman numerals at the beginning of the string.
+    // The order of checks is important.
     const upperStr = trimmedStr.toUpperCase();
     if (upperStr.startsWith('VI')) return 6;
     if (upperStr.startsWith('V')) return 5;
