@@ -70,7 +70,7 @@ const generateInitialPiagamLayout = (settings) => {
 
     return [
         ...adaptedKopElements,
-        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', dominantBaseline: 'middle' },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 115, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
@@ -197,7 +197,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                     backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`
                                 }
                             },
-                               React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet", className: "cursor-default" },
+                               React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "none", className: "cursor-default" },
                                     elements.map(el => {
                                         const isSelected = el.id === selectedElementId;
                                         const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(e, el), style: { cursor: 'move' } };
@@ -207,7 +207,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             let textAnchor = "start", xPos = el.x;
                                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
+                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
                                         } else if (el.type === 'image') {
                                             const imageUrl = String(settings[el.content] || '');
                                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
@@ -218,7 +218,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                         }
                                         
                                         const selectionBoxHeight = (el.type === 'text') ? (el.fontSize || 14) * 1.2 : (el.height || 0);
-                                        const selectionBoxY = (el.type === 'text') ? el.y - (el.fontSize || 14) : el.y;
+                                        const selectionBoxY = (el.type === 'text') ? (el.dominantBaseline === 'middle' ? el.y - (selectionBoxHeight / 2) : el.y - (el.fontSize || 14)) : el.y;
 
                                         return React.createElement('g', commonProps,
                                             elementRender,
@@ -267,14 +267,15 @@ const DefaultPiagamBackground = () => {
     const width = PIAGAM_WIDTH;
     const height = PIAGAM_HEIGHT;
     const cornerSize = s * 3;
+    const overlap_ext = 1; // 1 unit overlap to prevent rendering gaps
 
     // A reusable component for the new corner design, inspired by the user's image
     const CornerPattern = ({ transform }) => (
         React.createElement('g', { transform: transform },
             // This pattern creates the stepped corner from the user's image idea
             React.createElement('rect', { x: 0, y: 0, width: s, height: s, fill: darkBlue }),
-            React.createElement('rect', { x: s, y: 0, width: s * 2, height: s, fill: blue }),
-            React.createElement('rect', { x: 0, y: s, width: s, height: s * 2, fill: blue }),
+            React.createElement('rect', { x: s, y: 0, width: s * 2, height: s + overlap_ext, fill: blue }), // Extend downwards
+            React.createElement('rect', { x: 0, y: s, width: s + overlap_ext, height: s * 2, fill: blue }), // Extend rightwards
             React.createElement('rect', { x: s, y: s, width: s, height: s, fill: yellow }),
             React.createElement('rect', { x: s, y: s * 2, width: s, height: s, fill: yellow }),
             React.createElement('rect', { x: s * 2, y: s, width: s, height: s, fill: yellow })
@@ -285,26 +286,26 @@ const DefaultPiagamBackground = () => {
         React.createElement('g', { 'data-name': "default-background" },
             // Long connecting bars
             // Top bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin + cornerSize, y: margin, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: margin, width: width - 2 * margin - 2 * cornerSize, height: s + overlap_ext, fill: blue }), // Extend downwards
             React.createElement('rect', { x: margin + cornerSize, y: margin + s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
-            
+
             // Bottom bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: blue }),
+            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s - overlap_ext, width: width - 2 * margin - 2 * cornerSize, height: s + overlap_ext, fill: blue }), // Extend upwards
             React.createElement('rect', { x: margin + cornerSize, y: height - margin - s*2, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
 
             // Left bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: margin, y: margin + cornerSize, width: s + overlap_ext, height: height - 2 * margin - 2 * cornerSize, fill: blue }), // Extend rightwards
             React.createElement('rect', { x: margin + s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
 
             // Right bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: width - margin - s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: blue }),
+            React.createElement('rect', { x: width - margin - s - overlap_ext, y: margin + cornerSize, width: s + overlap_ext, height: height - 2 * margin - 2 * cornerSize, fill: blue }), // Extend leftwards
             React.createElement('rect', { x: width - margin - s*2, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
             
             // Corner patterns placed at the four corners, transformed appropriately
             React.createElement(CornerPattern, { transform: `translate(${margin}, ${margin})` }), // Top-Left
-            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` }), // Top-Right
-            React.createElement(CornerPattern, { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` }), // Bottom-Left
-            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` }) // Bottom-Right
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` }), // Top-Right (scaled X-axis, pattern still extends down/right from its transformed origin)
+            React.createElement(CornerPattern, { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` }), // Bottom-Left (scaled Y-axis, pattern still extends down/right from its transformed origin)
+            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` }) // Bottom-Right (scaled X&Y axis, pattern still extends down/right from its transformed origin)
         )
     );
 };
@@ -342,7 +343,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                 className: 'absolute top-0 left-0 w-full h-full object-cover' 
             }),
             React.createElement('div', { className: "absolute top-0 left-0 w-full h-full" },
-                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMin meet" },
+                React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "none" },
                     !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
                     layout.map(el => {
                         let elementRender;
@@ -350,7 +351,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                             let textAnchor = "start", xPos = el.x;
                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
+                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
                         } else if (el.type === 'image') {
                             const imageUrl = String(settings[el.content] || '');
                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
