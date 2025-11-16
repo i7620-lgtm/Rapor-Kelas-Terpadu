@@ -26,14 +26,14 @@ const generateInitialPiagamLayout = (settings) => {
     
     const yOffset = 50;
     const xOffset = (1123 - 800) / 2;
-    const adaptedKopElements = kopLayout.map(el => {
+
+    const lineElOriginal = kopLayout.find(el => el.id.includes('line_1'));
+    const otherKopElementsOriginal = kopLayout.filter(el => !el.id.includes('line_1'));
+    
+    const adaptedKopElements = otherKopElementsOriginal.map(el => {
         let newElement = { ...el, id: `kop_${el.id}` };
         
-        if (el.type === 'line') {
-            const newWidth = 1000;
-            newElement.x = (1123 - newWidth) / 2;
-            newElement.width = newWidth;
-        } else if (el.textAlign === 'center') {
+        if (el.textAlign === 'center') {
             newElement.x = (1123 - el.width) / 2;
         } else {
             newElement.x = (el.id === 'logo_sekolah_img') ? (1123 - xOffset - el.width) : (el.x + xOffset);
@@ -44,26 +44,36 @@ const generateInitialPiagamLayout = (settings) => {
         return newElement;
     });
     
-    // REQUEST: move horizontal line closer to header text
-    const lineEl = adaptedKopElements.find(el => el.id.includes('line_1'));
-    if (lineEl) {
-        lineEl.y -= 25; // Move up 25px
-    }
+    const kopContentBottomY = Math.max(0, ...adaptedKopElements.map(el => {
+        if (el.type === 'image') return (el.y || 0) + (el.height || 0);
+        // The y attribute for text is the baseline, so add font size to get the approximate bottom
+        if (el.type === 'text') return (el.y || 0) + (el.fontSize || 0);
+        return 0;
+    }));
 
-    const kopBottomY = Math.max(...adaptedKopElements.map(el => (el.y + (el.height || el.fontSize || 0))), 150) + 5; // Reduced buffer from 10 to 5
-
-    // REQUEST: Adjust vertical spacing for main content to be more balanced and avoid overlapping background
-    const contentStartY = kopBottomY + 40; // Start content lower, reduced from 60
+    const lineBuffer = 5;
+    const adaptedLineEl = {
+        ...(lineElOriginal || { type: 'line', height: 3 }), // Fallback if line somehow doesn't exist
+        id: `kop_${lineElOriginal?.id || 'line_1'}`,
+        y: kopContentBottomY + lineBuffer,
+        x: (1123 - 1000) / 2, // Center the wider line for piagam
+        width: 1000
+    };
+    
+    const allAdaptedKop = [...adaptedKopElements, adaptedLineEl];
+    const kopBottomY = adaptedLineEl.y + (adaptedLineEl.height || 0);
+    
+    const contentStartY = kopBottomY + 40;
     const rankBoxWidth = 300;
     const rankBoxHeight = 50;
     const rankBoxX = (1123 - rankBoxWidth) / 2;
     const rankBoxY = contentStartY + 160;
 
-    const paragraphY = rankBoxY + rankBoxHeight + 30; // Reduced gap from 40
-    const signatureY = paragraphY + 90; // Reduced gap from 100
+    const paragraphY = rankBoxY + rankBoxHeight + 30;
+    const signatureY = paragraphY + 90;
 
     return [
-        ...adaptedKopElements,
+        ...allAdaptedKop,
         { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 50, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 100, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
