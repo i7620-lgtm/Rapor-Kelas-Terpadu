@@ -1,397 +1,877 @@
 
 {
-  "Bahasa Inggris": [
-    "Peserta didik dapat mengidentifikasi kosakata dalam memperkenalkan diri dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat menggunakan ungkapan memperkenalkan diri dalam Bahasa Inggris secara interaktif dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana yang berhubungan dengan memperkenalkan diri dan mengomunikasikannya melalui gambar.",
-    "Peserta didik dapat mengidentifikasi kosakata tentang anggota keluarga dan asal daerah dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat mendeskripsikan anggota keluarga dan asal daerah dalam bahasa Inggris secara lisan dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana tentang anggota keluarga dan asal daerahnya serta mengkomunikasikannya melalui gambar.",
-    "Peserta didik dapat mengidentifikasi kosakata tentang kegiatan di rumah dan ruangan-ruangan dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat mendeskripsikan tentang kegiatan di rumah dan ruangan-ruangan di rumah dalam bahasa Inggris secara lisan dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana tentang kegiatan di rumah dan ruangan-ruangan di rumah serta mengkomunikasikannya melalui gambar.",
-    "Peserta didik dapat menggunakan ungkapan tentang ruangan-ruangan sekolah dan letaknya dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat mendeskripsikan tentang ruangan-ruangan sekolah dan letaknya dalam Bahasa Inggris secara lisan dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana tentang ruangan-ruangan sekolah dan letaknya serta mengkomunikasikannya melalui gambar.",
-    "Peserta didik dapat mengidentifikasi kosakata tentang benda-benda di dalam kelas dan letaknya dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat menggunakan ungkapan dan merespon pertanyaan tentang benda-benda di dalam kelas beserta letaknya secara interaktif dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana tentang benda-benda di dalam kelas dan letaknya serta mengkomunikasikannya melalui gambar.",
-    "Peserta didik dapat mengidentifikasi kosakata tentang nama profesi warga sekolah dan kata sifat tentang kepribadian seseorang dengan dukungan gambar/ilustrasi.",
-    "Peserta didik dapat merespon pertanyaan dan merespon tanggapan tentang warga profesi sekolah dan kata sifat tentang kepribadian dalam bahasa Inggris secara interaktif dan mengganti beberapa elemen kalimat dalam pola kalimat tertentu.",
-    "Peserta didik dapat menuliskan kosakata sederhana tentang profesi warga sekolah dan kata sifat tentang kepribadian serta mengkomunikasikannya melalui gambar."
-  ],
-  "Matematika": [
-    "Membaca bilangan cacah sampai 1.000 dengan baik dan benar.",
-    "Menuliskan bilangan cacah sampai 1.000 dengan baik dan benar.",
-    "Menentukan nilai tempat bilangan cacah sampai 1.000 dengan baik dan benar.",
-    "Membandingkan dua bilangan cacah sampai 1.000 dengan baik dan benar.",
-    "Mengurutkan beberapa bilangan cacah sampai 1.000 dengan baik dan benar.",
-    "Menentukan hasil penjumlahan dua bilangan cacah sampai 100 dengan baik dan benar.",
-    "Menentukan hasil pengurangan dua bilangan cacah sampai 100 dengan baik dan benar.",
-    "Menentukan hasil perkalian dua bilangan cacah sampai 100 dengan baik dan benar.",
-    "Menentukan hasil pembagian dua bilangan cacah sampai 100 dengan baik dan benar.",
-    "Menjelaskan langkah-langkah penyelesaian untuk kalimat Matematika dengan penjumlahan pada bilangan cacah sampai 100.",
-    "Mengisi nilai yang belum diketahui dalam kalimat Matematika yang berkaitan dengan penjumlahan pada bilangan cacah sampai 100.",
-    "Menjelaskan langkah-langkah penyelesaian untuk kalimat Matematika dengan pengurangan pada bilangan cacah sampai 100.",
-    "Mengisi nilai yang belum diketahui dalam kalimat Matematika yang berkaitan dengan pengurangan pada bilangan cacah sampai 100.",
-    "Mengukur panjang benda menggunakan satuan baku.",
-    "Menentukan hubungan antarsatuan baku panjang.",
-    "Mengukur berat benda menggunakan satuan baku.",
-    "Menentukan hubungan antarsatuan baku berat.",
-    "Mendeskripsikan arti garis, sinar garis, dan kurva.",
-    "Mendeskripsikan arti sudut, ukuran sudut baku, dan jenis-jenis sudut.",
-    "Mendeskripsikan arti garis tegak lurus dan garis-garis sejajar.",
-    "Mengurutkan data dari terkecil ke terbesar dengan benar.",
-    "Membandingkan data dengan benar.",
-    "Menyajikan data dalam bentuk tabel dengan benar.",
-    "Menentukan data paling banyak dan paling sedikit dalam bentuk tabel dengan benar."
-  ],
-  "Bahasa Indonesia": [
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat menemukan dan mengelompokkan gambar benda, memeriksa penggunaan huruf kapital, tanda baca, dan spasi, menyampaikan gagasan dengan penuh semangat, serta memahami dan mengikuti instruksi guru dengan tepat.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat menulis cerita dengan struktur awal, tengah, akhir, menyebutkan maksud sebuah gambar, serta menyimak dan mengikuti instruksi guru dengan tepat.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat berlatih berbicara dengan sopan, menemukan ide pokok, dan menyebutkan masalah yang dihadapi tokoh cerita dengan tepat.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik mampu berpendapat dan menanggapi pendapat teman, menilai gambar dan warna pada ilustrasi, juga menuliskan ide pokok, ide pendukung, dan kesimpulan bacaan dengan benar.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat menggambar poster promosi, memperagakan wawancara, dan menilai gambar atau ilustrasi pada buku bacaan dengan tepat.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik mampu berpendapat dalam diskusi, menyebutkan permasalahan yang dialami tokoh, berbicara dengan volume suara yang tepat, dan menuliskan pendapat dengan benar.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat menemukan informasi dalam bacaan, mengajukan pertanyaan, menyimak informasi tentang ciri hewan, dan dapat menulis surat berisi pengalaman dengan benar.",
-    "Melalui kegiatan berkelompok atau mandiri, peserta didik dapat menyimak berbagai jenis percakapan, membaca dan mengisi tabel, menuliskan pendapat, dan berpendapat dalam diskusi dengan benar."
-  ],
-  "Seni Budaya (Seni Rupa)": [
-    "Peserta didik mampu mengamati, mengenali, dan mengidentifikasi elemen rupa (garis, bentuk, warna, bidang, ruang, dan tekstur) di lingkungan sekitarnya.",
-    "Peserta didik mampu menggunakan dan menerapkan hasil pengamatan atau pengalaman kesehariannya pada karya 2 atau 3 dimensi.",
-    "Peserta didik mampu mengenal, memahami, dan menggunakan alat, bahan, dan prosedur yang tepat dalam penciptaan karyanya.",
-    "Peserta didik mampu mengeksplorasi ruang jauh, menengah, dan dekat.",
-    "Peserta didik mampu menjelaskan elemen rupa, alat, bahan, teknik, atau prosedur berdasarkan pengamatan terhadap sebuah karya 2 atau 3 dimensi dengan menggunakan kosakata seni rupa yang sesuai."
-  ],
-  "Seni Budaya (Seni Musik)": [
-    "Peserta didik mampu mengimitasi, menyimak dan mengamati alat musik perkusi mulai dari bentuk fisik dan cara memainkan instrumen, teknik serta bentuk penyajiannya.",
-    "Peserta didik mampu mengenal, mengimitasi, membayangkan dan menata pola ritme sederhana dari berbagai alat musik perkusi ataupun media lainnya yang sesuai.",
-    "Peserta didik mampu menjelaskan baik dengan cara membuat alat musik perkusi sederhana, dengan menggunakan bahan yang ada di lingkungan sekitar.",
-    "Peserta didik mampu mengembangkan kemampuan bermusik melalui memainkan alat musik perkusi sederhana hasil karya sendiri.",
-    "Peserta didik mampu mengenali dan menirukan bunyi tangga nada diatonik mayor, diatonik minor dan tangga nada nusantara lainnya melalui nyanyian atau alat musik melodis.",
-    "Peserta didik mampu menata dan mengembangkan melodi sederhana dalam bentuk nyanyian dan permainan alat musik melodis.",
-    "Peserta didik mampu mendemonstrasikan kemampuan bermusiknya disertai dengan penghayatan dan ekspresi yang sesuai, dihadapan orang tua serta teman-teman di lingkungan sekitar guna mendapatkan apresiasi atau tanggapan."
-  ],
-  "Seni Budaya (Seni Tari)": [
-    "peserta didik mampu memperagakan gerak berbagai ekspresi dengan stimulus aktivitas keseharian.",
-    "peserta didik mampu memperagakan gerak berbagai ekspresi dengan stimulus aktivitas keseharian.",
-    "peserta didik mampu memperagakan keunikan bentuk penyajian kelompok yang bersumber dari permainan tradisional."
-  ],
-  "Seni Budaya (Seni Teater)": [
-    "Peserta didik mengenal ragam karakter dalam cerita khayali.",
-    "Peserta didik menggunakan seluruh anggota tubuh dan suara untuk menunjukkan beberapa tokoh dalam cerita khayali.",
-    "Peserta didik memainkan penggalan cerita khayali dalam pertunjukan tablo dengan durasi pertunjukan 3-5 menit.",
-    "Peserta didik mengevaluasi karya sendiri dan orang lain.",
-    "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran dan cerita.",
-    "Peserta didik mendeskripsikan tubuh dan suara karakter dalam setiap plot cerita pilihan mereka.",
-    "Peserta didik mengeksplorasi tubuh dan suara karakter sesuai latar lokasi dalam cerita pilihan mereka.",
-    "Peserta didik merespons suara latar dengan gerakan spontan.",
-    "Peserta didik merancang pertunjukan tablo atau pantomim dengan potongan cerita yang dipilih.",
-    "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran.",
-    "Peserta didik memberi contoh ragam improvisasi dalam teater (improvisasi solo, improvisasi dengan properti, dan improvisasi dengan pasangan).",
-    "Peserta didik memperagakan hasil eksplorasi tubuh dan suara mereka dengan emosi yang tepat.",
-    "Peserta didik menghasilkan dialog dan gerak tubuh sebagai respons terhadap deskripsi dan narasi yang diberikan.",
-    "Peserta didik mendemonstrasikan pertunjukan improvisasi sesuai ragam pilihannya.",
-    "Peserta didik menciptakan pertunjukan spontan sebagai respons terhadap narasi dan properti yang diberikan.",
-    "Peserta didik mengevaluasi kelebihan dan kekurangan penampilan diri sendiri atau orang lain.",
-    "Peserta didik berdiskusi untuk menentukan cerita pilihan mereka.",
-    "Peserta didik memilih pemain yang diwakili sutradara dan tim produksi yang diwakili oleh pimpinan produksi.",
-    "Peserta didik mengidentifikasi karakter dan mempersiapkan unsur produksi lainnya.",
-    "Peserta didik menampilkan pertunjukan akhir."
-  ],
-  "Ilmu Pengetahuan Alam dan Sosial": [
-    "Mengenali keragaman hewan di sekitar.",
-    "Memahami bahwa anggota tubuh hewan memiliki bentuk anggota tubuh yang berbeda-beda.",
-    "Melakukan penyelidikan fungsi bagian tubuh dan kaitannya dengan perilaku hewan.",
-    "Menjelaskan tahap siklus yang dilalui oleh makhluk hidup.",
-    "Membandingkan siklus hidup pada manusia, hewan, dan tumbuhan.",
-    "Membuat simulasi menggunakan bagan/alat bantu sederhana tentang siklus hidup hewan.",
-    "Menganalisis komponen biotik dan abiotik dalam suatu ekosistem.",
-    "Mengetahui peran komponen dalam suatu ekosistem.",
-    "Menganalisis keterkaitan dan hubungan yang terjadi antarkomponen pada suatu ekosistem.",
-    "Mengidentifikasi bentuk dan sumber energi yang ada di sekitarnya.",
-    "Melakukan penyelidikan mengenai macam-macam energi yang digunakannya dalam kehidupan sehari-hari beserta sumbernya.",
-    "Melakukan penyelidikan mengenai cara menghemat salah satu energi.",
-    "Membuat dan menggunakan denah sederhana sebagai penunjuk arah.",
-    "Belajar membuat denah daerah sekitar tempat tinggal.",
-    "Mempelajari peran penting denah untuk kehidupan.",
-    "Mengenal tata kelola kota/kabupaten tempat tinggal.",
-    "Mengenal pemimpin di masyarakat.",
-    "Menjelaskan tugas pemimpin di masyarakat.",
-    "Mengidentifikasi dan mengenal ragam tradisi atau budaya dalam keluarga dan masyarakat yang ada di Indonesia.",
-    "Mengetahui pengaruh kebiasaan ragam tradisi atau budaya dalam keluarga dan masyarakat.",
-    "Menceritakan sejarah atau cerita yang berkaitan dengan tradisi atau budaya di daerah tempat tinggal.",
-    "Mengidentifikasi ragam bentang alam di daerahnya.",
-    "Mengenal karakter tempat dengan bentang alam yang berbeda.",
-    "Mendeskripsikan bentuk adaptasi kita di lingkungan kita."
-  ],
-  "Pendidikan Pancasila": [
-    "Peserta didik mampu menghargai identitas diri, teman, dan keluarga sesuai budaya, suku bangsa, bahasa, agama, dan kepercayaan.",
-    "Peserta didik mampu mengidentifikasi lingkungan tempat tinggal sebagai bagian tidak terpisahkan dari wilayah NKRI.",
-    "Peserta didik mampu mengidentifikasi dan melaksanakan aturan di sekolah, dan lingkungan tempat tinggal.",
-    "Peserta didik mampu mengidentifikasi dan melaksanakan hak dan kewajiban sebagai anggota keluarga dan warga sekolah.",
-    "Mengidentifikasi, membedakan dan menghargai identitas diri, keluarga, dan teman-temannya sesuai budaya, suku bangsa, dan bahasa di lingkungan rumah, sekolah, dan masyarakat.",
-    "Peserta didik mampu mempraktikkan makna sila-sila Pancasila dalam kehidupan sehari-hari di lingkungan keluarga dan sekolah.",
-    "Peserta didik mampu meneladani karakter para perumus Pancasila."
-  ],
-  "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan variasi pola gerak dasar pada gerakan lokomotor seperti gerakan berjalan, berlari, melompat, dan meloncat dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan variasi pola gerak dasar pada gerakan nonlokomotor, seperti gerakan memutar, mengayun, menekuk, dan meliuk dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan variasi pola gerak dasar pada gerakan manipulatif seperti gerakan melempar, menangkap, menendang, dan menahan bola dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan aktivitas pembelajaran pola gerak dominan pada senam, seperti keseimbangan, sikap lilin, dan lompat kangkang dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap seperti: mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan variasi pola gerak langkah kaki dan ayunan lengan aktivitas gerak berirama dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan gerak dasar posisi badan, gerakan kaki, gerakan lengan, dan mengambil napas dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu mempraktikkan aktivitas latihan kebugaran jasmani untuk kesehatan, seperti latihan kekuatan otot dan daya tahan otot dengan benar sesuai potensi dan kreativitas yang dimiliki serta mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari.",
-    "Peserta didik dapat menunjukkan kemampuan dalam menjelaskan dan mampu menerapkan konsep aktivitas fisik, istirhat, pengisian waktu luang, serta memilih makanan bergizi dan seimbang sesuai dengan pola perilaku hidup sehat dengan mengembangkan nilai-nilai Profil Pelajar Pancasila dengan menanamkan nilai-nilai sikap, seperti mandiri dan gotong royong, serta dapat menerapkan pola perilaku hidup sehat dalam kehidupan sehari-hari."
-  ],
   "Pendidikan Agama dan Budi Pekerti (Islam)": [
-    "Membiasakan membaca Al-Qur'an dengan tartil.",
-    "Meyakini sikap rajin belajar sebagai implementasi pemahaman QS. al-'Alaq ayat 1-5 dengan baik.",
-    "Menunjukkan sikap rajin belajar sebagai implementasi pemahaman QS. al-'Alaq ayat 1-5 dengan tepat.",
-    "Melafalkan QS. al-'Alaq ayat 1-5 dengan tartil.",
-    "Membaca QS. al-'Alaq ayat 1-5 dengan tartil.",
-    "Menjelaskan hukum bacaan qalqalah dengan benar.",
-    "Menerapkan hukum bacaan qalqalah dengan benar.",
-    "Menyalin QS. al-'Alaq ayat 1-5 dengan tartil.",
-    "Menulis QS. al-'Alaq ayat 1-5 dengan tartil.",
-    "Menunjukkan hafalan al-'Alaq ayat 1-5 dan terjemahnya dengan lancar.",
-    "Menjelaskan pesan pokok QS. al-'Alaq ayat 1-5 dengan benar.",
-    "Menyimpulkan pesan pokok QS. al-'Alaq ayat 1-5 dengan benar.",
-    "Meyakini bahwa Allah Swt. memiliki sifat wajib, jaiz, dan mustahil, serta asmaulhusna dengan benar.",
-    "Membiasakan sikap peduli sebagai penghayatan asmaulhusna al-Wahhāb dengan benar.",
-    "Menunjukkan sikap rendah hati sebagai implementasi pemahaman sifat-sifat Allah Swt. dengan baik.",
-    "Menjelaskan sifat wajib, jaiz, dan mustahil, serta asmaulhusna Allah Swt. dengan benar.",
-    "Merasionalkan sifat wajib, jaiz, dan mustahil, serta asmaulhusna Allah Swt. dengan benar.",
-    "Membenarkan sifat wajib, jaiz, dan mustahil, serta asmaulhusna Allah Swt. dengan benar.",
-    "Mendemonstrasikan hafalan sifat wajib, jaiz, dan mustahil, serta asmaulhusna Allah Swt. dengan benar.",
-    "Meyakini berbakti kepada orang tua dan guru, dan hormat kepada orang lain merupakan perintah Allah Swt. dengan benar.",
-    "Menunjukkan sikap berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan sungguh-sungguh.",
-    "Menjelaskan pengertian dan cara bakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Mengidentifikasi ciri-ciri orang yang berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Menemukan cara berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Merumuskan hikmah berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Mendemonstrasikan cara berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Menceritakan kembali pengalaman berbakti kepada orang tua dan guru, dan hormat kepada orang lain dengan benar.",
-    "Meyakini pelaksanaan puasa sebagai bentuk ketaatan kepada Allah Swt. dengan benar.",
-    "Menunjukkan sikap sabar dan mengendalikan diri sebagai hikmah dalam menjalankan ibadah puasa dengan benar.",
-    "Menjelaskan pengertian dan dalil puasa dengan benar.",
-    "Mengidentifikasi ketentuan puasa dengan tepat.",
-    "Menjelaskan ketentuan puasa dengan tepat.",
-    "Merumuskan hikmah puasa dengan benar.",
-    "Menunjukkan hafalan niat dan doa berbuka puasa dengan lancar.",
-    "Menceritakan pengalaman puasa Ramadan dalam keluarga masing-masing dengan baik.",
-    "Meyakini sikap berani, jujur, dan dipercaya sebagai ajaran agama Islam dengan mantap.",
-    "Menunjukkan sikap berani, jujur, dan dapat dipercaya sebagai implementasi pemahaman kisah masa kanak-kanak dan remaja Nabi Muhammad saw. dengan benar.",
-    "Menjelaskan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw. dengan benar.",
-    "Menyimpulkan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw. dengan benar.",
-    "Membenarkan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw. dengan baik.",
-    "Melantunkan selawat, sya'ir, atau qasidah yang berisi tentang kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw.",
-    "Mendemonstrasikan hafalan selawat, sya'ir, atau qasidah yang berisi tentang kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw.",
-    "Menceritakan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw. dengan benar.",
-    "Meyakini Hadis sebagai pedoman hidup umat Islam dengan benar.",
-    "Menunjukkan sikap senang melaksanakan salat berjemaah sebagai implementasi pemahaman Hadis salat berjemaah dengan benar.",
-    "Mempertahankan sikap tertib sebagai implementasi pemahaman Hadis salat berjemaah dengan benar.",
-    "Membaca Hadis salat berjemaah dengan tartil.",
-    "Menulis Hadis salat berjemaah dengan benar.",
-    "Menunjukkan hafalan Hadis salat berjemaah dengan lancar.",
-    "Menjelaskan pesan pokok Hadis salat berjemaah dengan benar.",
-    "Menyimpulkan pesan pokok Hadis salat berjemaah dengan benar.",
-    "Mempraktikkan Hadis salat berjemaah dalam kehidupan sehari-hari dengan benar.",
-    "Meyakini kebenaran adanya kitab-kitab Allah dengan benar.",
-    "Menunjukkan sikap gotong royong dan saling menghargai sebagai implementasi pemahaman iman kepada kitab-kitab Allah Swt. dengan baik.",
-    "Menjelaskan iman kepada kitab-kitab Allah Swt. dengan benar.",
-    "Mengidentifikasi iman kepada kitab-kitab Allah Swt. dengan benar.",
-    "Menyimpulkan iman kepada kitab-kitab Allah Swt. dengan benar.",
-    "Membuat gambar pohon iman kepada kitab-kitab Allah Swt. dengan benar.",
-    "Terbiasa mengucapkan kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar dalam berbagai kesempatan atau situasi dengan benar.",
-    "Menunjukkan sikap disiplin sebagai cerminan kalimah tayyibah, subhanallah, masyaallah, dan Allahu akbar dengan benar.",
-    "Menjelaskan arti kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar dengan benar.",
-    "Membedakan waktu pelafalan kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar dengan benar.",
-    "Melafalkan kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar dengan fasih.",
-    "Mendemonstrasikan hafalan kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar.",
-    "Menulis kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar dengan benar.",
-    "Menunjukkan sikap rajin salat qabliyah dan ba'diyah dengan salat rawatib dengan benar.",
-    "Menunjukkan sikap tertib sebagai dampak dari pemahaman salat rawatib dengan benar.",
-    "Menjelaskan ketentuan dan tata cara salat rawatib dengan benar.",
-    "Mengidentifikasi ketentuan dan tata cara salat rawatib dengan benar.",
-    "Menemukan hikmah salat rawatib dengan benar.",
-    "Mempraktikkan salat rawatib dengan benar.",
-    "Meyakini kebenaran kisah Nabi Muhammad saw. dengan benar.",
-    "Menunjukkan sikap sabar dan percaya diri sebagai peneladanan perjuangan Nabi Muhammad saw. dalam berdakwah dengan benar.",
-    "Menjelaskan proses Nabi Muhammad saw. berkhwat dan menerima wahyu dengan benar.",
-    "Mengidentifikasi wahyu pertama dan kedua dengan benar.",
-    "Menjelaskan strategi dakwah Nabi Muhammad saw. dengan benar.",
-    "Merumuskan strategi dakwah Nabi Muhammad saw. dengan benar.",
-    "Menjelaskan Mukjizat Nabi Muhammad saw. dengan benar.",
-    "Menyusun kesimpulan rangkaian peristiwa kisah Nabi Muhammad saw. dengan benar.",
-    "Menceritakan kembali kisah Nabi Muhammad saw. saat menjadi rasul dengan lengkap."
-  ],
-  "Pendidikan Agama dan Budi Pekerti (Khonghucu)": [
-    "Mengetahui adanya benih kebajikan karunia Tian",
-    "Membiasakan sikap disiplin menghargai waktu",
-    "Membuat jadwal harian yang ditepati",
-    "Menunjukkan sikap saling mengasihi sesama manusia",
-    "Mengetahui tujuan sembahyang kepada leluhur",
-    "Melaksanakan sembahyang kepada leluhur",
-    "Mengenal perlengkapan sembahyang kepada leluhur",
-    "Menyusun perlengkapan sembahyang di altar leluhur",
-    "Mengetahui Delapan Pengakuan Iman dalam agama Khonghucu",
-    "Menghafal Delapan Pengakuan Iman",
-    "Menerapkan Delapan Pengakuan Iman sebagai pedoman hidup",
-    "Menyebutkan tiga kesukaan yang membawa faedah",
-    "Menyebutkan tiga kesukaan yang membawa celaka",
-    "Memahami mana yang sebaiknya diteladani",
-    "Menghindari kesukaan yang membawa celaka",
-    "Mengetahui pribadi luhur Nabi Kongzi",
-    "Menerapkan teladan tersebut dalam perilaku hidup keseharian",
-    "Mengetahui saat terakhir hidup Nabi Kongzi",
-    "Meyakini tanda-tanda menjelang wafat Nabi",
-    "Mengenal empat murid utama Nabi Kongzi",
-    "Mengenal sifat-sifat murid Nabi Kongzi",
-    "Meneladani perilaku para murid Nabi Kongzi"
+    {
+      "slm": "Bab 1: Belajar Al-Qur'an Surah Al-'Alaq",
+      "tp": [
+        "Membiasakan membaca Al-Qur'an dengan tartil.",
+        "Meyakini sikap rajin belajar sebagai implementasi pemahaman QS. al-'Alaq ayat 1-5.",
+        "Menunjukkan sikap rajin belajar sebagai implementasi pemahaman QS. al-'Alaq ayat 1-5.",
+        "Melafalkan, membaca, menulis, dan menghafal QS. al-'Alaq ayat 1-5.",
+        "Menjelaskan dan menerapkan hukum bacaan qalqalah.",
+        "Menjelaskan dan menyimpulkan pesan pokok QS. al-'Alaq ayat 1-5."
+      ]
+    },
+    {
+      "slm": "Bab 2: Sifat-Sifat Allah Swt. dan Asmaulhusna",
+      "tp": [
+        "Meyakini sifat wajib, jaiz, dan mustahil, serta asmaulhusna Allah Swt.",
+        "Membiasakan sikap peduli sebagai penghayatan asmaulhusna al-Wahhāb.",
+        "Menunjukkan sikap rendah hati sebagai implementasi pemahaman sifat-sifat Allah Swt.",
+        "Menjelaskan, merasionalkan, dan membenarkan sifat wajib, jaiz, mustahil, serta asmaulhusna Allah Swt.",
+        "Mendemonstrasikan hafalan sifat wajib, jaiz, mustahil, serta asmaulhusna Allah Swt."
+      ]
+    },
+    {
+      "slm": "Bab 3: Aku Anak Saleh",
+      "tp": [
+        "Meyakini berbakti kepada orang tua dan guru, dan hormat kepada orang lain merupakan perintah Allah Swt.",
+        "Menunjukkan sikap berbakti kepada orang tua dan guru, dan hormat kepada orang lain.",
+        "Menjelaskan dan mengidentifikasi ciri-ciri orang yang berbakti kepada orang tua dan guru.",
+        "Menemukan cara berbakti dan merumuskan hikmah berbakti kepada orang tua dan guru.",
+        "Mendemonstrasikan dan menceritakan kembali pengalaman berbakti kepada orang tua dan guru."
+      ]
+    },
+    {
+      "slm": "Bab 4: Indahnya Berpuasa",
+      "tp": [
+        "Meyakini pelaksanaan puasa sebagai bentuk ketaatan kepada Allah Swt.",
+        "Menunjukkan sikap sabar dan mengendalikan diri sebagai hikmah puasa.",
+        "Menjelaskan pengertian, dalil, dan ketentuan puasa.",
+        "Mengidentifikasi dan merumuskan hikmah puasa.",
+        "Menunjukkan hafalan niat dan doa berbuka puasa.",
+        "Menceritakan pengalaman puasa Ramadan."
+      ]
+    },
+    {
+      "slm": "Bab 5: Kisah Nabi Muhammad saw.",
+      "tp": [
+        "Meyakini sikap berani, jujur, dan dipercaya sebagai ajaran agama Islam.",
+        "Menunjukkan sikap berani, jujur, dan dapat dipercaya sebagai implementasi pemahaman kisah masa kanak-kanak dan remaja Nabi Muhammad saw.",
+        "Menjelaskan, menyimpulkan, dan membenarkan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw.",
+        "Melantunkan dan mendemonstrasikan hafalan selawat, sya'ir, atau qasidah tentang kisah Nabi Muhammad saw.",
+        "Menceritakan kisah Arab pra-Islam, masa kanak-kanak dan remaja Nabi Muhammad saw."
+      ]
+    },
+    {
+      "slm": "Bab 6: Belajar Hadis",
+      "tp": [
+        "Meyakini Hadis sebagai pedoman hidup umat Islam.",
+        "Menunjukkan sikap senang dan mempertahankan sikap tertib dalam melaksanakan salat berjemaah.",
+        "Membaca, menulis, dan menghafal Hadis salat berjemaah.",
+        "Menjelaskan dan menyimpulkan pesan pokok Hadis salat berjemaah.",
+        "Mempraktikkan Hadis salat berjemaah dalam kehidupan sehari-hari."
+      ]
+    },
+    {
+      "slm": "Bab 7: Kitab-Kitab Allah Swt.",
+      "tp": [
+        "Meyakini kebenaran adanya kitab-kitab Allah.",
+        "Menunjukkan sikap gotong royong dan saling menghargai.",
+        "Menjelaskan, mengidentifikasi, dan menyimpulkan iman kepada kitab-kitab Allah Swt.",
+        "Membuat gambar pohon iman kepada kitab-kitab Allah Swt."
+      ]
+    },
+    {
+      "slm": "Bab 8: Aku Anak Baik",
+      "tp": [
+        "Terbiasa mengucapkan kalimah tayyibah subhanallah, masyaallah, dan Allahu akbar.",
+        "Menunjukkan sikap disiplin sebagai cerminan kalimah tayyibah.",
+        "Menjelaskan arti dan membedakan waktu pelafalan kalimah tayyibah.",
+        "Melafalkan, menghafal, dan menulis kalimah tayyibah."
+      ]
+    },
+    {
+      "slm": "Bab 9: Salat Rawatib",
+      "tp": [
+        "Menunjukkan sikap rajin dan tertib dalam salat qabliyah dan ba'diyah.",
+        "Menjelaskan, mengidentifikasi ketentuan, dan menemukan hikmah salat rawatib.",
+        "Mempraktikkan salat rawatib."
+      ]
+    },
+    {
+      "slm": "Bab 10: Kisah Nabi Muhammad saw. Menjadi Rasul",
+      "tp": [
+        "Meyakini kebenaran kisah Nabi Muhammad saw.",
+        "Menunjukkan sikap sabar dan percaya diri sebagai peneladanan perjuangan Nabi Muhammad saw.",
+        "Menjelaskan proses Nabi Muhammad saw. berkhalwat dan menerima wahyu.",
+        "Mengidentifikasi wahyu pertama dan kedua.",
+        "Menjelaskan dan merumuskan strategi dakwah Nabi Muhammad saw.",
+        "Menjelaskan Mukjizat Nabi Muhammad saw.",
+        "Menyusun kesimpulan dan menceritakan kembali kisah Nabi Muhammad saw. saat menjadi rasul."
+      ]
+    }
   ],
   "Pendidikan Agama dan Budi Pekerti (Kristen)": [
-    "Menjelaskan bahwa Allah yang menciptakan seluruh ciptaan.",
-    "Menjelaskan ragam ciptaan Allah.",
-    "Mempraktikkan tanggung jawab dalam memelihara alam sekitar.",
-    "Menjelaskan bahwa Allah yang menciptakan manusia.",
-    "Menunjukkan sikap bersyukur kepada Allah yang telah menciptakan manusia.",
-    "Menerapkan sikap hidup rukun antar sesama manusia.",
-    "Menjelaskan kasih Allah yang memelihara hidup manusia melalui kehadiran keluarga, teman, dan guru.",
-    "Menghormati orang tua dan orang yang lebih tua.",
-    "Menjaga kerukunan di sekolah.",
-    "Menjelaskan manfaat anggota tubuh ciptaan Allah.",
-    "Mempraktikkan cara memuliakan Allah dengan anggota tubuh.",
-    "Menunjukkan sikap bertanggung jawab menjaga tubuh agar bersih dan tetap sehat.",
-    "Menjelaskan berbagai perbedaan pada manusia.",
-    "Menerapkan sikap yang tepat terhadap perbedaan.",
-    "Menerapkan hidup rukun.",
-    "Menjadi sahabat yang baik.",
-    "Menjelaskan pentingnya hidup disiplin.",
-    "Mempraktikkan sikap hidup disiplin di rumah.",
-    "Mempraktikkan sikap hidup disiplin di lingkungan sekolah.",
-    "Menerapkan sikap taat dan tekun dalam beribadah.",
-    "Menjelaskan arti melayani.",
-    "Menerapkan perbuatan melayani Tuhan dan sesama.",
-    "Mengenal keragaman suku, budaya, dan agama di Indonesia.",
-    "Menyebutkan keragaman suku, budaya, dan agama di sekolah dan lingkungan rumah.",
-    "Menghargai teman yang berbeda suku, budaya, dan agama.",
-    "Menolong sesama tanpa membeda-bedakan.",
-    "Menjelaskan bahwa Allah yang mengatur iklim dan cuaca.",
-    "Menjelaskan bahwa Allah hadir dalam seluruh peristiwa gejala alam.",
-    "Menceritakan rasa syukur kepada Allah atas seluruh peristiwa alam yang dialami.",
-    "Menjelaskan alasan manusia bertanggung jawab terhadap alam.",
-    "Menjelaskan bentuk tanggung jawab manusia terhadap alam.",
-    "Melakukan tindakan sederhana agar lingkungan bersih, sejuk, dan rapi."
+    {
+      "slm": "Pelajaran 1: Allah Menciptakan Langit dan Bumi",
+      "tp": [
+        "Menjelaskan bahwa Allah yang menciptakan seluruh ciptaan.",
+        "Menjelaskan ragam ciptaan Allah.",
+        "Mempraktikkan tanggung jawab dalam memelihara alam sekitar."
+      ]
+    },
+    {
+      "slm": "Pelajaran 2: Allah Menciptakan Manusia",
+      "tp": [
+        "Menjelaskan bahwa Allah yang menciptakan manusia.",
+        "Menunjukkan sikap bersyukur kepada Allah yang telah menciptakan manusia.",
+        "Menerapkan sikap hidup rukun antar sesama manusia."
+      ]
+    },
+    {
+      "slm": "Pelajaran 3: Allah Memelihara Ciptaan-Nya",
+      "tp": [
+        "Menjelaskan kasih Allah yang memelihara hidup manusia melalui kehadiran keluarga, teman, dan guru.",
+        "Menghormati orang tua dan orang yang lebih tua.",
+        "Menjaga kerukunan di sekolah."
+      ]
+    },
+    {
+      "slm": "Pelajaran 4: Memuliakan Allah dengan Tubuhku",
+      "tp": [
+        "Menjelaskan manfaat anggota tubuh ciptaan Allah.",
+        "Mempraktikkan cara memuliakan Allah dengan anggota tubuh.",
+        "Menunjukkan sikap bertanggung jawab menjaga tubuh agar bersih dan tetap sehat."
+      ]
+    },
+    {
+      "slm": "Pelajaran 5: Aku Berharga di Mata Allah",
+      "tp": [
+        "Menjelaskan berbagai perbedaan pada manusia.",
+        "Menerapkan sikap yang tepat terhadap perbedaan.",
+        "Menerapkan hidup rukun.",
+        "Menjadi sahabat yang baik."
+      ]
+    },
+    {
+      "slm": "Pelajaran 6: Aku Mau Hidup Disiplin",
+      "tp": [
+        "Menjelaskan pentingnya hidup disiplin.",
+        "Mempraktikkan sikap hidup disiplin di rumah.",
+        "Mempraktikkan sikap hidup disiplin di lingkungan sekolah."
+      ]
+    },
+    {
+      "slm": "Pelajaran 7: Aku Mau Beribadah dan Melayani",
+      "tp": [
+        "Menerapkan sikap taat dan tekun dalam beribadah.",
+        "Menjelaskan arti melayani.",
+        "Menerapkan perbuatan melayani Tuhan dan sesama."
+      ]
+    },
+    {
+      "slm": "Pelajaran 8: Indonesia yang Majemuk",
+      "tp": [
+        "Mengenal keragaman suku, budaya, dan agama di Indonesia.",
+        "Menyebutkan keragaman suku, budaya, dan agama di sekolah dan lingkungan rumah.",
+        "Menghargai teman yang berbeda suku, budaya, dan agama.",
+        "Menolong sesama tanpa membeda-bedakan."
+      ]
+    },
+    {
+      "slm": "Pelajaran 9: Allah Mengatur Iklim dan Cuaca",
+      "tp": [
+        "Menjelaskan bahwa Allah yang mengatur iklim dan cuaca.",
+        "Menjelaskan bahwa Allah hadir dalam seluruh peristiwa gejala alam.",
+        "Menceritakan rasa syukur kepada Allah atas seluruh peristiwa alam yang dialami."
+      ]
+    },
+    {
+      "slm": "Pelajaran 10: Tanggung Jawabku terhadap Alam",
+      "tp": [
+        "Menjelaskan alasan manusia bertanggung jawab terhadap alam.",
+        "Menjelaskan bentuk tanggung jawab manusia terhadap alam.",
+        "Melakukan tindakan sederhana agar lingkungan bersih, sejuk, dan rapi."
+      ]
+    }
   ],
   "Pendidikan Agama dan Budi Pekerti (Katolik)": [
-    "Melalui pembahasan pada bab ini, peserta didik mampu memahami dirinya sebagai pribadi yang tumbuh dan berkembang. Juga memahami bahwa Tuhan memberinya kemampuan untuk bertumbuh dan berkembang menjadi manusia yang baik serta berusaha melakukan yang baik sesuai pertumbuhan dan perkembangannya.",
-    "Melalui pembahasan pada bab ini, peserta didik diharapkan mampu mengenal Allah yang menyelamatkan manusia sebagaimana tercermin pada tokoh Perjanjian Lama (Kisah Yusuf, Kisah Musa, dan Kisah Yosua) dan berusaha mengaplikasikan teladan hidup tokoh-tokoh tersebut dalam kehidupannya.",
-    "Melalui pembahasan pada bab ini, peserta didik mampu mengenal Allah yang menyelamatkan manusia melalui peristiwa Yesus dibaptis, Yesus yang memberi makan lima ribu orang, dan Yesus yang mengampuni.",
-    "Peserta didik mampu mengenal Tata Perayaan Sakramen Baptis, Ekaristi, dan Tobat sebagai tanda dan sarana karya keselamatan Allah bagi manusia. Juga mampu bersyukur dan memiliki sikap disiplin dalam merayakan Sakramen Baptis, Ekaristi, dan Tobat sehingga mampu memperagakan Tata Perayaan Sakramen Baptis, Ekaristi, dan Tobat.",
-    "Peserta didik mampu mengenal pemimpin dan tradisi masyarakat yang baik sebagai wujud karya keselamatan Allah. Peserta didik juga dapat bersyukur atas pemimpin dan tradisi masyarakat yang baik. Dan pada akhirnya, mampu menunjukkan rasa hormat terhadap para pemimpin dan tradisi masyarakat yang baik.",
-    "Peserta didik mampu memahami pentingnya melestarikan lingkungan hidup sebagai wujud karya keselamatan Allah, bersyukur akan karya keselamatan Allah dalam karya kelestarian lingkungan alam, peduli terhadap kegiatan melestarikan lingkungan alam, dan melakukan upaya nyata dalam kegiatan melestarikan lingkungan alam."
+    {
+      "slm": "Bab 1: Aku Anak yang Tumbuh dan Berkembang",
+      "tp": [
+        "mampu memahami dirinya sebagai pribadi yang tumbuh dan berkembang;",
+        "memahami bahwa Tuhan memberinya kemampuan untuk bertumbuh dan berkembang menjadi manusia yang baik;",
+        "berusaha melakukan yang baik sesuai pertumbuhan dan perkembangannya."
+      ]
+    },
+    {
+      "slm": "Bab 2: Allah Menyelamatkan Umat-Nya",
+      "tp": [
+        "mampu mengenal Allah yang menyelamatkan manusia sebagaimana tercermin pada tokoh Perjanjian Lama (Kisah Yusuf, Kisah Musa, dan Kisah Yosua);",
+        "berusaha mengaplikasikan teladan hidup tokoh-tokoh tersebut dalam kehidupannya."
+      ]
+    },
+    {
+      "slm": "Bab 3: Allah Menyelamatkan Manusia melalui Yesus",
+      "tp": [
+        "mampu mengenal Allah yang menyelamatkan manusia melalui peristiwa Yesus dibaptis, Yesus yang memberi makan lima ribu orang, dan Yesus yang mengampuni."
+      ]
+    },
+    {
+      "slm": "Bab 4: Sakramen sebagai Tanda Keselamatan Allah",
+      "tp": [
+        "mampu mengenal Tata Perayaan Sakramen Baptis, Ekaristi, dan Tobat sebagai tanda karya keselamatan Allah;",
+        "mampu bersyukur dan memiliki sikap disiplin dalam merayakan Sakramen Baptis, Ekaristi, dan Tobat;",
+        "mampu memperagakan Tata Perayaan Sakramen Baptis, Ekaristi, dan Tobat."
+      ]
+    },
+    {
+      "slm": "Bab 5: Pemimpin dan Tradisi Masyarakat",
+      "tp": [
+        "mampu mengenal pemimpin dan tradisi masyarakat yang baik sebagai wujud karya keselamatan Allah;",
+        "dapat bersyukur atas pemimpin dan tradisi masyarakat yang baik;",
+        "mampu menunjukkan rasa hormat terhadap para pemimpin dan tradisi masyarakat yang baik."
+      ]
+    },
+    {
+      "slm": "Bab 6: Melestarikan Lingkungan Hidup",
+      "tp": [
+        "mampu memahami pentingnya melestarikan lingkungan hidup sebagai wujud karya keselamatan Allah;",
+        "bersyukur akan karya keselamatan Allah dalam karya kelestarian lingkungan alam;",
+        "peduli dan melakukan upaya nyata dalam kegiatan melestarikan lingkungan alam."
+      ]
+    }
   ],
   "Pendidikan Agama dan Budi Pekerti (Hindu)": [
-    "Menyebutkan pengertian Purana",
-    "Menyebutkan Jenis-jenis Purana",
-    "Mengidentifikasi cerita-cerita Purana",
-    "Menyebutkan manfaat Purana",
-    "Menjalankan ajaran suci Purana di Nusantara sesuai kearifan lokal",
-    "Menyebutkan pengertian Tri Murti",
-    "Menyebutkan bagian-bagian Tri Murti",
-    "Menyebutkan fungsi Tri Murti sebagai manifestasi Hyang Widhi Wasa",
-    "Menyebutkan Sakti Tri Murti",
-    "Menunjukkan sikap sujud bhakti kepada Tri Murti",
-    "Menyebutkan pengertian Tri Parartha",
-    "Menyebutkan bagian-bagian Tri Parartha",
-    "Mencontohkan Perilaku Tri Parartha dalam sehari-hari",
-    "Mengilustrasikan Tri Parartha dalam cerita",
-    "Menjalankan ajaran Tri Parartha untuk keharmonisan Hidup",
-    "Menyebutkan pengertian hari suci Agama Hindu",
-    "Menyebutkan jenis-jenis hari suci agama Hindu",
-    "Menjelaskan tujuan perayaan hari suci agama",
-    "Menceritakan cerita yang berkaitan dengan hari suci agama Hindu",
-    "Melaksanakan hari suci agama Hindu sesuai daerah setempat",
-    "Mengenal Tokoh Hindu pada masa Kerajaan di Indonesia",
-    "Mengidentifikasi tokoh kerajaan Hindu di Kalimantan",
-    "Mengidentifikasi tokoh kerajaan Hindu di Jawa",
-    "Mengidentifikasi tokoh kerajaan Hindu di Bali",
-    "Meniru sikap tokoh-tokoh kerajaan Hindu yang patut diteladani"
+    {
+      "slm": "Bab 1: Itihasa dan Purana",
+      "tp": [
+        "Menyebutkan pengertian Purana",
+        "Menyebutkan Jenis-jenis Purana",
+        "Mengidentifikasi cerita-cerita Purana",
+        "Menyebutkan manfaat Purana",
+        "Menjalankan ajaran suci Purana di Nusantara sesuai kearifan lokal"
+      ]
+    },
+    {
+      "slm": "Bab 2: Tri Murti",
+      "tp": [
+        "Menyebutkan pengertian Tri Murti",
+        "Menyebutkan bagian-bagian Tri Murti",
+        "Menyebutkan fungsi Tri Murti sebagai manifestasi Hyang Widhi Wasa",
+        "Menyebutkan Sakti Tri Murti",
+        "Menunjukkan sikap sujud bhakti kepada Tri Murti"
+      ]
+    },
+    {
+      "slm": "Bab 3: Tri Parartha",
+      "tp": [
+        "Menyebutkan pengertian Tri Parartha",
+        "Menyebutkan bagian-bagian Tri Parartha",
+        "Mencontohkan Perilaku Tri Parartha dalam sehari-hari",
+        "Mengilustrasikan Tri Parartha dalam cerita",
+        "Menjalankan ajaran Tri Parartha untuk keharmonisan Hidup"
+      ]
+    },
+    {
+      "slm": "Bab 4: Hari Suci",
+      "tp": [
+        "Menyebutkan pengertian hari suci Agama Hindu",
+        "Menyebutkan jenis-jenis hari suci agama Hindu",
+        "Menjelaskan tujuan perayaan hari suci agama",
+        "Menceritakan cerita yang berkaitan dengan hari suci agama Hindu",
+        "Melaksanakan hari suci agama Hindu sesuai daerah setempat"
+      ]
+    },
+    {
+      "slm": "Bab 5: Tokoh Hindu",
+      "tp": [
+        "Mengenal Tokoh Hindu pada masa Kerajaan di Indonesia",
+        "Mengidentifikasi tokoh kerajaan Hindu di Kalimantan",
+        "Mengidentifikasi tokoh kerajaan Hindu di Jawa",
+        "Mengidentifikasi tokoh kerajaan Hindu di Bali",
+        "Meniru sikap tokoh-tokoh kerajaan Hindu yang patut diteladani"
+      ]
+    }
   ],
   "Pendidikan Agama dan Budi Pekerti (Buddha)": [
-    "mengidentifikasi kelahiran Pangeran Siddharta",
-    "meneladani nilai-nilai dari kisah kelahiran Pangeran Siddharta",
-    "menguraikan asal usul Pangeran Siddharta",
-    "menghargai asal usul Pangeran Siddharta",
-    "mampu meneladani sikap Pangeran Siddharta pada masa bersekolah",
-    "mampu mengidentifikasi masa berumah tangga Pangeran Siddharta",
-    "mampu mengidentifikasi kehidupan Pangeran Siddharta",
-    "mengidentifikasi kehidupan Pangeran Siddharta pada masa menjadi Buddha",
-    "menerapkan ajaran Buddha",
-    "menyatakan berlindung kepada Buddha",
-    "menunjukkan identitas masyarakat di lingkungan terdekatnya",
-    "menghargai identitas orang lain di lingkungan terdekat",
-    "menunjukkan budaya di lingkungan tempat tinggal",
-    "menerima dengan senang hati budaya yang ada di lingkungan tempat tinggal",
-    "membangun kebersamaan dalam lingkungan",
-    "mendefinisikan sikap peduli terhadap sesama",
-    "menerapkan sikap peduli pada sesama",
-    "mendefinisikan sikap peduli terhadap lingkungan",
-    "menerapkan sikap peduli pada lingkungan",
-    "merencana doa Buddhis",
-    "menerapkan doa sebelum dan setelah belajar",
-    "menerapkan doa sebelum dan setelah makan",
-    "menerapkan doa sebelum dan setelah bangun tidur",
-    "menerapkan doa untuk orang-orang yang disayangi dan para leluhur",
-    "peserta didik mampu menunjukkan perilaku disiplin di rumah, sekolah, vihara, dan di lingkungan tempat tinggal",
-    "melakukan kebajikan dengan bermurah hati",
-    "menunjukkan perilaku jujur dalam kehidupan sehari-hari",
-    "menerapkan kesabaran dalam kehidupan sehari-hari",
-    "membudayakan perilaku antri sebagai bagian dari kesabaran dalam kehidupan sehari-hari",
-    "selalu bersemangat dalam kehidupan sehari-hari",
-    "menunjukkan sikap yang tangguh dalam kehidupan sehari-hari",
-    "menunjukkan perilaku sopan di lingkungan masyarakat",
-    "menunjukkan budaya menghormat kepada orang yang lebih tua dalam kehidupan sehari-hari di lingkungan masyarakat",
-    "menunjukkan perilaku menjaga pikiran, ucapan, dan perbuatan agar selalu baik dalam kehidupan sehari-hari di lingkungan masyarakat"
+    {
+      "slm": "Unit 1: Sejarah Pangeran Siddharta",
+      "tp": [
+        "mengidentifikasi dan meneladani nilai-nilai dari kisah kelahiran Pangeran Siddharta;",
+        "menguraikan dan menghargai asal usul Pangeran Siddharta;",
+        "mampu meneladani sikap Pangeran Siddharta pada masa bersekolah;",
+        "mampu mengidentifikasi masa berumah tangga Pangeran Siddharta;",
+        "mampu mengidentifikasi kehidupan Pangeran Siddharta pada masa menjadi Buddha;",
+        "menerapkan ajaran Buddha dan menyatakan berlindung kepada Buddha."
+      ]
+    },
+    {
+      "slm": "Unit 2: Tempat Tinggalku",
+      "tp": [
+        "menunjukkan dan menghargai identitas masyarakat di lingkungan terdekatnya;",
+        "menunjukkan dan menerima dengan senang hati budaya yang ada di lingkungan tempat tinggal;",
+        "membangun kebersamaan dalam lingkungan."
+      ]
+    },
+    {
+      "slm": "Unit 3: Peduli Sesama",
+      "tp": [
+        "mendefinisikan dan menerapkan sikap peduli terhadap sesama;",
+        "mendefinisikan dan menerapkan sikap peduli pada lingkungan."
+      ]
+    },
+    {
+      "slm": "Unit 4: Doa-doa Buddhis",
+      "tp": [
+        "merencana dan menerapkan doa sebelum dan setelah belajar;",
+        "menerapkan doa sebelum dan setelah makan;",
+        "menerapkan doa sebelum dan setelah bangun tidur;",
+        "menerapkan doa untuk orang-orang yang disayangi dan para leluhur."
+      ]
+    },
+    {
+      "slm": "Unit 5: Hidup Disiplin",
+      "tp": [
+        "mampu menunjukkan perilaku disiplin di rumah, sekolah, vihara, dan di lingkungan tempat tinggal;",
+        "melakukan kebajikan dengan bermurah hati;",
+        "menunjukkan perilaku jujur, sabar, dan selalu bersemangat dalam kehidupan sehari-hari;",
+        "membudayakan perilaku antri sebagai bagian dari kesabaran;",
+        "menunjukkan perilaku sopan dan menghormat kepada orang yang lebih tua;",
+        "menunjukkan perilaku menjaga pikiran, ucapan, dan perbuatan agar selalu baik."
+      ]
+    }
+  ],
+  "Pendidikan Agama dan Budi Pekerti (Khonghucu)": [
+    {
+      "slm": "Bab 1: Aku dan Lingkunganku",
+      "tp": [
+        "Mengetahui adanya benih kebajikan karunia Tian",
+        "Membiasakan sikap disiplin menghargai waktu",
+        "Membuat jadwal harian yang ditepati",
+        "Menunjukkan sikap saling mengasihi sesama manusia"
+      ]
+    },
+    {
+      "slm": "Bab 2: Aku Sembahyang",
+      "tp": [
+        "Mengetahui tujuan sembahyang kepada leluhur",
+        "Melaksanakan sembahyang kepada leluhur",
+        "Mengenal perlengkapan sembahyang kepada leluhur",
+        "Menyusun perlengkapan sembahyang di altar leluhur"
+      ]
+    },
+    {
+      "slm": "Bab 3: Imanku",
+      "tp": [
+        "Mengetahui Delapan Pengakuan Iman dalam agama Khonghucu",
+        "Menghafal Delapan Pengakuan Iman",
+        "Menerapkan Delapan Pengakuan Iman sebagai pedoman hidup"
+      ]
+    },
+    {
+      "slm": "Bab 4: Tiga Kesukaan",
+      "tp": [
+        "Menyebutkan tiga kesukaan yang membawa faedah",
+        "Menyebutkan tiga kesukaan yang membawa celaka",
+        "Memahami mana yang sebaiknya diteladani",
+        "Menghindari kesukaan yang membawa celaka"
+      ]
+    },
+    {
+      "slm": "Bab 5: Kisah Nabi Kongzi",
+      "tp": [
+        "Mengetahui pribadi luhur Nabi Kongzi",
+        "Menerapkan teladan tersebut dalam perilaku hidup keseharian",
+        "Mengetahui saat terakhir hidup Nabi Kongzi",
+        "Meyakini tanda-tanda menjelang wafat Nabi"
+      ]
+    },
+    {
+      "slm": "Bab 6: Murid-Murid Nabi Kongzi",
+      "tp": [
+        "Mengenal empat murid utama Nabi Kongzi",
+        "Mengenal sifat-sifat murid Nabi Kongzi",
+        "Meneladani perilaku para murid Nabi Kongzi"
+      ]
+    }
+  ],
+  "Pendidikan Pancasila": [
+    {
+      "slm": "Bab 1: Norma dan Aturan",
+      "tp": [
+        "menghargai identitas diri, teman, dan keluarga sesuai budaya, suku bangsa, bahasa, agama, dan kepercayaan.",
+        "mengidentifikasi lingkungan tempat tinggal sebagai bagian tidak terpisahkan dari wilayah NKRI."
+      ]
+    },
+    {
+      "slm": "Bab 2: Hak dan Kewajiban",
+      "tp": [
+        "mengidentifikasi dan melaksanakan aturan di sekolah, dan lingkungan tempat tinggal.",
+        "mengidentifikasi dan melaksanakan hak dan kewajiban sebagai anggota keluarga dan warga sekolah."
+      ]
+    },
+    {
+      "slm": "Bab 3: Bersatu dalam Keberagaman",
+      "tp": [
+        "Mengidentifikasi, membedakan dan menghargai identitas diri, keluarga, dan teman-temannya sesuai budaya, suku bangsa, dan bahasa di lingkungan rumah, sekolah, dan masyarakat."
+      ]
+    },
+    {
+      "slm": "Bab 4: Aku Anak Indonesia",
+      "tp": [
+        "mempraktikkan makna sila-sila Pancasila dalam kehidupan sehari-hari di lingkungan keluarga dan sekolah.",
+        "meneladani karakter para perumus Pancasila."
+      ]
+    }
+  ],
+  "Bahasa Indonesia": [
+    {
+      "slm": "Bab 1: Tubuhku Siap Bergerak",
+      "tp": [
+        "menemukan dan mengelompokkan gambar benda, memeriksa penggunaan huruf kapital, tanda baca, dan spasi;",
+        "menyampaikan gagasan dengan penuh semangat;",
+        "memahami dan mengikuti instruksi guru dengan tepat."
+      ]
+    },
+    {
+      "slm": "Bab 2: Cerita dari Kampung Halaman",
+      "tp": [
+        "menulis cerita dengan struktur awal, tengah, akhir;",
+        "menyebutkan maksud sebuah gambar;",
+        "menyimak dan mengikuti instruksi guru dengan tepat."
+      ]
+    },
+    {
+      "slm": "Bab 3: Siap-Siap Belajar",
+      "tp": [
+        "berlatih berbicara dengan sopan;",
+        "menemukan ide pokok;",
+        "menyebutkan masalah yang dihadapi tokoh cerita dengan tepat."
+      ]
+    },
+    {
+      "slm": "Bab 4: Belajar Beragam",
+      "tp": [
+        "berpendapat dan menanggapi pendapat teman;",
+        "menilai gambar dan warna pada ilustrasi;",
+        "menuliskan ide pokok, ide pendukung, dan kesimpulan bacaan dengan benar."
+      ]
+    },
+    {
+      "slm": "Bab 5: Berwirausaha",
+      "tp": [
+        "menggambar poster promosi;",
+        "memperagakan wawancara;",
+        "menilai gambar atau ilustrasi pada buku bacaan dengan tepat."
+      ]
+    },
+    {
+      "slm": "Bab 6: Aku dan Teman-Temanku",
+      "tp": [
+        "berpendapat dalam diskusi;",
+        "menyebutkan permasalahan yang dialami tokoh;",
+        "berbicara dengan volume suara yang tepat;",
+        "menuliskan pendapat dengan benar."
+      ]
+    },
+    {
+      "slm": "Bab 7: Hewan di Sekitarku",
+      "tp": [
+        "menemukan informasi dalam bacaan;",
+        "mengajukan pertanyaan;",
+        "menyimak informasi tentang ciri hewan;",
+        "dapat menulis surat berisi pengalaman dengan benar."
+      ]
+    },
+    {
+      "slm": "Bab 8: Berkawan dalam Keragaman",
+      "tp": [
+        "menyimak berbagai jenis percakapan;",
+        "membaca dan mengisi tabel;",
+        "menuliskan pendapat;",
+        "berpendapat dalam diskusi dengan benar."
+      ]
+    }
+  ],
+  "Matematika": [
+    {
+      "slm": "Bab 1: Bilangan Cacah Sampai 1.000",
+      "tp": [
+        "Membaca dan menuliskan bilangan cacah sampai 1.000.",
+        "Menentukan nilai tempat dan membandingkan dua bilangan cacah sampai 1.000.",
+        "Mengurutkan beberapa bilangan cacah sampai 1.000."
+      ]
+    },
+    {
+      "slm": "Bab 2: Operasi Hitung",
+      "tp": [
+        "Menentukan hasil penjumlahan, pengurangan, perkalian, dan pembagian dua bilangan cacah sampai 100.",
+        "Menjelaskan langkah-langkah penyelesaian untuk kalimat Matematika dengan penjumlahan/pengurangan pada bilangan cacah sampai 100.",
+        "Mengisi nilai yang belum diketahui dalam kalimat Matematika yang berkaitan dengan penjumlahan/pengurangan pada bilangan cacah sampai 100."
+      ]
+    },
+    {
+      "slm": "Bab 3: Pengukuran",
+      "tp": [
+        "Mengukur panjang benda menggunakan satuan baku.",
+        "Menentukan hubungan antarsatuan baku panjang.",
+        "Mengukur berat benda menggunakan satuan baku.",
+        "Menentukan hubungan antarsatuan baku berat."
+      ]
+    },
+    {
+      "slm": "Bab 4: Bangun Datar dan Sudut",
+      "tp": [
+        "Mendeskripsikan arti garis, sinar garis, dan kurva.",
+        "Mendeskripsikan arti sudut, ukuran sudut baku, dan jenis-jenis sudut.",
+        "Mendeskripsikan arti garis tegak lurus dan garis-garis sejajar."
+      ]
+    },
+    {
+      "slm": "Bab 5: Diagram",
+      "tp": [
+        "Mengurutkan dan membandingkan data dari terkecil ke terbesar dengan benar.",
+        "Menyajikan data dalam bentuk tabel dan menentukan data paling banyak dan paling sedikit."
+      ]
+    }
+  ],
+  "Ilmu Pengetahuan Alam dan Sosial": [
+    {
+      "slm": "Bab 1: Mari Kenali Hewan di Sekitar Kita",
+      "tp": [
+        "Mengenali keragaman hewan di sekitar.",
+        "Memahami bahwa anggota tubuh hewan memiliki bentuk anggota tubuh yang berbeda-beda.",
+        "Melakukan penyelidikan fungsi bagian tubuh dan kaitannya dengan perilaku hewan."
+      ]
+    },
+    {
+      "slm": "Bab 2: Siklus Hidup Makhluk Hidup",
+      "tp": [
+        "Menjelaskan tahap siklus yang dilalui oleh makhluk hidup.",
+        "Membandingkan siklus hidup pada manusia, hewan, dan tumbuhan.",
+        "Membuat simulasi menggunakan bagan/alat bantu sederhana tentang siklus hidup hewan."
+      ]
+    },
+    {
+      "slm": "Bab 3: Ada Apa Saja di Lingkungan Sekitar?",
+      "tp": [
+        "Menganalisis komponen biotik dan abiotik dalam suatu ekosistem.",
+        "Mengetahui peran komponen dalam suatu ekosistem.",
+        "Menganalisis keterkaitan dan hubungan yang terjadi antarkomponen pada suatu ekosistem."
+      ]
+    },
+    {
+      "slm": "Bab 4: Energi dan Manfaatnya",
+      "tp": [
+        "Mengidentifikasi bentuk dan sumber energi yang ada di sekitarnya.",
+        "Melakukan penyelidikan mengenai macam-macam energi yang digunakannya dalam kehidupan sehari-hari beserta sumbernya.",
+        "Melakukan penyelidikan mengenai cara menghemat salah satu energi."
+      ]
+    },
+    {
+      "slm": "Bab 5: Peta, Aku dan Kamu",
+      "tp": [
+        "Membuat dan menggunakan denah sederhana sebagai penunjuk arah.",
+        "Belajar membuat denah daerah sekitar tempat tinggal.",
+        "Mempelajari peran penting denah untuk kehidupan."
+      ]
+    },
+    {
+      "slm": "Bab 6: Pemimpin di Sekitarku",
+      "tp": [
+        "Mengenal tata kelola kota/kabupaten tempat tinggal.",
+        "Mengenal dan menjelaskan tugas pemimpin di masyarakat."
+      ]
+    },
+    {
+      "slm": "Bab 7: Ragam Budaya di Daerahku",
+      "tp": [
+        "Mengidentifikasi dan mengenal ragam tradisi atau budaya dalam keluarga dan masyarakat yang ada di Indonesia.",
+        "Mengetahui pengaruh kebiasaan ragam tradisi atau budaya dalam keluarga dan masyarakat.",
+        "Menceritakan sejarah atau cerita yang berkaitan dengan tradisi atau budaya di daerah tempat tinggal."
+      ]
+    },
+    {
+      "slm": "Bab 8: Daerah Tempat Tinggalku",
+      "tp": [
+        "Mengidentifikasi ragam bentang alam di daerahnya.",
+        "Mengenal karakter tempat dengan bentang alam yang berbeda.",
+        "Mendeskripsikan bentuk adaptasi kita di lingkungan kita."
+      ]
+    }
+  ],
+  "Bahasa Inggris": [
+    {
+      "slm": "Unit 1: My New Friends are Great!",
+      "tp": [
+        "mengidentifikasi kosakata dalam memperkenalkan diri dengan dukungan gambar/ilustrasi.",
+        "menggunakan ungkapan memperkenalkan diri dalam Bahasa Inggris secara interaktif.",
+        "menuliskan kosakata sederhana yang berhubungan dengan memperkenalkan diri."
+      ]
+    },
+    {
+      "slm": "Unit 2: My House is The Best!",
+      "tp": [
+        "mengidentifikasi kosakata tentang kegiatan di rumah dan ruangan-ruangan.",
+        "mendeskripsikan tentang kegiatan di rumah dan ruangan-ruangan di rumah.",
+        "menuliskan kosakata sederhana tentang kegiatan di rumah dan ruangan-ruangan di rumah."
+      ]
+    },
+    {
+      "slm": "Unit 3: I Can Make It!",
+      "tp": [
+        "mengidentifikasi kosakata tentang anggota keluarga dan asal daerah.",
+        "mendeskripsikan anggota keluarga dan asal daerah dalam bahasa Inggris.",
+        "menuliskan kosakata sederhana tentang anggota keluarga dan asal daerahnya."
+      ]
+    },
+    {
+      "slm": "Unit 4: My School is Fun!",
+      "tp": [
+        "menggunakan ungkapan tentang ruangan-ruangan sekolah dan letaknya.",
+        "mendeskripsikan tentang ruangan-ruangan sekolah dan letaknya.",
+        "menuliskan kosakata sederhana tentang ruangan-ruangan sekolah dan letaknya."
+      ]
+    },
+    {
+      "slm": "Unit 5: What is in The Classroom?",
+      "tp": [
+        "mengidentifikasi kosakata tentang benda-benda di dalam kelas dan letaknya.",
+        "menggunakan ungkapan dan merespon pertanyaan tentang benda-benda di dalam kelas.",
+        "menuliskan kosakata sederhana tentang benda-benda di dalam kelas."
+      ]
+    },
+    {
+      "slm": "Unit 6: Who Are They?",
+      "tp": [
+        "mengidentifikasi kosakata tentang nama profesi warga sekolah dan kata sifat tentang kepribadian.",
+        "merespon pertanyaan dan tanggapan tentang profesi warga sekolah.",
+        "menuliskan kosakata sederhana tentang profesi warga sekolah."
+      ]
+    }
+  ],
+  "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
+    {
+      "slm": "Unit 1: Pola Gerak Dasar Lokomotor",
+      "tp": [
+        "menjelaskan dan mempraktikkan variasi pola gerak dasar pada gerakan lokomotor seperti berjalan, berlari, melompat, dan meloncat."
+      ]
+    },
+    {
+      "slm": "Unit 2: Pola Gerak Dasar Non-Lokomotor",
+      "tp": [
+        "menjelaskan dan mempraktikkan variasi pola gerak dasar pada gerakan nonlokomotor, seperti gerakan memutar, mengayun, menekuk, dan meliuk."
+      ]
+    },
+    {
+      "slm": "Unit 3: Pola Gerak Dasar Manipulatif",
+      "tp": [
+        "menjelaskan dan mempraktikkan variasi pola gerak dasar pada gerakan manipulatif seperti melempar, menangkap, menendang, dan menahan bola."
+      ]
+    },
+    {
+      "slm": "Unit 4: Aktivitas Senam",
+      "tp": [
+        "menjelaskan dan mempraktikkan aktivitas pembelajaran pola gerak dominan pada senam, seperti keseimbangan, sikap lilin, dan lompat kangkang."
+      ]
+    },
+    {
+      "slm": "Unit 5: Aktivitas Gerak Berirama",
+      "tp": [
+        "menjelaskan dan mempraktikkan variasi pola gerak langkah kaki dan ayunan lengan aktivitas gerak berirama."
+      ]
+    },
+    {
+      "slm": "Unit 6: Aktivitas Air",
+      "tp": [
+        "menjelaskan dan mempraktikkan gerak dasar posisi badan, gerakan kaki, gerakan lengan, dan mengambil napas."
+      ]
+    },
+    {
+      "slm": "Unit 7: Aktivitas Kebugaran Jasmani",
+      "tp": [
+        "menjelaskan dan mempraktikkan aktivitas latihan kebugaran jasmani untuk kesehatan, seperti latihan kekuatan otot dan daya tahan otot."
+      ]
+    },
+    {
+      "slm": "Unit 8: Pola Perilaku Hidup Sehat",
+      "tp": [
+        "menjelaskan dan menerapkan konsep aktivitas fisik, istirahat, pengisian waktu luang, serta memilih makanan bergizi dan seimbang."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Rupa)": [
+    {
+      "slm": "Unit 1: Unsur-unsur Rupa dan Prinsip Desain",
+      "tp": [
+        "mampu mengamati, mengenali, dan mengidentifikasi elemen rupa (garis, bentuk, warna, bidang, ruang, dan tekstur) di lingkungan sekitarnya.",
+        "mampu menggunakan dan menerapkan hasil pengamatan pada karya 2 atau 3 dimensi.",
+        "mampu mengenal, memahami, dan menggunakan alat, bahan, dan prosedur yang tepat dalam penciptaan karyanya.",
+        "mampu mengeksplorasi ruang jauh, menengah, dan dekat.",
+        "mampu menjelaskan elemen rupa, alat, bahan, teknik, atau prosedur berdasarkan pengamatan terhadap sebuah karya."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Musik)": [
+    {
+      "slm": "Unit 1: Musik Perkusi",
+      "tp": [
+        "mampu mengimitasi, menyimak dan mengamati alat musik perkusi.",
+        "mampu mengenal, mengimitasi, membayangkan dan menata pola ritme sederhana dari berbagai alat musik perkusi.",
+        "mampu menjelaskan cara membuat alat musik perkusi sederhana.",
+        "mampu mengembangkan kemampuan bermusik melalui memainkan alat musik perkusi sederhana."
+      ]
+    },
+    {
+      "slm": "Unit 2: Melodi",
+      "tp": [
+        "mampu mengenali dan menirukan bunyi tangga nada diatonik mayor, minor dan nusantara lainnya.",
+        "mampu menata dan mengembangkan melodi sederhana dalam bentuk nyanyian dan permainan alat musik melodis.",
+        "mampu mendemonstrasikan kemampuan bermusiknya."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Tari)": [
+    {
+      "slm": "Unit 1: Gerak Tari dan Ekspresi",
+      "tp": [
+        "mampu memperagakan gerak berbagai ekspresi dengan stimulus aktivitas keseharian.",
+        "mampu mendeskripsikan pengalaman menari.",
+        "mampu memperagakan keunikan bentuk penyajian kelompok yang bersumber dari permainan tradisional."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Teater)": [
+    {
+      "slm": "Unit 1: Cerita Khayali",
+      "tp": [
+        "mengenal ragam karakter dalam cerita khayali.",
+        "menggunakan seluruh anggota tubuh dan suara untuk menunjukkan beberapa tokoh dalam cerita khayali.",
+        "memainkan penggalan cerita khayali dalam pertunjukan tablo.",
+        "mengevaluasi karya sendiri dan orang lain."
+      ]
+    },
+    {
+      "slm": "Unit 2: Eksplorasi Cerita Pilihan",
+      "tp": [
+        "mengeksplorasi penggunaan properti panggung untuk menunjang peran dan cerita.",
+        "mendeskripsikan tubuh dan suara karakter dalam setiap plot cerita pilihan mereka.",
+        "mengeksplorasi tubuh dan suara karakter sesuai latar lokasi dalam cerita pilihan mereka.",
+        "merespons suara latar dengan gerakan spontan.",
+        "merancang pertunjukan tablo atau pantomim dengan potongan cerita yang dipilih."
+      ]
+    },
+    {
+      "slm": "Unit 3: Improvisasi",
+      "tp": [
+        "mengeksplorasi penggunaan properti panggung untuk menunjang peran.",
+        "memberi contoh ragam improvisasi dalam teater.",
+        "memperagakan hasil eksplorasi tubuh dan suara mereka dengan emosi yang tepat.",
+        "menghasilkan dialog dan gerak tubuh sebagai respons terhadap deskripsi dan narasi yang diberikan.",
+        "mendemonstrasikan pertunjukan improvisasi.",
+        "menciptakan pertunjukan spontan.",
+        "mengevaluasi kelebihan dan kekurangan penampilan diri sendiri atau orang lain."
+      ]
+    },
+    {
+      "slm": "Unit 4: Pertunjukan Akhir",
+      "tp": [
+        "berdiskusi untuk menentukan cerita pilihan mereka.",
+        "memilih pemain yang diwakili sutradara dan tim produksi.",
+        "mengidentifikasi karakter dan mempersiapkan unsur produksi lainnya.",
+        "menampilkan pertunjukan akhir."
+      ]
+    }
   ],
   "Muatan Lokal (Bahasa Bali)": [
-    "Peserta didik mampu mengetahui jenis beburon endah",
-    "Peserta didik mampu menyebutkan beburon endah",
-    "Peserta didik mampu mengetahui amah-amahan buron",
-    "Peserta didik mampu membedakan amah-amahan buron",
-    "Peserta didik mampu menyebutkan jenis amah-amahan buron",
-    "Peserta didik mampu mengetahui nama pahan entik-entikan",
-    "Peserta didik mampu menggambarkan bagaian pahan entik-entikan",
-    "Peserta didik mampu menyebutkan pahan entik-entikan",
-    "Peserta didik mampu mengenal adan panak beburon",
-    "Peserta didik mampu menyebutkan adan panak buron",
-    "Peserta didik mampu membedakan adan panak beburon",
-    "Peserta didik mampu menghafal adan panak beburon",
-    "Peserta didik mampu mengenal angka 1-50",
-    "Peserta didik mampu menyebutkan angka 1-50",
-    "Peserta didik mampu menulis angka 1-50",
-    "Peserta didik mampu mengenal aksara bali wianjana",
-    "Peserta didik mampu menyebutkan Aksara Bali Wianjana",
-    "Peserta didik mampu menulis Aksara Bali Wianjana",
-    "Peserta didik mampu mengenal adan masan (cuaca)",
-    "Peserta didik mampu membedakan adan masa (cuaca)",
-    "Mampu menyebutkan kruna - kruna dalam bahasa Bali",
-    "Mampu mencari len raos (sinonim) kruna dalam bahasa Bali",
-    "Mampu menentukan len raos (sinonim)",
-    "Mampu mengenal pengangge suara dalam bahasa Bali",
-    "Mampu menyebutkan pengangge suara dalam bahasa Bali",
-    "Mampu menulis pengangge suara dalam bahasa Bali",
-    "Mampu mengenal angka aksara Bali 1 - 10",
-    "Mampu menulis angka aksara Bali 1 - 10",
-    "Mampu mengenal kruna - kruna dalam bahasa Bali",
-    "Mampu menentukan kruna matungkalik dalam bahasa Bali",
-    "Mampu mencari tungkalikan kruna dalam bahasa Bali",
-    "Mampu mengenal satua Bali",
-    "Mampu menyebutkan beragam satua Bali",
-    "Mampu menentukan tokoh - tokoh dalam satua Bali",
-    "Mampu mesatua Bali dengan baik dan benar",
-    "Mampu mengenal sekar alit (Pupuh Mijil) dalam bahasa Bali",
-    "Mampu menyanyikan sekar alit (Pupuh Mijil) dalam bahasa Bali"
+    {
+      "slm": "Bab 1: Beburon Endah",
+      "tp": [
+        "mampu mengetahui jenis beburon endah",
+        "mampu menyebutkan beburon endah",
+        "mampu mengetahui amah-amahan buron",
+        "mampu membedakan amah-amahan buron",
+        "mampu menyebutkan jenis amah-amahan buron"
+      ]
+    },
+    {
+      "slm": "Bab 2: Entik-entikan",
+      "tp": [
+        "mampu mengetahui nama pahan entik-entikan",
+        "mampu menggambarkan bagaian pahan entik-entikan",
+        "mampu menyebutkan pahan entik-entikan"
+      ]
+    },
+    {
+      "slm": "Bab 3: Panak Beburon",
+      "tp": [
+        "mampu mengenal adan panak beburon",
+        "mampu menyebutkan adan panak buron",
+        "mampu membedakan adan panak beburon",
+        "mampu menghafal adan panak beburon"
+      ]
+    },
+    {
+      "slm": "Bab 4: Wilangan",
+      "tp": [
+        "mampu mengenal angka 1-50",
+        "mampu menyebutkan angka 1-50",
+        "mampu menulis angka 1-50"
+      ]
+    },
+    {
+      "slm": "Bab 5: Aksara Wianjana",
+      "tp": [
+        "mampu mengenal aksara bali wianjana",
+        "mampu menyebutkan Aksara Bali Wianjana",
+        "mampu menulis Aksara Bali Wianjana"
+      ]
+    },
+    {
+      "slm": "Bab 6: Adan Masan",
+      "tp": [
+        "mampu mengenal adan masan (cuaca)",
+        "mampu membedakan adan masa (cuaca)"
+      ]
+    },
+    {
+      "slm": "Bab 7: Len Raos",
+      "tp": [
+        "Mampu menyebutkan kruna - kruna dalam bahasa Bali",
+        "Mampu mencari len raos (sinonim) kruna dalam bahasa Bali",
+        "Mampu menentukan len raos (sinonim)"
+      ]
+    },
+    {
+      "slm": "Bab 8: Pangangge Suara",
+      "tp": [
+        "Mampu mengenal pengangge suara dalam bahasa Bali",
+        "Mampu menyebutkan pengangge suara dalam bahasa Bali",
+        "Mampu menulis pengangge suara dalam bahasa Bali"
+      ]
+    },
+    {
+      "slm": "Bab 9: Angka Aksara Bali",
+      "tp": [
+        "Mampu mengenal angka aksara Bali 1 - 10",
+        "Mampu menulis angka aksara Bali 1 - 10"
+      ]
+    },
+    {
+      "slm": "Bab 10: Kruna Matungkalik",
+      "tp": [
+        "Mampu mengenal kruna - kruna dalam bahasa Bali",
+        "Mampu menentukan kruna matungkalik dalam bahasa Bali",
+        "Mampu mencari tungkalikan kruna dalam bahasa Bali"
+      ]
+    },
+    {
+      "slm": "Bab 11: Satua Bali",
+      "tp": [
+        "Mampu mengenal satua Bali",
+        "Mampu menyebutkan beragam satua Bali",
+        "Mampu menentukan tokoh - tokoh dalam satua Bali",
+        "Mampu mesatua Bali dengan baik dan benar"
+      ]
+    },
+    {
+      "slm": "Bab 12: Pupuh Mijil",
+      "tp": [
+        "Mampu mengenal sekar alit (Pupuh Mijil) dalam bahasa Bali",
+        "Mampu menyanyikan sekar alit (Pupuh Mijil) dalam bahasa Bali"
+      ]
+    }
   ]
 }
