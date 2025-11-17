@@ -407,8 +407,8 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
     const phase = getPhase(gradeNumber);
     
     return React.createElement('div', { ref: ref },
-        React.createElement('h2', { className: 'text-center font-bold mb-2', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-2', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
+        React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
+        React.createElement('table', { className: 'w-full mb-1', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
@@ -444,13 +444,13 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
         React.createElement('tbody', { ref: ref },
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id },
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] text-center align-top' }, item.grade ?? ''),
-                    React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top leading-tight' },
+                    React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, startingIndex + index),
+                    React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top' }, item.name),
+                    React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, item.grade ?? ''),
+                    React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
                         React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'my-1 border-t border-black' }),
+                            React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
                             React.createElement('p', null, item.description.lowest)
                         )
                     )
@@ -620,7 +620,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-1' },
                 React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
-                    React.createElement('div', { style: { minHeight: '1.5cm' } })
+                    React.createElement('div', { style: { minHeight: '1cm' } })
                 )
             ),
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-1 flex justify-between', style: { fontSize: '12pt' } },
