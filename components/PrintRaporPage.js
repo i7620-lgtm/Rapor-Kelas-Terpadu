@@ -479,7 +479,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const originalNote = notes[student.id] || '';
     let studentNoteContent;
     if (shouldDisplayRank) {
-        const rankMessageStart = `Selamat! ${nickname} berhasil meraih `;
+        const rankMessageStart = `Selamat! berhasil meraih `;
         const rankText = `Peringkat ${rank}`;
         const rankMessageEnd = ` di kelas. `;
         studentNoteContent = React.createElement(React.Fragment, null, 
@@ -522,7 +522,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         let descriptionParts = [];
 
         if (theme) {
-            descriptionParts.push(`${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
+            descriptionParts.push(`berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
         }
         
         const strongDimensions = COCURRICULAR_DIMENSIONS
@@ -620,7 +620,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-2' },
                 React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
-                    React.createElement('div', { style: { minHeight: '2cm' } })
+                    React.createElement('div', { style: { minHeight: '1.5cm' } })
                 )
             ),
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
