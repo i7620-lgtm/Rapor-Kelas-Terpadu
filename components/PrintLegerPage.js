@@ -318,7 +318,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             }
             @media print {
                 .leger-page {
-                    transform: translateY(-${PAGE_TOP_MARGIN_CM}cm) scale(0.98);
+                    transform: scale(0.98);
                     transform-origin: top center;
                     box-shadow: none !important;
                     border: none !important;
