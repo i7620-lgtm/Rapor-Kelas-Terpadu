@@ -450,7 +450,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                     React.createElement('td', { className: 'border border-black px-1 py-[2px] align-top leading-tight' },
                         React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'border-t border-slate-300' }),
+                            React.createElement('hr', { className: 'my-1 border-t border-black' }),
                             React.createElement('p', null, item.description.lowest)
                         )
                     )
@@ -509,7 +509,6 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const cocurricularDescription = useMemo(() => {
         const studentCoData = cocurricularData?.[student.id];
         const theme = settings.cocurricular_theme;
-
         const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
             ? studentCoData.dimensionRatings
             : {};
@@ -520,40 +519,42 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             return "Data kokurikuler belum diisi.";
         }
 
-        let description = '';
+        let descriptionParts = [];
+
         if (theme) {
-            description = `Ananda ${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}". `;
-        }
-
-        if (hasRatings) {
-            const strongDimensions = COCURRICULAR_DIMENSIONS
-                .filter(dim => ['SB', 'BSH'].includes(ratings[dim.id]))
-                .map(dim => dim.label.toLowerCase());
-
-            if (strongDimensions.length > 0) {
-                const last = strongDimensions.pop();
-                const first = strongDimensions.join(', ');
-                const dimensionText = strongDimensions.length > 0 ? `${first}, dan ${last}` : last;
-                description += `Ia menunjukkan perkembangan yang sangat baik dalam aspek ${dimensionText}.`;
-            } else {
-                const developingDimensions = COCURRICULAR_DIMENSIONS
-                    .filter(dim => ['MB'].includes(ratings[dim.id]))
-                    .map(dim => dim.label.toLowerCase());
-                
-                if (developingDimensions.length > 0) {
-                     const last = developingDimensions.pop();
-                     const first = developingDimensions.join(', ');
-                     const dimensionText = developingDimensions.length > 0 ? `${first}, dan ${last}` : last;
-                     description += `Ia mulai menunjukkan perkembangan dalam aspek ${dimensionText}.`;
-                } else {
-                    description += `Perlu bimbingan lebih lanjut untuk mengembangkan dimensi profil lulusan.`;
-                }
-            }
-        } else if (theme) {
-            description += 'Penilaian dimensi profil lulusan perlu ditambahkan.';
+            descriptionParts.push(`Ananda ${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
         }
         
-        return description.trim();
+        const strongDimensions = COCURRICULAR_DIMENSIONS
+            .filter(dim => ['SB', 'BSH'].includes(ratings[dim.id]))
+            .map(dim => dim.label.toLowerCase());
+
+        const developingDimensions = COCURRICULAR_DIMENSIONS
+            .filter(dim => ['MB', 'BB'].includes(ratings[dim.id]))
+            .map(dim => dim.label.toLowerCase());
+        
+        if (strongDimensions.length > 0) {
+            const last = strongDimensions.pop();
+            const first = strongDimensions.join(', ');
+            const dimensionText = strongDimensions.length > 0 ? `${first}, dan ${last}` : last;
+            descriptionParts.push(`Ia menunjukkan perkembangan yang sangat baik dalam aspek ${dimensionText}.`);
+        }
+
+        if (developingDimensions.length > 0) {
+            const last = developingDimensions.pop();
+            const first = developingDimensions.join(', ');
+            const dimensionText = developingDimensions.length > 0 ? `${first}, dan ${last}` : last;
+            descriptionParts.push(`Perlu bimbingan untuk lebih meningkatkan kemampuan dalam aspek ${dimensionText}.`);
+        }
+
+        if (descriptionParts.length > 0 && !hasRatings) {
+             descriptionParts.push('Penilaian dimensi profil lulusan perlu ditambahkan.');
+        } else if (descriptionParts.length === 0 && hasRatings) {
+            descriptionParts.push(`Ananda ${nickname} telah menyelesaikan kegiatan kokurikuler dengan baik.`);
+        }
+
+        return descriptionParts.join(' ');
+        
     }, [student, settings, cocurricularData, nickname]);
 
     const renderDecision = () => {
