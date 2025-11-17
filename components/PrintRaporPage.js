@@ -479,7 +479,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const originalNote = notes[student.id] || '';
     let studentNoteContent;
     if (shouldDisplayRank) {
-        const rankMessageStart = `Selamat! Ananda ${nickname} berhasil meraih `;
+        const rankMessageStart = `Selamat! ${nickname} berhasil meraih `;
         const rankText = `Peringkat ${rank}`;
         const rankMessageEnd = ` di kelas. `;
         studentNoteContent = React.createElement(React.Fragment, null, 
@@ -522,7 +522,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         let descriptionParts = [];
 
         if (theme) {
-            descriptionParts.push(`Ananda ${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
+            descriptionParts.push(`${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
         }
         
         const strongDimensions = COCURRICULAR_DIMENSIONS
@@ -550,7 +550,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         if (descriptionParts.length > 0 && !hasRatings) {
              descriptionParts.push('Penilaian dimensi profil lulusan perlu ditambahkan.');
         } else if (descriptionParts.length === 0 && hasRatings) {
-            descriptionParts.push(`Ananda ${nickname} telah menyelesaikan kegiatan kokurikuler dengan baik.`);
+            descriptionParts.push(`${nickname} telah menyelesaikan kegiatan kokurikuler dengan baik.`);
         }
 
         return descriptionParts.join(' ');
@@ -693,7 +693,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const notesForMeasurement = useMemo(() => {
         if (shouldDisplayRank) {
             const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
-            const rankMessage = `Selamat! Ananda ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
+            const rankMessage = `Selamat! ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
             const originalNote = notes[student.id] || '';
             return {
                 ...notes,
