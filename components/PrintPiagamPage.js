@@ -259,53 +259,95 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 };
 
 const DefaultPiagamBackground = () => {
-    const s = 24; // block size
-    const margin = 0;
-    const blue = "#00B2FF"; // A bright, sky blue
-    const yellow = "#FFD700"; // A golden yellow
-    const darkBlue = "#005F88"; // A darker, coordinating blue
     const width = PIAGAM_WIDTH;
     const height = PIAGAM_HEIGHT;
-    const cornerSize = s * 3;
-    const overlap_ext = 1; // 1 unit overlap to prevent rendering gaps
+    const margin = 20; // Overall margin from the edge
 
-    // A reusable component for the new corner design, inspired by the user's image
-    const CornerPattern = ({ transform }) => (
-        React.createElement('g', { transform: transform },
-            // This pattern creates the stepped corner from the user's image idea
-            React.createElement('rect', { x: 0, y: 0, width: s, height: s, fill: darkBlue }),
-            React.createElement('rect', { x: s, y: 0, width: s * 2, height: s + overlap_ext, fill: blue }), // Extend downwards
-            React.createElement('rect', { x: 0, y: s, width: s + overlap_ext, height: s * 2, fill: blue }), // Extend rightwards
-            React.createElement('rect', { x: s, y: s, width: s, height: s, fill: yellow }),
-            React.createElement('rect', { x: s, y: s * 2, width: s, height: s, fill: yellow }),
-            React.createElement('rect', { x: s * 2, y: s, width: s, height: s, fill: yellow })
-        )
-    );
+    const goldGradientId = "goldGradient";
+    const backgroundGradientId = "backgroundGradient";
 
-    return (
-        React.createElement('g', { 'data-name': "default-background" },
-            // Long connecting bars
-            // Top bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin + cornerSize, y: margin, width: width - 2 * margin - 2 * cornerSize, height: s + overlap_ext, fill: blue }), // Extend downwards
-            React.createElement('rect', { x: margin + cornerSize, y: margin + s, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
+    // A more intricate corner design using SVG path
+    const cornerPath = "M 0,120 L 0,30 Q 0,0 30,0 L 120,0 M 80,0 Q 100,0 100,20 L 100,60 M 0,80 Q 0,100 20,100 L 60,100";
+    
+    return React.createElement('g', { 'data-name': "default-background" },
+        // Define gradients
+        React.createElement('defs', null,
+            React.createElement('linearGradient', { id: goldGradientId, x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#FDE047', stopOpacity: 1 } }), // Lighter gold
+                React.createElement('stop', { offset: "50%", style: { stopColor: '#F59E0B', stopOpacity: 1 } }), // Richer gold
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#FDE047', stopOpacity: 1 } }) // Lighter gold
+            ),
+            React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "70%" },
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFEF9', stopOpacity: 1 } }), // Very light cream
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#FFFBEB', stopOpacity: 1 } }) // Light yellow
+            )
+        ),
 
-            // Bottom bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s - overlap_ext, width: width - 2 * margin - 2 * cornerSize, height: s + overlap_ext, fill: blue }), // Extend upwards
-            React.createElement('rect', { x: margin + cornerSize, y: height - margin - s*2, width: width - 2 * margin - 2 * cornerSize, height: s, fill: yellow }),
+        // Subtle background fill
+        React.createElement('rect', {
+            x: 0, y: 0, width: width, height: height,
+            fill: `url(#${backgroundGradientId})`
+        }),
 
-            // Left bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: margin, y: margin + cornerSize, width: s + overlap_ext, height: height - 2 * margin - 2 * cornerSize, fill: blue }), // Extend rightwards
-            React.createElement('rect', { x: margin + s, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
+        // Main outer border
+        React.createElement('rect', {
+            x: margin, y: margin,
+            width: width - margin * 2,
+            height: height - margin * 2,
+            fill: "none",
+            stroke: '#1e3a8a', // Deep Navy Blue
+            strokeWidth: "3"
+        }),
+        // Inner decorative border
+        React.createElement('rect', {
+            x: margin + 8, y: margin + 8,
+            width: width - (margin + 8) * 2,
+            height: height - (margin + 8) * 2,
+            fill: "none",
+            stroke: `url(#${goldGradientId})`,
+            strokeWidth: "1.5"
+        }),
 
-            // Right bars (blue is outer, yellow is inner)
-            React.createElement('rect', { x: width - margin - s - overlap_ext, y: margin + cornerSize, width: s + overlap_ext, height: height - 2 * margin - 2 * cornerSize, fill: blue }), // Extend leftwards
-            React.createElement('rect', { x: width - margin - s*2, y: margin + cornerSize, width: s, height: height - 2 * margin - 2 * cornerSize, fill: yellow }),
-            
-            // Corner patterns placed at the four corners, transformed appropriately
-            React.createElement(CornerPattern, { transform: `translate(${margin}, ${margin})` }), // Top-Left
-            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` }), // Top-Right (scaled X-axis, pattern still extends down/right from its transformed origin)
-            React.createElement(CornerPattern, { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` }), // Bottom-Left (scaled Y-axis, pattern still extends down/right from its transformed origin)
-            React.createElement(CornerPattern, { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` }) // Bottom-Right (scaled X&Y axis, pattern still extends down/right from its transformed origin)
+        // Corner Ornaments
+        // Top-Left
+        React.createElement('g', { transform: `translate(${margin}, ${margin})` },
+            React.createElement('path', {
+                d: cornerPath,
+                fill: "none",
+                stroke: `url(#${goldGradientId})`,
+                strokeWidth: "5",
+                strokeLinecap: "round"
+            })
+        ),
+        // Top-Right
+        React.createElement('g', { transform: `translate(${width - margin}, ${margin}) scale(-1, 1)` },
+            React.createElement('path', {
+                d: cornerPath,
+                fill: "none",
+                stroke: `url(#${goldGradientId})`,
+                strokeWidth: "5",
+                strokeLinecap: "round"
+            })
+        ),
+        // Bottom-Left
+        React.createElement('g', { transform: `translate(${margin}, ${height - margin}) scale(1, -1)` },
+            React.createElement('path', {
+                d: cornerPath,
+                fill: "none",
+                stroke: `url(#${goldGradientId})`,
+                strokeWidth: "5",
+                strokeLinecap: "round"
+            })
+        ),
+        // Bottom-Right
+        React.createElement('g', { transform: `translate(${width - margin}, ${height - margin}) scale(-1, -1)` },
+            React.createElement('path', {
+                d: cornerPath,
+                fill: "none",
+                stroke: `url(#${goldGradientId})`,
+                strokeWidth: "5",
+                strokeLinecap: "round"
+            })
         )
     );
 };
