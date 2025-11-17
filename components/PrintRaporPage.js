@@ -407,8 +407,8 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
     const phase = getPhase(gradeNumber);
     
     return React.createElement('div', { ref: ref },
-        React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-4', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
+        React.createElement('h2', { className: 'text-center font-bold mb-2', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
+        React.createElement('table', { className: 'w-full mb-2', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
                     React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
@@ -432,7 +432,7 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
 });
 
 const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-2', style: { fontSize: '10pt', tableLayout: 'fixed' } },
+    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '10pt', tableLayout: 'fixed' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
@@ -583,18 +583,18 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     };
 
     return (
-        React.createElement('div', { className: 'mt-2' },
+        React.createElement('div', { className: 'mt-1' },
             showCocurricular && cocurricularDescription && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
                 React.createElement('div', { className: 'min-h-[2rem]' }, cocurricularDescription)
             ),
-            showExtra && React.createElement('div', { ref: extraRef, className: 'mt-2' },
+            showExtra && React.createElement('div', { ref: extraRef, className: 'mt-1' },
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
                     React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[32%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[63%]' }, 'Keterangan'))),
                     React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
                 )
             ),
-            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-2 items-stretch' },
+            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-1 items-stretch' },
                 showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '6.5cm' } },
                     React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
                      React.createElement('div', { className: 'flex-grow flex flex-col' },
@@ -616,24 +616,24 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     React.createElement('div', { className: 'min-h-[3rem]' }, studentNoteContent)
                 )
             ),
-            showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-2' }, renderDecision()),
-            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-2' },
+            showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-1' }, renderDecision()),
+            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-1' },
                 React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
                     React.createElement('div', { style: { minHeight: '1.5cm' } })
                 )
             ),
-            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-2 flex justify-between', style: { fontSize: '12pt' } },
-                React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', null, '.........................')),
+            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-1 flex justify-between', style: { fontSize: '12pt' } },
+                React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-12' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center' }, 
                     React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
                     React.createElement('div', null, 'Wali Kelas,'), 
-                    React.createElement('div', { className: 'h-14' }), 
+                    React.createElement('div', { className: 'h-12' }), 
                     React.createElement('div', { className: 'font-bold underline' }, settings.nama_wali_kelas || '_________________'), 
                     React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             ),
-            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-2 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-14' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
+            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-1 flex justify-center text-center', style: { fontSize: '12pt' } }, React.createElement('div', null, React.createElement('div', null, 'Mengetahui,'), React.createElement('div', null, 'Kepala Sekolah,'), React.createElement('div', { className: 'h-12' }), React.createElement('div', { className: 'font-bold underline' }, settings.nama_kepala_sekolah || '_________________'), React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)))
         )
     );
 });
