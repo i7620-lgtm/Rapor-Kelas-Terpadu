@@ -119,19 +119,19 @@ const LegerFooter = React.forwardRef(({ settings, isCompact }, ref) => {
     };
 
     return (
-        React.createElement('div', { ref: ref, className: `font-times w-full ${isCompact ? 'mt-1 text-xs' : 'mt-2 text-sm'}` },
+        React.createElement('div', { ref: ref, className: `font-times w-full ${isCompact ? 'mt-0.5 text-xs' : 'mt-2 text-sm'}` },
             React.createElement('div', { className: "pt-2 flex justify-between" },
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, "Mengetahui,"),
                     React.createElement('p', null, "Kepala Sekolah,"),
-                    React.createElement('div', { style: { height: isCompact ? '2rem' : '2.5rem' } }),
+                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, getTanggalRapor()),
                     React.createElement('p', null, "Wali Kelas,"),
-                    React.createElement('div', { style: { height: isCompact ? '2rem' : '2.5rem' } }),
+                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
@@ -283,7 +283,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
-                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '4rem' : '5rem' } },
+                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '3.5rem' : '5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
                                 style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }
