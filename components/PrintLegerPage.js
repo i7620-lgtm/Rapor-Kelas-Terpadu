@@ -233,19 +233,22 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }
 
         setIsMeasuring(true);
-        setIsCompact(false); // Always measure in non-compact mode first
+        setIsCompact(false); // Selalu ukur dalam mode normal terlebih dahulu
 
         const timer = setTimeout(() => {
-            if (pageRef.current && contentRef.current) {
-                const pageHeight = pageRef.current.clientHeight;
+            if (contentRef.current) {
+                const availableHeight = contentRef.current.clientHeight;
                 const contentHeight = contentRef.current.scrollHeight;
-
-                if (contentHeight > pageHeight) {
+                
+                // Jika tinggi konten melebihi area yang tersedia, aktifkan mode ringkas
+                if (contentHeight > availableHeight) {
                     setIsCompact(true);
+                } else {
+                    setIsCompact(false);
                 }
             }
             setIsMeasuring(false);
-        }, 100);
+        }, 150); // Tambahkan sedikit penundaan untuk memastikan semua render selesai
 
         return () => clearTimeout(timer);
     }, [processedData, paperSize, cmToPx]);
@@ -305,12 +308,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         const style = document.createElement('style');
         style.id = 'print-leger-style';
-        // The @page rule now sets margins to 0, allowing the app's absolute positioning to control the layout precisely,
-        // matching the on-screen preview.
         style.innerHTML = `
             @page { 
                 ${paperSizeCss} 
-                margin: 0; 
+                margin: 0;
             }
         `;
         document.head.appendChild(style);
