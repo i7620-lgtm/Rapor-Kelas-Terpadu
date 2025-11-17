@@ -305,32 +305,12 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         const style = document.createElement('style');
         style.id = 'print-leger-style';
-        // This new CSS injection does two things for printing:
-        // 1. Sets the @page rule to use browser-managed margins.
-        // 2. Overrides the absolute positioning used for screen preview, turning the layout
-        //    into a normal document flow that respects the print margins.
+        // The @page rule now sets margins to 0, allowing the app's absolute positioning to control the layout precisely,
+        // matching the on-screen preview.
         style.innerHTML = `
             @page { 
                 ${paperSizeCss} 
-                margin: ${PAGE_TOP_MARGIN_CM}cm ${PAGE_LEFT_RIGHT_MARGIN_CM}cm ${PAGE_BOTTOM_MARGIN_CM}cm; 
-            }
-            @media print {
-                #print-area .leger-page {
-                    position: static !important;
-                    width: auto !important;
-                    height: auto !important;
-                    overflow: visible !important;
-                    border: none !important;
-                    box-shadow: none !important;
-                }
-                /* This targets the two main containers (header and content) that are absolutely positioned for the screen preview */
-                #print-area .leger-page > .absolute {
-                    position: static !important;
-                    top: auto !important;
-                    left: auto !important;
-                    right: auto !important;
-                    bottom: auto !important;
-                }
+                margin: 0; 
             }
         `;
         document.head.appendChild(style);
@@ -381,7 +361,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement('col', { style: { width: '6%' } })
             ),
             tableHeader,
-            React.createElement('tbody', { className: "leading-tight" },
+            React.createElement('tbody', { className: "leading-snug" },
                 rows.map((student, index) => (
                     React.createElement('tr', { key: student.no },
                         React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.no),
