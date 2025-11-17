@@ -99,7 +99,7 @@ const LegerHeader = React.forwardRef(({ settings }, ref) => (
             `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[Tahun Ajaran]'} SEMESTER ${settings.semester || '[Semester]'}`
         ),
         React.createElement('h2', { className: "font-bold text-sm mb-1 uppercase" }, (settings.nama_sekolah || '[Nama Sekolah]')),
-        React.createElement('h2', { className: "font-bold text-sm mb-2 uppercase" }, `KELAS: ${(settings.nama_kelas || '[Nama Kelas]')}`)
+        React.createElement('h2', { className: "font-bold text-sm mb-1 uppercase" }, `KELAS: ${(settings.nama_kelas || '[Nama Kelas]')}`)
     )
 ));
 
@@ -115,19 +115,19 @@ const LegerFooter = React.forwardRef(({ settings }, ref) => {
     };
     
     return (
-        React.createElement('div', { ref: ref, className: "font-times mt-4 text-sm" },
-            React.createElement('div', { className: "pt-4 flex justify-between" },
+        React.createElement('div', { ref: ref, className: "font-times mt-2 text-sm" },
+            React.createElement('div', { className: "pt-2 flex justify-between" },
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, "Mengetahui,"),
                     React.createElement('p', null, "Kepala Sekolah,"),
-                    React.createElement('div', { style: { height: '4rem' } }),
+                    React.createElement('div', { style: { height: '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, getTanggalRapor()),
                     React.createElement('p', null, "Wali Kelas,"),
-                    React.createElement('div', { style: { height: '4rem' } }),
+                    React.createElement('div', { style: { height: '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
@@ -311,13 +311,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             React.createElement('tbody', null,
                 rows.map(student => (
                     React.createElement('tr', { key: student.no },
-                        React.createElement('td', { className: "border border-black px-1 py-[1px] text-center" }, student.no),
-                        React.createElement('td', { className: "border border-black px-2 py-[1px]" }, student.namaLengkap),
-                        React.createElement('td', { className: "border border-black px-1 py-[1px] text-center" }, student.nisn),
-                        React.createElement('td', { className: "border border-black px-1 py-[1px] text-center" }, student.nis),
-                        ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-1 py-[1px] text-center" }, student.grades[subject.id] ?? '')),
-                        React.createElement('td', { className: "border border-black px-1 py-[1px] text-center font-bold" }, student.total),
-                        React.createElement('td', { className: "border border-black px-1 py-[1px] text-center font-bold" }, student.average)
+                        React.createElement('td', { className: "border border-black px-1 py-0 text-center" }, student.no),
+                        React.createElement('td', { className: "border border-black px-2 py-0" }, student.namaLengkap),
+                        React.createElement('td', { className: "border border-black px-1 py-0 text-center" }, student.nisn),
+                        React.createElement('td', { className: "border border-black px-1 py-0 text-center" }, student.nis),
+                        ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: "border border-black px-1 py-0 text-center" }, student.grades[subject.id] ?? '')),
+                        React.createElement('td', { className: "border border-black px-1 py-0 text-center font-bold" }, student.total),
+                        React.createElement('td', { className: "border border-black px-1 py-0 text-center font-bold" }, student.average)
                     )
                 ))
             )
@@ -326,13 +326,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     
     const tableHeader = React.createElement('thead', null,
         React.createElement('tr', { className: "text-center font-bold" },
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "NO"),
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "NAMA MURID"),
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "NISN"),
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "NIS"),
-            React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black p-1 align-middle" }, "NILAI MATA PELAJARAN"),
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "JUMLAH"),
-            React.createElement('td', { rowSpan: 2, className: "border border-black p-1 align-middle" }, "RATA-RATA")
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "NO"),
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "NAMA MURID"),
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "NISN"),
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "NIS"),
+            React.createElement('td', { colSpan: displaySubjects.length, className: "border border-black px-1 py-0 align-middle" }, "NILAI MATA PELAJARAN"),
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "JUMLAH"),
+            React.createElement('td', { rowSpan: 2, className: "border border-black px-1 py-0 align-middle" }, "RATA-RATA")
         ),
         React.createElement('tr', { className: "text-center font-bold" },
             displaySubjects.map(subject => 
