@@ -620,7 +620,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-1' },
                 React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
-                    React.createElement('div', { style: { minHeight: '1cm' } })
+                    React.createElement('div', { style: { minHeight: '1.5cm' } })
                 )
             ),
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-1 flex justify-between', style: { fontSize: '12pt' } },
