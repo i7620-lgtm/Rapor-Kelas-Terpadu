@@ -146,6 +146,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const [isPrinting, setIsPrinting] = useState(false);
     const [isCompact, setIsCompact] = useState(false);
     const [isMeasuring, setIsMeasuring] = useState(true);
+    const [nameFontSize, setNameFontSize] = useState(null);
+    const nameCellRefs = useRef([]);
 
     const pageRef = useRef(null);
     const contentRef = useRef(null);
@@ -219,6 +221,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         });
     }, [students, grades, activeSubjects, displaySubjects]);
 
+    useEffect(() => {
+        setNameFontSize(null);
+    }, [processedData, isCompact, paperSize]);
+
     useLayoutEffect(() => {
         if (!processedData.length || !cmToPx) {
             setIsMeasuring(false);
@@ -243,6 +249,47 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         return () => clearTimeout(timer);
     }, [processedData, paperSize, cmToPx]);
+
+    useLayoutEffect(() => {
+        if (isMeasuring || !processedData.length || !cmToPx) return;
+    
+        nameCellRefs.current = nameCellRefs.current.slice(0, processedData.length);
+    
+        const initialSize = isCompact ? 8.5 : 9;
+        const currentSize = nameFontSize ?? initialSize;
+    
+        if (nameFontSize === null) {
+            setNameFontSize(initialSize);
+            return;
+        }
+
+        const firstCell = nameCellRefs.current[0];
+        if (!firstCell) return;
+    
+        const tempSpan = document.createElement("span");
+        tempSpan.style.fontSize = `${currentSize}pt`;
+        tempSpan.style.fontFamily = "Times, serif";
+        tempSpan.style.visibility = "hidden";
+        tempSpan.style.position = "absolute";
+        tempSpan.innerText = "Test";
+        document.body.appendChild(tempSpan);
+        const singleLineHeight = tempSpan.offsetHeight;
+        document.body.removeChild(tempSpan);
+
+        if (singleLineHeight <= 0) return;
+
+        let needsResize = false;
+        for (const cell of nameCellRefs.current) {
+            if (cell && cell.offsetHeight > singleLineHeight * 1.5) {
+                needsResize = true;
+                break;
+            }
+        }
+    
+        if (needsResize && currentSize > 6) { // Minimum font size of 6pt
+            setNameFontSize(size => Math.max(6, size - 0.2));
+        }
+    }, [isMeasuring, processedData, isCompact, nameFontSize, cmToPx]);
 
 
     const handlePrint = () => {
@@ -271,7 +318,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
     
     const tableHeader = useMemo(() => (
-        React.createElement('thead', { className: isCompact ? 'text-[7pt]' : 'text-[7.5pt]' },
+        React.createElement('thead', { className: isCompact ? 'text-[8pt]' : 'text-[8.5pt]' },
             React.createElement('tr', { className: "text-center font-bold" },
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NO"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NAMA MURID"),
@@ -296,7 +343,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     ), [displaySubjects, isCompact]);
     
     const renderTable = (rows) => (
-        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[7pt]' : 'text-[8pt]'}` },
+        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[8.5pt]' : 'text-[9pt]'}` },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
                 React.createElement('col', { style: { width: '25%' } }),
@@ -308,10 +355,14 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             ),
             tableHeader,
             React.createElement('tbody', null,
-                rows.map(student => (
+                rows.map((student, index) => (
                     React.createElement('tr', { key: student.no },
                         React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.no),
-                        React.createElement('td', { className: `border border-black px-2 ${isCompact ? 'py-0' : 'py-0'}` }, student.namaLengkap),
+                        React.createElement('td', { 
+                            ref: el => nameCellRefs.current[index] = el,
+                            className: `border border-black px-2 ${isCompact ? 'py-0' : 'py-0'}`,
+                            style: nameFontSize ? { fontSize: `${nameFontSize}pt`, lineHeight: 1.2 } : {}
+                        }, student.namaLengkap),
                         React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nisn),
                         React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nis),
                         ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.grades[subject.id] ?? '')),
