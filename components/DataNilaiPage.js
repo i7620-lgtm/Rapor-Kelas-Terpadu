@@ -369,10 +369,12 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 };
 
 
-const SummativeCard = ({ title, subtitle, onClick }) => (
+const SummativeCard = ({ title, subtitle, onClick, isFilled }) => (
     React.createElement('button', {
         onClick: onClick,
-        className: "w-full p-6 bg-white border border-slate-200 rounded-xl shadow-md text-left hover:bg-indigo-50 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200"
+        className: `w-full p-6 border rounded-xl shadow-md text-left hover:bg-indigo-50 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 ${
+            isFilled ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'
+        }`
     },
         React.createElement('h4', { className: "text-lg font-bold text-slate-800" }, title),
         React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, subtitle)
@@ -387,6 +389,21 @@ const SubjectDetailView = (props) => {
     const [modalData, setModalData] = useState(null);
     const gradeNumber = getGradeNumber(settings.nama_kelas);
     const [predefinedSlms, setPredefinedSlms] = useState([]);
+
+    const isSlmFilled = useCallback((slmId) => {
+        return grades.some(g => {
+            const slm = g.detailedGrades?.[subject.id]?.slm?.find(s => s.id === slmId);
+            return slm?.scores?.some(score => typeof score === 'number');
+        });
+    }, [grades, subject.id]);
+
+    const isStsFilled = useMemo(() => {
+        return grades.some(g => typeof g.detailedGrades?.[subject.id]?.sts === 'number');
+    }, [grades, subject.id]);
+
+    const isSasFilled = useMemo(() => {
+        return grades.some(g => typeof g.detailedGrades?.[subject.id]?.sas === 'number');
+    }, [grades, subject.id]);
 
     useEffect(() => {
         if (gradeNumber) {
@@ -475,11 +492,13 @@ const SubjectDetailView = (props) => {
                         const slmId = `slm_predefined_${subject.id}_${index}`;
                         const existingSlm = existingSlms.find(s => s.id === slmId);
                         const slmName = existingSlm ? existingSlm.name : pSlm.slm;
+                        const isFilled = isSlmFilled(slmId);
                         return React.createElement(SummativeCard, { 
                             key: slmId, 
                             title: slmName, 
                             subtitle: "Klik untuk mengisi nilai TP (Kurikulum)", 
-                            onClick: () => handleOpenPredefinedSlm(pSlm, index)
+                            onClick: () => handleOpenPredefinedSlm(pSlm, index),
+                            isFilled: isFilled
                         });
                     }),
                     
@@ -488,15 +507,16 @@ const SubjectDetailView = (props) => {
                             key: slm.id, 
                             title: slm.name, 
                             subtitle: "Klik untuk mengisi nilai TP (Kustom)", 
-                            onClick: () => handleOpenModal('slm', slm) 
+                            onClick: () => handleOpenModal('slm', slm),
+                            isFilled: isSlmFilled(slm.id)
                         })
                     ),
                     
                     React.createElement('button', { onClick: handleAddCustomSlm, className: "w-full p-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400" }, "+ Tambah Lingkup Materi (Di Luar Kurikulum)")
                 ),
                 React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-                    React.createElement(SummativeCard, { title: "Sumatif Tengah Semester (STS)", subtitle: "Klik untuk mengisi nilai STS", onClick: () => handleOpenModal('sts') }),
-                    React.createElement(SummativeCard, { title: "Sumatif Akhir Semester (SAS)", subtitle: "Klik untuk mengisi nilai SAS", onClick: () => handleOpenModal('sas') })
+                    React.createElement(SummativeCard, { title: "Sumatif Tengah Semester (STS)", subtitle: "Klik untuk mengisi nilai STS", onClick: () => handleOpenModal('sts'), isFilled: isStsFilled }),
+                    React.createElement(SummativeCard, { title: "Sumatif Akhir Semester (SAS)", subtitle: "Klik untuk mengisi nilai SAS", onClick: () => handleOpenModal('sas'), isFilled: isSasFilled })
                 )
             )
         )
