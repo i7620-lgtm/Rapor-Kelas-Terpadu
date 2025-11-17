@@ -236,19 +236,22 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         setIsCompact(false); // Selalu ukur dalam mode normal terlebih dahulu
 
         const timer = setTimeout(() => {
-            if (contentRef.current) {
-                const availableHeight = contentRef.current.clientHeight;
+            if (contentRef.current && cmToPx > 0) {
+                const pageHeightInCm = parseFloat(PAPER_SIZES[paperSize].height);
+                // Area cetak vertikal aktual di dalam margin kita
+                const availableHeightInCm = pageHeightInCm - HEADER_HEIGHT_CM - PAGE_BOTTOM_MARGIN_CM;
+                const availableHeightInPx = availableHeightInCm * cmToPx;
+                
                 const contentHeight = contentRef.current.scrollHeight;
                 
-                // Jika tinggi konten melebihi area yang tersedia, aktifkan mode ringkas
-                if (contentHeight > availableHeight) {
+                if (contentHeight > availableHeightInPx) {
                     setIsCompact(true);
                 } else {
                     setIsCompact(false);
                 }
             }
             setIsMeasuring(false);
-        }, 150); // Tambahkan sedikit penundaan untuk memastikan semua render selesai
+        }, 150);
 
         return () => clearTimeout(timer);
     }, [processedData, paperSize, cmToPx]);
@@ -311,7 +314,16 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         style.innerHTML = `
             @page { 
                 ${paperSizeCss} 
-                margin: 0;
+                margin: 0 !important; 
+            }
+            @media print {
+                .leger-page {
+                    transform: translateY(-${PAGE_TOP_MARGIN_CM}cm) scale(0.98);
+                    transform-origin: top center;
+                    box-shadow: none !important;
+                    border: none !important;
+                    margin: 0 !important;
+                }
             }
         `;
         document.head.appendChild(style);
@@ -410,7 +422,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', {
                     ref: contentRef,
-                    className: 'absolute',
+                    className: 'absolute flex flex-col', // Added flex flex-col
                     style: {
                         top: `${HEADER_HEIGHT_CM}cm`,
                         left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
@@ -419,7 +431,9 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     }
                 },
                     React.createElement(LegerHeader, { settings: settings, isCompact: isCompact }),
-                    renderTable(processedData),
+                    React.createElement('div', { className: "flex-grow" }, // Added flex-grow to table container
+                       renderTable(processedData)
+                    ),
                     React.createElement(LegerFooter, { settings: settings, isCompact: isCompact })
                 )
             )
