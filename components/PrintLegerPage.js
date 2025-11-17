@@ -283,7 +283,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
-                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '3.5rem' : '5rem' } },
+                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
                                 style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }
