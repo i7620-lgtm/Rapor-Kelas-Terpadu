@@ -95,10 +95,10 @@ const ReportHeader = ({ settings }) => {
 
 const LegerHeader = React.forwardRef(({ settings, isCompact }, ref) => (
     React.createElement('div', { ref: ref, className: `font-times text-center ${isCompact ? 'mb-1' : 'mb-2'}` },
-        React.createElement('h2', { className: `font-bold uppercase ${isCompact ? 'text-xs mb-0.5' : 'text-sm mb-1'}` },
+        React.createElement('h2', { className: `font-bold uppercase ${isCompact ? 'text-xs' : 'text-sm mb-1'}` },
             `LEGER NILAI RAPOR MURID TAHUN PELAJARAN ${settings.tahun_ajaran || '[Tahun Ajaran]'} SEMESTER ${settings.semester || '[Semester]'}`
         ),
-        React.createElement('h2', { className: `font-bold uppercase ${isCompact ? 'text-xs mb-0.5' : 'text-sm mb-1'}` },
+        React.createElement('h2', { className: `font-bold uppercase ${isCompact ? 'text-xs' : 'text-sm mb-1'}` },
             (settings.nama_sekolah || '[Nama Sekolah]')
         ),
         React.createElement('h2', { className: `font-bold uppercase ${isCompact ? 'text-xs' : 'text-sm'}` },
@@ -124,14 +124,14 @@ const LegerFooter = React.forwardRef(({ settings, isCompact }, ref) => {
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, "Mengetahui,"),
                     React.createElement('p', null, "Kepala Sekolah,"),
-                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
+                    React.createElement('div', { style: { height: isCompact ? '1.2rem' : '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5" },
                     React.createElement('p', null, getTanggalRapor()),
                     React.createElement('p', null, "Wali Kelas,"),
-                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
+                    React.createElement('div', { style: { height: isCompact ? '1.2rem' : '2.5rem' } }),
                     React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
@@ -255,7 +255,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     
         nameCellRefs.current = nameCellRefs.current.slice(0, processedData.length);
     
-        const initialSize = isCompact ? 8.5 : 9;
+        const initialSize = isCompact ? 8 : 9;
         const currentSize = nameFontSize ?? initialSize;
     
         if (nameFontSize === null) {
@@ -280,14 +280,14 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         let needsResize = false;
         for (const cell of nameCellRefs.current) {
-            if (cell && cell.offsetHeight > singleLineHeight * 1.5) {
+            if (cell && cell.offsetHeight > singleLineHeight * 1.3) {
                 needsResize = true;
                 break;
             }
         }
     
-        if (needsResize && currentSize > 6) { // Minimum font size of 6pt
-            setNameFontSize(size => Math.max(6, size - 0.2));
+        if (needsResize && currentSize > 5.5) { // Minimum font size
+            setNameFontSize(size => Math.max(5.5, size - 0.4));
         }
     }, [isMeasuring, processedData, isCompact, nameFontSize, cmToPx]);
 
@@ -345,7 +345,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
     
     const tableHeader = useMemo(() => (
-        React.createElement('thead', { className: isCompact ? 'text-[8pt]' : 'text-[8.5pt]' },
+        React.createElement('thead', { className: isCompact ? 'text-[7.5pt]' : 'text-[8.5pt]' },
             React.createElement('tr', { className: "text-center font-bold" },
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NO"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NAMA MURID"),
@@ -357,7 +357,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
-                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
+                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.2rem' : '3.5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
                                 style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap' }
@@ -370,7 +370,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     ), [displaySubjects, isCompact]);
     
     const renderTable = (rows) => (
-        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[8.5pt]' : 'text-[9pt]'}` },
+        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[8pt]' : 'text-[9pt]'}` },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
                 React.createElement('col', { style: { width: '25%' } }),
