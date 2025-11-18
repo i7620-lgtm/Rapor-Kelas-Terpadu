@@ -106,30 +106,37 @@ const DataEkstrakurikulerPage = ({
                             students.length > 0 ? (
                                 students.map(student => {
                                     const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
+                                    const allAssignedIdsForStudent = (studentExtra?.assignedActivities || []).filter(Boolean);
+                                    
                                     return (
                                         React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50" },
                                             React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-slate-900 whitespace-nowrap sticky left-0 bg-white z-10" }, student.namaLengkap),
                                             ...Array.from({ length: MAX_EXTRA_FIELDS }).map((_, i) => {
-                                                const assignedId = studentExtra?.assignedActivities?.[i] || null;
+                                                const currentAssignedId = studentExtra?.assignedActivities?.[i] || null;
+                                                
+                                                const optionsForThisDropdown = activeExtracurriculars.filter(ex => 
+                                                    ex.id === currentAssignedId || !allAssignedIdsForStudent.includes(ex.id)
+                                                );
+
                                                 return (
                                                     React.createElement(React.Fragment, { key: i },
                                                         React.createElement('td', { className: "px-4 py-2" },
                                                             React.createElement('select', {
-                                                                value: assignedId || "---",
+                                                                value: currentAssignedId || "---",
                                                                 onChange: (e) => handleAssignmentChange(student.id, i, e.target.value),
                                                                 className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                             },
                                                                 React.createElement('option', { value: "---" }, "--- Pilih ---"),
-                                                                activeExtracurriculars.map(ex => (
+                                                                optionsForThisDropdown.map(ex => (
                                                                     React.createElement('option', { key: ex.id, value: ex.id }, ex.name)
                                                                 ))
                                                             )
                                                         ),
                                                         React.createElement('td', { className: "px-4 py-2" },
-                                                            assignedId && (
+                                                            currentAssignedId && (
                                                                 React.createElement('textarea', {
-                                                                    value: studentExtra?.descriptions?.[assignedId] || '',
-                                                                    onChange: (e) => handleDescriptionChange(student.id, assignedId, e.target.value),
+                                                                    value: studentExtra?.descriptions?.[currentAssignedId] || '',
+                                                                    onChange: (e) => handleDescriptionChange(student.id, currentAssignedId, e.target.value),
                                                                     rows: 2,
                                                                     className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                                 })
