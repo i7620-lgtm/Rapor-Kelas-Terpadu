@@ -422,16 +422,15 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', {
                     ref: contentRef,
-                    className: 'absolute flex flex-col', // Added flex flex-col
+                    className: 'absolute flex flex-col',
                     style: {
                         top: `${HEADER_HEIGHT_CM}cm`,
                         left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                         right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                        bottom: `${PAGE_BOTTOM_MARGIN_CM}cm`
                     }
                 },
                     React.createElement(LegerHeader, { settings: settings, isCompact: isCompact }),
-                    React.createElement('div', { className: "flex-grow" }, // Added flex-grow to table container
+                    React.createElement('div', null,
                        renderTable(processedData)
                     ),
                     React.createElement(LegerFooter, { settings: settings, isCompact: isCompact })
