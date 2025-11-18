@@ -153,7 +153,7 @@ const App = () => {
   const [syncStatus, setSyncStatus] = useState('idle');
 
   const { isSignedIn, userProfile, googleToken, signIn, signOut,
-          uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles } = useGoogleAuth(GOOGLE_CLIENT_ID);
+          uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles, deleteFile } = useGoogleAuth(GOOGLE_CLIENT_ID);
   
   const prevUserProfile = useRef(userProfile);
   
@@ -807,33 +807,49 @@ const App = () => {
 
         try {
             let fileToOperateId = googleDriveFileId;
-            if (!fileToOperateId) {
-                const foundFiles = await findRKTFileId(currentDynamicFileName);
-                if (foundFiles.length > 0) {
-                    fileToOperateId = foundFiles[0].id;
-                    setGoogleDriveFileId(fileToOperateId);
+            
+            // Gunakan pemeriksaan duplikat cerdas yang baru.
+            // Sekarang memerlukan pengaturan saat ini untuk dibandingkan dengan konten file.
+            const foundFile = await findRKTFileId(currentDynamicFileName, settings);
+            
+            if (foundFile) {
+                // Duplikat sejati ditemukan. Gunakan ID-nya.
+                fileToOperateId = foundFile.id;
+                if (googleDriveFileId !== foundFile.id) {
+                    console.log(`Beralih untuk memperbarui file yang ada dengan ID: ${foundFile.id}`);
+                    setGoogleDriveFileId(foundFile.id);
                 }
+            } else {
+                // Tidak ada duplikat sejati yang ditemukan (nama tidak ada, atau nama ada tetapi konten berbeda).
+                // Ini akan memaksa pembuatan file baru.
+                fileToOperateId = null; 
             }
+    
             const blob = exportToExcelBlob();
             if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
-
-            if (fileToOperateId) await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
-            else {
+    
+            if (fileToOperateId) {
+                // Perbarui file yang ada
+                await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
+            } else {
+                // Buat file baru
                 const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
                 setGoogleDriveFileId(newFile.id);
             }
-
+    
             const newTimestamp = new Date().toISOString();
             setLastSyncTimestamp(newTimestamp);
             setIsDirty(false);
             setSyncStatus('saved');
             setTimeout(() => setSyncStatus('idle'), 3000);
-
+    
         } catch (error) {
             console.error("Gagal sinkronisasi online dengan Google Drive:", error);
             setSyncStatus('error');
             setTimeout(() => setSyncStatus(isDirty ? 'unsaved' : 'idle'), 5000);
-            if (error.message.includes("File not found") || (error.result?.error?.code === 404)) setGoogleDriveFileId(null);
+            if (error.message.includes("File not found") || (error.result?.error?.code === 404)) {
+                setGoogleDriveFileId(null);
+            }
         }
     }, [isDirty, isSignedIn, isOnline, googleToken, googleDriveFileId, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
     
@@ -877,6 +893,8 @@ const App = () => {
                 reader.onloadend = () => setSettings(prev => ({ ...prev, [name]: reader.result }));
                 reader.readAsDataURL(files[0]);
             }
+        } else if (type === 'file_processed') {
+            setSettings(prev => ({ ...prev, [name]: value }));
         } else {
             setSettings(prev => ({ ...prev, [name]: value }));
         }
@@ -1027,6 +1045,27 @@ const App = () => {
             showToast(`Gagal mengunduh: ${error.message}`, 'error');
         } finally { setIsLoading(false); }
     };
+    
+    const handleDriveFileDelete = async (fileId, fileName) => {
+        if (!window.confirm(`Apakah Anda yakin ingin menghapus file "${fileName}" secara permanen dari Google Drive Anda? Tindakan ini tidak dapat diurungkan.`)) {
+            return;
+        }
+
+        try {
+            await deleteFile(fileId);
+            showToast(`File "${fileName}" berhasil dihapus.`, 'success');
+            // Refresh the file list
+            setDriveFiles(prevFiles => prevFiles.filter(f => f.id !== fileId));
+            // If the deleted file was the one currently synced, clear the ID
+            if (googleDriveFileId === fileId) {
+                setGoogleDriveFileId(null);
+                setLastSyncTimestamp(null);
+            }
+        } catch (error) {
+            console.error("Gagal menghapus file:", error);
+            showToast(`Gagal menghapus file: ${error.message}`, 'error');
+        }
+    };
 
     useEffect(() => {
         const justGotProfile = !prevUserProfile.current && userProfile;
@@ -1091,7 +1130,7 @@ const App = () => {
   
   return React.createElement(React.Fragment, null,
       isUpdateAvailable && React.createElement('div', { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" }, React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'), React.createElement('button', { onClick: updateAssets, className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold' }, 'Perbarui Sekarang')),
-      React.createElement(DriveDataSelectionModal, { isOpen: isDriveModalOpen, onClose: () => setIsDriveModalOpen(false), onConfirm: handleDriveFileSelection, files: driveFiles, isLoading: isCheckingDrive }),
+      React.createElement(DriveDataSelectionModal, { isOpen: isDriveModalOpen, onClose: () => setIsDriveModalOpen(false), onConfirm: handleDriveFileSelection, files: driveFiles, isLoading: isCheckingDrive, onDelete: handleDriveFileDelete }),
       React.createElement('div', { className: "flex h-screen bg-slate-100 font-sans" },
         React.createElement(Sidebar, { activePage, setActivePage, onExport: handleExportAll, onImport: handleImportAll, isSignedIn, userEmail: userProfile?.email, isOnline, lastSyncTimestamp, syncStatus, onSignInClick: signIn, onSignOutClick: signOut }),
         React.createElement('main', { className: "flex-1 p-6 lg:p-8 overflow-y-auto" }, renderPage())
