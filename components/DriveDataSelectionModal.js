@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const DriveDataSelectionModal = ({ isOpen, onClose, onConfirm, files = [], isLoading }) => {
+const DriveDataSelectionModal = ({ isOpen, onClose, onConfirm, files = [], isLoading, onDelete }) => {
     const [selectedFileId, setSelectedFileId] = useState(null);
 
     // Reset selection when files change or modal opens
@@ -58,30 +58,44 @@ const DriveDataSelectionModal = ({ isOpen, onClose, onConfirm, files = [], isLoa
         };
 
         return (
-            React.createElement('div', { className: "space-y-4" },
+            React.createElement('div', { className: "space-y-3" },
                 files.map(file => {
                     const parsed = parseFileName(file.name);
                     return (
-                        React.createElement('label', { key: file.id, className: `flex items-center p-4 border rounded-lg cursor-pointer transition-all ${selectedFileId === file.id ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-300' : 'bg-white border-slate-300 hover:bg-slate-50'}` },
-                            React.createElement('input', {
-                                type: "radio",
-                                name: "driveFile",
-                                value: file.id,
-                                checked: selectedFileId === file.id,
-                                onChange: () => setSelectedFileId(file.id),
-                                className: "h-5 w-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
-                            }),
-                            React.createElement('div', { className: "ml-4" },
-                                parsed ? (
-                                    React.createElement(React.Fragment, null,
-                                        React.createElement('p', { className: "font-semibold text-slate-800" }, `${parsed.school} - Kelas ${parsed.class}`),
-                                        React.createElement('p', { className: "text-sm text-slate-600" }, `T.A ${parsed.year} - Semester ${parsed.semester}`)
+                        React.createElement('div', { key: file.id, className: "group flex items-stretch gap-2" },
+                            React.createElement('label', { className: `flex-grow flex items-center p-4 border rounded-lg cursor-pointer transition-all ${selectedFileId === file.id ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-300' : 'bg-white border-slate-300 hover:bg-slate-50'}` },
+                                React.createElement('input', {
+                                    type: "radio",
+                                    name: "driveFile",
+                                    value: file.id,
+                                    checked: selectedFileId === file.id,
+                                    onChange: () => setSelectedFileId(file.id),
+                                    className: "h-5 w-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                                }),
+                                React.createElement('div', { className: "ml-4" },
+                                    parsed ? (
+                                        React.createElement(React.Fragment, null,
+                                            React.createElement('p', { className: "font-semibold text-slate-800" }, `${parsed.school} - Kelas ${parsed.class}`),
+                                            React.createElement('p', { className: "text-sm text-slate-600" }, `T.A ${parsed.year} - Semester ${parsed.semester}`)
+                                        )
+                                    ) : (
+                                        React.createElement('p', { className: "font-semibold text-slate-800" }, file.name)
+                                    ),
+                                    React.createElement('p', { className: "text-xs text-slate-500 mt-1" },
+                                        `Terakhir diubah: ${new Date(file.modifiedTime).toLocaleString('id-ID')}`
                                     )
-                                ) : (
-                                    React.createElement('p', { className: "font-semibold text-slate-800" }, file.name)
-                                ),
-                                React.createElement('p', { className: "text-xs text-slate-500 mt-1" },
-                                    `Terakhir diubah: ${new Date(file.modifiedTime).toLocaleString('id-ID')}`
+                                )
+                            ),
+                            React.createElement('button', {
+                                onClick: (e) => {
+                                    e.stopPropagation();
+                                    onDelete(file.id, file.name);
+                                },
+                                className: "p-3 flex-shrink-0 text-slate-400 hover:text-red-600 bg-white border border-slate-300 group-hover:border-slate-300 group-hover:bg-red-50 rounded-lg transition-colors",
+                                title: `Hapus file ${file.name}`
+                            },
+                                React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-5 w-5", viewBox: "0 0 20 20", fill: "currentColor" },
+                                    React.createElement('path', { fillRule: "evenodd", d: "M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z", clipRule: "evenodd" })
                                 )
                             )
                         )
