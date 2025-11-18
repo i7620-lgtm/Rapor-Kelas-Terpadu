@@ -155,29 +155,87 @@ const useGoogleAuth = (clientId) => {
       return createData.id;
     }
   }, [driveFetch]);
+  
+  /**
+   * Downloads a file from Google Drive.
+   */
+  const downloadFile = useCallback(async (fileId) => {
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+    const response = await driveFetch(url);
+    return response.blob();
+  }, [driveFetch]);
 
   /**
-   * Finds RKT files by name within the dedicated RKT folder or root.
+   * Finds an RKT file that is a true duplicate, checking not just the filename
+   * but also key settings within the file content.
    */
-  const findRKTFileId = useCallback(async (fileName) => {
+  const findRKTFileId = useCallback(async (fileName, currentSettings) => {
+    if (typeof XLSX === 'undefined') {
+        console.error('SheetJS (XLSX) library is not loaded. Cannot perform deep file check.');
+        return null;
+    }
+      
     const folderId = await getOrCreateRKTFolder();
-    // Search in both dedicated folder and root for an exact name match
     const q = `name='${fileName}' and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and ('${folderId}' in parents or 'root' in parents) and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name,modifiedTime)`;
     
     const response = await driveFetch(url);
     const data = await response.json();
-    return data.files || [];
-  }, [driveFetch, getOrCreateRKTFolder]);
+    const candidates = data.files || [];
+
+    if (candidates.length === 0) {
+        return null;
+    }
+
+    const normalizeString = (str) => (typeof str === 'string' || typeof str === 'number') ? String(str).trim().toLowerCase().replace(/\s+/g, ' ') : '';
+    const fieldsToCompare = ['nama_sekolah', 'nama_kelas', 'tahun_ajaran', 'semester', 'nama_kepala_sekolah', 'nip_kepala_sekolah', 'nama_wali_kelas', 'nip_wali_kelas'];
+
+    const normalizedCurrentSettings = {};
+    fieldsToCompare.forEach(field => {
+        normalizedCurrentSettings[field] = normalizeString(currentSettings[field]);
+    });
+
+    for (const candidateFile of candidates) {
+        try {
+            const blob = await downloadFile(candidateFile.id);
+            const fileData = await blob.arrayBuffer();
+            const workbook = XLSX.read(fileData, { type: 'array' });
+            const settingsSheet = workbook.Sheets["Pengaturan"];
+            
+            if (!settingsSheet) continue;
+
+            const sheetData = XLSX.utils.sheet_to_json(settingsSheet, { header: 1 });
+            const driveSettings = {};
+            for (const row of sheetData) {
+                if (row[0] && fieldsToCompare.includes(row[0])) {
+                    driveSettings[row[0]] = row[1];
+                }
+            }
+
+            const isMatch = fieldsToCompare.every(field => {
+                const currentVal = normalizedCurrentSettings[field];
+                const driveVal = normalizeString(driveSettings[field]);
+                return currentVal === driveVal;
+            });
+
+            if (isMatch) {
+                console.log(`Found true duplicate file in Drive: ${candidateFile.name} (ID: ${candidateFile.id})`);
+                return candidateFile;
+            }
+        } catch (err) {
+            console.warn(`Could not read or compare settings from candidate file ${candidateFile.name}:`, err);
+        }
+    }
+
+    return null;
+  }, [driveFetch, getOrCreateRKTFolder, downloadFile]);
 
   const findAllRKTFiles = useCallback(async () => {
     const folderId = await getOrCreateRKTFolder();
 
-    // Query 1: Files inside the dedicated RKT folder, checking format
     const q1 = `'${folderId}' in parents and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and trashed = false`;
     const url1 = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q1)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
 
-    // Query 2: Files in root containing 'rkt' (case-insensitive) in their name, also checking format
     const q2 = `'root' in parents and name contains 'rkt' and (mimeType='${RKT_MIME_TYPE}' or fileExtension='xlsx') and trashed = false`;
     const url2 = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q2)}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`;
     
@@ -193,7 +251,6 @@ const useGoogleAuth = (clientId) => {
         const filesFromFolder = data1.files || [];
         const filesFromRoot = data2.files || [];
 
-        // Combine and deduplicate files
         const allFilesMap = new Map();
         [...filesFromFolder, ...filesFromRoot].forEach(file => {
           if (!allFilesMap.has(file.id)) {
@@ -203,13 +260,12 @@ const useGoogleAuth = (clientId) => {
 
         const combinedFiles = Array.from(allFilesMap.values());
         
-        // Sort combined files by modification date, most recent first
         combinedFiles.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
 
         return combinedFiles;
     } catch (error) {
         console.error("Error fetching files from Drive:", error);
-        throw error; // Propagate the error to be handled by the caller.
+        throw error;
     }
   }, [driveFetch, getOrCreateRKTFolder]);
 
@@ -243,21 +299,20 @@ const useGoogleAuth = (clientId) => {
     const response = await driveFetch(url, {
       method,
       body: form,
-      // Content-Type header is set automatically by the browser for FormData
     });
     
     return response.json();
   }, [driveFetch, getOrCreateRKTFolder]);
-
-  /**
-   * Downloads a file from Google Drive.
-   */
-  const downloadFile = useCallback(async (fileId) => {
-    const url = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-    const response = await driveFetch(url);
-    return response.blob();
-  }, [driveFetch]);
   
+  /**
+   * Deletes a file from Google Drive.
+   */
+  const deleteFile = useCallback(async (fileId) => {
+    const url = `https://www.googleapis.com/drive/v3/files/${fileId}`;
+    const response = await driveFetch(url, { method: 'DELETE' });
+    return response;
+  }, [driveFetch]);
+
   /**
    * Convenience function to create a new file.
    */
@@ -276,6 +331,7 @@ const useGoogleAuth = (clientId) => {
     findRKTFileId,
     findAllRKTFiles,
     createRKTFile,
+    deleteFile,
   };
 };
 
