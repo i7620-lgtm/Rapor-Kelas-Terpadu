@@ -207,6 +207,7 @@ const Dashboard = ({
         const currentStudentExtracurriculars = studentExtracurriculars || [];
         const totalStudents = currentStudents.length;
 
+        // 1. Informasi Dasar
         const settingsFields = ['nama_sekolah', 'nama_wali_kelas', 'nama_kelas', 'tahun_ajaran', 'semester'];
         let filledSettingsFields = settingsFields.filter(key => settings[key] && settings[key].trim() !== '').length;
         const settingsPercentage = Math.round((filledSettingsFields / settingsFields.length) * 100);
@@ -222,15 +223,16 @@ const Dashboard = ({
             const emptyDataMessages = [
                 { category: 'Data Siswa', title: 'Data Siswa', message: 'Belum ada data siswa.', actionText: 'Tambah Siswa', page: 'DATA_SISWA' },
                 { category: 'Data Nilai', title: 'Data Nilai', message: 'Belum ada data siswa.', actionText: 'Periksa Data Nilai', page: 'DATA_NILAI' },
-                { category: 'Data Lainnya', title: 'Data Absensi', message: 'Belum ada data siswa.', actionText: 'Periksa Data Absensi', page: 'DATA_ABSENSI' },
-                { category: 'Data Lainnya', title: 'Kokurikuler', message: 'Belum ada data siswa.', actionText: 'Isi Catatan', page: 'DATA_KOKURIKULER' },
-                { category: 'Data Lainnya', title: 'Catatan Wali Kelas', message: 'Belum ada data siswa.', actionText: 'Isi Catatan', page: 'CATATAN_WALI_KELAS' },
+                { category: 'Data Lainnya', title: 'Kokurikuler', message: 'Belum ada data siswa.', actionText: 'Isi Penilaian', page: 'DATA_KOKURIKULER' },
                 { category: 'Data Lainnya', title: 'Ekstrakurikuler', message: 'Belum ada data siswa.', actionText: 'Atur Ekstrakurikuler', page: 'DATA_EKSTRAKURIKULER' },
+                { category: 'Data Lainnya', title: 'Data Absensi', message: 'Belum ada data siswa.', actionText: 'Periksa Data Absensi', page: 'DATA_ABSENSI' },
+                { category: 'Data Lainnya', title: 'Catatan Wali Kelas', message: 'Belum ada data siswa.', actionText: 'Isi Catatan', page: 'CATATAN_WALI_KELAS' },
             ];
             emptyDataMessages.forEach(item => results.push({ ...item, status: 'bad', onActionClick: () => setActivePage(item.page), percentage: 0 }));
             return results;
         }
 
+        // 2. Data Siswa
         const studentDataFieldsToCheck = ['namaLengkap', 'namaPanggilan', 'nis', 'nisn', 'tempatLahir', 'tanggalLahir', 'jenisKelamin', 'agama', 'asalTk', 'alamatSiswa', 'diterimaDiKelas', 'diterimaTanggal', 'namaAyah', 'namaIbu', 'pekerjaanAyah', 'pekerjaanIbu', 'alamatOrangTua', 'teleponOrangTua'];
         const totalStudentDataFields = totalStudents * studentDataFieldsToCheck.length;
         let filledStudentDataFields = currentStudents.reduce((acc, student) => acc + studentDataFieldsToCheck.filter(field => student[field] && String(student[field]).trim() !== '').length, 0);
@@ -242,9 +244,9 @@ const Dashboard = ({
             results.push({ category: 'Data Siswa', title: 'Data Siswa', status: 'bad', message: `Terdapat ${totalStudentDataFields - filledStudentDataFields} data pribadi/orang tua yang belum diisi.`, actionText: 'Lengkapi Data Siswa', onActionClick: () => setActivePage('DATA_SISWA'), percentage: studentDataPercentage });
         }
 
+        // 3. Data Nilai
         let studentsWithCompleteGrades = 0;
         const minGrade = parseInt(settings.predikats?.c || '70', 10);
-
         currentStudents.forEach(student => {
             const studentGrade = currentGrades.find(g => g.studentId === student.id);
             const studentReligion = student.agama?.trim().toLowerCase();
@@ -271,16 +273,7 @@ const Dashboard = ({
             results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'bad', message: `${totalStudents - studentsWithCompleteGrades} siswa dengan nilai belum lengkap atau di bawah KKM.`, actionText: 'Periksa Data Nilai', onActionClick: () => setActivePage('DATA_NILAI'), percentage: gradesPercentage });
         }
 
-        const checkSimpleCompletion = (data, key, title, page) => {
-            let completed = currentStudents.filter(s => data[s.id] && data[s.id].trim() !== '').length;
-            const percentage = Math.round((completed / totalStudents) * 100);
-            if (percentage === 100) {
-                results.push({ category: 'Data Lainnya', title, status: 'good', message: `Semua siswa telah memiliki ${title.toLowerCase()}.`, percentage: 100 });
-            } else {
-                results.push({ category: 'Data Lainnya', title, status: 'bad', message: `${totalStudents - completed} siswa belum memiliki ${title.toLowerCase()}.`, actionText: 'Isi Catatan', onActionClick: () => setActivePage(page), percentage });
-            }
-        };
-
+        // 4. Kokurikuler
         const cocurricData = cocurricularData || {};
         let studentsWithCo = currentStudents.filter(s => {
             const studentCoData = cocurricData[s.id];
@@ -293,8 +286,16 @@ const Dashboard = ({
             results.push({ category: 'Data Lainnya', title: 'Kokurikuler', status: 'bad', message: `${totalStudents - studentsWithCo} siswa belum memiliki penilaian kokurikuler.`, actionText: 'Isi Penilaian', onActionClick: () => setActivePage('DATA_KOKURIKULER'), percentage: coPercentage });
         }
         
-        checkSimpleCompletion(notes, 'notes', 'Catatan Wali Kelas', 'CATATAN_WALI_KELAS');
+        // 5. Ekstrakurikuler
+        let studentsWithExtra = currentStudents.filter(s => currentStudentExtracurriculars.some(se => se.studentId === s.id && se.assignedActivities?.some(activity => activity !== null))).length;
+        const extraPercentage = Math.round((studentsWithExtra / totalStudents) * 100);
+        if (extraPercentage === 100) {
+            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'good', message: 'Semua siswa memiliki setidaknya satu ekstrakurikuler.', percentage: 100 });
+        } else {
+            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'bad', message: `${totalStudents - studentsWithExtra} siswa belum memiliki ekstrakurikuler.`, actionText: 'Atur Ekstrakurikuler', onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'), percentage: extraPercentage });
+        }
         
+        // 6. Data Absensi
         let studentsWithAttendance = currentStudents.filter(s => currentAttendance.some(a => a.studentId === s.id && (a.sakit !== null || a.izin !== null || a.alpa !== null))).length;
         const attendancePercentage = Math.round((studentsWithAttendance / totalStudents) * 100);
         if (attendancePercentage === 100) {
@@ -303,13 +304,17 @@ const Dashboard = ({
             results.push({ category: 'Data Lainnya', title: 'Data Absensi', status: 'bad', message: `${totalStudents - studentsWithAttendance} siswa belum memiliki catatan absensi.`, actionText: 'Periksa Data Absensi', onActionClick: () => setActivePage('DATA_ABSENSI'), percentage: attendancePercentage });
         }
 
-        let studentsWithExtra = currentStudents.filter(s => currentStudentExtracurriculars.some(se => se.studentId === s.id && se.assignedActivities?.some(activity => activity !== null))).length;
-        const extraPercentage = Math.round((studentsWithExtra / totalStudents) * 100);
-        if (extraPercentage === 100) {
-            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'good', message: 'Semua siswa memiliki setidaknya satu ekstrakurikuler.', percentage: 100 });
-        } else {
-            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'bad', message: `${totalStudents - studentsWithExtra} siswa belum memiliki ekstrakurikuler.`, actionText: 'Atur Ekstrakurikuler', onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'), percentage: extraPercentage });
-        }
+        // 7. Catatan Wali Kelas
+        const checkSimpleCompletion = (data, key, title, page) => {
+            let completed = currentStudents.filter(s => data[s.id] && data[s.id].trim() !== '').length;
+            const percentage = Math.round((completed / totalStudents) * 100);
+            if (percentage === 100) {
+                results.push({ category: 'Data Lainnya', title, status: 'good', message: `Semua siswa telah memiliki ${title.toLowerCase()}.`, percentage: 100 });
+            } else {
+                results.push({ category: 'Data Lainnya', title, status: 'bad', message: `${totalStudents - completed} siswa belum memiliki ${title.toLowerCase()}.`, actionText: 'Isi Catatan', onActionClick: () => setActivePage(page), percentage });
+            }
+        };
+        checkSimpleCompletion(notes, 'notes', 'Catatan Wali Kelas', 'CATATAN_WALI_KELAS');
 
         return results;
     }, [settings, students, grades, notes, cocurricularData, attendance, studentExtracurriculars, subjects, setActivePage]);
