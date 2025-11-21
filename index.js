@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import * as App from './App.js';
+import App from './App.js';
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -22,7 +22,5 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
-  React.createElement(React.StrictMode, null, 
-    React.createElement(App.default, null)
-  )
+  React.createElement(App, null)
 );
