@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
-import Sidebar from './components/Sidebar.js';
+import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
 import SettingsPage from './components/SettingsPage.js';
@@ -17,6 +17,7 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
+import useWindowDimensions from './hooks/useWindowDimensions.js';
 
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
@@ -146,6 +147,8 @@ const App = () => {
   const [presets, setPresets] = useState(null);
   const [dataNilaiInitialTab, setDataNilaiInitialTab] = useState('keseluruhan');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isMobile } = useWindowDimensions();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
   const isInitialMount = useRef(true);
   const debounceTimeout = useRef(null);
@@ -1128,12 +1131,32 @@ const App = () => {
     }
   };
   
+  const mainLayoutClass = isMobile
+    ? "bg-slate-100 font-sans flex flex-col min-h-screen"
+    : "flex h-screen bg-slate-100 font-sans";
+    
   return React.createElement(React.Fragment, null,
       isUpdateAvailable && React.createElement('div', { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" }, React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'), React.createElement('button', { onClick: updateAssets, className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold' }, 'Perbarui Sekarang')),
       React.createElement(DriveDataSelectionModal, { isOpen: isDriveModalOpen, onClose: () => setIsDriveModalOpen(false), onConfirm: handleDriveFileSelection, files: driveFiles, isLoading: isCheckingDrive, onDelete: handleDriveFileDelete }),
-      React.createElement('div', { className: "flex h-screen bg-slate-100 font-sans" },
-        React.createElement(Sidebar, { activePage, setActivePage, onExport: handleExportAll, onImport: handleImportAll, isSignedIn, userEmail: userProfile?.email, isOnline, lastSyncTimestamp, syncStatus, onSignInClick: signIn, onSignOutClick: signOut }),
-        React.createElement('main', { className: "flex-1 p-6 lg:p-8 overflow-y-auto" }, renderPage())
+      React.createElement('div', { className: mainLayoutClass },
+        React.createElement(Navigation, { 
+            activePage, 
+            setActivePage, 
+            onExport: handleExportAll, 
+            onImport: handleImportAll, 
+            isSignedIn, 
+            userEmail: userProfile?.email, 
+            isOnline, 
+            lastSyncTimestamp, 
+            syncStatus, 
+            onSignInClick: signIn, 
+            onSignOutClick: signOut,
+            isMobile,
+            isMobileMenuOpen,
+            setIsMobileMenuOpen,
+            currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
+        }),
+        React.createElement('main', { className: `${isMobile ? 'flex-1 pt-16' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
       ),
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
     );
