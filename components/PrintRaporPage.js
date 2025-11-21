@@ -431,14 +431,16 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
     )
 });
 
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef }, ref) => (
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '10pt', tableLayout: 'fixed' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
                 React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[63%]' }, 'Capaian Kompetensi')
+                !hideGradesForFaseA && (
+                    React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir')
+                ),
+                React.createElement('td', { className: 'border-2 border-black px-1 py-0', style: { width: hideGradesForFaseA ? '75%' : '63%' } }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
@@ -446,7 +448,9 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                 React.createElement('tr', { key: item.id },
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, startingIndex + index),
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top' }, item.name),
-                    React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, item.grade ?? ''),
+                    !hideGradesForFaseA && (
+                        React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, item.grade ?? '')
+                    ),
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
                         React.createElement('p', null, item.description.highest),
                         item.description.lowest && React.createElement(React.Fragment, null,
@@ -667,7 +671,7 @@ const PageFooter = ({ student, settings, currentPage }) => {
 };
 
 
-const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, rank, rankingOption, ...restProps }) => {
+const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, rank, rankingOption, hideGradesForFaseA, ...restProps }) => {
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
@@ -894,7 +898,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
                 } },
                     React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                         rank: rank, rankingOption: rankingOption,
@@ -953,7 +957,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex }),
+                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA }),
                         React.createElement(ReportFooterContent, { 
                             student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
                             rank: rank, rankingOption: rankingOption,
@@ -995,6 +999,10 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isPrinting, setIsPrinting] = useState(false);
+    const [hideGradesForFaseA, setHideGradesForFaseA] = useState(true);
+
+    const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
+    const isFaseA = useMemo(() => gradeNumber === 1 || gradeNumber === 2, [gradeNumber]);
 
     const studentRanks = useMemo(() => {
         if (rankingOption === 'none' || !students.length || !grades.length || !subjects.length) {
@@ -1155,15 +1163,36 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4" },
-                    React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Pilih Halaman untuk Dicetak:"),
-                    React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
-                        React.createElement('label', { className: "flex items-center space-x-2" }, React.createElement('input', { type: "checkbox", name: "all", checked: Object.values(selectedPages).every(Boolean), onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }), React.createElement('span', { className: "text-sm font-bold" }, "Pilih Semua")),
-                        ...pageCheckboxes.map(page => (
-                            React.createElement('label', { key: page.key, className: "flex items-center space-x-2" },
-                                React.createElement('input', { type: "checkbox", name: page.key, checked: selectedPages[page.key] || false, onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                                React.createElement('span', { className: "text-sm" }, page.label)
+                    React.createElement('div', { className: "flex flex-wrap items-center gap-x-6 gap-y-2" },
+                        React.createElement('div', null,
+                            React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Pilih Halaman untuk Dicetak:"),
+                            React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
+                                React.createElement('label', { className: "flex items-center space-x-2" }, React.createElement('input', { type: "checkbox", name: "all", checked: Object.values(selectedPages).every(Boolean), onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }), React.createElement('span', { className: "text-sm font-bold" }, "Pilih Semua")),
+                                ...pageCheckboxes.map(page => (
+                                    React.createElement('label', { key: page.key, className: "flex items-center space-x-2" },
+                                        React.createElement('input', { type: "checkbox", name: page.key, checked: selectedPages[page.key] || false, onChange: handlePageSelectionChange, className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                                        React.createElement('span', { className: "text-sm" }, page.label)
+                                    )
+                                ))
                             )
-                        ))
+                        ),
+                         isFaseA && (
+                            React.createElement('div', { className: "pl-6 border-l" },
+                                React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Opsi Fase A:"),
+                                React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
+                                    React.createElement('label', { className: "flex items-center space-x-2" },
+                                        React.createElement('input', { 
+                                            type: "checkbox", 
+                                            name: "hideGrades",
+                                            checked: hideGradesForFaseA, 
+                                            onChange: e => setHideGradesForFaseA(e.target.checked),
+                                            className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" 
+                                        }),
+                                        React.createElement('span', { className: "text-sm" }, "Sembunyikan Nilai Angka")
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
             ),
@@ -1180,6 +1209,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         paperSize: paperSize,
                         rank: rank,
                         rankingOption: rankingOption,
+                        hideGradesForFaseA: isFaseA && hideGradesForFaseA,
                         ...restProps
                     })
                 })
