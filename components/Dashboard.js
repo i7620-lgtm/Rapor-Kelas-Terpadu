@@ -196,7 +196,7 @@ const Dashboard = ({
     });
 
     return items;
-  }, [students, grades, subjects, settings]);
+  }, [students, grades, subjects, settings, onNavigateToNilai]);
 
     const completenessChecks = useMemo(() => {
         const results = [];
@@ -218,6 +218,48 @@ const Dashboard = ({
             const missingSettings = settingsFields.filter(key => !settings[key] || settings[key].trim() === '');
             results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'bad', message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`, actionText: 'Lengkapi di Pengaturan', onActionClick: () => setActivePage('PENGATURAN'), percentage: settingsPercentage });
         }
+
+        // New Check: Weighting Validation
+        const subjectsWithBadWeights = [];
+        let firstInvalidSubjectId = null;
+        for (const subjectId in settings.gradeCalculation) {
+            const config = settings.gradeCalculation[subjectId];
+            if (config.method === 'pembobotan') {
+                const weights = config.weights || {};
+                let totalWeight = 0;
+                
+                if (weights.TP) {
+                    for (const slmId in weights.TP) {
+                        (weights.TP[slmId] || []).forEach(w => totalWeight += (w || 0));
+                    }
+                }
+                totalWeight += weights.STS || 0;
+                totalWeight += weights.SAS || 0;
+                
+                if (Math.round(totalWeight) !== 100) {
+                    const subject = activeSubjects.find(s => s.id === subjectId);
+                    if (subject) {
+                        subjectsWithBadWeights.push(subject.label);
+                        if (!firstInvalidSubjectId) {
+                            firstInvalidSubjectId = subjectId;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (subjectsWithBadWeights.length > 0) {
+            results.push({
+                category: 'Pengaturan',
+                title: 'Bobot Nilai Tidak Tepat',
+                status: 'bad',
+                message: `Total bobot untuk mapel ${subjectsWithBadWeights.join(', ')} tidak sama dengan 100%.`,
+                actionText: 'Perbaiki Bobot',
+                onActionClick: () => onNavigateToNilai(firstInvalidSubjectId),
+                percentage: 0
+            });
+        }
+
 
         if (totalStudents === 0) {
             const emptyDataMessages = [
@@ -317,7 +359,7 @@ const Dashboard = ({
         checkSimpleCompletion(notes, 'notes', 'Catatan Wali Kelas', 'CATATAN_WALI_KELAS');
 
         return results;
-    }, [settings, students, grades, notes, cocurricularData, attendance, studentExtracurriculars, subjects, setActivePage]);
+    }, [settings, students, grades, notes, cocurricularData, attendance, studentExtracurriculars, subjects, setActivePage, onNavigateToNilai]);
 
   return (
     React.createElement('div', { className: "space-y-8" },
