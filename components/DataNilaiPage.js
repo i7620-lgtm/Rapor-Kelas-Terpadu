@@ -29,20 +29,12 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
     const [localPredikats, setLocalPredikats] = useState(settings.predikats);
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
     const [localMethod, setLocalMethod] = useState(calculationConfig.method);
-    const [localWeights, setLocalWeights] = useState(calculationConfig.weights || { slm: 50, sts: 25, sas: 25 });
 
     const handleSave = () => {
         onUpdatePredikats(localPredikats);
-        onUpdateGradeCalculation(subject.id, { method: localMethod, weights: localWeights });
+        // Only update the method, weights are handled elsewhere
+        onUpdateGradeCalculation(subject.id, { ...calculationConfig, method: localMethod });
         onClose();
-    };
-
-    const handleWeightChange = (e) => {
-        const { name, value } = e.target;
-        const numValue = parseInt(value, 10);
-        if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-            setLocalWeights(prev => ({ ...prev, [name]: numValue }));
-        }
     };
     
     return (
@@ -76,14 +68,6 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
                                     )
                                 )
                             ))
-                        ),
-                        localMethod === 'pembobotan' && (
-                            React.createElement('div', { className: "mt-4 p-4 border rounded-lg bg-slate-50 space-y-3" },
-                                React.createElement('h5', { className: "font-semibold" }, "Atur Bobot (%)"),
-                                React.createElement('div', { className: "flex items-center justify-between" }, React.createElement('label', null, "Rata-rata semua SLM"), React.createElement('input', { name: "slm", type: "number", value: localWeights.slm, onChange: handleWeightChange, className: "w-20 p-1 border rounded text-center" })),
-                                React.createElement('div', { className: "flex items-center justify-between" }, React.createElement('label', null, "Nilai STS"), React.createElement('input', { name: "sts", type: "number", value: localWeights.sts, onChange: handleWeightChange, className: "w-20 p-1 border rounded text-center" })),
-                                React.createElement('div', { className: "flex items-center justify-between" }, React.createElement('label', null, "Nilai SAS"), React.createElement('input', { name: "sas", type: "number", value: localWeights.sas, onChange: handleWeightChange, className: "w-20 p-1 border rounded text-center" }))
-                            )
                         )
                     )
                 ),
@@ -172,11 +156,14 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
 };
 
 
-const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdate, onUpdateObjectives, gradeNumber }) => {
+const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdate, onUpdateObjectives, gradeNumber, settings, onUpdateGradeCalculation }) => {
     if (!isOpen) return null;
 
     const { type, item } = modalData;
     const isSLM = type === 'slm';
+    const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
+    const isWeighting = calculationConfig.method === 'pembobotan';
+    const weights = useMemo(() => calculationConfig.weights || {}, [calculationConfig]);
 
     const [slmName, setSlmName] = useState(isSLM ? item?.name || '' : '');
     const [localObjectives, setLocalObjectives] = useState([]);
@@ -186,8 +173,6 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         if (isSLM && item) {
             const gradeKey = `Kelas ${gradeNumber}`;
             const objectivesForSubject = objectives[gradeKey]?.[subject.fullName] || [];
-            // This logic is now more complex because objectives are grouped.
-            // We need to find the TPs that belong to this SLM ID.
             const initialTps = objectivesForSubject
                 .filter(obj => obj.slmId === item.id)
                 .map((obj, index) => ({ id: `tp_${index}_${item.id}`, text: obj.text }));
@@ -198,28 +183,16 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
     const handleSave = () => {
         if (isSLM) {
             const gradeKey = `Kelas ${gradeNumber}`;
-            // The objectives structure is now [{slm: "...", tp: [...]}]
-            // The logic for updating objectives needs to change
-            // The current `objectives` state is a flat array of {slmId, text}
             const existingObjectives = objectives[gradeKey]?.[subject.fullName] || [];
-            
-            // Remove old TPs for this SLM
             const otherSlmObjectives = existingObjectives.filter(obj => obj.slmId !== item.id);
-            
-            // Create new TPs for this SLM
             const newSlmObjectives = localObjectives.map(tp => ({ slmId: item.id, text: tp.text }));
-
             const newObjectivesForSubject = [...otherSlmObjectives, ...newSlmObjectives];
             const newObjectivesObject = {
                 ...objectives,
-                [gradeKey]: {
-                    ...(objectives[gradeKey] || {}),
-                    [subject.fullName]: newObjectivesForSubject
-                }
+                [gradeKey]: { ...(objectives[gradeKey] || {}), [subject.fullName]: newObjectivesForSubject }
             };
             onUpdateObjectives(newObjectivesObject);
             
-            // Update the name of the SLM across all students
             students.forEach(student => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
                 const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
@@ -244,7 +217,6 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             const slmToUpdate = detailedGrade.slm.find(s => s.id === item.id) || { ...item, scores: Array(localObjectives.length).fill(null) };
             const newScores = [...(slmToUpdate.scores || Array(localObjectives.length).fill(null))];
             
-            // Ensure scores array is long enough
             while(newScores.length < localObjectives.length) { newScores.push(null); }
 
             newScores[tpIndex] = numericValue;
@@ -261,6 +233,23 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         onUpdate(studentId, subject.id, { type, value: updateValue });
     };
 
+    const handleWeightChange = (weightType, value, slmId = null, tpIndex = null) => {
+        const numValue = value === '' ? null : parseInt(value, 10);
+        if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) return;
+
+        const newWeights = JSON.parse(JSON.stringify(weights)); // Deep copy
+        
+        if (weightType === 'TP' && slmId !== null && tpIndex !== null) {
+            if (!newWeights.TP) newWeights.TP = {};
+            if (!newWeights.TP[slmId]) newWeights.TP[slmId] = [];
+            newWeights.TP[slmId][tpIndex] = numValue;
+        } else if (weightType === 'STS' || weightType === 'SAS') {
+            newWeights[weightType] = numValue;
+        }
+
+        onUpdateGradeCalculation(subject.id, { ...calculationConfig, weights: newWeights });
+    };
+
     const handleAddManualTp = () => {
         setLocalObjectives(prev => [...prev, { id: `manual_${Date.now()}`, text: '' }]);
     };
@@ -271,7 +260,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 
     const handleDeleteTp = (id, index) => {
         setLocalObjectives(prev => prev.filter(tp => tp.id !== id));
-        // Also remove the corresponding grade for all students
+        // Also remove the corresponding grade and weight for all students
         students.forEach(student => {
              const studentGrade = grades.find(g => g.studentId === student.id);
              const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
@@ -286,6 +275,13 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 }
              }
         });
+        if (isWeighting) {
+            const newWeights = JSON.parse(JSON.stringify(weights));
+            if (newWeights.TP && newWeights.TP[item.id]) {
+                newWeights.TP[item.id].splice(index, 1);
+                onUpdateGradeCalculation(subject.id, { ...calculationConfig, weights: newWeights });
+            }
+        }
     };
     
     const handleApplyTpSelection = (selectedTexts) => {
@@ -300,15 +296,33 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         }
         return students;
     }, [students, subject]);
+    
+    const AutoSizingTextarea = ({ value, onChange, ...props }) => {
+        const textareaRef = useRef(null);
+
+        useEffect(() => {
+            if (textareaRef.current) {
+                textareaRef.current.style.height = 'auto';
+                textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+            }
+        }, [value]);
+
+        return React.createElement('textarea', {
+            ref: textareaRef,
+            value: value,
+            onChange: onChange,
+            ...props
+        });
+    };
 
     return (
         React.createElement(React.Fragment, null,
             React.createElement(TPSelectionModal, { isOpen: isTpSelectionModalOpen, onClose: () => setIsTpSelectionModalOpen(false), onApply: handleApplyTpSelection, subject: subject, gradeNumber: gradeNumber }),
             React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4" },
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col" },
-                    React.createElement('div', { className: "p-5 border-b flex justify-between items-center" },
+                    React.createElement('div', { className: "p-5 border-b flex justify-between items-center flex-shrink-0" },
                         isSLM ? 
-                            React.createElement('input', { type: 'text', value: slmName, onChange: e => setSlmName(e.target.value), placeholder: "Nama Lingkup Materi", className: "text-xl font-bold text-slate-800 border-b-2 border-transparent focus:border-indigo-500 outline-none flex-grow" }) :
+                            React.createElement('input', { type: 'text', value: slmName, onChange: e => setSlmName(e.target.value), placeholder: "Nama Lingkup Materi", className: "text-xl font-bold text-slate-800 border-b-2 border-transparent focus:border-indigo-500 outline-none flex-grow bg-transparent" }) :
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, `Input Nilai ${type.toUpperCase()}`),
                         React.createElement('div', { className: "flex items-center gap-2" },
                             isSLM && React.createElement('button', { onClick: handleAddManualTp, className: "px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Ketik TP Manual"),
@@ -316,49 +330,73 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                             React.createElement('button', { onClick: handleSave, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Simpan & Tutup")
                         )
                     ),
-                    isSLM && (
-                        React.createElement('div', { className: 'p-4 border-b space-y-2 max-h-48 overflow-y-auto' },
-                            localObjectives.map((tp, index) => (
-                                React.createElement('div', { key: tp.id, className: 'flex items-center gap-2' },
-                                    React.createElement('span', { className: 'font-bold text-sm text-slate-500' }, `TP ${index + 1}:`),
-                                    React.createElement('input', { type: 'text', value: tp.text, onChange: e => handleUpdateTpText(tp.id, e.target.value), placeholder: 'Deskripsi Tujuan Pembelajaran', className: 'flex-grow p-1 border rounded-md text-sm' }),
-                                    React.createElement('button', { onClick: () => handleDeleteTp(tp.id, index), className: 'text-red-500 hover:text-red-700' }, '×')
-                                )
-                            ))
-                        )
-                    ),
-                    React.createElement('div', { className: "overflow-y-auto" },
-                        React.createElement('table', { className: "w-full text-sm text-left" },
-                            React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0" },
-                                React.createElement('tr', null,
-                                    React.createElement('th', { className: "px-6 py-3" }, "No"),
-                                    React.createElement('th', { className: "px-6 py-3" }, "Nama Siswa"),
-                                    isSLM ? 
-                                        localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" }, `TP ${i + 1}`)) :
-                                        React.createElement('th', { className: "px-2 py-3 text-center" }, `Nilai ${type.toUpperCase()}`),
-                                    isSLM && React.createElement('th', { className: "px-4 py-3 text-center bg-slate-200" }, "Rata-rata")
-                                )
-                            ),
-                            React.createElement('tbody', null,
-                                relevantStudents.map((student, index) => {
-                                    const studentGrade = grades.find(g => g.studentId === student.id);
-                                    const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-                                    let slmData, slmAvg;
-                                    if (isSLM) {
-                                        slmData = detailedGrade?.slm.find(s => s.id === item.id);
-                                        const validScores = slmData?.scores?.filter(s => typeof s === 'number') || [];
-                                        slmAvg = validScores.length > 0 ? (validScores.reduce((a,b)=>a+b,0)/validScores.length).toFixed(1) : '-';
-                                    }
-                                    
-                                    return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
-                                        React.createElement('td', { className: "px-6 py-2" }, index + 1),
-                                        React.createElement('td', { className: "px-6 py-2 font-medium" }, student.namaLengkap),
-                                        isSLM ? 
-                                            localObjectives.map((_, i) => React.createElement('td', { key: i, className: "px-2 py-1 text-center" }, React.createElement('input', { type: "number", min:0, max:100, value: slmData?.scores?.[i] ?? '', onChange: (e) => handleGradeChange(student.id, e.target.value, i), className: "w-20 p-2 text-center border rounded-md" }))) :
-                                            React.createElement('td', { className: "px-2 py-1 text-center" }, React.createElement('input', { type: "number", min:0, max:100, value: detailedGrade?.[type] ?? '', onChange: (e) => handleGradeChange(student.id, e.target.value), className: "w-20 p-2 text-center border rounded-md" })),
-                                        isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100" }, slmAvg)
+                    
+                    React.createElement('div', { className: "flex-1 overflow-y-auto" },
+                        isSLM && (
+                            React.createElement('div', { className: 'p-4 border-b space-y-2' },
+                                localObjectives.map((tp, index) => (
+                                    React.createElement('div', { key: tp.id, className: 'flex items-start gap-2' },
+                                        React.createElement('span', { className: 'font-bold text-sm text-slate-500 pt-2' }, `TP ${index + 1}:`),
+                                        React.createElement(AutoSizingTextarea, {
+                                            value: tp.text,
+                                            onChange: e => handleUpdateTpText(tp.id, e.target.value),
+                                            placeholder: 'Deskripsi Tujuan Pembelajaran',
+                                            className: 'flex-grow p-2 border rounded-md text-sm resize-none overflow-hidden',
+                                            rows: "1"
+                                        }),
+                                        React.createElement('button', { onClick: () => handleDeleteTp(tp.id, index), className: 'text-red-500 hover:text-red-700 p-1 text-2xl leading-none flex-shrink-0 mt-1' }, '×')
                                     )
-                                })
+                                ))
+                            )
+                        ),
+                        
+                        React.createElement('div', null,
+                            React.createElement('table', { className: "w-full text-sm text-left" },
+                                React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0" },
+                                    React.createElement('tr', null,
+                                        React.createElement('th', { className: "px-6 py-3" }, "No"),
+                                        React.createElement('th', { className: "px-6 py-3" }, "Nama Siswa"),
+                                        isSLM ? 
+                                            localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" }, `TP ${i + 1}`)) :
+                                            React.createElement('th', { className: "px-2 py-3 text-center" }, `Nilai ${type.toUpperCase()}`),
+                                        isSLM && React.createElement('th', { className: "px-4 py-3 text-center bg-slate-200" }, "Rata-rata")
+                                    ),
+                                    isWeighting && React.createElement('tr', null,
+                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50" }),
+                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50 text-indigo-900 text-right font-bold" }, "BOBOT (%)"),
+                                        isSLM ?
+                                            localObjectives.map((_, i) => (
+                                                React.createElement('th', { key: `weight-tp-${i}`, className: "px-2 py-1 bg-indigo-50 align-middle text-center" },
+                                                    React.createElement('input', { type: "number", min:0, max:100, value: weights.TP?.[item.id]?.[i] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, item.id, i), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
+                                                )
+                                            )) :
+                                            React.createElement('th', { className: "px-2 py-1 bg-indigo-50 align-middle text-center" },
+                                                React.createElement('input', { type: "number", min:0, max:100, value: weights[type.toUpperCase()] ?? '', onChange: (e) => handleWeightChange(type.toUpperCase(), e.target.value), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
+                                            ),
+                                        isSLM && React.createElement('th', { className: "px-4 py-1 bg-indigo-50" })
+                                    )
+                                ),
+                                React.createElement('tbody', null,
+                                    relevantStudents.map((student, index) => {
+                                        const studentGrade = grades.find(g => g.studentId === student.id);
+                                        const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+                                        let slmData, slmAvg;
+                                        if (isSLM) {
+                                            slmData = detailedGrade?.slm.find(s => s.id === item.id);
+                                            const validScores = slmData?.scores?.filter(s => typeof s === 'number') || [];
+                                            slmAvg = validScores.length > 0 ? (validScores.reduce((a,b)=>a+b,0)/validScores.length).toFixed(1) : '-';
+                                        }
+                                        
+                                        return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
+                                            React.createElement('td', { className: "px-6 py-2" }, index + 1),
+                                            React.createElement('td', { className: "px-6 py-2 font-medium" }, student.namaLengkap),
+                                            isSLM ? 
+                                                localObjectives.map((_, i) => React.createElement('td', { key: i, className: "px-2 py-1 text-center" }, React.createElement('input', { type: "number", min:0, max:100, value: slmData?.scores?.[i] ?? '', onChange: (e) => handleGradeChange(student.id, e.target.value, i), className: "w-20 p-2 text-center border rounded-md" }))) :
+                                                React.createElement('td', { className: "px-2 py-1 text-center" }, React.createElement('input', { type: "number", min:0, max:100, value: detailedGrade?.[type] ?? '', onChange: (e) => handleGradeChange(student.id, e.target.value), className: "w-20 p-2 text-center border rounded-md" })),
+                                            isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100" }, slmAvg)
+                                        )
+                                    })
+                                )
                             )
                         )
                     )
@@ -478,7 +516,7 @@ const SubjectDetailView = (props) => {
     return (
         React.createElement(React.Fragment, null,
             React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation }),
-            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onUpdate: onUpdateDetailedGrade, objectives: props.learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber }),
+            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onUpdate: onUpdateDetailedGrade, objectives: props.learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation }),
             
             React.createElement('div', { className: "space-y-6" },
                 React.createElement('div', { className: "flex justify-end" },
