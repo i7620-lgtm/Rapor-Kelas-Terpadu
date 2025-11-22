@@ -139,6 +139,66 @@ const getDynamicRKTFileName = (currentSettings) => {
     return `RKT_${schoolName}_${className}_${academicYear}_${semester}.xlsx`.toUpperCase();
 };
 
+const calculateFinalGrade = (detailed, config, kkm) => {
+    if (!detailed) return null;
+    let finalScore = null;
+
+    if (config.method === 'rata-rata') {
+        const slmAvgScores = (detailed.slm || []).map(slm => {
+            const validScores = (slm.scores || []).filter(s => typeof s === 'number');
+            return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
+        }).filter(avg => avg !== null);
+        
+        const stsScore = detailed.sts;
+        const sasScore = detailed.sas;
+        const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null;
+        const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number');
+        if (components.length > 0) finalScore = components.reduce((a, b) => a + b, 0) / components.length;
+    } else if (config.method === 'pembobotan') {
+        let totalWeightedScore = 0;
+        let totalWeightUsed = 0;
+        const weights = config.weights || {};
+        const tpWeights = weights.TP || {};
+        const stsWeight = weights.STS || 0;
+        const sasWeight = weights.SAS || 0;
+
+        (detailed.slm || []).forEach(slm => {
+            const slmTpWeights = tpWeights[slm.id] || [];
+            (slm.scores || []).forEach((score, index) => {
+                const weight = slmTpWeights[index] || 0;
+                if (typeof score === 'number' && weight > 0) {
+                    totalWeightedScore += score * (weight / 100);
+                    totalWeightUsed += weight;
+                }
+            });
+        });
+
+        if (typeof detailed.sts === 'number' && stsWeight > 0) {
+            totalWeightedScore += detailed.sts * (stsWeight / 100);
+            totalWeightUsed += stsWeight;
+        }
+        if (typeof detailed.sas === 'number' && sasWeight > 0) {
+            totalWeightedScore += detailed.sas * (sasWeight / 100);
+            totalWeightUsed += sasWeight;
+        }
+        
+        finalScore = totalWeightUsed > 0 ? totalWeightedScore : null;
+
+    } else if (config.method === 'persentase' && !isNaN(kkm)) {
+        const slmAvgScores = (detailed.slm || []).map(slm => {
+            const validScores = (slm.scores || []).filter(s => typeof s === 'number');
+            return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
+        }).filter(avg => avg !== null);
+        const allSummatives = [...slmAvgScores];
+        if(typeof detailed.sts === 'number') allSummatives.push(detailed.sts);
+        if(typeof detailed.sas === 'number') allSummatives.push(detailed.sas);
+        if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100;
+    }
+
+    return finalScore === null ? null : Math.round(finalScore);
+};
+
+
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
@@ -335,10 +395,11 @@ const App = () => {
 
         settingsData.push([]);
         settingsData.push(["Pengaturan Cara Pengolahan Nilai Rapor"]);
-        const gradeCalcHeader = ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot SLM (%)", "Bobot STS (%)", "Bobot SAS (%)"];
+        const gradeCalcHeader = ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot (JSON)"];
         settingsData.push(gradeCalcHeader);
         Object.entries(settings.gradeCalculation).forEach(([subjectId, config]) => {
-            settingsData.push([ subjectId, config.method, config.weights?.slm ?? '', config.weights?.sts ?? '', config.weights?.sas ?? '' ]);
+            const weightsString = config.weights ? JSON.stringify(config.weights) : '';
+            settingsData.push([ subjectId, config.method, weightsString ]);
         });
         const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsData);
         XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
@@ -565,8 +626,14 @@ const App = () => {
                     if (row[0] === 'C') newSettings.predikats.c = String(row[1]);
                 } else {
                     if (row[0] === 'ID Mata Pelajaran') continue;
-                    const [subjectId, method, slm, sts, sas] = row;
-                    if (subjectId) newSettings.gradeCalculation[subjectId] = { method: method || 'rata-rata', weights: { slm: slm || 0, sts: sts || 0, sas: sas || 0 } };
+                    const [subjectId, method, weightsString] = row;
+                    if (subjectId) {
+                        let weights = {};
+                        try {
+                            if(weightsString) weights = JSON.parse(weightsString);
+                        } catch(e) { console.error(`Gagal mem-parsing bobot JSON untuk ${subjectId}:`, e)}
+                        newSettings.gradeCalculation[subjectId] = { method: method || 'rata-rata', weights: weights };
+                    }
                 }
             }
         }
@@ -664,13 +731,8 @@ const App = () => {
             for (const subjectId in studentGrade.detailedGrades) {
                 const detailed = studentGrade.detailedGrades[subjectId];
                 const config = newSettings.gradeCalculation[subjectId] || { method: 'rata-rata' };
-                let finalScore = null;
-                const slmAvgScores = (detailed.slm || []).map(slm => { const valid = (slm.scores || []).filter(s => typeof s === 'number'); return valid.length > 0 ? valid.reduce((a, b) => a + b, 0) / valid.length : null; }).filter(avg => avg !== null);
-                const stsScore = detailed.sts; const sasScore = detailed.sas;
-                if (config.method === 'rata-rata') { const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null; const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number'); if (components.length > 0) finalScore = components.reduce((a, b) => a + b, 0) / components.length; } 
-                else if (config.method === 'pembobotan') { let totalW = 0, weightedS = 0; const weights = config.weights || {}; if (slmAvgScores.length > 0 && (weights.slm || 0) > 0) { const avgOfSlms = slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length; weightedS += avgOfSlms * weights.slm; totalW += weights.slm; } if (typeof stsScore === 'number' && (weights.sts || 0) > 0) { weightedS += stsScore * weights.sts; totalW += weights.sts; } if (typeof sasScore === 'number' && (weights.sas || 0) > 0) { weightedS += sasScore * weights.sas; totalW += weights.sas; } if (totalW > 0) finalScore = weightedS / totalW; }
-                else if (config.method === 'persentase' && !isNaN(kkm)) { const allSummatives = [...slmAvgScores]; if(typeof stsScore === 'number') allSummatives.push(stsScore); if(typeof sasScore === 'number') allSummatives.push(sasScore); if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100; }
-                newFinalGrades[subjectId] = finalScore === null ? null : Math.round(finalScore);
+                const finalScore = calculateFinalGrade(detailed, config, kkm);
+                newFinalGrades[subjectId] = finalScore;
             }
             return { ...studentGrade, finalGrades: newFinalGrades };
         });
@@ -950,7 +1012,37 @@ const App = () => {
     }, []);
     const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => setStudentExtracurriculars(newStudentExtracurriculars), []);
     const handleUpdatePredikats = useCallback((newPredikats) => setSettings(prev => ({ ...prev, predikats: newPredikats })), []);
-    const handleUpdateGradeCalculation = useCallback((subjectId, config) => setSettings(prev => ({ ...prev, gradeCalculation: { ...prev.gradeCalculation, [subjectId]: config } })), []);
+    
+    const handleUpdateGradeCalculation = useCallback((subjectId, newConfig) => {
+        setSettings(prevSettings => {
+            const updatedSettings = {
+                ...prevSettings,
+                gradeCalculation: {
+                    ...prevSettings.gradeCalculation,
+                    [subjectId]: newConfig,
+                },
+            };
+
+            setGrades(prevGrades => {
+                const kkm = parseInt(updatedSettings.predikats.c, 10);
+                return prevGrades.map(studentGrade => {
+                    const detailedGrade = studentGrade.detailedGrades[subjectId];
+                    if (detailedGrade) {
+                        const newFinalScore = calculateFinalGrade(detailedGrade, newConfig, kkm);
+                        const newFinalGrades = {
+                            ...studentGrade.finalGrades,
+                            [subjectId]: newFinalScore,
+                        };
+                        return { ...studentGrade, finalGrades: newFinalGrades };
+                    }
+                    return studentGrade;
+                });
+            });
+
+            return updatedSettings;
+        });
+    }, []);
+
     const handleUpdateDetailedGrade = useCallback((studentId, subjectId, { type, value }) => {
         setGrades(prevGrades => {
             const studentGradeIndex = prevGrades.findIndex(g => g.studentId === studentId);
@@ -958,44 +1050,21 @@ const App = () => {
             let studentGrade = studentGradeIndex > -1 ? { ...newGrades[studentGradeIndex] } : { studentId, detailedGrades: {}, finalGrades: {} };
             
             studentGrade.detailedGrades = { ...studentGrade.detailedGrades };
-            studentGrade.detailedGrades[subjectId] = { ...(studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null }), [type]: value };
+            const newDetailedGradeForSubject = { ...(studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null }), [type]: value };
+            studentGrade.detailedGrades[subjectId] = newDetailedGradeForSubject;
 
-            const detailed = studentGrade.detailedGrades[subjectId];
             const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
             const kkm = parseInt(settings.predikats.c, 10);
-            let finalScore = null;
-
-            const slmAvgScores = (detailed.slm || []).map(slm => {
-                const validScores = (slm.scores || []).filter(s => typeof s === 'number');
-                return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
-            }).filter(avg => avg !== null);
             
-            const stsScore = detailed.sts;
-            const sasScore = detailed.sas;
+            const finalScore = calculateFinalGrade(newDetailedGradeForSubject, config, kkm);
 
-            if (config.method === 'rata-rata') {
-                const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null;
-                const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number');
-                if (components.length > 0) finalScore = components.reduce((a, b) => a + b, 0) / components.length;
-            } else if (config.method === 'pembobotan') {
-                let totalWeight = 0, weightedScore = 0;
-                const weights = config.weights || { slm: 0, sts: 0, sas: 0 };
-                if (slmAvgScores.length > 0 && weights.slm > 0) { const avgOfSlms = slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length; weightedScore += avgOfSlms * weights.slm; totalWeight += weights.slm; }
-                if (typeof stsScore === 'number' && weights.sts > 0) { weightedScore += stsScore * weights.sts; totalWeight += weights.sts; }
-                if (typeof sasScore === 'number' && weights.sas > 0) { weightedScore += sasScore * weights.sas; totalWeight += weights.sas; }
-                if (totalWeight > 0) finalScore = weightedScore / totalWeight;
-            } else if (config.method === 'persentase' && !isNaN(kkm)) {
-                const allSummatives = [...slmAvgScores];
-                if(typeof stsScore === 'number') allSummatives.push(stsScore);
-                if(typeof sasScore === 'number') allSummatives.push(sasScore);
-                if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100;
+            studentGrade.finalGrades = { ...studentGrade.finalGrades, [subjectId]: finalScore };
+
+            if (studentGradeIndex > -1) {
+                newGrades[studentGradeIndex] = studentGrade;
+            } else {
+                newGrades.push(studentGrade);
             }
-
-            studentGrade.finalGrades = { ...studentGrade.finalGrades };
-            studentGrade.finalGrades[subjectId] = finalScore === null ? null : Math.round(finalScore);
-
-            if (studentGradeIndex > -1) newGrades[studentGradeIndex] = studentGrade;
-            else newGrades.push(studentGrade);
             return newGrades;
         });
     }, [settings.gradeCalculation, settings.predikats.c]);
