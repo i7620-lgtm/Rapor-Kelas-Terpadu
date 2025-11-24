@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 
 const emptyStudent = {
-    namaLengkap: '', namaPanggilan: '', nis: '', nisn: '', tempatLahir: '',
-    tanggalLahir: '', jenisKelamin: '', agama: '', asalTk: '', alamatSiswa: '',
+    namaLengkap: '', namaPanggilan: '', nis: '', nisn: '', ttl: '',
+    jenisKelamin: '', agama: '', asalTk: '', alamatSiswa: '',
     diterimaDiKelas: '', diterimaTanggal: '',
     namaAyah: '', namaIbu: '', pekerjaanAyah: '', pekerjaanIbu: '',
     alamatOrangTua: '', teleponOrangTua: '', namaWali: '', pekerjaanWali: '',
@@ -10,10 +10,10 @@ const emptyStudent = {
 };
 
 // Moved FormField outside of the component to prevent re-creation on every render.
-const FormField = ({name, label, value, onChange, type = 'text', required = false}) => (
+const FormField = ({name, label, value, onChange, type = 'text', required = false, placeholder = ''}) => (
     React.createElement('div', null,
         React.createElement('label', { htmlFor: name, className: "block text-sm font-medium text-slate-700" }, label),
-        React.createElement('input', { type: type, name: name, id: name, value: value || '', onChange: onChange, required: required, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
+        React.createElement('input', { type: type, name: name, id: name, value: value || '', onChange: onChange, required: required, placeholder: placeholder, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" })
     )
 );
 
@@ -53,8 +53,7 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
                             React.createElement(FormField, { name: "namaPanggilan", label: "Nama Panggilan", value: formData.namaPanggilan, onChange: handleChange }),
                             React.createElement(FormField, { name: "nis", label: "NIS", value: formData.nis, onChange: handleChange }),
                             React.createElement(FormField, { name: "nisn", label: "NISN", value: formData.nisn, onChange: handleChange }),
-                            React.createElement(FormField, { name: "tempatLahir", label: "Tempat Lahir", value: formData.tempatLahir, onChange: handleChange }),
-                            React.createElement(FormField, { name: "tanggalLahir", label: "Tanggal Lahir", type: "date", value: formData.tanggalLahir, onChange: handleChange }),
+                            React.createElement(FormField, { name: "ttl", label: "Tempat, Tanggal Lahir", placeholder: "Contoh: Denpasar, 2015-07-22", value: formData.ttl, onChange: handleChange }),
                              React.createElement('div', null,
                                 React.createElement('label', { htmlFor: "jenisKelamin", className: "block text-sm font-medium text-slate-700" }, "Jenis Kelamin"),
                                 React.createElement('select', { name: "jenisKelamin", id: "jenisKelamin", value: formData.jenisKelamin || '', onChange: handleChange, className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" },
@@ -169,9 +168,9 @@ const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents,
                                 React.createElement('tr', null,
                                     React.createElement('th', { scope: "col", className: "px-6 py-3" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Nama Lengkap"),
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Nama Panggilan"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3" }, "NIS"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3" }, "NISN"),
+                                    React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Tempat, Tanggal Lahir"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 text-center" }, "Aksi")
                                 )
                             ),
@@ -181,9 +180,9 @@ const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents,
                                         React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50" },
                                             React.createElement('td', { className: "px-6 py-4" }, index + 1),
                                             React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-slate-900 whitespace-nowrap" }, student.namaLengkap),
-                                            React.createElement('td', { className: "px-6 py-4" }, student.namaPanggilan),
                                             React.createElement('td', { className: "px-6 py-4" }, student.nis),
                                             React.createElement('td', { className: "px-6 py-4" }, student.nisn),
+                                            React.createElement('td', { className: "px-6 py-4" }, student.ttl),
                                             React.createElement('td', { className: "px-6 py-4 text-center space-x-2" },
                                                 React.createElement('button', { onClick: () => handleEdit(student), className: "font-medium text-indigo-600 hover:underline" }, "Edit"),
                                                 React.createElement('button', { onClick: () => handleDelete(student), className: "font-medium text-red-600 hover:underline" }, "Hapus")
@@ -192,7 +191,7 @@ const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents,
                                     ))
                                 ) : (
                                     React.createElement('tr', null,
-                                        React.createElement('td', { colSpan: 6, className: "text-center py-10 text-slate-500" },
+                                        React.createElement('td', { colSpan: 7, className: "text-center py-10 text-slate-500" },
                                             "Belum ada data siswa. Klik 'Tambah Siswa' untuk memulai."
                                         )
                                     )
