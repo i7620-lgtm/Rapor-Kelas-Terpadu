@@ -952,18 +952,56 @@ const App = () => {
 
     const handleSettingsChange = useCallback((e) => {
         const { name, value, type, files } = e.target;
+    
         if (type === 'file') {
             if (files && files[0]) {
                 const reader = new FileReader();
-                reader.onloadend = () => setSettings(prev => ({ ...prev, [name]: reader.result }));
+                reader.onloadend = () => {
+                    const newValue = reader.result;
+                    setSettings(prev => {
+                        // Check for grade level change before updating state
+                        if (name === 'nama_kelas') {
+                            const oldGradeNumber = getGradeNumber(prev.nama_kelas);
+                            const newGradeNumber = getGradeNumber(newValue);
+                            if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
+                                if (window.confirm('Mengubah jenjang kelas akan mereset data nilai dan TP. Lanjutkan?')) {
+                                    setLearningObjectives({});
+                                    setGrades(initialGrades);
+                                    showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
+                                } else {
+                                    return prev; // Abort state update
+                                }
+                            }
+                        }
+                        return { ...prev, [name]: newValue };
+                    });
+                };
                 reader.readAsDataURL(files[0]);
             }
         } else if (type === 'file_processed') {
             setSettings(prev => ({ ...prev, [name]: value }));
         } else {
-            setSettings(prev => ({ ...prev, [name]: value }));
+            setSettings(prev => {
+                // Check for grade level change before updating state
+                if (name === 'nama_kelas') {
+                    const oldGradeNumber = getGradeNumber(prev.nama_kelas);
+                    const newGradeNumber = getGradeNumber(value);
+                    if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
+                         if (window.confirm('Mengubah jenjang kelas akan mereset data nilai dan TP. Lanjutkan?')) {
+                            setLearningObjectives({});
+                            setGrades(initialGrades);
+                             showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
+                        } else {
+                            // Revert the input value visually if possible, or just prevent state update
+                            e.target.value = prev.nama_kelas;
+                            return prev;
+                        }
+                    }
+                }
+                return { ...prev, [name]: value };
+            });
         }
-    }, []);
+    }, [showToast]);
 
     const saveSettings = useCallback(() => console.log("Settings saved to state."), []);
     const onUpdateSubjects = useCallback((newSubjects) => setSubjects(newSubjects), []);
@@ -1225,7 +1263,7 @@ const App = () => {
             setIsMobileMenuOpen,
             currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
         }),
-        React.createElement('main', { className: `${isMobile ? 'flex-1 pt-16' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
+        React.createElement('main', { className: `${isMobile ? 'flex-1' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
       ),
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
     );
