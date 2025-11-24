@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS } from './constants.js';
+import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
@@ -13,6 +13,7 @@ import DataEkstrakurikulerPage from './components/DataEkstrakurikulerPage.js';
 import PrintRaporPage from './components/PrintRaporPage.js';
 import PrintPiagamPage from './components/PrintPiagamPage.js';
 import PrintLegerPage from './components/PrintLegerPage.js';
+import JurnalFormatifPage from './components/JurnalFormatifPage.js';
 import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js';
@@ -117,8 +118,9 @@ const initialNotes = {};
 const initialCocurricularData = {};
 const initialAttendance = [];
 const initialStudentExtracurriculars = [];
+const initialFormativeJournal = {};
 
-const getAppData = (settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives) => ({
+const getAppData = (settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal) => ({
     settings,
     students,
     grades,
@@ -129,6 +131,7 @@ const getAppData = (settings, students, grades, notes, cocurricularData, attenda
     studentExtracurriculars,
     subjects,
     learningObjectives,
+    formativeJournal
 });
 
 const getDynamicRKTFileName = (currentSettings) => {
@@ -259,7 +262,8 @@ const App = () => {
              JSON.stringify(data.extracurriculars) === JSON.stringify(defaultExtracurriculars) &&
              JSON.stringify(data.studentExtracurriculars) === JSON.stringify(initialStudentExtracurriculars) &&
              JSON.stringify(data.subjects) === JSON.stringify(defaultSubjects) &&
-             JSON.stringify(data.learningObjectives) === JSON.stringify({});
+             JSON.stringify(data.learningObjectives) === JSON.stringify({}) &&
+             JSON.stringify(data.formativeJournal) === JSON.stringify(initialFormativeJournal);
   }, []);
 
   const [settings, setSettings] = useState(() => {
@@ -332,6 +336,12 @@ const App = () => {
           return saved ? JSON.parse(saved) : {};
       } catch (e) { return {}; }
   });
+  const [formativeJournal, setFormativeJournal] = useState(() => {
+      try {
+          const saved = localStorage.getItem('appFormativeJournal');
+          return saved ? JSON.parse(saved) : initialFormativeJournal;
+      } catch (e) { return initialFormativeJournal; }
+  });
   
   useEffect(() => {
     const { a, b, c, d } = settings.predikats;
@@ -354,8 +364,8 @@ const App = () => {
     }
   }, [settings.predikats, settings.qualitativeGradingMap]);
 
-  const appData = useMemo(() => getAppData(settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives), [
-      settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives
+  const appData = useMemo(() => getAppData(settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal), [
+      settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal
   ]);
 
   const showToast = useCallback((message, type) => {
@@ -587,6 +597,19 @@ const App = () => {
         const wsCocurricular = XLSX.utils.aoa_to_sheet(cocurricularSheetData);
         XLSX.utils.book_append_sheet(wb, wsCocurricular, "Data Kokurikuler");
 
+        const formativeJournalData = [];
+        const journalHeader = ["ID Siswa", "Nama Siswa", "ID Catatan", "Tanggal", "Topik", "Jenis", "Catatan"];
+        formativeJournalData.push(journalHeader);
+        Object.entries(formativeJournal).forEach(([studentId, notesArray]) => {
+            const studentName = students.find(s => s.id === studentId)?.namaLengkap || '';
+            notesArray.forEach(note => {
+                formativeJournalData.push([studentId, studentName, note.id, note.date, note.topic, note.type, note.note]);
+            });
+        });
+        const wsFormativeJournal = XLSX.utils.aoa_to_sheet(formativeJournalData);
+        XLSX.utils.book_append_sheet(wb, wsFormativeJournal, "Jurnal Formatif");
+
+
         // Sheet Tambahan: Aset Gambar (untuk menyimpan gambar base64 dengan chunking)
         const imageAssetsData = [];
         const imageKeys = ['logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background'];
@@ -620,7 +643,7 @@ const App = () => {
         showToast(`Gagal mengekspor data: ${error.message}`, 'error');
         return null;
     }
-  }, [settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, showToast]);
+  }, [settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal, showToast]);
 
     const importFromExcelBlob = useCallback(async (blob) => {
     if (typeof XLSX === 'undefined') {
@@ -643,6 +666,7 @@ const App = () => {
         setStudentExtracurriculars(initialStudentExtracurriculars);
         setSubjects(defaultSubjects);
         setLearningObjectives({});
+        setFormativeJournal(initialFormativeJournal);
         
         let newSettings = { ...initialSettings };
         let newStudents = [];
@@ -654,6 +678,7 @@ const App = () => {
         let newStudentExtracurriculars = [];
         let newLearningObjectives = {};
         let newGrades = [];
+        let newFormativeJournal = {};
         const subjectStructureMap = new Map();
 
         // 1. Parse Pengaturan
@@ -825,6 +850,27 @@ const App = () => {
             newStudentExtracurriculars = Object.values(tempStudentExtra);
         }
 
+        const wsFormativeJournal = workbook.Sheets["Jurnal Formatif"];
+        if (wsFormativeJournal) {
+            const journalData = XLSX.utils.sheet_to_json(wsFormativeJournal);
+            journalData.forEach(row => {
+                const studentId = row["ID Siswa"];
+                if (studentId) {
+                    if (!newFormativeJournal[studentId]) {
+                        newFormativeJournal[studentId] = [];
+                    }
+                    newFormativeJournal[studentId].push({
+                        id: row["ID Catatan"],
+                        date: row["Tanggal"],
+                        topic: row["Topik"],
+                        type: row["Jenis"],
+                        note: row["Catatan"],
+                    });
+                }
+            });
+        }
+
+
         // 10. Parse Aset Gambar (dengan rekombinasi chunk)
         const wsImageAssets = workbook.Sheets["Aset Gambar"];
         if (wsImageAssets) {
@@ -867,6 +913,7 @@ const App = () => {
         setNotes(newNotes);
         setCocurricularData(newCocurricularData);
         setStudentExtracurriculars(newStudentExtracurriculars);
+        setFormativeJournal(newFormativeJournal);
         
         showToast('Data berhasil diimpor dari file!', 'success');
         
@@ -982,6 +1029,7 @@ const App = () => {
         localStorage.setItem('appStudentExtracurriculars', JSON.stringify(appData.studentExtracurriculars));
         localStorage.setItem('appSubjects', JSON.stringify(appData.subjects));
         if (Object.keys(appData.learningObjectives).length > 0) localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
+        localStorage.setItem('appFormativeJournal', JSON.stringify(appData.formativeJournal));
 
         if (isInitialMount.current) { isInitialMount.current = false; return; }
         if (isSignedIn) {
@@ -1017,7 +1065,6 @@ const App = () => {
                             const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                             const newGradeNumber = getGradeNumber(newValue);
                             if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
-                                // Confirmation removed
                                 setLearningObjectives({});
                                 setGrades(initialGrades);
                                 showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
@@ -1037,7 +1084,6 @@ const App = () => {
                     const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                     const newGradeNumber = getGradeNumber(value);
                     if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
-                        // Confirmation removed
                         setLearningObjectives({});
                         setGrades(initialGrades);
                         showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
@@ -1060,6 +1106,7 @@ const App = () => {
             setStudents(prev => [...prev, newStudent]);
             setGrades(prev => [...prev, { studentId: newStudent.id, detailedGrades: {}, finalGrades: {} }]);
             setAttendance(prev => [...prev, { studentId: newStudent.id, sakit: null, izin: null, alpa: null }]);
+            setFormativeJournal(prev => ({ ...prev, [newStudent.id]: [] }));
             showToast('Siswa baru berhasil ditambahkan.', 'success');
         }
     }, [showToast]);
@@ -1071,6 +1118,7 @@ const App = () => {
         setCocurricularData(prev => { const newData = {...prev}; delete newData[studentId]; return newData; });
         setAttendance(prev => prev.filter(a => a.studentId !== studentId));
         setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
+        setFormativeJournal(prev => { const newJournal = {...prev}; delete newJournal[studentId]; return newJournal; });
     }, []);
     const handleUpdateAttendance = useCallback((studentId, type, value) => {
         setAttendance(prev => {
@@ -1175,6 +1223,26 @@ const App = () => {
         showToast('Lingkup Materi baru ditambahkan.', 'success');
     }, [showToast]);
 
+    const handleUpdateFormativeJournal = useCallback((studentId, noteData) => {
+        setFormativeJournal(prev => {
+            const studentNotes = prev[studentId] ? [...prev[studentId]] : [];
+            const existingNoteIndex = studentNotes.findIndex(note => note.id === noteData.id);
+            if (existingNoteIndex > -1) {
+                studentNotes[existingNoteIndex] = noteData;
+            } else {
+                studentNotes.unshift({ ...noteData, id: `note_${Date.now()}` }); // Add to the top
+            }
+            return { ...prev, [studentId]: studentNotes };
+        });
+    }, []);
+    
+    const handleDeleteFormativeNote = useCallback((studentId, noteId) => {
+        setFormativeJournal(prev => {
+            const studentNotes = prev[studentId] ? prev[studentId].filter(note => note.id !== noteId) : [];
+            return { ...prev, [studentId]: studentNotes };
+        });
+    }, []);
+
     
     const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
     const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
@@ -1265,6 +1333,7 @@ const App = () => {
     switch (activePage) {
       case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
       case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
+      case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
       case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
       case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
       case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
