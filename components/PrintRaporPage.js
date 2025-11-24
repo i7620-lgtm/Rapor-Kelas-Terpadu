@@ -355,7 +355,7 @@ const StudentIdentityPage = ({ student, settings }) => {
     const identitasSiswa = [
         { no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
-        { no: '3.', label: 'Tempat, Tanggal Lahir', value: `${student.tempatLahir || ''}, ${formatDate(student.tanggalLahir)}` },
+        { no: '3.', label: 'Tempat, Tanggal Lahir', value: student.ttl || '-' },
         { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
         { no: '5.', label: 'Agama', value: student.agama },
         { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
