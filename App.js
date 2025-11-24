@@ -1333,7 +1333,7 @@ const App = () => {
     switch (activePage) {
       case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
       case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
-      case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
+      case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, subjects, grades, learningObjectives, settings, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
       case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
       case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
       case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
@@ -1349,6 +1349,9 @@ const App = () => {
     }
   };
   
+  const pagesWithOwnScroll = ['DATA_NILAI', 'DATA_KOKURIKULER', 'DATA_EKSTRAKURIKULER', 'DATA_SISWA', 'DATA_ABSENSI', 'CATATAN_WALI_KELAS'];
+  const shouldDisableMainScroll = !isMobile && pagesWithOwnScroll.includes(activePage);
+
   const mainLayoutClass = isMobile
     ? "bg-slate-100 font-sans" // Removed flex properties to use normal flow
     : "flex h-screen bg-slate-100 font-sans";
@@ -1374,7 +1377,7 @@ const App = () => {
             setIsMobileMenuOpen,
             currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
         }),
-        React.createElement('main', { className: `${isMobile ? 'flex-1' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
+        React.createElement('main', { className: `${isMobile ? 'flex-1' : (shouldDisableMainScroll ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto')} p-4 sm:p-6 lg:p-8` }, renderPage())
       ),
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
     );
