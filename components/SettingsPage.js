@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 
-const placeholderSvg = "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
+const placeholderSvg = "data:image/svg+xml,%3Csvg%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
 const TransliterationModal = ({ isOpen, onClose, onApply, initialText }) => {
     const [latinText, setLatinText] = useState('');
@@ -438,7 +438,7 @@ const KopSuratPreview = ({ settings }) => {
     );
 };
 
-const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur }) => (
+const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown }) => (
     React.createElement('div', { className: "col-span-1" },
         React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
             label
@@ -450,6 +450,7 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
             value: value || '',
             onChange: onChange,
             onBlur: onBlur,
+            onKeyDown: onKeyDown,
             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 placeholder:text-slate-400",
             placeholder: placeholder
         })
@@ -525,6 +526,13 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
         setNewSubjectName('');
         setNewSubjectLabel('');
     };
+
+    const handleKeyDownForAdd = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddSubject();
+        }
+    };
     
     return (
         React.createElement('div', { className: "space-y-4" },
@@ -555,6 +563,7 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
                             id: "new-subject-name",
                             value: newSubjectName,
                             onChange: e => setNewSubjectName(e.target.value),
+                            onKeyDown: handleKeyDownForAdd,
                             placeholder: "Contoh: Bahasa Sunda",
                             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
                         })
@@ -566,6 +575,7 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
                             id: "new-subject-label",
                             value: newSubjectLabel,
                             onChange: e => setNewSubjectLabel(e.target.value),
+                            onKeyDown: handleKeyDownForAdd,
                             placeholder: "Contoh: BSunda",
                             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
                         })
@@ -600,6 +610,13 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
         setNewExtraName('');
     };
 
+    const handleKeyDownForAdd = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAdd();
+        }
+    };
+
     return (
         React.createElement('div', { className: "space-y-4" },
              React.createElement('div', { className: "p-4 border rounded-lg bg-slate-50" },
@@ -628,6 +645,7 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
                             id: "new-extra-name",
                             value: newExtraName,
                             onChange: e => setNewExtraName(e.target.value),
+                            onKeyDown: handleKeyDownForAdd,
                             placeholder: "Contoh: Seni Lukis",
                             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         })
@@ -644,6 +662,13 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
 
 const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            onSave();
+        }
+    };
 
     const handleMakeTransparent = useCallback(async (logoKey) => {
         const base64String = settings[logoKey];
@@ -699,19 +724,19 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
 
                             React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4" },
                                 React.createElement('div', { className: "lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" },
-                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Nama Dinas Pendidikan", id: "nama_dinas_pendidikan", value: settings.nama_dinas_pendidikan, onChange: onSettingsChange, onBlur: onSave })),
-                                    React.createElement(FormField, { label: "Nama Sekolah", id: "nama_sekolah", value: settings.nama_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "NPSN", id: "npsn", value: settings.npsn, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Alamat Sekolah", id: "alamat_sekolah", value: settings.alamat_sekolah, onChange: onSettingsChange, onBlur: onSave })),
-                                    React.createElement(FormField, { label: "Desa / Kelurahan", id: "desa_kelurahan", value: settings.desa_kelurahan, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Kecamatan", id: "kecamatan", value: settings.kecamatan, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Kota/Kabupaten", id: "kota_kabupaten", value: settings.kota_kabupaten, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Provinsi", id: "provinsi", value: settings.provinsi, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Kode Pos", id: "kode_pos", value: settings.kode_pos, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Email Sekolah", id: "email_sekolah", type: "email", value: settings.email_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Telepon Sekolah", id: "telepon_sekolah", value: settings.telepon_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Website Sekolah", id: "website_sekolah", value: settings.website_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Faksimile", id: "faksimile", value: settings.faksimile, onChange: onSettingsChange, onBlur: onSave }))
+                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Nama Dinas Pendidikan", id: "nama_dinas_pendidikan", value: settings.nama_dinas_pendidikan, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })),
+                                    React.createElement(FormField, { label: "Nama Sekolah", id: "nama_sekolah", value: settings.nama_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "NPSN", id: "npsn", value: settings.npsn, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Alamat Sekolah", id: "alamat_sekolah", value: settings.alamat_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })),
+                                    React.createElement(FormField, { label: "Desa / Kelurahan", id: "desa_kelurahan", value: settings.desa_kelurahan, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Kecamatan", id: "kecamatan", value: settings.kecamatan, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Kota/Kabupaten", id: "kota_kabupaten", value: settings.kota_kabupaten, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Provinsi", id: "provinsi", value: settings.provinsi, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Kode Pos", id: "kode_pos", value: settings.kode_pos, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Email Sekolah", id: "email_sekolah", type: "email", value: settings.email_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Telepon Sekolah", id: "telepon_sekolah", value: settings.telepon_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Website Sekolah", id: "website_sekolah", value: settings.website_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Faksimile", id: "faksimile", value: settings.faksimile, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }))
                                 ),
                                 React.createElement('div', { className: "lg:col-span-1 space-y-4" },
                                     React.createElement(FileInputField, { label: "Logo Sekolah", id: "logo_sekolah", onChange: onSettingsChange, onSave: onSave, imagePreview: typeof settings.logo_sekolah === 'string' ? settings.logo_sekolah : null, onMakeTransparent: handleMakeTransparent }),
@@ -731,8 +756,8 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                              React.createElement('section', null,
                                 React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Periode Akademik"),
                                  React.createElement('div', { className: "space-y-4" },
-                                    React.createElement(FormField, { label: "Nama Kelas", id: "nama_kelas", placeholder: "e.g. 6a atau 6A atau VIA", value: settings.nama_kelas, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave }),
+                                    React.createElement(FormField, { label: "Nama Kelas", id: "nama_kelas", placeholder: "e.g. 6a atau 6A atau VIA", value: settings.nama_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', null,
                                         React.createElement('label', { htmlFor: 'semester', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Semester'),
                                         React.createElement('select', { 
@@ -741,6 +766,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             value: settings.semester || '', 
                                             onChange: onSettingsChange, 
                                             onBlur: onSave, 
+                                            onKeyDown: handleKeyDown,
                                             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
                                         },
                                             React.createElement('option', { value: '' }, 'Pilih Semester...'),
@@ -748,16 +774,16 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             React.createElement('option', { value: 'Genap' }, 'Genap')
                                         )
                                     ),
-                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave})
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
                                 )
                             ),
                             React.createElement('section', null,
                                 React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Kepala Sekolah dan Guru"),
                                  React.createElement('div', { className: "space-y-4" },
-                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, onChange: onSettingsChange, onBlur: onSave }),
-                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, onChange: onSettingsChange, onBlur: onSave })
+                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
                                 )
                             )
                         ),
