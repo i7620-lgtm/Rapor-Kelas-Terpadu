@@ -1,6 +1,7 @@
 export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'DATA_SISWA', label: 'Data Siswa' },
+  { id: 'JURNAL_FORMATIF', label: 'Jurnal Formatif' },
   { id: 'DATA_NILAI', label: 'Data Nilai' },
   { id: 'DATA_KOKURIKULER', label: 'Data Kokurikuler' },
   { id: 'DATA_EKSTRAKURIKULER', label: 'Data Ekstrakurikuler' },
@@ -65,3 +66,14 @@ export const QUALITATIVE_DESCRIPTORS = {
     MB: 'Mulai Berkembang',
     BB: 'Belum Berkembang',
 };
+
+export const FORMATIVE_ASSESSMENT_TYPES = [
+    'Observasi',
+    'Kuis Singkat',
+    'Presentasi',
+    'Diskusi Kelompok',
+    'Penilaian Diri',
+    'Penilaian Teman',
+    'Projek Mini',
+    'Lainnya'
+];
