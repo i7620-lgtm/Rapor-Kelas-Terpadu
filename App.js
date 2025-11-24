@@ -414,7 +414,7 @@ const App = () => {
         
         // Sheet 5: Daftar Siswa
         const studentsData = students.map(s => ({
-          'ID Siswa (Otomatis)': s.id, 'Nama Lengkap': s.namaLengkap, 'Nama Panggilan': s.namaPanggilan, 'NIS': s.nis, 'NISN': s.nisn, 'Tempat Lahir': s.tempatLahir, 'Tanggal Lahir': s.tanggalLahir, 'Jenis Kelamin': s.jenisKelamin, 'Agama': s.agama, 'Asal TK': s.asalTk, 'Alamat Siswa': s.alamatSiswa, 'Diterima di Kelas': s.diterimaDiKelas, 'Diterima Tanggal': s.diterimaTanggal, 'Nama Ayah': s.namaAyah, 'Nama Ibu': s.namaIbu, 'Pekerjaan Ayah': s.pekerjaanAyah, 'Pekerjaan Ibu': s.pekerjaanIbu, 'Alamat Orang Tua': s.alamatOrangTua, 'Telepon Orang Tua': s.teleponOrangTua, 'Nama Wali': s.namaWali, 'Pekerjaan Wali': s.pekerjaanWali, 'Alamat Wali': s.alamatWali, 'Telepon Wali': s.teleponWali,
+          'ID Siswa (Otomatis)': s.id, 'Nama Lengkap': s.namaLengkap, 'Nama Panggilan': s.namaPanggilan, 'NIS': s.nis, 'NISN': s.nisn, 'Tempat, Tanggal Lahir': s.ttl, 'Jenis Kelamin': s.jenisKelamin, 'Agama': s.agama, 'Asal TK': s.asalTk, 'Alamat Siswa': s.alamatSiswa, 'Diterima di Kelas': s.diterimaDiKelas, 'Diterima Tanggal': s.diterimaTanggal, 'Nama Ayah': s.namaAyah, 'Nama Ibu': s.namaIbu, 'Pekerjaan Ayah': s.pekerjaanAyah, 'Pekerjaan Ibu': s.pekerjaanIbu, 'Alamat Orang Tua': s.alamatOrangTua, 'Telepon Orang Tua': s.teleponOrangTua, 'Nama Wali': s.namaWali, 'Pekerjaan Wali': s.pekerjaanWali, 'Alamat Wali': s.alamatWali, 'Telepon Wali': s.teleponWali,
         }));
         const wsStudents = XLSX.utils.json_to_sheet(studentsData);
         XLSX.utils.book_append_sheet(wb, wsStudents, "Daftar Siswa");
@@ -653,7 +653,7 @@ const App = () => {
                 return {
                     id: s['ID Siswa (Otomatis)'] || `imported_student_${Date.now()}_${importCounter}`,
                     namaLengkap: s['Nama Lengkap'], namaPanggilan: s['Nama Panggilan'], nis: s['NIS'], nisn: s['NISN'], 
-                    tempatLahir: s['Tempat Lahir'], tanggalLahir: s['Tanggal Lahir'], jenisKelamin: s['Jenis Kelamin'], 
+                    ttl: s['Tempat, Tanggal Lahir'], jenisKelamin: s['Jenis Kelamin'], 
                     agama: s['Agama'], asalTk: s['Asal TK'], alamatSiswa: s['Alamat Siswa'], 
                     diterimaDiKelas: s['Diterima di Kelas'], diterimaTanggal: s['Diterima Tanggal'], 
                     namaAyah: s['Nama Ayah'], namaIbu: s['Nama Ibu'], pekerjaanAyah: s['Pekerjaan Ayah'], 
@@ -1263,7 +1263,7 @@ const App = () => {
             setIsMobileMenuOpen,
             currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
         }),
-        React.createElement('main', { className: `${isMobile ? 'flex-1' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
+        React.createElement('main', { className: `${isMobile ? 'flex-1 pt-16' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
       ),
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
     );
