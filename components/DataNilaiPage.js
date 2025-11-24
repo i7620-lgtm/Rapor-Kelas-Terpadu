@@ -206,7 +206,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
 };
 
 
-const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdateObjectives, onBulkUpdateGrades, gradeNumber, settings, onUpdateGradeCalculation }) => {
+const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdateObjectives, onBulkUpdateGrades, gradeNumber, settings, onUpdateGradeCalculation, showToast }) => {
     if (!isOpen) return null;
 
     const { type, item } = modalData;
@@ -220,16 +220,22 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
     const [localObjectives, setLocalObjectives] = useState([]);
     const [isTpSelectionModalOpen, setIsTpSelectionModalOpen] = useState(false);
     
-    // Local state for grades and input types to enable "Batal" functionality
     const [localGrades, setLocalGrades] = useState({});
     const [activeInput, setActiveInput] = useState({});
+
+    const relevantStudents = useMemo(() => {
+        if (subject.fullName.startsWith('Pendidikan Agama')) {
+            const religion = subject.fullName.match(/\(([^)]+)\)/)?.[1].toLowerCase();
+            if (religion) return students.filter(s => s.agama?.toLowerCase() === religion);
+        }
+        return students;
+    }, [students, subject]);
 
     useEffect(() => {
         if (isOpen) {
             const initialLocalGrades = {};
             students.forEach(student => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
-                // Deep copy to ensure immutability when setting initial state
                 initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
             });
             setLocalGrades(initialLocalGrades);
@@ -274,23 +280,17 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         const key = `${studentId}_${isSLM ? `slm_${item.id}_tp_${tpIndex}` : type}`;
         
         setLocalGrades(prevGrades => {
-            // Create a shallow copy of the grades object
             const newGrades = { ...prevGrades };
-            // Create a deep copy of the specific student's grade to modify
-            // This ensures we don't mutate the previous state or affect other students
             const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
     
             let finalValue = value;
             
             if (inputType === 'qnt') {
-                // Handle quantitative input (numbers)
                 finalValue = value === '' ? null : parseInt(value, 10);
                 if (value !== '' && (isNaN(finalValue) || finalValue < 0 || finalValue > 100)) {
-                    return prevGrades; // Invalid input, ignore
+                    return prevGrades;
                 }
             } else if (inputType === 'ql') {
-                 // Handle qualitative input (dropdown) - value is string code like 'SB'
-                 // No conversion needed here, store the code directly. Conversion happens at display/calc time.
                  finalValue = value === '' ? null : value;
             }
     
@@ -300,7 +300,6 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                     slm = { id: item.id, name: slmName, scores: Array(localObjectives.length).fill(null) };
                     studentGrade.slm.push(slm);
                 }
-                // Ensure scores array is long enough
                 while (slm.scores.length < localObjectives.length) {
                     slm.scores.push(null);
                 }
@@ -309,17 +308,13 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 studentGrade[type] = finalValue;
             }
     
-            // Assign the modified student grade back to the new grades object
             newGrades[studentId] = studentGrade;
             return newGrades;
         });
         
-        // Update active input state to track which input type is currently being used
-        // This is mainly for UI/UX to highlight the active field
         if (value !== '' && value !== null) {
              setActiveInput(prev => ({ ...prev, [key]: inputType }));
         } else {
-             // If cleared, maybe reset? Optional. Keeping it simple.
              setActiveInput(prev => {
                  const newState = { ...prev };
                  delete newState[key];
@@ -328,6 +323,74 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         }
 
     }, [isSLM, item, slmName, localObjectives.length]);
+    
+    const handlePaste = useCallback((e, startStudentId, tpIndex = null) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text');
+        const pastedRows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+
+        if (pastedRows.length === 0) return;
+
+        const studentIds = relevantStudents.map(s => s.id);
+        const startStudentIndex = studentIds.indexOf(startStudentId);
+
+        if (startStudentIndex === -1) return;
+
+        setLocalGrades(prevLocalGrades => {
+            const newLocalGrades = JSON.parse(JSON.stringify(prevLocalGrades));
+            let updatedCount = 0;
+
+            pastedRows.forEach((pastedValue, rowIndex) => {
+                const currentStudentIndex = startStudentIndex + rowIndex;
+                if (currentStudentIndex >= studentIds.length) return;
+
+                const studentIdToUpdate = studentIds[currentStudentIndex];
+                const studentGradeToUpdate = newLocalGrades[studentIdToUpdate];
+                if (!studentGradeToUpdate) return;
+
+                const valuesInRow = pastedValue.split('\t');
+                const gradeValueStr = valuesInRow[valuesInRow.length - 1].trim();
+                
+                let finalValue = null;
+                const qualitativeCode = gradeValueStr.toUpperCase();
+                if (QUALITATIVE_DESCRIPTORS.hasOwnProperty(qualitativeCode)) {
+                    finalValue = qualitativeCode;
+                } else {
+                    const numericValue = parseInt(gradeValueStr, 10);
+                    if (!isNaN(numericValue) && numericValue >= 0 && numericValue <= 100) {
+                        finalValue = numericValue;
+                    }
+                }
+
+                if (finalValue !== null) {
+                    updatedCount++;
+                    if (isSLM) {
+                        let slm = studentGradeToUpdate.slm.find(s => s.id === item.id);
+                        if (!slm) {
+                            slm = { id: item.id, name: slmName, scores: Array(localObjectives.length).fill(null) };
+                            studentGradeToUpdate.slm.push(slm);
+                        }
+                        while (slm.scores.length < localObjectives.length) {
+                           slm.scores.push(null);
+                        }
+                        if (tpIndex !== null && tpIndex < slm.scores.length) {
+                            slm.scores[tpIndex] = finalValue;
+                        }
+                    } else {
+                        studentGradeToUpdate[type] = finalValue;
+                    }
+                }
+            });
+
+            if (updatedCount > 0) {
+                showToast(`${updatedCount} nilai berhasil ditempel.`, 'success');
+            } else {
+                showToast('Tidak ada nilai valid yang ditemukan untuk ditempel.', 'error');
+            }
+
+            return newLocalGrades;
+        });
+    }, [relevantStudents, setLocalGrades, isSLM, item, slmName, localObjectives, type, showToast]);
 
 
     const handleWeightChange = (weightType, value, slmId = null, tpIndex = null) => {
@@ -381,14 +444,6 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         const newTps = selectedTexts.map(text => ({ id: `selected_${Date.now()}_${Math.random()}`, text }));
         setLocalObjectives(prev => [...prev, ...newTps]);
     };
-
-    const relevantStudents = useMemo(() => {
-        if (subject.fullName.startsWith('Pendidikan Agama')) {
-            const religion = subject.fullName.match(/\(([^)]+)\)/)?.[1].toLowerCase();
-            if (religion) return students.filter(s => s.agama?.toLowerCase() === religion);
-        }
-        return students;
-    }, [students, subject]);
     
     const AutoSizingTextarea = ({ value, onChange, ...props }) => {
         const textareaRef = useRef(null);
@@ -513,7 +568,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 
                                                     return React.createElement('td', { key: i, className: "px-2 py-1 text-center" }, 
                                                         React.createElement('div', {className: 'flex gap-1'},
-                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), readOnly: active === 'ql', className: `w-16 p-2 text-center border rounded-md ${active === 'qnt' ? 'border-green-500 ring-1 ring-green-500' : (active === 'ql' ? 'border-red-500 bg-red-50' : 'border-slate-300')}` }),
+                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-16 p-2 text-center border rounded-md ${active === 'qnt' ? 'border-green-500 ring-1 ring-green-500' : (active === 'ql' ? 'border-red-500 bg-red-50' : 'border-slate-300')}` }),
                                                             React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `p-2 text-xs border rounded-md ${active === 'ql' ? 'border-green-500 ring-1 ring-green-500' : (active === 'qnt' ? 'border-red-500 bg-red-50' : 'border-slate-300')}`},
                                                                 React.createElement('option', {value: ''}, '...'),
                                                                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', {key: code, value: code}, code))
@@ -522,7 +577,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                                     )
                                                 }) :
                                                 React.createElement('td', { className: "px-2 py-1 text-center" }, 
-                                                    React.createElement('input', { type: "number", min:0, max:100, value: studentGrade[type] ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), className: "w-20 p-2 text-center border rounded-md" })
+                                                    React.createElement('input', { type: "number", min:0, max:100, value: studentGrade[type] ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: "w-20 p-2 text-center border rounded-md" })
                                                 ),
                                              isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100" }, average ?? '-')
                                         )
@@ -647,7 +702,7 @@ const SubjectDetailView = (props) => {
     return (
         React.createElement(React.Fragment, null,
             React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation }),
-            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: props.learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation }),
+            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: props.learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation, showToast: props.showToast }),
             
             React.createElement('div', { className: "space-y-6" },
                 React.createElement('div', { className: "flex justify-end" },
@@ -848,7 +903,11 @@ const DataNilaiPage = ({ initialTab, onBulkUpdateGrades, onBulkAddSlm, ...props 
         React.createElement('div', { className: "space-y-6" },
             React.createElement('div', null,
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Nilai"),
-                React.createElement('p', { className: "mt-1 text-slate-600" }, "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.")
+                React.createElement('p', { className: "mt-1 text-slate-600" }, 
+                    "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.",
+                    React.createElement('br', null),
+                    React.createElement('span', { className: "text-sm text-indigo-600" }, "💡 Tips: Anda dapat menyalin satu kolom nilai dari Excel/Word dan menempelkannya (paste) ke kolom nilai di bawah.")
+                )
             ),
             
             students.length === 0 ? (
