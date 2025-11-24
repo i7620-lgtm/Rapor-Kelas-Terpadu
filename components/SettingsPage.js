@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
+import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
+
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
 
@@ -438,7 +440,7 @@ const KopSuratPreview = ({ settings }) => {
     );
 };
 
-const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown }) => (
+const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, ...props }) => (
     React.createElement('div', { className: "col-span-1" },
         React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
             label
@@ -452,7 +454,8 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
             onBlur: onBlur,
             onKeyDown: onKeyDown,
             className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 placeholder:text-slate-400",
-            placeholder: placeholder
+            placeholder: placeholder,
+            ...props
         })
     )
 );
@@ -705,6 +708,48 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
         }
     }, [settings, onSettingsChange, showToast]);
 
+    const QualitativeGradingTable = () => {
+        const { predikats, qualitativeGradingMap } = settings;
+        if (!predikats || !qualitativeGradingMap) return null;
+
+        const valA = parseInt(predikats.a, 10);
+        const valB = parseInt(predikats.b, 10);
+        const valC = parseInt(predikats.c, 10);
+        const valD = parseInt(predikats.d, 10);
+
+        const data = [
+            { code: 'SB', descriptor: QUALITATIVE_DESCRIPTORS.SB, range: `${valA} - 100`, value: qualitativeGradingMap.SB },
+            { code: 'BSH', descriptor: QUALITATIVE_DESCRIPTORS.BSH, range: `${valB} - ${valA - 1}`, value: qualitativeGradingMap.BSH },
+            { code: 'MB', descriptor: QUALITATIVE_DESCRIPTORS.MB, range: `${valC} - ${valB - 1}`, value: qualitativeGradingMap.MB },
+            { code: 'BB', descriptor: QUALITATIVE_DESCRIPTORS.BB, range: `${valD} - ${valC - 1}`, value: qualitativeGradingMap.BB },
+        ];
+
+        return (
+             React.createElement('div', { className: "mt-4" },
+                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Penilaian Kualitatif Otomatis (Hanya Baca)"),
+                React.createElement('p', { className: "text-xs text-slate-500 mb-3" }, "Nilai representatif ini dihitung otomatis dari nilai KKM dan rentang di atas."),
+                React.createElement('table', { className: "w-full text-sm border-collapse" },
+                    React.createElement('thead', null,
+                        React.createElement('tr', { className: "bg-slate-100" },
+                            React.createElement('th', { className: "border p-2 text-left whitespace-nowrap" }, "Deskriptor"),
+                            React.createElement('th', { className: "border p-2 text-center whitespace-nowrap" }, "Rentang Nilai"),
+                            React.createElement('th', { className: "border p-2 text-center whitespace-nowrap" }, "Nilai Representatif")
+                        )
+                    ),
+                    React.createElement('tbody', null,
+                        data.map(item => (
+                            React.createElement('tr', { key: item.code },
+                                React.createElement('td', { className: "border p-2 whitespace-nowrap" }, `${item.code} (${item.descriptor})`),
+                                React.createElement('td', { className: "border p-2 text-center whitespace-nowrap" }, item.range),
+                                React.createElement('td', { className: "border p-2 text-center font-bold text-indigo-700 whitespace-nowrap" }, item.value)
+                            )
+                        ))
+                    )
+                )
+            )
+        );
+    };
+
     return (
         React.createElement(React.Fragment, null,
             React.createElement(KopSuratEditorModal, { 
@@ -804,6 +849,17 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                         React.createElement('section', null,
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Ekstrakurikuler"),
                             React.createElement(PengaturanEkstra, { extracurriculars: extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast })
+                        ),
+                        
+                        React.createElement('section', null,
+                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Rentang Nilai & Penilaian Kualitatif"),
+                            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-4 gap-4" },
+                                React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", value: settings.predikats.d, readOnly: true, className: "bg-slate-100" })
+                            ),
+                            React.createElement(QualitativeGradingTable, null)
                         )
                     )
                 )
