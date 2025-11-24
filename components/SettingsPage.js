@@ -496,7 +496,7 @@ const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTrans
     );
 };
 
-const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
+const PengaturanMapel = ({ subjects, onUpdateSubjects, showToast }) => {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [newSubjectLabel, setNewSubjectLabel] = useState('');
 
@@ -506,12 +506,12 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
 
     const handleAddSubject = () => {
         if (!newSubjectName.trim() || !newSubjectLabel.trim()) {
-            alert("Nama mata pelajaran dan singkatan tidak boleh kosong.");
+            showToast("Nama mata pelajaran dan singkatan tidak boleh kosong.", 'error');
             return;
         }
         const newId = newSubjectLabel.trim().toUpperCase().replace(/\s+/g, '');
         if (subjects.some(s => s.id === newId)) {
-            alert("Singkatan mata pelajaran sudah ada. Harap gunakan singkatan yang unik.");
+            showToast("Singkatan mata pelajaran sudah ada. Harap gunakan singkatan yang unik.", 'error');
             return;
         }
 
@@ -525,12 +525,14 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
         onUpdateSubjects([...subjects, newSubject]);
         setNewSubjectName('');
         setNewSubjectLabel('');
+        showToast('Mata pelajaran baru berhasil ditambahkan.', 'success');
     };
 
     const handleKeyDownForAdd = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleAddSubject();
+            e.target.blur();
         }
     };
     
@@ -590,7 +592,7 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects }) => {
     );
 }
 
-const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
+const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [newExtraName, setNewExtraName] = useState('');
 
     const handleToggle = (id) => {
@@ -599,21 +601,26 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars }) => {
     };
 
     const handleAdd = () => {
-        if (!newExtraName.trim()) return;
+        if (!newExtraName.trim()) {
+            showToast("Nama ekstrakurikuler tidak boleh kosong.", 'error');
+            return;
+        }
         const newId = newExtraName.trim().toUpperCase().replace(/\s+/g, '_');
         if (extracurriculars.some(ex => ex.id === newId)) {
-            alert("Ekstrakurikuler dengan ID ini sudah ada.");
+            showToast("Ekstrakurikuler dengan ID ini sudah ada.", 'error');
             return;
         }
         const newExtra = { id: newId, name: newExtraName.trim(), active: true };
         onUpdateExtracurriculars([...extracurriculars, newExtra]);
         setNewExtraName('');
+        showToast('Ekstrakurikuler baru berhasil ditambahkan.', 'success');
     };
 
     const handleKeyDownForAdd = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             handleAdd();
+            e.target.blur();
         }
     };
 
@@ -666,7 +673,8 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            onSave();
+            e.target.blur();
+            showToast('Perubahan disimpan.', 'success');
         }
     };
 
@@ -790,12 +798,12 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                         
                         React.createElement('section', { className: "pt-6 border-t" },
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Mata Pelajaran"),
-                            React.createElement(PengaturanMapel, { subjects: subjects, onUpdateSubjects: onUpdateSubjects })
+                            React.createElement(PengaturanMapel, { subjects: subjects, onUpdateSubjects: onUpdateSubjects, showToast: showToast })
                         ),
 
                         React.createElement('section', null,
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Ekstrakurikuler"),
-                            React.createElement(PengaturanEkstra, { extracurriculars: extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars })
+                            React.createElement(PengaturanEkstra, { extracurriculars: extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast })
                         )
                     )
                 )
