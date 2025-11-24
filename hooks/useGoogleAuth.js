@@ -1,12 +1,12 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const RKT_FOLDER_NAME = 'RKT_App_Data'; // A specific folder for all RKT files
 
 /**
- * A custom React hook to manage Google Authentication and Google Drive file operations
- * using the modern Google Identity Services (GIS) and the Fetch API. This avoids
- * the legacy GAPI client and solves `idpiframe_initialization_failed` errors.
+ * A custom React hook to manage Google Authentication and Google Drive file operations.
+ * Updated to use Server-Side verification for email filtering.
  *
  * @param {string | null} clientId - The Google Client ID for your application.
  * @returns {object} An object containing auth state and functions to interact with Google services.
@@ -19,29 +19,51 @@ const useGoogleAuth = (clientId) => {
   const tokenClient = useRef(null);
 
   /**
-   * Fetches user profile information from Google's userinfo endpoint
-   * after a successful token acquisition.
+   * Signs the user out by revoking the current access token.
    */
-  const getUserInfo = useCallback(async (token) => {
-    if (!token) return;
-    try {
-      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user info with status: ${response.status}`);
+  const signOut = useCallback(() => {
+    if (googleToken) {
+      if (window.google && window.google.accounts) {
+          window.google.accounts.oauth2.revoke(googleToken, () => {
+            console.log('Token revoked.');
+          });
       }
-      const profile = await response.json();
-      setUserProfile({
-        id: profile.sub,
-        email: profile.email,
-        given_name: profile.given_name,
-        name: profile.name,
-        picture: profile.picture,
+      setGoogleToken(null);
+      setUserProfile(null);
+    }
+  }, [googleToken]);
+
+  /**
+   * Verifies the token with our OWN server API (`/api/verify`).
+   * This moves the email whitelist logic to the server side (Environment Variables).
+   */
+  const verifyTokenWithServer = useCallback(async (accessToken) => {
+    try {
+      // Kirim token ke server kita untuk divalidasi & dicek emailnya
+      const response = await fetch('/api/verify', {
+        method: 'POST',
+        body: JSON.stringify({ token: accessToken }),
       });
+
+      if (response.ok) {
+        const profile = await response.json();
+        // Login Sukses & Email Diizinkan
+        setUserProfile({
+            id: profile.sub,
+            email: profile.email,
+            given_name: profile.given_name,
+            name: profile.name,
+            picture: profile.picture,
+        });
+      } else {
+        // Login Gagal (Token invalid atau Email diblokir)
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Akses ditolak oleh server.');
+      }
     } catch (error) {
-      console.error("Error fetching user info:", error);
-      // Clear token if user info fails, forcing re-authentication
+      console.error("Login Verification Failed:", error);
+      alert(`Gagal Masuk: ${error.message}`);
+      // Force logout cleanup
       setGoogleToken(null);
       setUserProfile(null);
     }
@@ -62,7 +84,8 @@ const useGoogleAuth = (clientId) => {
       callback: (tokenResponse) => {
         if (tokenResponse && tokenResponse.access_token) {
           setGoogleToken(tokenResponse.access_token);
-          getUserInfo(tokenResponse.access_token);
+          // Change: Don't fetch directly from Google here. Verify with our server first.
+          verifyTokenWithServer(tokenResponse.access_token);
         } else {
           console.error('Invalid token response:', tokenResponse);
         }
@@ -70,7 +93,7 @@ const useGoogleAuth = (clientId) => {
     });
     tokenClient.current = client;
     console.log('Google OAuth2 Token Client initialized.');
-  }, [clientId, getUserInfo]);
+  }, [clientId, verifyTokenWithServer]);
 
   /**
    * Initiates the sign-in flow by requesting an access token.
@@ -88,19 +111,6 @@ const useGoogleAuth = (clientId) => {
       alert('Layanan otentikasi Google sedang dimuat. Silakan coba beberapa saat lagi.');
     }
   }, [clientId]);
-
-  /**
-   * Signs the user out by revoking the current access token.
-   */
-  const signOut = useCallback(() => {
-    if (googleToken) {
-      window.google.accounts.oauth2.revoke(googleToken, () => {
-        console.log('Token revoked.');
-      });
-      setGoogleToken(null);
-      setUserProfile(null);
-    }
-  }, [googleToken]);
 
   /**
    * A wrapper for `fetch` that automatically adds the Authorization header
