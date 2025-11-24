@@ -275,7 +275,7 @@ const Dashboard = ({
         }
 
         // 2. Data Siswa
-        const studentDataFieldsToCheck = ['namaLengkap', 'namaPanggilan', 'nis', 'nisn', 'tempatLahir', 'tanggalLahir', 'jenisKelamin', 'agama', 'asalTk', 'alamatSiswa', 'diterimaDiKelas', 'diterimaTanggal', 'namaAyah', 'namaIbu', 'pekerjaanAyah', 'pekerjaanIbu', 'alamatOrangTua', 'teleponOrangTua'];
+        const studentDataFieldsToCheck = ['namaLengkap', 'namaPanggilan', 'nis', 'nisn', 'ttl', 'jenisKelamin', 'agama', 'asalTk', 'alamatSiswa', 'diterimaDiKelas', 'diterimaTanggal', 'namaAyah', 'namaIbu', 'pekerjaanAyah', 'pekerjaanIbu', 'alamatOrangTua', 'teleponOrangTua'];
         const totalStudentDataFields = totalStudents * studentDataFieldsToCheck.length;
         let filledStudentDataFields = currentStudents.reduce((acc, student) => acc + studentDataFieldsToCheck.filter(field => student[field] && String(student[field]).trim() !== '').length, 0);
         const studentDataPercentage = totalStudentDataFields > 0 ? Math.round((filledStudentDataFields / totalStudentDataFields) * 100) : 100;
