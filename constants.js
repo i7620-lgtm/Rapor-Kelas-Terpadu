@@ -58,3 +58,10 @@ export const COCURRICULAR_RATINGS = {
     BSH: 'Berkembang Sesuai Harapan',
     SB: 'Sudah Berkembang',
 };
+
+export const QUALITATIVE_DESCRIPTORS = {
+    SB: 'Sangat Baik',
+    BSH: 'Berkembang Sesuai Harapan',
+    MB: 'Mulai Berkembang',
+    BB: 'Belum Berkembang',
+};
