@@ -509,9 +509,9 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                         
                         React.createElement('div', { className: 'overflow-x-auto' },
                             React.createElement('table', { className: "w-full text-sm text-left" },
-                                React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0" },
+                                React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-[30]" },
                                     React.createElement('tr', null,
-                                        React.createElement('th', { className: "px-6 py-3" }, "No"),
+                                        React.createElement('th', { className: "px-6 py-3 sticky left-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
                                         React.createElement('th', { className: "px-6 py-3" }, "Nama Siswa"),
                                         isSLM ? 
                                             localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" }, `TP ${i + 1}`)) :
@@ -519,7 +519,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                         isSLM && React.createElement('th', { className: "px-4 py-3 text-center bg-slate-200" }, "Rata-rata")
                                     ),
                                     isWeighting && React.createElement('tr', null,
-                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50" }),
+                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }),
                                         React.createElement('th', { className: "px-6 py-2 bg-indigo-50 text-indigo-900 text-right font-bold" }, "BOBOT (%)"),
                                         isSLM ?
                                             localObjectives.map((_, i) => (
@@ -548,7 +548,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                         }
 
                                         return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
-                                            React.createElement('td', { className: "px-6 py-2" }, index + 1),
+                                            React.createElement('td', { className: "px-6 py-2 sticky left-0 z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, index + 1),
                                             React.createElement('td', { className: "px-6 py-2 font-medium" }, student.namaLengkap),
                                             isSLM ? 
                                                 localObjectives.map((_, i) => {
@@ -860,23 +860,51 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
     }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
 
     return (
-        React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-md border border-slate-200" },
-            React.createElement('div', { className: "flex justify-end items-center mb-4" }, React.createElement('span', { className: "text-sm font-medium text-slate-700 mr-4" }, "Urutkan:"), React.createElement('div', { className: "flex items-center gap-4" }, React.createElement('label', { className: "flex items-center cursor-pointer" }, React.createElement('input', { type: "radio", name: "sort", value: "no", checked: sortBy === 'no', onChange: () => setSortBy('no'), className: "h-4 w-4 text-indigo-600 border-slate-300" }), React.createElement('span', { className: "ml-2 text-sm text-slate-600" }, "No. Absen")), React.createElement('label', { className: "flex items-center cursor-pointer" }, React.createElement('input', { type: "radio", name: "sort", value: "rank", checked: sortBy === 'rank', onChange: () => setSortBy('rank'), className: "h-4 w-4 text-indigo-600 border-slate-300" }), React.createElement('span', { className: "ml-2 text-sm text-slate-600" }, "Peringkat")))),
-            React.createElement('div', { className: "overflow-x-auto" },
-                React.createElement('table', { className: "w-full text-sm text-left text-slate-500" }, React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" }, React.createElement('tr', null, React.createElement('th', { className: "px-3 py-3 w-10 text-center" }, sortBy === 'rank' ? 'Peringkat' : 'No'), React.createElement('th', { className: "px-6 py-3 min-w-[200px]" }, "Nama Siswa"), ...displaySubjects.map(s => React.createElement('th', { key: s.id, className: "px-2 py-3 w-20 text-center", title: s.fullName }, s.label)), React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "Jumlah"), React.createElement('th', { className: "px-2 py-3 w-20 text-center" }, "Rata-rata"))),
-                React.createElement('tbody', null,
-                    processedData.map(data => {
-                        const predicateCValue = parseInt(predikats?.c, 10);
-                        return (
-                        React.createElement('tr', { key: data.id, className: "bg-white border-b hover:bg-slate-50" },
-                            React.createElement('td', { className: "px-3 py-2 text-center font-medium" }, sortBy === 'rank' ? data.rank : data.no), React.createElement('th', { className: `px-6 py-2 font-medium whitespace-nowrap ${data.hasFailingGrade ? 'text-red-600' : 'text-slate-900'}` }, data.namaLengkap),
-                            ...displaySubjects.map(subject => {
-                                const grade = data.grades[subject.id];
-                                const isBelowC = !isNaN(predicateCValue) && typeof grade === 'number' && grade < predicateCValue;
-                                return React.createElement('td', { key: subject.id, className: "px-2 py-1" }, React.createElement('input', { type: "text", value: grade ?? '', readOnly: true, className: `w-16 p-2 text-center bg-slate-100 border-slate-200 rounded-md cursor-not-allowed ${isBelowC ? 'text-red-600 font-bold' : ''}` }));
-                            }),
-                            React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.total), React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800" }, data.average))
-                    )}))
+        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col h-full" },
+            React.createElement('div', { className: "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0" },
+                React.createElement('span', { className: "text-sm font-medium text-slate-700 mr-4" }, "Urutkan:"),
+                React.createElement('div', { className: "flex items-center gap-4" },
+                    React.createElement('label', { className: "flex items-center cursor-pointer" },
+                        React.createElement('input', { type: "radio", name: "sort", value: "no", checked: sortBy === 'no', onChange: () => setSortBy('no'), className: "h-4 w-4 text-indigo-600 border-slate-300" }),
+                        React.createElement('span', { className: "ml-2 text-sm text-slate-600" }, "No. Absen")
+                    ),
+                    React.createElement('label', { className: "flex items-center cursor-pointer" },
+                        React.createElement('input', { type: "radio", name: "sort", value: "rank", checked: sortBy === 'rank', onChange: () => setSortBy('rank'), className: "h-4 w-4 text-indigo-600 border-slate-300" }),
+                        React.createElement('span', { className: "ml-2 text-sm text-slate-600" }, "Peringkat")
+                    )
+                )
+            ),
+            React.createElement('div', { className: "flex-1 overflow-auto" },
+                React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
+                    React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
+                        React.createElement('tr', null,
+                            React.createElement('th', { className: "px-3 py-3 w-10 text-center sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, sortBy === 'rank' ? 'Peringkat' : 'No'),
+                            React.createElement('th', { className: "px-6 py-3 min-w-[200px] border-b border-slate-200" }, "Nama Siswa"),
+                            ...displaySubjects.map(s => React.createElement('th', { key: s.id, className: "px-2 py-3 w-20 text-center border-b border-slate-200", title: s.fullName }, s.label)),
+                            React.createElement('th', { className: "px-2 py-3 w-20 text-center border-b border-slate-200" }, "Jumlah"),
+                            React.createElement('th', { className: "px-2 py-3 w-20 text-center border-b border-slate-200" }, "Rata-rata")
+                        )
+                    ),
+                    React.createElement('tbody', null,
+                        processedData.map(data => {
+                            const predicateCValue = parseInt(predikats?.c, 10);
+                            return (
+                                React.createElement('tr', { key: data.id, className: "bg-white hover:bg-slate-50" },
+                                    React.createElement('td', { className: "px-3 py-2 text-center font-medium sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, sortBy === 'rank' ? data.rank : data.no),
+                                    React.createElement('th', { className: `px-6 py-2 font-medium whitespace-nowrap border-b border-slate-200 ${data.hasFailingGrade ? 'text-red-600' : 'text-slate-900'}` }, data.namaLengkap),
+                                    ...displaySubjects.map(subject => {
+                                        const grade = data.grades[subject.id];
+                                        const isBelowC = !isNaN(predicateCValue) && typeof grade === 'number' && grade < predicateCValue;
+                                        return React.createElement('td', { key: subject.id, className: "px-2 py-1 border-b border-slate-200" },
+                                            React.createElement('input', { type: "text", value: grade ?? '', readOnly: true, className: `w-16 p-2 text-center bg-slate-100 border-slate-200 rounded-md cursor-not-allowed ${isBelowC ? 'text-red-600 font-bold' : ''}` })
+                                        );
+                                    }),
+                                    React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200" }, data.total),
+                                    React.createElement('td', { className: "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200" }, data.average)
+                                )
+                            );
+                        })
+                    )
                 )
             )
         )
@@ -900,8 +928,8 @@ const DataNilaiPage = ({ initialTab, onBulkUpdateGrades, onBulkAddSlm, ...props 
     const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm";
 
     return (
-        React.createElement('div', { className: "space-y-6" },
-            React.createElement('div', null,
+        React.createElement('div', { className: "flex flex-col h-full gap-4" },
+            React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Nilai"),
                 React.createElement('p', { className: "mt-1 text-slate-600" }, 
                     "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.",
@@ -916,16 +944,18 @@ const DataNilaiPage = ({ initialTab, onBulkUpdateGrades, onBulkAddSlm, ...props 
                 )
             ) : (
                 React.createElement(React.Fragment, null,
-                    React.createElement('div', { className: "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4" },
+                    React.createElement('div', { className: "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4 flex-shrink-0" },
                         React.createElement('button', { onClick: () => setActiveTab('keseluruhan'), className: activeTab === 'keseluruhan' ? activeButtonClass : inactiveButtonClass }, "Nilai Keseluruhan"),
                         activeSubjects.map((subject) => (
                             React.createElement('button', { key: subject.id, onClick: () => setActiveTab(subject.id), className: activeTab === subject.id ? activeButtonClass : inactiveButtonClass }, subject.label)
                         ))
                     ),
 
-                    React.createElement('div', null,
+                    React.createElement('div', { className: "flex-1 overflow-hidden" },
                         activeTab === 'keseluruhan' && React.createElement(NilaiKeseluruhanView, props),
-                        selectedSubject && React.createElement(SubjectDetailView, { ...props, subject: selectedSubject, key: selectedSubject.id, onBulkUpdateGrades: onBulkUpdateGrades, onBulkAddSlm: onBulkAddSlm })
+                        selectedSubject && React.createElement('div', { className: "h-full overflow-y-auto pr-2" },
+                            React.createElement(SubjectDetailView, { ...props, subject: selectedSubject, key: selectedSubject.id, onBulkUpdateGrades: onBulkUpdateGrades, onBulkAddSlm: onBulkAddSlm })
+                        )
                     )
                 )
             )
