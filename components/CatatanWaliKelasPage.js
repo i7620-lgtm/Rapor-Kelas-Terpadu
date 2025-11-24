@@ -80,29 +80,29 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
     };
 
     return (
-        React.createElement('div', { className: "space-y-6" },
-            React.createElement('div', null,
+        React.createElement('div', { className: "flex flex-col h-full gap-4" },
+            React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Catatan Wali Kelas"),
                  React.createElement('p', { className: "mt-1 text-slate-600" }, "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester.")
             ),
             
-            React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-md border border-slate-200" },
-                React.createElement('div', { className: "overflow-x-auto" },
-                    React.createElement('table', { className: "w-full text-sm text-left text-slate-500" },
-                        React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" },
+            React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+                React.createElement('div', { className: "flex-1 overflow-auto" },
+                    React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
+                        React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                             React.createElement('tr', null,
-                                React.createElement('th', { scope: "col", className: "px-6 py-3 w-16" }, "No"),
-                                React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Nama Lengkap"),
-                                React.createElement('th', { scope: "col", className: "px-6 py-3" }, "Catatan Wali Kelas")
+                                React.createElement('th', { scope: "col", className: "px-6 py-3 w-16 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, "No"),
+                                React.createElement('th', { scope: "col", className: "px-6 py-3 border-b border-slate-200 min-w-[250px]" }, "Nama Lengkap"),
+                                React.createElement('th', { scope: "col", className: "px-6 py-3 border-b border-slate-200 min-w-[400px]" }, "Catatan Wali Kelas")
                             )
                         ),
                         React.createElement('tbody', null,
                             students.length > 0 ? (
                                 students.map((student, index) => (
-                                    React.createElement('tr', { key: student.id, className: "bg-white border-b hover:bg-slate-50 align-top" },
-                                        React.createElement('td', { className: "px-6 py-4" }, index + 1),
-                                        React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-slate-900 whitespace-nowrap" }, student.namaLengkap),
-                                        React.createElement('td', { className: "px-6 py-4" },
+                                    React.createElement('tr', { key: student.id, className: "bg-white hover:bg-slate-50 align-top" },
+                                        React.createElement('td', { className: "px-6 py-4 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, index + 1),
+                                        React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-slate-900 whitespace-nowrap border-b border-slate-200" }, student.namaLengkap),
+                                        React.createElement('td', { className: "px-6 py-4 border-b border-slate-200" },
                                             React.createElement('textarea', {
                                                 value: notes[student.id] || '',
                                                 onChange: (e) => handleNoteChange(student.id, e.target.value),
@@ -123,7 +123,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                 ))
                             ) : (
                                 React.createElement('tr', null,
-                                    React.createElement('td', { colSpan: 3, className: "text-center py-10 text-slate-500" },
+                                    React.createElement('td', { colSpan: 3, className: "text-center py-10 text-slate-500 border-b border-slate-200" },
                                         "Belum ada data siswa. Silakan tambahkan siswa di halaman 'Data Siswa'."
                                     )
                                 )
