@@ -113,13 +113,24 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
 
     return (
         React.createElement('div', {className: "print-hidden sticky top-0 z-50 bg-white"},
-            React.createElement('header', { className: 'h-16 flex items-center justify-between px-4 border-b' },
+            React.createElement('header', { 
+                className: 'h-16 flex items-center justify-between px-4 border-b cursor-pointer',
+                onClick: () => setIsMobileMenuOpen(prev => !prev)
+            },
                 React.createElement('div', { className: "flex items-center" },
                     React.createElement('h1', { className: "text-lg font-bold text-indigo-600 tracking-tight" }, "RKT"),
                     React.createElement('span', { className: 'mx-2 text-slate-300' }, '/'),
                     React.createElement('h2', { className: 'text-lg font-semibold text-slate-800' }, currentPageName)
                 ),
-                React.createElement('button', { onClick: () => setIsMobileMenuOpen(prev => !prev), className: 'p-2' },
+                React.createElement('button', { 
+                    className: 'p-2',
+                    // We let the parent header click handler manage the toggle to maximize click area, 
+                    // but keep the button for semantic correctness and potential focus management.
+                    onClick: (e) => {
+                        e.stopPropagation(); // Prevent double toggle if header also has click handler
+                        setIsMobileMenuOpen(prev => !prev);
+                    }
+                },
                     React.createElement('svg', { className: 'h-6 w-6 text-slate-700', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' },
                         isMobileMenuOpen 
                         ? React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 2, d: 'M6 18L18 6M6 6l12 12' })
@@ -144,7 +155,8 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
                                 allNavItems.map(item => (
                                     React.createElement('button', {
                                         key: item.id,
-                                        onClick: () => {
+                                        onClick: (e) => {
+                                            e.stopPropagation(); // Prevent header click from firing immediately after
                                             if (NAV_ITEMS.some(nav => nav.id === item.id)) {
                                                 handleNavClick(item.id);
                                             } else {
@@ -162,14 +174,20 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
                                     href: "/terms.html",
                                     target: "_blank",
                                     rel: "noopener noreferrer",
-                                    onClick: () => setIsMobileMenuOpen(false),
+                                    onClick: (e) => {
+                                        e.stopPropagation();
+                                        setIsMobileMenuOpen(false);
+                                    },
                                     className: "px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors duration-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
                                 }, "Ketentuan"),
                                 React.createElement('a', {
                                     href: "/privacy.html",
                                     target: "_blank",
                                     rel: "noopener noreferrer",
-                                    onClick: () => setIsMobileMenuOpen(false),
+                                    onClick: (e) => {
+                                        e.stopPropagation();
+                                        setIsMobileMenuOpen(false);
+                                    },
                                     className: "px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors duration-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
                                 }, "Privasi")
                             ),
