@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
+import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
@@ -104,8 +104,9 @@ const initialSettings = {
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   cocurricular_theme: '',
-  predikats: { a: '90', b: '80', c: '70' },
+  predikats: { a: '90', b: '80', c: '70', d: '0' },
   gradeCalculation: {},
+  qualitativeGradingMap: {},
   kop_layout: [],
   piagam_layout: [],
 };
@@ -139,21 +140,33 @@ const getDynamicRKTFileName = (currentSettings) => {
     return `RKT_${schoolName}_${className}_${academicYear}_${semester}.xlsx`.toUpperCase();
 };
 
-const calculateFinalGrade = (detailed, config, kkm) => {
+const calculateFinalGrade = (detailed, config, settings) => {
     if (!detailed) return null;
     let finalScore = null;
+    const { predikats, qualitativeGradingMap } = settings;
+    const kkm = parseInt(predikats.c, 10);
 
+    const getNumericScore = (score) => {
+        if (typeof score === 'number') return score;
+        if (typeof score === 'string' && qualitativeGradingMap && qualitativeGradingMap[score]) {
+            return qualitativeGradingMap[score];
+        }
+        return null;
+    };
+    
     if (config.method === 'rata-rata') {
         const slmAvgScores = (detailed.slm || []).map(slm => {
-            const validScores = (slm.scores || []).filter(s => typeof s === 'number');
+            const validScores = (slm.scores || []).map(getNumericScore).filter(s => s !== null);
             return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
         }).filter(avg => avg !== null);
         
-        const stsScore = detailed.sts;
-        const sasScore = detailed.sas;
+        const stsScore = getNumericScore(detailed.sts);
+        const sasScore = getNumericScore(detailed.sas);
         const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null;
-        const components = [avgOfSlms, stsScore, sasScore].filter(s => typeof s === 'number');
+        
+        const components = [avgOfSlms, stsScore, sasScore].filter(s => s !== null);
         if (components.length > 0) finalScore = components.reduce((a, b) => a + b, 0) / components.length;
+
     } else if (config.method === 'pembobotan') {
         let totalWeightedScore = 0;
         let totalWeightUsed = 0;
@@ -165,20 +178,24 @@ const calculateFinalGrade = (detailed, config, kkm) => {
         (detailed.slm || []).forEach(slm => {
             const slmTpWeights = tpWeights[slm.id] || [];
             (slm.scores || []).forEach((score, index) => {
+                const numericScore = getNumericScore(score);
                 const weight = slmTpWeights[index] || 0;
-                if (typeof score === 'number' && weight > 0) {
-                    totalWeightedScore += score * (weight / 100);
+                if (numericScore !== null && weight > 0) {
+                    totalWeightedScore += numericScore * (weight / 100);
                     totalWeightUsed += weight;
                 }
             });
         });
-
-        if (typeof detailed.sts === 'number' && stsWeight > 0) {
-            totalWeightedScore += detailed.sts * (stsWeight / 100);
+        
+        const stsScore = getNumericScore(detailed.sts);
+        if (stsScore !== null && stsWeight > 0) {
+            totalWeightedScore += stsScore * (stsWeight / 100);
             totalWeightUsed += stsWeight;
         }
-        if (typeof detailed.sas === 'number' && sasWeight > 0) {
-            totalWeightedScore += detailed.sas * (sasWeight / 100);
+
+        const sasScore = getNumericScore(detailed.sas);
+        if (sasScore !== null && sasWeight > 0) {
+            totalWeightedScore += sasScore * (sasWeight / 100);
             totalWeightUsed += sasWeight;
         }
         
@@ -186,12 +203,16 @@ const calculateFinalGrade = (detailed, config, kkm) => {
 
     } else if (config.method === 'persentase' && !isNaN(kkm)) {
         const slmAvgScores = (detailed.slm || []).map(slm => {
-            const validScores = (slm.scores || []).filter(s => typeof s === 'number');
+            const validScores = (slm.scores || []).map(getNumericScore).filter(s => s !== null);
             return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
         }).filter(avg => avg !== null);
+        
         const allSummatives = [...slmAvgScores];
-        if(typeof detailed.sts === 'number') allSummatives.push(detailed.sts);
-        if(typeof detailed.sas === 'number') allSummatives.push(detailed.sas);
+        const stsScore = getNumericScore(detailed.sts);
+        const sasScore = getNumericScore(detailed.sas);
+        if(stsScore !== null) allSummatives.push(stsScore);
+        if(sasScore !== null) allSummatives.push(sasScore);
+        
         if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100;
     }
 
@@ -312,6 +333,27 @@ const App = () => {
       } catch (e) { return {}; }
   });
   
+  useEffect(() => {
+    const { a, b, c, d } = settings.predikats;
+    const valA = parseInt(a, 10);
+    const valB = parseInt(b, 10);
+    const valC = parseInt(c, 10);
+    const valD = parseInt(d, 10);
+
+    if (![valA, valB, valC, valD].some(isNaN)) {
+        const newMap = {
+            SB: Math.round((valA + 100) / 2),
+            BSH: Math.round((valB + (valA - 1)) / 2),
+            MB: Math.round((valC + (valB - 1)) / 2),
+            BB: Math.round((valD + (valC - 1)) / 2),
+        };
+        // Only update state if the map has actually changed to prevent infinite loops.
+        if (JSON.stringify(newMap) !== JSON.stringify(settings.qualitativeGradingMap)) {
+            setSettings(prev => ({...prev, qualitativeGradingMap: newMap}));
+        }
+    }
+  }, [settings.predikats, settings.qualitativeGradingMap]);
+
   const appData = useMemo(() => getAppData(settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives), [
       settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives
   ]);
@@ -382,7 +424,7 @@ const App = () => {
 
         // Sheet 2: Pengaturan
         const settingsData = Object.entries(initialSettings)
-            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout'].includes(key))
+            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout', 'qualitativeGradingMap'].includes(key))
             .map(([key, _]) => [key, settings[key] || '']);
         settingsData.unshift(["Kunci Pengaturan", "Nilai"]);
         
@@ -392,6 +434,8 @@ const App = () => {
         settingsData.push(['A', settings.predikats.a]);
         settingsData.push(['B', settings.predikats.b]);
         settingsData.push(['C', settings.predikats.c]);
+        settingsData.push(['D', settings.predikats.d]);
+
 
         settingsData.push([]);
         settingsData.push(["Pengaturan Cara Pengolahan Nilai Rapor"]);
@@ -624,6 +668,7 @@ const App = () => {
                     if (row[0] === 'A') newSettings.predikats.a = String(row[1]);
                     if (row[0] === 'B') newSettings.predikats.b = String(row[1]);
                     if (row[0] === 'C') newSettings.predikats.c = String(row[1]);
+                    if (row[0] === 'D') newSettings.predikats.d = String(row[1]);
                 } else {
                     if (row[0] === 'ID Mata Pelajaran') continue;
                     const [subjectId, method, weightsString] = row;
@@ -723,15 +768,23 @@ const App = () => {
             }
         });
         newGrades = Array.from(gradesMap.values());
+        
+        // 8. Re-calculate final grades after all data is parsed.
+        const { a, b, c, d } = newSettings.predikats;
+        const tempQualitativeMap = {
+            SB: Math.round((parseInt(a, 10) + 100) / 2),
+            BSH: Math.round((parseInt(b, 10) + (parseInt(a, 10) - 1)) / 2),
+            MB: Math.round((parseInt(c, 10) + (parseInt(b, 10) - 1)) / 2),
+            BB: Math.round((parseInt(d, 10) + (parseInt(c, 10) - 1)) / 2),
+        };
+        const settingsForCalc = { ...newSettings, qualitativeGradingMap: tempQualitativeMap };
 
-        // 8. Re-calculate final grades
-        const kkm = parseInt(newSettings.predikats.c, 10);
         newGrades = newGrades.map(studentGrade => {
             const newFinalGrades = {};
             for (const subjectId in studentGrade.detailedGrades) {
                 const detailed = studentGrade.detailedGrades[subjectId];
                 const config = newSettings.gradeCalculation[subjectId] || { method: 'rata-rata' };
-                const finalScore = calculateFinalGrade(detailed, config, kkm);
+                const finalScore = calculateFinalGrade(detailed, config, settingsForCalc);
                 newFinalGrades[subjectId] = finalScore;
             }
             return { ...studentGrade, finalGrades: newFinalGrades };
@@ -739,7 +792,7 @@ const App = () => {
 
         // 9. Parse other sheets
         const wsAttendance = workbook.Sheets["Absensi"];
-        if (wsAttendance) newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ studentId: a.studentId, sakit: a.Sakit, izin: a.Izin, alpa: a.Alpa }));
+        if (wsAttendance) newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ studentId: a.studentId, Sakit: a.Sakit, Izin: a.Izin, Alpa: a.Alpa }));
         const wsNotes = workbook.Sheets["Catatan Wali Kelas"];
         if (wsNotes) newNotes = XLSX.utils.sheet_to_json(wsNotes).reduce((acc, n) => { acc[n["ID Siswa"]] = n["Catatan Wali Kelas"]; return acc; }, {});
         
@@ -1054,11 +1107,10 @@ const App = () => {
             };
 
             setGrades(prevGrades => {
-                const kkm = parseInt(updatedSettings.predikats.c, 10);
                 return prevGrades.map(studentGrade => {
                     const detailedGrade = studentGrade.detailedGrades[subjectId];
                     if (detailedGrade) {
-                        const newFinalScore = calculateFinalGrade(detailedGrade, newConfig, kkm);
+                        const newFinalScore = calculateFinalGrade(detailedGrade, newConfig, updatedSettings);
                         const newFinalGrades = {
                             ...studentGrade.finalGrades,
                             [subjectId]: newFinalScore,
@@ -1073,59 +1125,57 @@ const App = () => {
         });
     }, []);
 
-    const handleUpdateDetailedGrade = useCallback((studentId, subjectId, { type, value }) => {
+    const handleBulkUpdateGrades = useCallback((updates) => {
         setGrades(prevGrades => {
-            const studentGradeIndex = prevGrades.findIndex(g => g.studentId === studentId);
             const newGrades = [...prevGrades];
-            let studentGrade = studentGradeIndex > -1 ? { ...newGrades[studentGradeIndex] } : { studentId, detailedGrades: {}, finalGrades: {} };
-            
-            studentGrade.detailedGrades = { ...studentGrade.detailedGrades };
-            const newDetailedGradeForSubject = { ...(studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null }), [type]: value };
-            studentGrade.detailedGrades[subjectId] = newDetailedGradeForSubject;
+            const gradesMap = new Map(newGrades.map(g => [g.studentId, g]));
 
-            const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
-            const kkm = parseInt(settings.predikats.c, 10);
-            
-            const finalScore = calculateFinalGrade(newDetailedGradeForSubject, config, kkm);
-
-            studentGrade.finalGrades = { ...studentGrade.finalGrades, [subjectId]: finalScore };
-
-            if (studentGradeIndex > -1) {
-                newGrades[studentGradeIndex] = studentGrade;
-            } else {
-                newGrades.push(studentGrade);
-            }
-            return newGrades;
-        });
-    }, [settings.gradeCalculation, settings.predikats.c]);
-    
-    const handleBulkAddSlm = useCallback((subjectId, slmTemplate) => {
-        setGrades(prevGrades => {
-            const newState = prevGrades.map(g => ({...g})); // Shallow copy students
-    
-            return newState.map(studentGrade => {
-                const newStudentGrade = {...studentGrade};
-                newStudentGrade.detailedGrades = {...newStudentGrade.detailedGrades};
-    
-                const subjectGrades = newStudentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null };
-                
-                // If this SLM already exists for this student, do nothing for this student
-                if (subjectGrades.slm && subjectGrades.slm.some(s => s.id === slmTemplate.id)) {
-                    return newStudentGrade;
+            updates.forEach(update => {
+                const { studentId, subjectId, newDetailedGrade } = update;
+                let studentGrade = gradesMap.get(studentId);
+                if (!studentGrade) {
+                    studentGrade = { studentId, detailedGrades: {}, finalGrades: {} };
+                    newGrades.push(studentGrade);
+                    gradesMap.set(studentId, studentGrade);
                 }
                 
-                const newSubjectGrades = {...subjectGrades};
-                newSubjectGrades.slm = [...(newSubjectGrades.slm || [])];
+                studentGrade.detailedGrades = { ...studentGrade.detailedGrades, [subjectId]: newDetailedGrade };
+                
+                const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
+                const finalScore = calculateFinalGrade(newDetailedGrade, config, settings);
+                studentGrade.finalGrades = { ...studentGrade.finalGrades, [subjectId]: finalScore };
+            });
+            
+            return newGrades;
+        });
+    }, [settings]);
+
+    const handleBulkAddSlm = useCallback((subjectId, slmTemplate) => {
+        setGrades(prevGrades => {
+            return prevGrades.map(studentGrade => {
+                const detailedGradesForSubject = studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null };
+                const slmExists = detailedGradesForSubject.slm.some(s => s.id === slmTemplate.id);
     
-                // Crucially, create a deep copy of the template for EACH student
-                newSubjectGrades.slm.push(JSON.parse(JSON.stringify(slmTemplate)));
-    
-                newStudentGrade.detailedGrades[subjectId] = newSubjectGrades;
-                return newStudentGrade;
+                if (!slmExists) {
+                    const newSlms = [...detailedGradesForSubject.slm, slmTemplate];
+                    const newDetailedGradesForSubject = { ...detailedGradesForSubject, slm: newSlms };
+                    
+                    return {
+                        ...studentGrade,
+                        detailedGrades: {
+                            ...studentGrade.detailedGrades,
+                            [subjectId]: newDetailedGradesForSubject
+                        }
+                    };
+                }
+                
+                return studentGrade;
             });
         });
-    }, []);
+        showToast('Lingkup Materi baru ditambahkan.', 'success');
+    }, [showToast]);
 
+    
     const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
     const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
     const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
@@ -1215,7 +1265,7 @@ const App = () => {
     switch (activePage) {
       case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
       case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
-      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onUpdateDetailedGrade: handleUpdateDetailedGrade, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, predikats: settings.predikats, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
+      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
       case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
       case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
       case 'CATATAN_WALI_KELAS': return React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: handleUpdateNote, grades, subjects, settings, showToast: showToast });
@@ -1231,7 +1281,7 @@ const App = () => {
   };
   
   const mainLayoutClass = isMobile
-    ? "bg-slate-100 font-sans flex flex-col min-h-screen"
+    ? "bg-slate-100 font-sans" // Removed flex properties to use normal flow
     : "flex h-screen bg-slate-100 font-sans";
     
   return React.createElement(React.Fragment, null,
