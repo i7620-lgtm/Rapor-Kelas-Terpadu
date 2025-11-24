@@ -964,13 +964,10 @@ const App = () => {
                             const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                             const newGradeNumber = getGradeNumber(newValue);
                             if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
-                                if (window.confirm('Mengubah jenjang kelas akan mereset data nilai dan TP. Lanjutkan?')) {
-                                    setLearningObjectives({});
-                                    setGrades(initialGrades);
-                                    showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
-                                } else {
-                                    return prev; // Abort state update
-                                }
+                                // Confirmation removed
+                                setLearningObjectives({});
+                                setGrades(initialGrades);
+                                showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
                             }
                         }
                         return { ...prev, [name]: newValue };
@@ -987,15 +984,10 @@ const App = () => {
                     const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                     const newGradeNumber = getGradeNumber(value);
                     if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
-                         if (window.confirm('Mengubah jenjang kelas akan mereset data nilai dan TP. Lanjutkan?')) {
-                            setLearningObjectives({});
-                            setGrades(initialGrades);
-                             showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
-                        } else {
-                            // Revert the input value visually if possible, or just prevent state update
-                            e.target.value = prev.nama_kelas;
-                            return prev;
-                        }
+                        // Confirmation removed
+                        setLearningObjectives({});
+                        setGrades(initialGrades);
+                        showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
                     }
                 }
                 return { ...prev, [name]: value };
@@ -1263,7 +1255,7 @@ const App = () => {
             setIsMobileMenuOpen,
             currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
         }),
-        React.createElement('main', { className: `${isMobile ? 'flex-1 pt-16' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
+        React.createElement('main', { className: `${isMobile ? 'flex-1' : 'flex-1 overflow-y-auto'} p-4 sm:p-6 lg:p-8` }, renderPage())
       ),
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
     );
