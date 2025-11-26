@@ -5,7 +5,6 @@ const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
     F4: { width: '33cm', height: '21.5cm' },
     Letter: { width: '27.94cm', height: '21.59cm' },
-    Legal: { width: '21.59cm', height: '35.56cm' },
 };
 
 const PIAGAM_WIDTH = 1115;
@@ -233,25 +232,56 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                     React.createElement('div', { className: "w-72 bg-white p-4 border-l overflow-y-auto" },
                         React.createElement('h3', { className: "font-semibold mb-2" }, "Alat"),
                         React.createElement('button', { onClick: addElement, className: "w-full text-left p-2 rounded hover:bg-slate-100 mb-4" }, "Tambah Teks"),
-                         selectedElement && selectedElement.type === 'text' ? (
+                         selectedElement ? (
                              React.createElement('div', { className: "space-y-4 pt-4 border-t" },
-                                React.createElement('h3', { className: "font-semibold" }, "Properti Teks"),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Teks"), React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 })),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Lebar (Width)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), React.createElement('option', { value: "system-ui" }, "System UI (Modern)"))),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId, { fontWeight: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
-                                React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId, { textAlign: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan"))),
-                                React.createElement('div', null,
-                                    React.createElement('label', { className: "text-sm" }, "Garis Bawah"),
-                                    React.createElement('select', { value: selectedElement.textDecoration || 'none', onChange: e => updateElement(selectedElementId, { textDecoration: e.target.value }), className: "w-full p-1 border rounded" },
-                                        React.createElement('option', { value: "none" }, "Tidak"),
-                                        React.createElement('option', { value: "underline" }, "Ya")
+                                React.createElement('h3', { className: "font-semibold" }, "Properti Elemen"),
+                                React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
+                                    React.createElement('div', null,
+                                        React.createElement('label', { className: 'text-sm' }, 'Posisi X'),
+                                        React.createElement('input', {
+                                            type: 'number',
+                                            step: GRID_SIZE,
+                                            value: selectedElement.x,
+                                            onChange: e => updateElement(selectedElementId, { x: parseInt(e.target.value) || 0 }),
+                                            className: 'w-full p-1 border rounded'
+                                        })
+                                    ),
+                                    React.createElement('div', null,
+                                        React.createElement('label', { className: 'text-sm' }, 'Posisi Y'),
+                                        React.createElement('input', {
+                                            type: 'number',
+                                            step: GRID_SIZE,
+                                            value: selectedElement.y,
+                                            onChange: e => updateElement(selectedElementId, { y: parseInt(e.target.value) || 0 }),
+                                            className: 'w-full p-1 border rounded'
+                                        })
                                     )
+                                ),
+                                 (selectedElement.type === 'text' || selectedElement.type === 'image' || selectedElement.type === 'rect' || selectedElement.type === 'line') && (
+                                     React.createElement(React.Fragment, null,
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Lebar (Width)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
+                                        selectedElement.hasOwnProperty('height') && React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Tinggi (Height)"), React.createElement('input', { type: "number", value: selectedElement.height, onChange: e => updateElement(selectedElementId, { height: parseInt(e.target.value) }), className: "w-full p-1 border rounded" }))
+                                    )
+                                ),
+                                selectedElement.type === 'text' && (
+                                     React.createElement(React.Fragment, null,
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Teks"), React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), React.createElement('option', { value: "system-ui" }, "System UI (Modern)"))),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId, { fontWeight: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId, { textAlign: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan"))),
+                                        React.createElement('div', null,
+                                            React.createElement('label', { className: "text-sm" }, "Garis Bawah"),
+                                            React.createElement('select', { value: selectedElement.textDecoration || 'none', onChange: e => updateElement(selectedElementId, { textDecoration: e.target.value }), className: "w-full p-1 border rounded" },
+                                                React.createElement('option', { value: "none" }, "Tidak"),
+                                                React.createElement('option', { value: "underline" }, "Ya")
+                                            )
+                                        )
+                                     )
                                 ),
                                 React.createElement('button', { onClick: deleteElement, className: "w-full text-left p-2 rounded text-red-600 hover:bg-red-100 mt-4" }, "Hapus Elemen")
                              )
-                         ) : React.createElement('p', { className: "text-sm text-slate-500 pt-4 border-t" }, "Pilih sebuah elemen teks untuk melihat propertinya.")
+                         ) : React.createElement('p', { className: "text-sm text-slate-500 pt-4 border-t" }, "Pilih sebuah elemen untuk melihat propertinya.")
                     )
                 )
             )
