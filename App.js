@@ -235,7 +235,6 @@ const App = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
   const isInitialMount = useRef(true);
-  const debounceTimeout = useRef(null);
   const [isDirty, setIsDirty] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle');
 
@@ -1035,21 +1034,44 @@ const App = () => {
         if (isSignedIn) {
             setIsDirty(true);
             setSyncStatus('unsaved');
-            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-            debounceTimeout.current = setTimeout(() => autoSaveToDrive(), 5000);
+            // REMOVED: Auto-save debounce interval to save quota.
+            // if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+            // debounceTimeout.current = setTimeout(() => autoSaveToDrive(), 5000);
         }
-    }, [appData, isSignedIn, autoSaveToDrive]);
+    }, [appData, isSignedIn]); // autoSaveToDrive removed from dependency to prevent loop, though unused now.
 
+    // New Effect: Trigger Auto-Save on Page Navigation
+    useEffect(() => {
+        if (isSignedIn && isDirty) {
+            console.log("Navigasi halaman terdeteksi, memulai penyimpanan otomatis...");
+            autoSaveToDrive();
+        }
+    }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
+
+    // Updated Effect: Trigger Auto-Save on App Visibility Change (Switching Apps/Tabs)
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden' && isDirty && isSignedIn) {
-                if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+                console.log("Aplikasi disembunyikan, menyimpan perubahan...");
                 autoSaveToDrive();
             }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isDirty, isSignedIn, autoSaveToDrive]);
+
+    // New Effect: Warn user before closing tab if unsaved data exists
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty && isSignedIn) {
+                e.preventDefault();
+                // Standard browser message will appear
+                e.returnValue = ''; 
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty, isSignedIn]);
 
     const handleSettingsChange = useCallback((e) => {
         const { name, value, type, files } = e.target;
