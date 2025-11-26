@@ -514,7 +514,13 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                         React.createElement('th', { className: "px-6 py-3 sticky left-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
                                         React.createElement('th', { className: "px-6 py-3" }, "Nama Siswa"),
                                         isSLM ? 
-                                            localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" }, `TP ${i + 1}`)) :
+                                            localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" },
+                                                React.createElement('div', { className: "font-bold" }, `TP ${i + 1}`),
+                                                React.createElement('div', { className: "flex justify-center gap-1 mt-1 text-[9px] text-slate-500 font-normal uppercase" },
+                                                    React.createElement('span', { className: "w-16 text-center border-b border-slate-300 pb-0.5" }, "Angka"),
+                                                    React.createElement('span', { className: "w-16 text-center border-b border-slate-300 pb-0.5" }, "Huruf")
+                                                )
+                                            )) :
                                             React.createElement('th', { className: "px-2 py-3 text-center" }, `Nilai ${type.toUpperCase()}`),
                                         isSLM && React.createElement('th', { className: "px-4 py-3 text-center bg-slate-200" }, "Rata-rata")
                                     ),
