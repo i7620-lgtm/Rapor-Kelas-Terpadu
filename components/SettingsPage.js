@@ -127,42 +127,6 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
         }
     }, [isOpen, settings]);
     
-    useEffect(() => {
-        const handleMouseMove = (e) => {
-            if (!dragInfo.current || !svgRef.current) return;
-            e.preventDefault();
-
-            const svg = svgRef.current;
-            const pt = svg.createSVGPoint();
-            pt.x = e.clientX;
-            pt.y = e.clientY;
-
-            const transformedPt = pt.matrixTransform(dragInfo.current.ctm);
-            let newX = transformedPt.x - dragInfo.current.offset.x;
-            let newY = transformedPt.y - dragInfo.current.offset.y;
-            
-            newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-            newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
-
-            updateElement(dragInfo.current.elementId, { x: newX, y: newY });
-        };
-
-        const handleMouseUp = (e) => {
-            dragInfo.current = null;
-        };
-        
-        if (dragInfo.current) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
-        
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, []);
-
-
     if (!isOpen) return null;
 
     const handleSelectElement = (id, e) => {
@@ -179,22 +143,52 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
     };
     
     const handleMouseDown = (e, el) => {
+        if (e.button !== 0) return; // Hanya drag dengan tombol kiri mouse
         if (!svgRef.current) return;
         const svg = svgRef.current;
         const ctm = svg.getScreenCTM()?.inverse();
         if (!ctm) return;
-        
+
         const pt = svg.createSVGPoint();
         pt.x = e.clientX;
         pt.y = e.clientY;
         const transformedPt = pt.matrixTransform(ctm);
-        
+
         dragInfo.current = {
             elementId: el.id,
             offset: { x: transformedPt.x - el.x, y: transformedPt.y - el.y },
-            ctm: ctm
+            ctm: ctm,
         };
+
+        const handleMouseMove = (moveEvent) => {
+            if (!dragInfo.current) return;
+            moveEvent.preventDefault();
+
+            const ptMove = svg.createSVGPoint();
+            ptMove.x = moveEvent.clientX;
+            ptMove.y = moveEvent.clientY;
+            const transformedPtMove = ptMove.matrixTransform(dragInfo.current.ctm);
+
+            let newX = transformedPtMove.x - dragInfo.current.offset.x;
+            let newY = transformedPtMove.y - dragInfo.current.offset.y;
+
+            // Snap to grid
+            newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+            newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+
+            updateElement(dragInfo.current.elementId, { x: newX, y: newY });
+        };
+
+        const handleMouseUp = () => {
+            dragInfo.current = null;
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
     };
+
 
     const addElement = (type) => {
         const newId = `${type}_${Date.now()}`;
@@ -337,6 +331,28 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                          React.createElement('h3', { className: "font-semibold mb-4" }, "Properti"),
                          selectedElement ? (
                              React.createElement('div', { className: "space-y-4" },
+                                React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
+                                    React.createElement('div', null,
+                                        React.createElement('label', { className: 'text-sm' }, 'Posisi X'),
+                                        React.createElement('input', {
+                                            type: 'number',
+                                            step: GRID_SIZE,
+                                            value: selectedElement.x,
+                                            onChange: e => updateElement(selectedElementId, { x: parseInt(e.target.value) || 0 }),
+                                            className: 'w-full p-1 border rounded'
+                                        })
+                                    ),
+                                    React.createElement('div', null,
+                                        React.createElement('label', { className: 'text-sm' }, 'Posisi Y'),
+                                        React.createElement('input', {
+                                            type: 'number',
+                                            step: GRID_SIZE,
+                                            value: selectedElement.y,
+                                            onChange: e => updateElement(selectedElementId, { y: parseInt(e.target.value) || 0 }),
+                                            className: 'w-full p-1 border rounded'
+                                        })
+                                    )
+                                ),
                                 selectedElement.type === 'text' && (
                                      React.createElement(React.Fragment, null,
                                         React.createElement('div', null,
