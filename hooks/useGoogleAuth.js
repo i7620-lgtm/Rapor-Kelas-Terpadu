@@ -58,11 +58,17 @@ const useGoogleAuth = (clientId) => {
       } else {
         // Login Gagal (Token invalid atau Email diblokir)
         const errorData = await response.json();
+        
+        // Jika error 403, berarti email ditolak oleh filter server
+        if (response.status === 403) {
+            throw new Error(`Akses Ditolak.\nEmail Anda belum terdaftar dalam sistem.\n\nSilakan hubungi Admin untuk pendaftaran:\nNama: I Made Hermawan Surya Putra\nWA: 087863011916`);
+        }
+
         throw new Error(errorData.error || 'Akses ditolak oleh server.');
       }
     } catch (error) {
       console.error("Login Verification Failed:", error);
-      alert(`Gagal Masuk: ${error.message}`);
+      alert(`${error.message}`); // Tampilkan pesan error yang sudah dikustomisasi
       // Force logout cleanup
       setGoogleToken(null);
       setUserProfile(null);
