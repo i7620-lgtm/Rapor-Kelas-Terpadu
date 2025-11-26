@@ -470,6 +470,8 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         }
         return null;
     }, [qualitativeGradingMap]);
+    
+    const headerRowSpan = isSLM ? (isWeighting ? 3 : 2) : (isWeighting ? 2 : 1);
 
     return (
         React.createElement(React.Fragment, null,
@@ -511,32 +513,40 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                             React.createElement('table', { className: "w-full text-sm text-left" },
                                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-[30]" },
                                     React.createElement('tr', null,
-                                        React.createElement('th', { className: "px-6 py-3 sticky left-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                                        React.createElement('th', { className: "px-6 py-3" }, "Nama Siswa"),
-                                        isSLM ? 
-                                            localObjectives.map((_, i) => React.createElement('th', { key: i, className: "px-2 py-3 text-center" },
-                                                React.createElement('div', { className: "font-bold" }, `TP ${i + 1}`),
-                                                React.createElement('div', { className: "flex justify-center gap-1 mt-1 text-[9px] text-slate-500 font-normal uppercase" },
-                                                    React.createElement('span', { className: "w-16 text-center border-b border-slate-300 pb-0.5" }, "Angka"),
-                                                    React.createElement('span', { className: "w-16 text-center border-b border-slate-300 pb-0.5" }, "Huruf")
-                                                )
-                                            )) :
-                                            React.createElement('th', { className: "px-2 py-3 text-center" }, `Nilai ${type.toUpperCase()}`),
-                                        isSLM && React.createElement('th', { className: "px-4 py-3 text-center bg-slate-200" }, "Rata-rata")
-                                    ),
-                                    isWeighting && React.createElement('tr', null,
-                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }),
-                                        React.createElement('th', { className: "px-6 py-2 bg-indigo-50 text-indigo-900 text-right font-bold" }, "BOBOT (%)"),
+                                        React.createElement('th', { rowSpan: headerRowSpan, className: "px-6 py-3 sticky left-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle border-b" }, "No"),
+                                        React.createElement('th', { rowSpan: headerRowSpan, className: "px-6 py-3 align-middle border-b" }, "Nama Siswa"),
                                         isSLM ?
                                             localObjectives.map((_, i) => (
-                                                React.createElement('th', { key: `weight-tp-${i}`, className: "px-2 py-1 bg-indigo-50 align-middle text-center" },
-                                                    React.createElement('input', { type: "number", min:0, max:100, value: weights.TP?.[item.id]?.[i] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, item.id, i), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
-                                                )
+                                                React.createElement('th', { key: `tp-header-${i}`, colSpan: 2, className: "px-2 py-3 text-center border-b border-l" }, `TP ${i + 1}`)
                                             )) :
-                                            React.createElement('th', { className: "px-2 py-1 bg-indigo-50 align-middle text-center" },
-                                                React.createElement('input', { type: "number", min:0, max:100, value: weights[type.toUpperCase()] ?? '', onChange: (e) => handleWeightChange(type.toUpperCase(), e.target.value), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
-                                            ),
-                                        isSLM && React.createElement('th', { className: "px-4 py-1 bg-indigo-50" })
+                                            React.createElement('th', { rowSpan: headerRowSpan, className: "px-2 py-3 text-center align-middle border-b" }, `Nilai ${type.toUpperCase()}`),
+                                        isSLM && React.createElement('th', { rowSpan: headerRowSpan, className: "px-4 py-3 text-center bg-slate-200 align-middle border-b border-l" }, "Rata-rata")
+                                    ),
+                                    isSLM && isWeighting && React.createElement('tr', null,
+                                        localObjectives.map((_, i) => (
+                                            React.createElement('th', { key: `weight-header-${i}`, colSpan: 2, className: "px-2 py-1 bg-indigo-50 align-middle text-center border-b border-l" },
+                                                React.createElement('div', { className: 'flex items-center justify-center gap-1' },
+                                                    React.createElement('span', { className: 'text-indigo-900 text-[10px] font-bold' }, 'BOBOT'),
+                                                    React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[item.id]?.[i] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, item.id, i), className: "w-16 p-1 text-center border-slate-300 rounded-md shadow-sm" })
+                                                )
+                                            )
+                                        ))
+                                    ),
+                                    isSLM && React.createElement('tr', null,
+                                        localObjectives.map((_, i) => (
+                                            React.createElement(React.Fragment, { key: `sub-header-${i}` },
+                                                React.createElement('th', { className: "px-2 py-2 text-center font-normal border-b border-l" }, "Kuantitatif"),
+                                                React.createElement('th', { className: "px-2 py-2 text-center font-normal border-b" }, "Kualitatif")
+                                            )
+                                        ))
+                                    ),
+                                    !isSLM && isWeighting && React.createElement('tr', null,
+                                        React.createElement('th', { className: "px-2 py-1 bg-indigo-50 align-middle text-center border-b" },
+                                            React.createElement('div', { className: 'flex items-center justify-center gap-1' },
+                                                React.createElement('span', { className: 'text-indigo-900 text-[10px] font-bold' }, 'BOBOT'),
+                                                React.createElement('input', { type: "number", min: 0, max: 100, value: weights[type.toUpperCase()] ?? '', onChange: (e) => handleWeightChange(type.toUpperCase(), e.target.value), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
+                                            )
+                                        )
                                     )
                                 ),
                                 React.createElement('tbody', null,
@@ -572,20 +582,22 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                                         ? value
                                                         : '';
 
-                                                    return React.createElement('td', { key: i, className: "px-2 py-1 text-center" }, 
-                                                        React.createElement('div', {className: 'flex gap-1'},
-                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-16 p-2 text-center border rounded-md ${active === 'qnt' ? 'border-green-500 ring-1 ring-green-500' : (active === 'ql' ? 'border-red-500 bg-red-50' : 'border-slate-300')}` }),
-                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `p-2 text-xs border rounded-md ${active === 'ql' ? 'border-green-500 ring-1 ring-green-500' : (active === 'qnt' ? 'border-red-500 bg-red-50' : 'border-slate-300')}`},
+                                                    return React.createElement(React.Fragment, { key: i },
+                                                        React.createElement('td', { className: "px-2 py-1 text-center border-l" },
+                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-full p-2 text-center border rounded-md ${active === 'qnt' ? 'border-green-500 ring-1 ring-green-500' : (active === 'ql' ? 'border-red-500 bg-red-50' : 'border-slate-300')}` })
+                                                        ),
+                                                        React.createElement('td', { className: "px-2 py-1 text-center" },
+                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `w-full p-2 text-xs border rounded-md ${active === 'ql' ? 'border-green-500 ring-1 ring-green-500' : (active === 'qnt' ? 'border-red-500 bg-red-50' : 'border-slate-300')}`},
                                                                 React.createElement('option', {value: ''}, '...'),
                                                                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', {key: code, value: code}, code))
                                                             )
                                                         )
-                                                    )
+                                                    );
                                                 }) :
                                                 React.createElement('td', { className: "px-2 py-1 text-center" }, 
                                                     React.createElement('input', { type: "number", min:0, max:100, value: studentGrade[type] ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: "w-20 p-2 text-center border rounded-md" })
                                                 ),
-                                             isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100" }, average ?? '-')
+                                             isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100 border-l" }, average ?? '-')
                                         )
                                     })
                                 )
