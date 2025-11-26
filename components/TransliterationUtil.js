@@ -79,7 +79,39 @@ const BALINESE_NUMBERS_PUNCTUATION = {
 };
 
 const ADEG_ADEG = '᭄';
+const CARIK_SIKI = '᭞';
 const VOWELS = 'aiueoĕ';
+
+// Peta Bunyi Huruf untuk Singkatan (Ringkesan)
+// Menggunakan Aksara Swara (ᬏ = É, ᬅ = A, dll) untuk bunyi vokal di awal nama huruf
+const LETTER_SOUNDS = {
+    'A': 'ᬅ',           // A (Akara)
+    'B': 'ᬩᬾ',          // Bé (Ba + Taling)
+    'C': 'ᬘᬾ',          // Cé (Ca + Taling)
+    'D': 'ᬤᬾ',          // Dé (Da + Taling)
+    'E': 'ᬏ',           // É (Ekara)
+    'F': 'ᬏᬧ᭄',         // Éf (Ekara + Pa + Adeg-adeg)
+    'G': 'ᬕᬾ',          // Gé (Ga + Taling)
+    'H': 'ᬳ',           // Ha
+    'I': 'ᬇ',           // I (Ikara)
+    'J': 'ᬚᬾ',          // Jé (Ja + Taling)
+    'K': 'ᬓ',           // Ka
+    'L': 'ᬏᬮ᭄',         // Él (Ekara + La + Adeg-adeg)
+    'M': 'ᬏᬫ᭄',         // Ém (Ekara + Ma + Adeg-adeg)
+    'N': 'ᬏᬦ᭄',         // Én (Ekara + Na + Adeg-adeg)
+    'O': 'ᬑ',           // O (Okara)
+    'P': 'ᬧᬾ',          // Pé (Pa + Taling)
+    'Q': 'ᬓᬶ',          // Ki (Ka + Ulu)
+    'R': 'ᬏᬭ᭄',         // Ér (Ekara + Ra + Adeg-adeg)
+    'S': 'ᬏᬲ᭄',         // És (Ekara + Sa + Adeg-adeg)
+    'T': 'ᬢᬾ',          // Té (Ta + Taling)
+    'U': 'ᬉ',           // U (Ukara)
+    'V': 'ᬯᬾ',          // Vé (Wa + Taling)
+    'W': 'ᬯᬾ',          // Wé (Wa + Taling)
+    'X': 'ᬏᬓ᭄ᬲ᭄',       // Éks (Ekara + Ka + Adeg + Sa + Adeg)
+    'Y': 'ᬬᬾ',          // Yé (Ya + Taling)
+    'Z': 'ᬚᬾᬢ᭄',        // Zét (Ja + Taling + Ta + Adeg)
+};
 
 const ALL_CONSONANT_KEYS = Object.keys(CONSONANTS).sort((a, b) => b.length - a.length);
 
@@ -97,6 +129,19 @@ function applyCorrections(text) {
         });
     });
     return correctedText;
+}
+
+/**
+ * Menerjemahkan singkatan (akronim) sesuai aturan Ringkesan Modern.
+ * Aturan: Diapit carik siki, ditulis sesuai bunyi pengucapan, dan dipisah spasi.
+ * @param {string} abbreviation Teks singkatan (misal: SMA, KTP).
+ * @returns {string} Aksara Bali untuk singkatan tersebut.
+ */
+function _transliterateAbbreviation(abbreviation) {
+    const chars = abbreviation.split('');
+    const balineseSounds = chars.map(char => LETTER_SOUNDS[char.toUpperCase()] || char);
+    // Menggunakan spasi di antara bunyi huruf dan diapit carik siki
+    return `${CARIK_SIKI}${balineseSounds.join(' ')}${CARIK_SIKI}`;
 }
 
 /**
@@ -239,6 +284,12 @@ export function transliterate(latin) {
         // Periksa kamus kata tunggal
         if (officialPhrases[lowerPart]) return officialPhrases[lowerPart];
         
+        // Periksa apakah ini singkatan (Huruf Kapital Semua, panjang >= 2, bukan angka)
+        // Contoh: SMA, KTP, DPR. Pengecualian untuk angka romawi jika diperlukan bisa ditambahkan nanti.
+        if (part.match(/^[A-Z]{2,}$/)) {
+            return _transliterateAbbreviation(part);
+        }
+        
         // Tangani spasi dan tanda baca
         if (part.match(/^(\s|[.,:()?!])$/)) return BALINESE_NUMBERS_PUNCTUATION[part] || part;
         
@@ -247,7 +298,7 @@ export function transliterate(latin) {
             return part.split('').map(digit => BALINESE_NUMBERS_PUNCTUATION[digit] || digit).join('');
         }
         
-        // Transliterasi kata
+        // Transliterasi kata biasa
         return _transliterateWord(part);
     }).join('');
 }
