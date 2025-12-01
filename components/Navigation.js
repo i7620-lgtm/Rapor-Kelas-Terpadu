@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
 
@@ -83,15 +84,28 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, ...props })
               activePage === item.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'
             }`
           }, item.label)
-        ))
+        )),
+        
+        // Divider and Legal Links styled as buttons
+        React.createElement('div', { className: "my-2 border-t border-slate-100" }),
+        
+        React.createElement('a', { 
+            href: "/terms.html", 
+            target: "_blank", 
+            rel: "noopener noreferrer", 
+            className: "block px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 text-slate-600 hover:bg-slate-100" 
+        }, "Ketentuan Layanan"),
+        
+        React.createElement('a', { 
+            href: "/privacy.html", 
+            target: "_blank", 
+            rel: "noopener noreferrer", 
+            className: "block px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 text-slate-600 hover:bg-slate-100" 
+        }, "Kebijakan Privasi")
       ),
       React.createElement('div', { className: "px-4 py-4 border-t" },
         React.createElement('div', { className: "space-y-3" },
-          React.createElement(UserAuthSection, {...props}),
-          React.createElement('div', { className: "flex justify-between items-center text-xs text-slate-500 pt-3 border-t mt-3" },
-            React.createElement('a', { href: "/terms.html", target: "_blank", rel: "noopener noreferrer", className: "font-medium hover:text-indigo-600" }, "Ketentuan"),
-            React.createElement('a', { href: "/privacy.html", target: "_blank", rel: "noopener noreferrer", className: "font-medium hover:text-indigo-600" }, "Privasi")
-          )
+          React.createElement(UserAuthSection, {...props})
         )
       )
     )
