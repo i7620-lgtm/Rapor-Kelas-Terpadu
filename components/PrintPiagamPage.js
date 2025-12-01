@@ -76,7 +76,7 @@ const generateInitialPiagamLayout = (settings) => {
         { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 115, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
-        { id: 'rank_text', type: 'text', content: 'PERINGKAT [RANK]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
+        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
 
         { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
@@ -391,12 +391,27 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
 
     const replacePlaceholders = (text) => {
         if (!text) return '';
-        const rankString = rank ? `${toRoman(rank)}` : '';
+        
+        let rankString = '';
+        let rankText = '[RANK TEXT]';
+        
+        if (rank) {
+            if (rank <= 3) {
+                rankString = `PERINGKAT ${toRoman(rank)}`;
+            } else {
+                // Assuming ranks > 3 are Hopeful Ranks (Harapan)
+                // Rank 4 -> Harapan I, Rank 5 -> Harapan II, etc.
+                rankString = `HARAPAN ${toRoman(rank - 3)}`;
+            }
+        }
+
         const classRoman = toRoman(parseInt(settings.nama_kelas, 10)) || settings.nama_kelas;
         
         return text
             .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '').toUpperCase())
-            .replace(/\[RANK\]/gi, rankString)
+            .replace(/\[RANK\]/gi, rank ? toRoman(rank) : '') // Legacy support if user customized layout
+            .replace(/\[RANK TEXT\]/gi, rankString) // New placeholder for full rank text
+            .replace(/PERINGKAT \[RANK\]/gi, rankString) // Replace default combo if present
             .replace(/\[nama kelas\]/gi, classRoman)
             .replace(/\[semester\]/gi, settings.semester || '')
             .replace(/\[tahun pelajaran\]/gi, settings.tahun_ajaran || '')
@@ -451,7 +466,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
 
 const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamLayout, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
-    const [selectedStudentId, setSelectedStudentId] = useState('all');
+    const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top6'
     const [isPrinting, setIsPrinting] = useState(false);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -521,9 +536,21 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const studentsToRender = useMemo(() => {
         const rankedStudents = students.filter(s => studentRankings.has(s.id) && studentRankings.get(s.id).rank !== null)
                                      .sort((a, b) => studentRankings.get(a.id).rank - studentRankings.get(b.id).rank);
-        if (selectedStudentId === 'all') return rankedStudents;
-        return rankedStudents.filter(s => String(s.id) === selectedStudentId);
-    }, [students, selectedStudentId, studentRankings]);
+        
+        if (selectedFilter === 'top3') {
+            return rankedStudents.filter(s => {
+                const rank = studentRankings.get(s.id).rank;
+                return rank >= 1 && rank <= 3;
+            });
+        } else if (selectedFilter === 'top6') {
+             return rankedStudents.filter(s => {
+                const rank = studentRankings.get(s.id).rank;
+                return rank >= 1 && rank <= 6;
+            });
+        }
+        
+        return rankedStudents; // 'all'
+    }, [students, selectedFilter, studentRankings]);
     
     const [isPrintingState, setIsPrintingState] = useState(false);
     useEffect(() => {
@@ -553,15 +580,16 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     ),
                     React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
                         React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'studentSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Pilih Murid'),
-                            React.createElement('select', { id: "studentSelector", value: selectedStudentId, onChange: (e) => setSelectedStudentId(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm" },
+                            React.createElement('label', { htmlFor: 'filterSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Tampilkan Peringkat'),
+                            React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-64 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 React.createElement('option', { value: "all" }, "Cetak Semua Peringkat"),
-                                students.map(s => React.createElement('option', { key: s.id, value: String(s.id) }, s.namaLengkap))
+                                React.createElement('option', { value: "top3" }, "Cetak Peringkat 1-3"),
+                                React.createElement('option', { value: "top6" }, "Cetak Peringkat 1-3 dan Harapan 1-3")
                             )
                         ),
                         React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
-                            React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm" },
+                            React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
                         React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
@@ -580,7 +608,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         rank: studentData?.rank,
                         average: studentData?.average
                     });
-                }) : React.createElement('p', {className: "text-center text-slate-500 py-10"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak.")
+                }) : React.createElement('p', {className: "text-center text-slate-500 py-10"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak sesuai filter yang dipilih.")
             )
         )
     );
