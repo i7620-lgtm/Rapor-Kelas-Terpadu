@@ -872,13 +872,13 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
         });
 
         if (sortBy === 'rank') {
-            return dataWithRanks.sort((a, b) => (a.rank === '-' ? 1 : b.rank === '-' ? -1 : a.rank - b.no || a.no - b.no));
+            return dataWithRanks.sort((a, b) => (a.rank === '-' ? 1 : b.rank === '-' ? -1 : a.rank - b.rank || a.no - b.no));
         }
         return dataWithRanks.sort((a, b) => a.no - b.no);
     }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
 
     return (
-        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col h-full" },
+        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-col h-full flex" },
             React.createElement('div', { className: "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0" },
                 React.createElement('span', { className: "text-sm font-medium text-slate-700 mr-4" }, "Urutkan:"),
                 React.createElement('div', { className: "flex items-center gap-4" },
