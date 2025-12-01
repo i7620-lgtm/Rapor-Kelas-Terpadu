@@ -6,78 +6,45 @@ const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
     return acc;
 }, {});
 
-const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
-    const isEditing = !!studentToEdit;
-    const [formData, setFormData] = useState(emptyStudent);
+const BulkAddRowModal = ({ isOpen, onClose, onAdd }) => {
+    const [count, setCount] = useState(1);
 
     useEffect(() => {
-        if (isOpen) {
-            setFormData(isEditing ? { ...studentToEdit } : emptyStudent);
-        }
-    }, [isOpen, studentToEdit, isEditing]);
-    
-    if (!isOpen) return null;
+        if (isOpen) setCount(1);
+    }, [isOpen]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+    if (!isOpen) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
-        onClose();
-    };
-    
-    const renderField = (fieldDef) => {
-        const commonProps = {
-            id: fieldDef.key,
-            name: fieldDef.key,
-            value: formData[fieldDef.key] || '',
-            onChange: handleChange,
-            required: fieldDef.key === 'namaLengkap',
-            className: "mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        };
-
-        let fieldElement;
-        switch (fieldDef.type) {
-            case 'textarea':
-                fieldElement = React.createElement('textarea', { ...commonProps, rows: 2 });
-                break;
-            case 'select':
-                fieldElement = React.createElement('select', commonProps,
-                    React.createElement('option', { value: '' }, `Pilih ${fieldDef.label}...`),
-                    fieldDef.options.map(option => React.createElement('option', { key: option, value: option }, option))
-                );
-                break;
-            case 'date':
-                fieldElement = React.createElement('input', { ...commonProps, type: 'date' });
-                break;
-            default: // 'text'
-                fieldElement = React.createElement('input', { ...commonProps, type: 'text', placeholder: fieldDef.description });
-                break;
+        const num = parseInt(count, 10);
+        if (num > 0) {
+            onAdd(num);
+            onClose();
         }
-
-        return React.createElement('div', { key: fieldDef.key, className: "col-span-1" },
-            React.createElement('label', { htmlFor: commonProps.id, className: "block text-sm font-medium text-slate-700" }, fieldDef.label),
-            fieldElement
-        );
     };
 
     return (
-        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start p-4", "aria-modal": "true", role: "dialog" },
-            React.createElement('div', { className: "bg-slate-50 rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] flex flex-col" },
-                React.createElement('div', { className: "flex justify-between items-center p-4 border-b" },
-                    React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'),
-                    React.createElement('button', { onClick: onClose, className: "text-slate-500 hover:text-slate-800 text-2xl" }, "\u00d7")
-                ),
-                React.createElement('form', { onSubmit: handleSubmit, className: "overflow-y-auto p-6" },
-                   React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4" },
-                        studentFieldDefinitions.map(fieldDef => renderField(fieldDef))
+        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4" },
+            React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-sm p-6" },
+                React.createElement('h3', { className: "text-lg font-bold text-slate-800 mb-2" }, "Tambah Siswa"),
+                React.createElement('p', { className: "text-sm text-slate-600 mb-4" }, "Masukkan jumlah siswa untuk membuat baris kosong."),
+                React.createElement('form', { onSubmit: handleSubmit },
+                    React.createElement('div', { className: "mb-4" },
+                        React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-1" }, "Jumlah Siswa"),
+                        React.createElement('input', {
+                            type: "number",
+                            min: "1",
+                            max: "100",
+                            value: count,
+                            onChange: (e) => setCount(e.target.value),
+                            className: "w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500",
+                            autoFocus: true
+                        })
                     ),
-                    React.createElement('div', { className: "flex justify-end items-center p-4 border-t mt-6 -mx-6 -mb-6 bg-slate-100 rounded-b-lg" },
-                        React.createElement('button', { type: "button", onClick: onClose, className: "bg-white py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50" }, "Batal"),
-                        React.createElement('button', { type: "submit", className: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" }, isEditing ? "Simpan Perubahan" : "Simpan Siswa")
+                    React.createElement('div', { className: "flex justify-end gap-2" },
+                        React.createElement('button', { type: "button", onClick: onClose, className: "px-4 py-2 text-sm text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50" }, "Batal"),
+                        React.createElement('button', { type: "submit", className: "px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700" }, "Tambahkan")
                     )
                 )
             )
@@ -85,8 +52,7 @@ const StudentModal = ({ isOpen, onClose, onSave, studentToEdit }) => {
     );
 };
 
-
-const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents, onDeleteStudent, showToast }) => {
+const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStudent, showToast }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [localStudents, setLocalStudents] = useState(students);
 
@@ -97,18 +63,36 @@ const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents,
     // Separate columns for fixed (Name) and scrollable (Details)
     const nameField = studentFieldDefinitions.find(f => f.key === 'namaLengkap');
     const otherFields = studentFieldDefinitions.filter(f => f.key !== 'namaLengkap');
+    
     // Create a flat array of fields representing the table column order for paste logic
+    // Note: The render order in table is Name -> Others.
     const allEditableFields = useMemo(() => [nameField, ...otherFields], [nameField, otherFields]);
 
     const handleAddNew = () => {
         setIsModalOpen(true);
     };
+    
+    const handleBulkAdd = (count) => {
+        const newStudents = [];
+        const timestamp = Date.now();
+        for (let i = 0; i < count; i++) {
+            newStudents.push({
+                ...emptyStudent,
+                id: `student_${timestamp}_${i}`
+            });
+        }
+        
+        const updatedStudents = [...localStudents, ...newStudents];
+        setLocalStudents(updatedStudents);
+        onBulkSaveStudents(updatedStudents);
+        showToast(`${count} baris siswa baru berhasil ditambahkan.`, 'success');
+    };
 
     const handleDelete = (studentId) => {
         const student = students.find(s => s.id === studentId);
-        if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa bernama ${student.namaLengkap}? Tindakan ini tidak dapat diurungkan.`)) {
+        if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa ${student.namaLengkap || 'ini'}? Tindakan ini tidak dapat diurungkan.`)) {
             onDeleteStudent(studentId);
-            showToast(`Siswa ${student.namaLengkap} berhasil dihapus.`, 'success');
+            showToast(`Siswa berhasil dihapus.`, 'success');
         }
     };
 
@@ -195,10 +179,10 @@ const DataSiswaPage = ({ students, namaKelas, onSaveStudent, onBulkSaveStudents,
 
     return (
         React.createElement('div', { className: "flex flex-col h-full gap-4" },
-            React.createElement(StudentModal, { 
+            React.createElement(BulkAddRowModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
-                onSave: onSaveStudent
+                onAdd: handleBulkAdd
             }),
             
             // Fixed Header Section
