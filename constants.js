@@ -30,7 +30,7 @@ export const studentFieldDefinitions = [
     { key: 'asalTk', label: 'Asal TK', description: 'Nama TK atau PAUD asal siswa.', type: 'text' },
     { key: 'alamatSiswa', label: 'Alamat Siswa', description: 'Alamat tempat tinggal siswa.', type: 'textarea' },
     { key: 'diterimaDiKelas', label: 'Diterima di Kelas', description: 'Siswa diterima di kelas ini (misal: I, II).', type: 'text' },
-    { key: 'diterimaTanggal', label: 'Diterima Tanggal', description: 'Tanggal siswa diterima di sekolah ini.', type: 'date' },
+    { key: 'diterimaTanggal', label: 'Diterima Tanggal', description: 'Tanggal siswa diterima di sekolah ini.', type: 'text' },
     { key: 'namaAyah', label: 'Nama Ayah', description: 'Nama lengkap ayah siswa.', type: 'text' },
     { key: 'namaIbu', label: 'Nama Ibu', description: 'Nama lengkap ibu siswa.', type: 'text' },
     { key: 'pekerjaanAyah', label: 'Pekerjaan Ayah', description: 'Pekerjaan ayah siswa.', type: 'text' },
