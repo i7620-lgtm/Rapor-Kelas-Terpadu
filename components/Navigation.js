@@ -193,7 +193,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
                                         setIsMobileMenuOpen(false);
                                     },
                                     className: "px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors duration-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                                }, "Ketentuan"),
+                                }, "Ketentuan Layanan"),
                                 React.createElement('a', {
                                     href: "/privacy.html",
                                     target: "_blank",
@@ -203,7 +203,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
                                         setIsMobileMenuOpen(false);
                                     },
                                     className: "px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors duration-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
-                                }, "Privasi")
+                                }, "Kebijakan Privasi")
                             ),
                             React.createElement('div', { className: "mt-6 pt-6 border-t border-slate-200" },
                                React.createElement(UserAuthSection, { ...props })
