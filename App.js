@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
@@ -1102,6 +1101,18 @@ const App = () => {
             setSettings(prev => ({ ...prev, [name]: value }));
         } else {
             setSettings(prev => {
+                // Handle nested keys (e.g., "predikats.a")
+                if (name.includes('.')) {
+                    const [parent, key] = name.split('.');
+                    return {
+                        ...prev,
+                        [parent]: {
+                            ...prev[parent],
+                            [key]: value
+                        }
+                    };
+                }
+
                 // Check for grade level change before updating state
                 if (name === 'nama_kelas') {
                     const oldGradeNumber = getGradeNumber(prev.nama_kelas);
