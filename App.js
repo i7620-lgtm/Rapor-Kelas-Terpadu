@@ -1429,12 +1429,17 @@ const App = () => {
         setIsLoading(true);
         showToast("Mengunduh data untuk verifikasi...", 'info');
         try {
+            // 1. Process Remote File
             const blob = await downloadFile(fileId);
             const remoteData = await parseExcelBlob(blob);
-            
-            // Calculate completeness scores
-            const localScore = calculateDataCompleteness(appData);
             const remoteScore = calculateDataCompleteness(remoteData);
+            
+            // 2. Process Local Data (Apple-to-Apple Comparison)
+            // Instead of calculating from state directly, we export to Excel and parse it back.
+            // This ensures both datasets go through the exact same parsing logic/sanitization.
+            const localBlob = exportToExcelBlob();
+            const localDataParsed = await parseExcelBlob(localBlob);
+            const localScore = calculateDataCompleteness(localDataParsed);
             
             const selectedFile = driveFiles.find(f => f.id === fileId);
             const remoteTimestamp = selectedFile?.modifiedTime || new Date().toISOString();
@@ -1444,7 +1449,7 @@ const App = () => {
                 fileId,
                 local: {
                     score: localScore,
-                    timestamp: lastSyncTimestamp || new Date().toISOString(), // Fallback if no sync yet
+                    timestamp: lastSyncTimestamp || new Date().toISOString(),
                 },
                 remote: {
                     score: remoteScore,
