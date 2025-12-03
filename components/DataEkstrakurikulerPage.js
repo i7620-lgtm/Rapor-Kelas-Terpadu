@@ -85,7 +85,13 @@ const DataEkstrakurikulerPage = ({
     const handlePasteDescription = (e, startStudentId, extraIndex) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
-        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        
+        // Split rows by newline, PRESERVING empty rows to maintain alignment.
+        // Only remove the very last empty element if it exists (common in Excel copy)
+        let rows = pasteData.split(/\r\n|\n|\r/);
+        if (rows.length > 0 && rows[rows.length - 1] === '') {
+            rows.pop();
+        }
 
         if (rows.length === 0) return;
 
@@ -126,6 +132,7 @@ const DataEkstrakurikulerPage = ({
                     const activityId = record.assignedActivities?.[targetExtraIndex];
                     
                     if (activityId) {
+                        // Update description even if empty (allows clearing)
                         record.descriptions[activityId] = value;
                         rowUpdated = true;
                     }
