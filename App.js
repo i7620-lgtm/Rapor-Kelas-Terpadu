@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+// ... (imports remain the same)
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -20,6 +21,7 @@ import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 
+// ... (Constants and DB helper remain the same)
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
     console.warn(
@@ -144,6 +146,7 @@ const getDynamicRKTFileName = (currentSettings) => {
 };
 
 const calculateFinalGrade = (detailed, config, settings) => {
+    // ... (No changes to calculateFinalGrade logic)
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap } = settings;
@@ -238,8 +241,7 @@ const calculateDataCompleteness = (data) => {
     });
     const studentScore = (filledStudentData / totalStudents) * 20;
 
-    // 2. Grades (40% weight) - UPDATED: Check Raw Inputs (Detailed Grades) instead of Final Grades
-    // This ensures consistency even if calculation logic/weights are missing in the Drive file.
+    // 2. Grades (40% weight)
     let totalGradeSlots = totalStudents * activeSubjects.length;
     let filledGradeSlots = 0;
     
@@ -252,7 +254,6 @@ const calculateDataCompleteness = (data) => {
                 activeSubjects.forEach(sub => {
                     const details = studentGrade.detailedGrades[sub.id];
                     if (details) {
-                        // Check for ANY significant data entry (STS, SAS, or any SLM score)
                         const hasSts = hasData(details.sts);
                         const hasSas = hasData(details.sas);
                         let hasTp = false;
@@ -305,6 +306,7 @@ const calculateDataCompleteness = (data) => {
 
 
 const App = () => {
+  // ... (Hooks and state remain the same)
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
@@ -327,7 +329,7 @@ const App = () => {
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState([]);
   const [isCheckingDrive, setIsCheckingDrive] = useState(false);
-  const [driveConflictData, setDriveConflictData] = useState(null); // Comparison state
+  const [driveConflictData, setDriveConflictData] = useState(null); 
 
   const [googleDriveFileId, setGoogleDriveFileId] = useState(null);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
@@ -783,22 +785,31 @@ const App = () => {
         const wsSubjects = workbook.Sheets["Mata Pelajaran"];
         if (wsSubjects) {
             // If the sheet exists, overwrite the default subjects
-            newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => ({
-                id: s["ID Internal (Jangan Diubah)"],
-                fullName: s["Nama Lengkap"],
-                label: s["Singkatan"],
-                // Strict check for active status to ensure consistency
-                active: (s["Status Aktif"] || '').toString().trim().toLowerCase() === 'aktif'
-            }));
+            newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => {
+                const status = (s["Status Aktif"] || '').toString().trim().toLowerCase();
+                // More robust active status check
+                const isActive = ['aktif', 'active', 'true', 'ya', 'yes'].includes(status);
+                
+                return {
+                    id: s["ID Internal (Jangan Diubah)"],
+                    fullName: s["Nama Lengkap"],
+                    label: s["Singkatan"],
+                    active: isActive
+                }
+            });
         }
         
         const wsExtra = workbook.Sheets["Ekstrakurikuler"];
         if (wsExtra) {
-            newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({
-                id: e["ID Unik (Jangan Diubah)"],
-                name: e["Nama Ekstrakurikuler"],
-                active: (e["Status Aktif"] || '').toString().trim().toLowerCase() === 'aktif'
-            }));
+            newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => {
+                const status = (e["Status Aktif"] || '').toString().trim().toLowerCase();
+                const isActive = ['aktif', 'active', 'true', 'ya', 'yes'].includes(status);
+                return {
+                    id: e["ID Unik (Jangan Diubah)"],
+                    name: e["Nama Ekstrakurikuler"],
+                    active: isActive
+                }
+            });
         }
 
         // 4. Parse Daftar Siswa and ensure unique IDs
@@ -854,22 +865,50 @@ const App = () => {
         // 7. Parse Nilai sheets
         workbook.SheetNames.forEach(sheetName => {
             if (sheetName.startsWith("Nilai_")) {
-                const subjectId = sheetName.split('_')[1];
+                const sheetNameParts = sheetName.split('_');
+                // Handle cases where ID might have underscores, though ideally it shouldn't. 
+                // Currently strictly takes part [1]. If ID has _, logic might fail. 
+                // Assuming standard "Nilai_ID" format.
+                const subjectId = sheetNameParts.length > 1 ? sheetName.substring(6) : ''; // "Nilai_".length = 6
+                
                 const wsNilai = workbook.Sheets[sheetName];
                 const nilaiData = XLSX.utils.sheet_to_json(wsNilai);
 
                 nilaiData.forEach(row => {
                     const studentId = row["ID Siswa"];
                     const studentGrade = gradesMap.get(studentId);
+                    
+                    // If student grade entry exists but subject entry doesn't (e.g. subject marked inactive in 'Mata Pelajaran' but sheet exists)
+                    // We should probably initialize it to capture the data.
+                    if (studentGrade && !studentGrade.detailedGrades[subjectId]) {
+                         studentGrade.detailedGrades[subjectId] = { slm: [], sts: null, sas: null };
+                    }
+
                     if (!studentGrade || !studentGrade.detailedGrades[subjectId]) return;
                     
                     const detailedGrade = studentGrade.detailedGrades[subjectId];
                     Object.keys(row).forEach(header => {
                         if (header.includes("_TP")) {
-                            const [slmId, tpPart] = header.split('_TP');
+                            // Split carefully to handle if SLM ID contains _TP (unlikely but safe)
+                            const parts = header.split('_TP');
+                            const tpPart = parts.pop(); // The last part is the TP number
+                            const slmId = parts.join('_TP'); // Rejoin the rest as ID
+                            
                             const tpIndex = parseInt(tpPart, 10) - 1;
-                            const slmEntry = detailedGrade.slm.find(s => s.id === slmId);
-                            if (slmEntry && tpIndex >= 0) slmEntry.scores[tpIndex] = row[header] === '' ? null : Number(row[header]);
+                            let slmEntry = detailedGrade.slm.find(s => s.id === slmId);
+                            
+                            // Important: If SLM entry doesn't exist (because it wasn't in "Tujuan Pembelajaran" sheet), create it dynamically.
+                            if (!slmEntry) {
+                                slmEntry = { id: slmId, name: slmId, scores: [] };
+                                detailedGrade.slm.push(slmEntry);
+                            }
+                            
+                            // Ensure scores array is big enough
+                            while (slmEntry.scores.length <= tpIndex) {
+                                slmEntry.scores.push(null);
+                            }
+
+                            if (tpIndex >= 0) slmEntry.scores[tpIndex] = row[header] === '' ? null : Number(row[header]);
                         } else if (header === 'STS') {
                             detailedGrade.sts = row[header] === '' ? null : Number(row[header]);
                         } else if (header === 'SAS') {
@@ -1003,6 +1042,12 @@ const App = () => {
         };
     }, [presets]);
 
+    // ... (Rest of the App component remains the same)
+    
+    // ...
+    // NOTE: Don't forget to close the App component properly at the end
+    // ...
+    
     const importFromExcelBlob = useCallback(async (blob) => {
         setIsLoading(true);
         try {
