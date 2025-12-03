@@ -238,7 +238,7 @@ const calculateDataCompleteness = (data) => {
     // 2. Grades (40% weight)
     let totalGradeSlots = totalStudents * activeSubjects.length;
     let filledGradeSlots = 0;
-    if (grades && grades.length > 0) {
+    if (grades && grades.length > 0 && totalGradeSlots > 0) {
         students.forEach(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             if (studentGrade) {
@@ -734,8 +734,8 @@ const App = () => {
 
         let newSettings = { ...initialSettings };
         let newStudents = [];
-        let newSubjects = [];
-        let newExtracurriculars = [];
+        let newSubjects = defaultSubjects; // Use defaults initially
+        let newExtracurriculars = presets?.extracurriculars || []; // Use defaults initially
         let newAttendance = [];
         let newNotes = {};
         let newCocurricularData = {};
@@ -774,9 +774,24 @@ const App = () => {
 
         // 2 & 3. Parse Mata Pelajaran & Ekstrakurikuler
         const wsSubjects = workbook.Sheets["Mata Pelajaran"];
-        if (wsSubjects) newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => ({ id: s["ID Internal (Jangan Diubah)"], fullName: s["Nama Lengkap"], label: s["Singkatan"], active: (s["Status Aktif"] || '').toLowerCase() === 'aktif' }));
+        if (wsSubjects) {
+            // If the sheet exists, overwrite the default subjects
+            newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => ({
+                id: s["ID Internal (Jangan Diubah)"],
+                fullName: s["Nama Lengkap"],
+                label: s["Singkatan"],
+                active: (s["Status Aktif"] || '').toLowerCase() === 'aktif'
+            }));
+        }
+        
         const wsExtra = workbook.Sheets["Ekstrakurikuler"];
-        if (wsExtra) newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({ id: e["ID Unik (Jangan Diubah)"], name: e["Nama Ekstrakurikuler"], active: (e["Status Aktif"] || '').toLowerCase() === 'aktif' }));
+        if (wsExtra) {
+            newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({
+                id: e["ID Unik (Jangan Diubah)"],
+                name: e["Nama Ekstrakurikuler"],
+                active: (e["Status Aktif"] || '').toLowerCase() === 'aktif'
+            }));
+        }
 
         // 4. Parse Daftar Siswa and ensure unique IDs
         const wsStudents = workbook.Sheets["Daftar Siswa"];
