@@ -30,6 +30,7 @@ const DataEkstrakurikulerPage = ({
     extracurriculars,
     studentExtracurriculars,
     onUpdateStudentExtracurriculars,
+    showToast
 }) => {
     const activeExtracurriculars = extracurriculars.filter(e => e.active);
 
@@ -80,12 +81,79 @@ const DataEkstrakurikulerPage = ({
         newStudentExtracurriculars.push(updatedStudentExtra);
         onUpdateStudentExtracurriculars(newStudentExtracurriculars);
     };
+
+    const handlePasteDescription = (e, startStudentId, extraIndex) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text');
+        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+
+        if (rows.length === 0) return;
+
+        const studentIndex = students.findIndex(s => s.id === startStudentId);
+        if (studentIndex === -1) return;
+
+        let updatedCount = 0;
+        const currentStudentExtracurriculars = [...studentExtracurriculars];
+        
+        // Create lookup for easier update
+        const studentExtraMap = new Map();
+        currentStudentExtracurriculars.forEach(se => studentExtraMap.set(se.studentId, se));
+
+        rows.forEach((row, rIndex) => {
+            const currentStudentIndex = studentIndex + rIndex;
+            if (currentStudentIndex >= students.length) return;
+
+            const student = students[currentStudentIndex];
+            const columns = row.split('\t');
+            
+            // Get current record or create new
+            let record = studentExtraMap.get(student.id);
+            if (!record) {
+                record = { studentId: student.id, assignedActivities: [], descriptions: {} };
+            } else {
+                // Clone simple object for immutability in loop
+                record = { ...record, descriptions: { ...record.descriptions } };
+            }
+
+            // Logic: We map the pasted columns to the description fields starting from `extraIndex`.
+            // E.g. pasting 2 columns into Deskripsi 1 will fill Deskripsi 1 and Deskripsi 2
+            
+            let rowUpdated = false;
+            columns.forEach((value, cIndex) => {
+                const targetExtraIndex = extraIndex + cIndex;
+                if (targetExtraIndex < MAX_EXTRA_FIELDS) {
+                    // We need the activity ID at this index to set the description
+                    const activityId = record.assignedActivities?.[targetExtraIndex];
+                    
+                    if (activityId) {
+                        record.descriptions[activityId] = value;
+                        rowUpdated = true;
+                    }
+                }
+            });
+
+            if (rowUpdated) {
+                studentExtraMap.set(student.id, record);
+                updatedCount++;
+            }
+        });
+
+        if (updatedCount > 0) {
+            const newExtracurricularsList = Array.from(studentExtraMap.values());
+            onUpdateStudentExtracurriculars(newExtracurricularsList);
+            showToast && showToast(`${updatedCount} deskripsi berhasil ditempel.`, 'success');
+        }
+    };
     
     return (
         React.createElement('div', { className: "flex flex-col h-full gap-4" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Ekstrakurikuler"),
-                React.createElement('p', { className: "mt-1 text-slate-600" }, "Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa. Pengaturan daftar ekstrakurikuler dapat diakses di halaman Pengaturan.")
+                React.createElement('p', { className: "mt-1 text-slate-600" }, 
+                    "Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa.",
+                    React.createElement('br', null),
+                    React.createElement('span', { className: "text-sm text-indigo-600" }, "💡 Tips: Anda dapat copy-paste deskripsi dari Excel ke kolom Deskripsi.")
+                )
             ),
 
             React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
@@ -139,6 +207,7 @@ const DataEkstrakurikulerPage = ({
                                                                 React.createElement('textarea', {
                                                                     value: studentExtra?.descriptions?.[currentAssignedId] || '',
                                                                     onChange: (e) => handleDescriptionChange(student.id, currentAssignedId, e.target.value),
+                                                                    onPaste: (e) => handlePasteDescription(e, student.id, i),
                                                                     rows: 2,
                                                                     className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                                                                 })
