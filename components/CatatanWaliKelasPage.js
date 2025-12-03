@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings }) => {
+const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings, showToast }) => {
 
     const handleGenerateNote = (student) => {
         const predA = parseInt(settings.predikats?.a || 90, 10);
@@ -79,11 +79,46 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
         onUpdateNote(studentId, note);
     };
 
+    const handlePaste = (e, startStudentId) => {
+        e.preventDefault();
+        const pasteData = e.clipboardData.getData('text');
+        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        
+        if (rows.length === 0) return;
+
+        const studentIndex = students.findIndex(s => s.id === startStudentId);
+        if (studentIndex === -1) return;
+
+        let updatedCount = 0;
+
+        rows.forEach((row, rIndex) => {
+            const currentStudentIndex = studentIndex + rIndex;
+            if (currentStudentIndex >= students.length) return;
+
+            const student = students[currentStudentIndex];
+            // Handle potential multiple columns in paste data (though usually notes are 1 col)
+            // We take the first column for the note
+            const columns = row.split('\t');
+            const noteValue = columns[0];
+
+            onUpdateNote(student.id, noteValue);
+            updatedCount++;
+        });
+
+        if (updatedCount > 0) {
+            showToast && showToast(`${updatedCount} catatan berhasil ditempel.`, 'success');
+        }
+    };
+
     return (
         React.createElement('div', { className: "flex flex-col h-full gap-4" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Catatan Wali Kelas"),
-                 React.createElement('p', { className: "mt-1 text-slate-600" }, "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester.")
+                 React.createElement('p', { className: "mt-1 text-slate-600" }, 
+                    "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester.",
+                    React.createElement('br', null),
+                    React.createElement('span', { className: "text-sm text-indigo-600" }, "💡 Tips: Anda dapat copy-paste catatan dari Excel/Word ke kolom Catatan.")
+                 )
             ),
             
             React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
@@ -106,6 +141,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                             React.createElement('textarea', {
                                                 value: notes[student.id] || '',
                                                 onChange: (e) => handleNoteChange(student.id, e.target.value),
+                                                onPaste: (e) => handlePaste(e, student.id),
                                                 placeholder: "Tulis catatan untuk siswa di sini...",
                                                 className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-slate-900",
                                                 rows: 4,
