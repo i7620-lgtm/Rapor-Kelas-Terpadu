@@ -82,7 +82,13 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
     const handlePaste = (e, startStudentId) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
-        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        
+        // Split rows by newline, PRESERVING empty rows to maintain index alignment
+        let rows = pasteData.split(/\r\n|\n|\r/);
+        // Remove the last element if it's empty (trailing newline from Excel copy)
+        if (rows.length > 0 && rows[rows.length - 1] === '') {
+            rows.pop();
+        }
         
         if (rows.length === 0) return;
 
@@ -101,6 +107,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
             const columns = row.split('\t');
             const noteValue = columns[0];
 
+            // Update note (allow empty string to clear)
             onUpdateNote(student.id, noteValue);
             updatedCount++;
         });
