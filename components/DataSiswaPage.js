@@ -109,8 +109,13 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     const handlePaste = (e, startStudentId, startFieldKey) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
-        // Split rows by newline
-        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        
+        // Split rows by newline, preserving empty rows to maintain index alignment
+        let rows = pasteData.split(/\r\n|\n|\r/);
+        // Remove the last element if it's empty (trailing newline from Excel copy)
+        if (rows.length > 0 && rows[rows.length - 1] === '') {
+            rows.pop();
+        }
 
         if (rows.length === 0) return;
 
@@ -171,7 +176,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         }
         
         if (fieldDef.type === 'date') {
-             return React.createElement('input', { ...commonProps, type: 'date' });
+             return React.createElement('input', { ...commonProps, type: 'text' });
         }
 
         return React.createElement('input', { ...commonProps, type: 'text', placeholder: "..." });
