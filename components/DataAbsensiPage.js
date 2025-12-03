@@ -20,8 +20,12 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
         
-        // Split rows by newline, allowing empty lines to preserve grid structure if copied from excel
-        const rows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        // Split rows by newline, PRESERVING empty rows to maintain index alignment
+        let rows = pasteData.split(/\r\n|\n|\r/);
+        // Remove the last element if it's empty (trailing newline from Excel copy)
+        if (rows.length > 0 && rows[rows.length - 1] === '') {
+            rows.pop();
+        }
         
         if (rows.length === 0) return;
 
@@ -58,7 +62,7 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
                     // Convert empty string to null, otherwise parse int
                     const cleanValue = value.trim() === '' ? null : parseInt(value.trim(), 10);
                     
-                    // Only update if value is valid number or null (clearing)
+                    // Update if value is valid number or null (clearing)
                     if (cleanValue === null || !isNaN(cleanValue)) {
                         record = { ...record, [fieldName]: cleanValue };
                         rowUpdated = true;
