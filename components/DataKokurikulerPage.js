@@ -22,7 +22,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                 React.createElement('input', {
                     type: "text",
                     name: "cocurricular_theme",
-                    value: "text",
+                    value: settings.cocurricular_theme || '',
                     onChange: onSettingsChange,
                     placeholder: "Contoh: Kearifan Lokal",
                     className: "w-full max-w-lg px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
