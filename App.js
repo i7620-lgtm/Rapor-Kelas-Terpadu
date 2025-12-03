@@ -816,7 +816,6 @@ const App = () => {
         const wsStudents = workbook.Sheets["Daftar Siswa"];
         if (wsStudents) {
             let importCounter = 0;
-            // STRICT FILTERING: Only accept students with a name
             newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => {
                 importCounter++;
                 return {
@@ -830,7 +829,7 @@ const App = () => {
                     teleponOrangTua: s['Telepon Orang Tua'], namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], 
                     alamatWali: s['Alamat Wali'], teleponWali: s['Telepon Wali'],
                 };
-            }).filter(s => s.namaLengkap && s.namaLengkap.trim() !== ''); // REMOVE GHOST ROWS
+            });
         }
         
         // 5. Parse Tujuan Pembelajaran
@@ -1043,7 +1042,598 @@ const App = () => {
         };
     }, [presets]);
 
-    // ... (Rest of App.js functions: importFromExcelBlob, handleExportAll, autoSaveToDrive, effects, etc.)
-    // Note: Truncated for brevity, assuming they remain unchanged except where noted in context.
+    // ... (Rest of the App component remains the same)
     
     // ...
+    // NOTE: Don't forget to close the App component properly at the end
+    // ...
+    
+    const importFromExcelBlob = useCallback(async (blob) => {
+        setIsLoading(true);
+        try {
+            const newData = await parseExcelBlob(blob);
+            
+            // Apply data to state
+            setSettings(newData.settings);
+            setSubjects(newData.subjects);
+            setExtracurriculars(newData.extracurriculars);
+            setStudents(newData.students);
+            setLearningObjectives(newData.learningObjectives);
+            setGrades(newData.grades);
+            setAttendance(newData.attendance);
+            setNotes(newData.notes);
+            setCocurricularData(newData.cocurricularData);
+            setStudentExtracurriculars(newData.studentExtracurriculars);
+            setFormativeJournal(newData.formativeJournal);
+            
+            showToast('Data berhasil diimpor dari file!', 'success');
+        } catch (error) {
+            console.error("Gagal mengimpor data:", error);
+            showToast(`Format file tidak valid atau rusak: ${error.message}`, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [showToast, parseExcelBlob]);
+
+    const handleExportAll = useCallback(() => {
+        const blob = exportToExcelBlob();
+        if (!blob) { showToast('Gagal membuat file ekspor.', 'error'); return; }
+        const fileName = getDynamicRKTFileName(settings);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+        showToast('File template berhasil diunduh!', 'success');
+    }, [exportToExcelBlob, settings, showToast]);
+
+    const handleImportAll = useCallback(() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xlsx, .xls';
+        input.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            importFromExcelBlob(file);
+        };
+        input.click();
+    }, [importFromExcelBlob]);
+
+    const autoSaveToDrive = useCallback(async () => {
+        if (!isDirty || !isSignedIn || !googleToken) { setSyncStatus(isDirty ? 'unsaved' : 'idle'); return; }
+        if (!isOnline) {
+            setSyncStatus('offline_pending');
+            const blob = exportToExcelBlob();
+            const fileName = getDynamicRKTFileName(settings);
+            
+            if (blob && fileName) {
+                await db.put('pendingSyncs', { id: 'unsynced_data', blob, fileName, fileId: googleDriveFileId });
+                if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                    navigator.serviceWorker.ready.then(sw => { sw.sync.register('sync-rkt-drive').catch(err => console.error("Background sync registration failed:", err)); });
+                }
+            }
+            return; 
+        }
+
+        setSyncStatus('saving');
+        const currentDynamicFileName = getDynamicRKTFileName(settings);
+
+        try {
+            let fileToOperateId = googleDriveFileId;
+            
+            // Gunakan pemeriksaan duplikat cerdas yang baru.
+            // Sekarang memerlukan pengaturan saat ini untuk dibandingkan dengan konten file.
+            const foundFile = await findRKTFileId(currentDynamicFileName, settings);
+            
+            if (foundFile) {
+                // Duplikat sejati ditemukan. Gunakan ID-nya.
+                fileToOperateId = foundFile.id;
+                if (googleDriveFileId !== foundFile.id) {
+                    console.log(`Beralih untuk memperbarui file yang ada dengan ID: ${foundFile.id}`);
+                    setGoogleDriveFileId(foundFile.id);
+                }
+            } else {
+                // Tidak ada duplikat sejati yang ditemukan (nama tidak ada, atau nama ada tetapi konten berbeda).
+                // Ini akan memaksa pembuatan file baru.
+                fileToOperateId = null; 
+            }
+    
+            const blob = exportToExcelBlob();
+            if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
+    
+            if (fileToOperateId) {
+                // Perbarui file yang ada
+                await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
+            } else {
+                // Buat file baru
+                const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
+                setGoogleDriveFileId(newFile.id);
+            }
+    
+            const newTimestamp = new Date().toISOString();
+            setLastSyncTimestamp(newTimestamp);
+            setIsDirty(false);
+            setSyncStatus('saved');
+            setTimeout(() => setSyncStatus('idle'), 3000);
+    
+        } catch (error) {
+            console.error("Gagal sinkronisasi online dengan Google Drive:", error);
+            setSyncStatus('error');
+            setTimeout(() => setSyncStatus(isDirty ? 'unsaved' : 'idle'), 5000);
+            if (error.message.includes("File not found") || (error.result?.error?.code === 404)) {
+                setGoogleDriveFileId(null);
+            }
+        }
+    }, [isDirty, isSignedIn, isOnline, googleToken, googleDriveFileId, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
+    
+    useEffect(() => {
+        localStorage.setItem('appSettings', JSON.stringify(appData.settings));
+        localStorage.setItem('appStudents', JSON.stringify(appData.students));
+        localStorage.setItem('appGrades', JSON.stringify(appData.grades));
+        localStorage.setItem('appNotes', JSON.stringify(appData.notes));
+        localStorage.setItem('appCocurricularData', JSON.stringify(appData.cocurricularData));
+        localStorage.setItem('appAttendance', JSON.stringify(appData.attendance));
+        localStorage.setItem('appExtracurriculars', JSON.stringify(appData.extracurriculars));
+        localStorage.setItem('appStudentExtracurriculars', JSON.stringify(appData.studentExtracurriculars));
+        localStorage.setItem('appSubjects', JSON.stringify(appData.subjects));
+        if (Object.keys(appData.learningObjectives).length > 0) localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
+        localStorage.setItem('appFormativeJournal', JSON.stringify(appData.formativeJournal));
+
+        if (isInitialMount.current) { isInitialMount.current = false; return; }
+        if (isSignedIn) {
+            setIsDirty(true);
+            setSyncStatus('unsaved');
+            // REMOVED: Auto-save debounce interval to save quota.
+            // if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+            // debounceTimeout.current = setTimeout(() => autoSaveToDrive(), 5000);
+        }
+    }, [appData, isSignedIn]); // autoSaveToDrive removed from dependency to prevent loop, though unused now.
+
+    // New Effect: Trigger Auto-Save on Page Navigation
+    useEffect(() => {
+        if (isSignedIn && isDirty) {
+            console.log("Navigasi halaman terdeteksi, memulai penyimpanan otomatis...");
+            autoSaveToDrive();
+        }
+    }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
+
+    // Updated Effect: Trigger Auto-Save on App Visibility Change (Switching Apps/Tabs)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden' && isDirty && isSignedIn) {
+                console.log("Aplikasi disembunyikan, menyimpan perubahan...");
+                autoSaveToDrive();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [isDirty, isSignedIn, autoSaveToDrive]);
+
+    // New Effect: Warn user before closing tab if unsaved data exists
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty && isSignedIn) {
+                e.preventDefault();
+                // Standard browser message will appear
+                e.returnValue = ''; 
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty, isSignedIn]);
+
+    const handleSettingsChange = useCallback((e) => {
+        const { name, value, type, files } = e.target;
+    
+        if (type === 'file') {
+            if (files && files[0]) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const newValue = reader.result;
+                    setSettings(prev => {
+                        // Check for grade level change before updating state
+                        if (name === 'nama_kelas') {
+                            const oldGradeNumber = getGradeNumber(prev.nama_kelas);
+                            const newGradeNumber = getGradeNumber(newValue);
+                            if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
+                                setLearningObjectives({});
+                                setGrades(initialGrades);
+                                showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
+                            }
+                        }
+                        return { ...prev, [name]: newValue };
+                    });
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        } else if (type === 'file_processed') {
+            setSettings(prev => ({ ...prev, [name]: value }));
+        } else {
+            setSettings(prev => {
+                // Handle nested keys (e.g., "predikats.a")
+                if (name.includes('.')) {
+                    const [parent, key] = name.split('.');
+                    return {
+                        ...prev,
+                        [parent]: {
+                            ...prev[parent],
+                            [key]: value
+                        }
+                    };
+                }
+
+                // Check for grade level change before updating state
+                if (name === 'nama_kelas') {
+                    const oldGradeNumber = getGradeNumber(prev.nama_kelas);
+                    const newGradeNumber = getGradeNumber(value);
+                    if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
+                        setLearningObjectives({});
+                        setGrades(initialGrades);
+                        showToast('Data nilai & TP direset karena jenjang kelas berubah.', 'info');
+                    }
+                }
+                return { ...prev, [name]: value };
+            });
+        }
+    }, [showToast]);
+
+    const saveSettings = useCallback(() => console.log("Settings saved to state."), []);
+    const onUpdateSubjects = useCallback((newSubjects) => setSubjects(newSubjects), []);
+    const onUpdateExtracurriculars = useCallback((newExtracurriculars) => setExtracurriculars(newExtracurriculars), []);
+    const handleSaveStudent = useCallback((studentData) => {
+        if (studentData.id) {
+            setStudents(prev => prev.map(s => s.id === studentData.id ? studentData : s));
+            showToast('Data siswa berhasil diperbarui.', 'success');
+        } else {
+            const newStudent = { ...studentData, id: `student_${Date.now()}` };
+            setStudents(prev => [...prev, newStudent]);
+            setGrades(prev => [...prev, { studentId: newStudent.id, detailedGrades: {}, finalGrades: {} }]);
+            setAttendance(prev => [...prev, { studentId: newStudent.id, sakit: null, izin: null, alpa: null }]);
+            setFormativeJournal(prev => ({ ...prev, [newStudent.id]: [] }));
+            showToast('Siswa baru berhasil ditambahkan.', 'success');
+        }
+    }, [showToast]);
+    const handleBulkSaveStudents = useCallback((newStudents) => setStudents(newStudents), []);
+    const handleDeleteStudent = useCallback((studentId) => {
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+        setGrades(prev => prev.filter(g => g.studentId !== studentId));
+        setNotes(prev => { const newNotes = {...prev}; delete newNotes[studentId]; return newNotes; });
+        setCocurricularData(prev => { const newData = {...prev}; delete newData[studentId]; return newData; });
+        setAttendance(prev => prev.filter(a => a.studentId !== studentId));
+        setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
+        setFormativeJournal(prev => { const newJournal = {...prev}; delete newJournal[studentId]; return newJournal; });
+    }, []);
+    const handleUpdateAttendance = useCallback((studentId, type, value) => {
+        setAttendance(prev => {
+            const index = prev.findIndex(a => a.studentId === studentId);
+            const numValue = value === '' ? null : parseInt(value, 10);
+            if (index > -1) {
+                const newAttendance = [...prev];
+                newAttendance[index] = { ...newAttendance[index], [type]: isNaN(numValue) ? null : numValue };
+                return newAttendance;
+            }
+            return [...prev, { studentId, sakit: null, izin: null, alpa: null, [type]: isNaN(numValue) ? null : numValue }];
+        });
+    }, []);
+    const handleBulkUpdateAttendance = useCallback((newAttendance) => setAttendance(newAttendance), []);
+    const handleUpdateNote = useCallback((studentId, note) => setNotes(prev => ({ ...prev, [studentId]: note })), []);
+    const handleUpdateCocurricularData = useCallback((studentId, dimensionId, rating) => {
+      setCocurricularData(prev => {
+        const studentData = prev[studentId] || { dimensionRatings: {} };
+        const newRatings = { ...studentData.dimensionRatings, [dimensionId]: rating };
+        return { ...prev, [studentId]: { dimensionRatings: newRatings } };
+      });
+    }, []);
+    const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => setStudentExtracurriculars(newStudentExtracurriculars), []);
+    const handleUpdatePredikats = useCallback((newPredikats) => setSettings(prev => ({ ...prev, predikats: newPredikats })), []);
+    
+    const handleUpdateGradeCalculation = useCallback((subjectId, newConfig) => {
+        setSettings(prevSettings => {
+            const updatedSettings = {
+                ...prevSettings,
+                gradeCalculation: {
+                    ...prevSettings.gradeCalculation,
+                    [subjectId]: newConfig,
+                },
+            };
+
+            setGrades(prevGrades => {
+                return prevGrades.map(studentGrade => {
+                    const detailedGrade = studentGrade.detailedGrades[subjectId];
+                    if (detailedGrade) {
+                        const newFinalScore = calculateFinalGrade(detailedGrade, newConfig, updatedSettings);
+                        const newFinalGrades = {
+                            ...studentGrade.finalGrades,
+                            [subjectId]: newFinalScore,
+                        };
+                        return { ...studentGrade, finalGrades: newFinalGrades };
+                    }
+                    return studentGrade;
+                });
+            });
+
+            return updatedSettings;
+        });
+    }, []);
+
+    const handleBulkUpdateGrades = useCallback((updates) => {
+        setGrades(prevGrades => {
+            const newGrades = [...prevGrades];
+            const gradesMap = new Map(newGrades.map(g => [g.studentId, g]));
+
+            updates.forEach(update => {
+                const { studentId, subjectId, newDetailedGrade } = update;
+                let studentGrade = gradesMap.get(studentId);
+                if (!studentGrade) {
+                    studentGrade = { studentId, detailedGrades: {}, finalGrades: {} };
+                    newGrades.push(studentGrade);
+                    gradesMap.set(studentId, studentGrade);
+                }
+                
+                studentGrade.detailedGrades = { ...studentGrade.detailedGrades, [subjectId]: newDetailedGrade };
+                
+                const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
+                const finalScore = calculateFinalGrade(newDetailedGrade, config, settings);
+                studentGrade.finalGrades = { ...studentGrade.finalGrades, [subjectId]: finalScore };
+            });
+            
+            return newGrades;
+        });
+    }, [settings]);
+
+    const handleBulkAddSlm = useCallback((subjectId, slmTemplate) => {
+        setGrades(prevGrades => {
+            return prevGrades.map(studentGrade => {
+                const detailedGradesForSubject = studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null };
+                const slmExists = detailedGradesForSubject.slm.some(s => s.id === slmTemplate.id);
+    
+                if (!slmExists) {
+                    const newSlms = [...detailedGradesForSubject.slm, slmTemplate];
+                    const newDetailedGradesForSubject = { ...detailedGradesForSubject, slm: newSlms };
+                    
+                    return {
+                        ...studentGrade,
+                        detailedGrades: {
+                            ...studentGrade.detailedGrades,
+                            [subjectId]: newDetailedGradesForSubject
+                        }
+                    };
+                }
+                
+                return studentGrade;
+            });
+        });
+        showToast('Lingkup Materi baru ditambahkan.', 'success');
+    }, [showToast]);
+
+    const handleUpdateFormativeJournal = useCallback((studentId, noteData) => {
+        setFormativeJournal(prev => {
+            const studentNotes = prev[studentId] ? [...prev[studentId]] : [];
+            const existingNoteIndex = studentNotes.findIndex(note => note.id === noteData.id);
+            if (existingNoteIndex > -1) {
+                studentNotes[existingNoteIndex] = noteData;
+            } else {
+                studentNotes.unshift({ ...noteData, id: `note_${Date.now()}` }); // Add to the top
+            }
+            return { ...prev, [studentId]: studentNotes };
+        });
+    }, []);
+    
+    const handleDeleteFormativeNote = useCallback((studentId, noteId) => {
+        setFormativeJournal(prev => {
+            const studentNotes = prev[studentId] ? prev[studentId].filter(note => note.id !== noteId) : [];
+            return { ...prev, [studentId]: studentNotes };
+        });
+    }, []);
+
+    
+    const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
+    const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
+    const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
+    
+    const handleDriveFileSelection = async (fileId) => {
+        if (!fileId) { setIsDriveModalOpen(false); setDriveConflictData(null); return; }
+        
+        setIsLoading(true);
+        showToast("Mengunduh data untuk verifikasi...", 'info');
+        try {
+            const blob = await downloadFile(fileId);
+            const remoteData = await parseExcelBlob(blob);
+            
+            // Calculate completeness scores
+            const localScore = calculateDataCompleteness(appData);
+            const remoteScore = calculateDataCompleteness(remoteData);
+            
+            const selectedFile = driveFiles.find(f => f.id === fileId);
+            const remoteTimestamp = selectedFile?.modifiedTime || new Date().toISOString();
+            
+            // Set conflict data for modal to display
+            setDriveConflictData({
+                fileId,
+                local: {
+                    score: localScore,
+                    timestamp: lastSyncTimestamp || new Date().toISOString(), // Fallback if no sync yet
+                },
+                remote: {
+                    score: remoteScore,
+                    timestamp: remoteTimestamp,
+                    blob: blob, // Keep blob ready to load
+                    data: remoteData // Keep parsed data
+                }
+            });
+            // Don't close modal yet, it will switch views based on driveConflictData prop
+            
+        } catch (error) {
+            console.error("Gagal memproses file Drive:", error);
+            showToast(`Gagal: ${error.message}`, 'error');
+            setIsDriveModalOpen(false);
+        } finally { setIsLoading(false); }
+    };
+    
+    const handleConfirmSyncAction = async (action, payload) => {
+        setIsLoading(true);
+        try {
+            if (action === 'overwrite_local') {
+                // User chose to download Drive data
+                const blob = payload;
+                await importFromExcelBlob(blob);
+                setGoogleDriveFileId(driveConflictData.fileId);
+                setLastSyncTimestamp(driveConflictData.remote.timestamp);
+                setDriveConflictData(null);
+                setIsDriveModalOpen(false);
+                showToast("Data perangkat berhasil diperbarui dari Drive.", 'success');
+            } else if (action === 'overwrite_drive') {
+                // User chose to upload Local data
+                const fileId = payload;
+                const blob = exportToExcelBlob();
+                const fileName = getDynamicRKTFileName(settings);
+                await uploadFile(fileId, fileName, blob, RKT_MIME_TYPE);
+                
+                // Update local sync state
+                setGoogleDriveFileId(fileId);
+                const newTime = new Date().toISOString();
+                setLastSyncTimestamp(newTime);
+                setIsDirty(false);
+                setSyncStatus('saved');
+                
+                setDriveConflictData(null);
+                setIsDriveModalOpen(false);
+                showToast("Data Drive berhasil diperbarui dengan data perangkat.", 'success');
+            }
+        } catch (error) {
+            console.error("Sync Action Failed:", error);
+            showToast(`Gagal melakukan sinkronisasi: ${error.message}`, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleDriveFileDelete = async (fileId, fileName) => {
+        if (!window.confirm(`Apakah Anda yakin ingin menghapus file "${fileName}" secara permanen dari Google Drive Anda? Tindakan ini tidak dapat diurungkan.`)) {
+            return;
+        }
+
+        try {
+            await deleteFile(fileId);
+            showToast(`File "${fileName}" berhasil dihapus.`, 'success');
+            // Refresh the file list
+            setDriveFiles(prevFiles => prevFiles.filter(f => f.id !== fileId));
+            // If the deleted file was the one currently synced, clear the ID
+            if (googleDriveFileId === fileId) {
+                setGoogleDriveFileId(null);
+                setLastSyncTimestamp(null);
+            }
+        } catch (error) {
+            console.error("Gagal menghapus file:", error);
+            showToast(`Gagal menghapus file: ${error.message}`, 'error');
+        }
+    };
+
+    useEffect(() => {
+        const justGotProfile = !prevUserProfile.current && userProfile;
+        prevUserProfile.current = userProfile;
+        const handleSignInAction = async () => {
+            if (!isSignedIn || !userProfile) return;
+            showToast(`Selamat datang, ${userProfile.given_name || userProfile.email}!`, 'success');
+            setIsCheckingDrive(true);
+            setIsDriveModalOpen(true);
+            try {
+                const allFiles = await findAllRKTFiles();
+                setDriveFiles(allFiles || []);
+            } catch (error) {
+                console.error("Error checking Drive on sign-in:", error);
+                showToast(`Gagal memeriksa Google Drive: ${error.message}`, 'error');
+                setDriveFiles([]);
+                setIsDriveModalOpen(false);
+            } finally { setIsCheckingDrive(false); }
+        };
+
+        if (isSignedIn && justGotProfile) handleSignInAction();
+        else if (!isSignedIn) {
+            setGoogleDriveFileId(null);
+            setLastSyncTimestamp(null);
+            setDriveFiles([]);
+            setIsDirty(false);
+            setSyncStatus('idle');
+        }
+    }, [isSignedIn, userProfile, showToast, findAllRKTFiles]);
+    useEffect(() => {
+        setGoogleDriveFileId(null);
+        setLastSyncTimestamp(null);
+    }, [settings.nama_sekolah, settings.nama_kelas, settings.tahun_ajaran, settings.semester]);
+
+  const handleNavigateToNilai = useCallback((subjectId) => {
+    setDataNilaiInitialTab(subjectId);
+    setActivePage('DATA_NILAI');
+  }, []);
+
+  const renderPage = () => {
+    if (isLoading) {
+        return React.createElement('div', { className: "flex items-center justify-center h-full w-full" }, React.createElement('div', { className: 'flex flex-col items-center gap-4' }, React.createElement('div', { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" }), React.createElement('p', { className: 'text-slate-600' }, 'Memuat data...')));
+    }
+
+    switch (activePage) {
+      case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
+      case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
+      case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, subjects, grades, learningObjectives, settings, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
+      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab });
+      case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
+      case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
+      case 'CATATAN_WALI_KELAS': return React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: handleUpdateNote, grades, subjects, settings, showToast: showToast });
+      case 'DATA_EKSTRAKURIKULER': return React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: handleUpdateStudentExtracurriculars, showToast: showToast });
+      case 'PENGATURAN': return React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: saveSettings, onUpdateKopLayout: handleUpdateKopLayout, subjects, onUpdateSubjects: onUpdateSubjects, extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast });
+      case 'PRINT_RAPOR': return React.createElement(PrintRaporPage, { students, settings, grades, attendance, notes, cocurricularData, subjects, learningObjectives, studentExtracurriculars, extracurriculars, showToast: showToast });
+      case 'PRINT_PIAGAM': return React.createElement(PrintPiagamPage, { students, settings, grades, subjects, onUpdatePiagamLayout: handleUpdatePiagamLayout, showToast: showToast });
+      case 'PRINT_LEGER': return React.createElement(PrintLegerPage, { students, settings, grades, subjects, showToast: showToast });
+      default:
+        const navItem = NAV_ITEMS.find(item => item.id === activePage);
+        return React.createElement(PlaceholderPage, { title: navItem ? navItem.label : 'Halaman' });
+    }
+  };
+  
+  const pagesWithOwnScroll = ['DATA_NILAI', 'DATA_KOKURIKULER', 'DATA_EKSTRAKURIKULER', 'DATA_SISWA', 'DATA_ABSENSI', 'CATATAN_WALI_KELAS'];
+  const shouldDisableMainScroll = !isMobile && pagesWithOwnScroll.includes(activePage);
+
+  const mainLayoutClass = isMobile
+    ? "bg-slate-100 font-sans" // Removed flex properties to use normal flow
+    : "flex h-screen bg-slate-100 font-sans";
+    
+  return React.createElement(React.Fragment, null,
+      isUpdateAvailable && React.createElement('div', { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" }, React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'), React.createElement('button', { onClick: updateAssets, className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold' }, 'Perbarui Sekarang')),
+      React.createElement(DriveDataSelectionModal, { 
+          isOpen: isDriveModalOpen, 
+          onClose: () => { setIsDriveModalOpen(false); setDriveConflictData(null); }, 
+          onConfirm: handleDriveFileSelection, 
+          files: driveFiles, 
+          isLoading: isCheckingDrive, 
+          onDelete: handleDriveFileDelete,
+          conflictData: driveConflictData,
+          onConfirmAction: handleConfirmSyncAction
+      }),
+      React.createElement('div', { className: mainLayoutClass },
+        React.createElement(Navigation, { 
+            activePage, 
+            setActivePage, 
+            onExport: handleExportAll, 
+            onImport: handleImportAll, 
+            isSignedIn, 
+            userEmail: userProfile?.email, 
+            isOnline, 
+            lastSyncTimestamp, 
+            syncStatus, 
+            onSignInClick: signIn, 
+            onSignOutClick: signOut,
+            isMobile,
+            isMobileMenuOpen,
+            setIsMobileMenuOpen,
+            currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
+        }),
+        React.createElement('main', { className: `${isMobile ? 'flex-1' : (shouldDisableMainScroll ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto')} p-4 sm:p-6 lg:p-8` }, renderPage())
+      ),
+      toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
+    );
+};
+
+export default App;
