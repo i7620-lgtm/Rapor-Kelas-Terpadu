@@ -327,7 +327,13 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
     const handlePaste = useCallback((e, startStudentId, tpIndex = null) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
-        const pastedRows = pasteData.split(/\r\n|\n|\r/).filter(row => row.trim() !== '');
+        
+        // Split rows by newline, preserving empty rows to maintain index alignment
+        let pastedRows = pasteData.split(/\r\n|\n|\r/);
+        // Remove the last element if it's empty (trailing newline from Excel copy)
+        if (pastedRows.length > 0 && pastedRows[pastedRows.length - 1] === '') {
+            pastedRows.pop();
+        }
 
         if (pastedRows.length === 0) return;
 
@@ -351,6 +357,27 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 const valuesInRow = pastedValue.split('\t');
                 const gradeValueStr = valuesInRow[valuesInRow.length - 1].trim();
                 
+                // If cell is empty, clear the grade (set to null)
+                if (gradeValueStr === '') {
+                     updatedCount++; // Count this as an update (clearing)
+                     if (isSLM) {
+                        let slm = studentGradeToUpdate.slm.find(s => s.id === item.id);
+                        if (!slm) {
+                            slm = { id: item.id, name: slmName, scores: Array(localObjectives.length).fill(null) };
+                            studentGradeToUpdate.slm.push(slm);
+                        }
+                        while (slm.scores.length < localObjectives.length) {
+                           slm.scores.push(null);
+                        }
+                        if (tpIndex !== null && tpIndex < slm.scores.length) {
+                            slm.scores[tpIndex] = null;
+                        }
+                     } else {
+                        studentGradeToUpdate[type] = null;
+                     }
+                     return; // Done for this row
+                }
+
                 let finalValue = null;
                 const qualitativeCode = gradeValueStr.toUpperCase();
                 if (QUALITATIVE_DESCRIPTORS.hasOwnProperty(qualitativeCode)) {
@@ -478,7 +505,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             React.createElement(TPSelectionModal, { isOpen: isTpSelectionModalOpen, onClose: () => setIsTpSelectionModalOpen(false), onApply: handleApplyTpSelection, subject: subject, gradeNumber: gradeNumber }),
             React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4" },
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col" },
-                    React.createElement('div', { className: "p-5 border-b flex justify-between items-center flex-shrink-0" },
+                    React.createElement('div', { className: "p-5 border-b flex-shrink-0" },
                         isSLM ? 
                             React.createElement('input', { type: 'text', value: slmName, onChange: e => setSlmName(e.target.value), placeholder: "Nama Lingkup Materi", className: "text-xl font-bold text-slate-800 border-b-2 border-transparent focus:border-indigo-500 outline-none flex-grow bg-transparent" }) :
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, `Input Nilai ${type.toUpperCase()}`),
