@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-// ... (imports remain the same)
+// ... (imports remain unchanged)
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -21,7 +21,7 @@ import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 
-// ... (Constants and DB helper remain the same)
+// ... (constants and db helper remain unchanged)
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
     console.warn(
@@ -146,7 +146,7 @@ const getDynamicRKTFileName = (currentSettings) => {
 };
 
 const calculateFinalGrade = (detailed, config, settings) => {
-    // ... (No changes to calculateFinalGrade logic)
+    // ... (unchanged)
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap } = settings;
@@ -226,29 +226,37 @@ const calculateFinalGrade = (detailed, config, settings) => {
 };
 
 // Helper function to calculate data completeness percentage
+// UPDATED: Strictly filters out empty/ghost students before calculating.
 const calculateDataCompleteness = (data) => {
     const { students, grades, subjects, attendance, notes, studentExtracurriculars } = data;
-    if (!students || students.length === 0) return 0;
+    
+    // 1. FILTER VALID STUDENTS (Ignore ghost rows/empty names)
+    // This is the key fix requested. Only count rows with actual names.
+    const validStudents = (students || []).filter(s => s.namaLengkap && s.namaLengkap.toString().trim() !== '');
+    
+    if (validStudents.length === 0) return 0;
 
-    const totalStudents = students.length;
+    const totalValidStudents = validStudents.length;
     const activeSubjects = (subjects || []).filter(s => s.active);
     
     // 1. Student Data (20% weight)
     const requiredStudentFields = ['nis', 'nisn', 'namaLengkap']; 
-    let filledStudentData = 0;
-    students.forEach(s => {
-        if (requiredStudentFields.every(k => s[k] && s[k].toString().trim() !== '')) filledStudentData++;
+    let filledStudentDataCount = 0;
+    validStudents.forEach(s => {
+        if (requiredStudentFields.every(k => s[k] && s[k].toString().trim() !== '')) {
+            filledStudentDataCount++;
+        }
     });
-    const studentScore = (filledStudentData / totalStudents) * 20;
+    const studentScore = (filledStudentDataCount / totalValidStudents) * 20;
 
     // 2. Grades (40% weight)
-    let totalGradeSlots = totalStudents * activeSubjects.length;
+    let totalGradeSlots = totalValidStudents * activeSubjects.length;
     let filledGradeSlots = 0;
     
     const hasData = (val) => val !== null && val !== '' && val !== undefined;
 
     if (grades && grades.length > 0 && totalGradeSlots > 0) {
-        students.forEach(student => {
+        validStudents.forEach(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             if (studentGrade && studentGrade.detailedGrades) {
                 activeSubjects.forEach(sub => {
@@ -274,31 +282,31 @@ const calculateDataCompleteness = (data) => {
     // 3. Attendance (10% weight)
     let filledAttendance = 0;
     if (attendance) {
-        students.forEach(s => {
+        validStudents.forEach(s => {
             const att = attendance.find(a => a.studentId === s.id);
             if (att && (att.sakit != null || att.izin != null || att.alpa != null)) filledAttendance++;
         });
     }
-    const attendanceScore = (filledAttendance / totalStudents) * 10;
+    const attendanceScore = (filledAttendance / totalValidStudents) * 10;
 
     // 4. Notes (15% weight)
     let filledNotes = 0;
     if (notes) {
-        students.forEach(s => {
+        validStudents.forEach(s => {
             if (notes[s.id] && notes[s.id].trim() !== '') filledNotes++;
         });
     }
-    const notesScore = (filledNotes / totalStudents) * 15;
+    const notesScore = (filledNotes / totalValidStudents) * 15;
 
     // 5. Extracurriculars (15% weight)
     let filledExtra = 0;
     if (studentExtracurriculars) {
-        students.forEach(s => {
+        validStudents.forEach(s => {
             const extra = studentExtracurriculars.find(se => se.studentId === s.id);
             if (extra && extra.assignedActivities && extra.assignedActivities.some(a => a !== null)) filledExtra++;
         });
     }
-    const extraScore = (filledExtra / totalStudents) * 15;
+    const extraScore = (filledExtra / totalValidStudents) * 15;
 
     const total = Math.round(studentScore + gradesScore + attendanceScore + notesScore + extraScore);
     return isNaN(total) ? 0 : total;
@@ -306,8 +314,9 @@ const calculateDataCompleteness = (data) => {
 
 
 const App = () => {
-  // ... (Hooks and state remain the same)
+  // ... (App component logic remains same, just ensuring parseExcelBlob uses strict filtering too)
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
+  // ... (state hooks)
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -334,6 +343,8 @@ const App = () => {
   const [googleDriveFileId, setGoogleDriveFileId] = useState(null);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
 
+  // ... (isDefaultAppData, state initializers)
+  
   const isDefaultAppData = useCallback((data, currentPresets, defaultSubjects) => {
       const defaultExtracurriculars = currentPresets?.extracurriculars || [];
       return JSON.stringify(data.settings) === JSON.stringify(initialSettings) &&
@@ -492,7 +503,7 @@ const App = () => {
     }, [showToast]);
 
   const exportToExcelBlob = useCallback(() => {
-    // ... (No changes here, handled in existing file or truncated for brevity as request focuses on parsing logic)
+    // ... (unchanged export logic)
     if (typeof XLSX === 'undefined') {
         showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
         return null;
@@ -816,6 +827,7 @@ const App = () => {
         const wsStudents = workbook.Sheets["Daftar Siswa"];
         if (wsStudents) {
             let importCounter = 0;
+            // STRICT FILTERING: Only accept students with a name
             newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => {
                 importCounter++;
                 return {
@@ -829,7 +841,7 @@ const App = () => {
                     teleponOrangTua: s['Telepon Orang Tua'], namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], 
                     alamatWali: s['Alamat Wali'], teleponWali: s['Telepon Wali'],
                 };
-            });
+            }).filter(s => s.namaLengkap && s.namaLengkap.trim() !== ''); // REMOVE GHOST ROWS
         }
         
         // 5. Parse Tujuan Pembelajaran
@@ -1042,12 +1054,7 @@ const App = () => {
         };
     }, [presets]);
 
-    // ... (Rest of the App component remains the same)
-    
-    // ...
-    // NOTE: Don't forget to close the App component properly at the end
-    // ...
-    
+    // ... (rest of App component)
     const importFromExcelBlob = useCallback(async (blob) => {
         setIsLoading(true);
         try {
@@ -1123,20 +1130,15 @@ const App = () => {
         try {
             let fileToOperateId = googleDriveFileId;
             
-            // Gunakan pemeriksaan duplikat cerdas yang baru.
-            // Sekarang memerlukan pengaturan saat ini untuk dibandingkan dengan konten file.
             const foundFile = await findRKTFileId(currentDynamicFileName, settings);
             
             if (foundFile) {
-                // Duplikat sejati ditemukan. Gunakan ID-nya.
                 fileToOperateId = foundFile.id;
                 if (googleDriveFileId !== foundFile.id) {
                     console.log(`Beralih untuk memperbarui file yang ada dengan ID: ${foundFile.id}`);
                     setGoogleDriveFileId(foundFile.id);
                 }
             } else {
-                // Tidak ada duplikat sejati yang ditemukan (nama tidak ada, atau nama ada tetapi konten berbeda).
-                // Ini akan memaksa pembuatan file baru.
                 fileToOperateId = null; 
             }
     
@@ -1144,10 +1146,8 @@ const App = () => {
             if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
     
             if (fileToOperateId) {
-                // Perbarui file yang ada
                 await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
             } else {
-                // Buat file baru
                 const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
                 setGoogleDriveFileId(newFile.id);
             }
@@ -1185,13 +1185,9 @@ const App = () => {
         if (isSignedIn) {
             setIsDirty(true);
             setSyncStatus('unsaved');
-            // REMOVED: Auto-save debounce interval to save quota.
-            // if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-            // debounceTimeout.current = setTimeout(() => autoSaveToDrive(), 5000);
         }
-    }, [appData, isSignedIn]); // autoSaveToDrive removed from dependency to prevent loop, though unused now.
+    }, [appData, isSignedIn]);
 
-    // New Effect: Trigger Auto-Save on Page Navigation
     useEffect(() => {
         if (isSignedIn && isDirty) {
             console.log("Navigasi halaman terdeteksi, memulai penyimpanan otomatis...");
@@ -1199,7 +1195,6 @@ const App = () => {
         }
     }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
 
-    // Updated Effect: Trigger Auto-Save on App Visibility Change (Switching Apps/Tabs)
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'hidden' && isDirty && isSignedIn) {
@@ -1211,12 +1206,10 @@ const App = () => {
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isDirty, isSignedIn, autoSaveToDrive]);
 
-    // New Effect: Warn user before closing tab if unsaved data exists
     useEffect(() => {
         const handleBeforeUnload = (e) => {
             if (isDirty && isSignedIn) {
                 e.preventDefault();
-                // Standard browser message will appear
                 e.returnValue = ''; 
             }
         };
@@ -1233,7 +1226,6 @@ const App = () => {
                 reader.onloadend = () => {
                     const newValue = reader.result;
                     setSettings(prev => {
-                        // Check for grade level change before updating state
                         if (name === 'nama_kelas') {
                             const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                             const newGradeNumber = getGradeNumber(newValue);
@@ -1252,7 +1244,6 @@ const App = () => {
             setSettings(prev => ({ ...prev, [name]: value }));
         } else {
             setSettings(prev => {
-                // Handle nested keys (e.g., "predikats.a")
                 if (name.includes('.')) {
                     const [parent, key] = name.split('.');
                     return {
@@ -1264,7 +1255,6 @@ const App = () => {
                     };
                 }
 
-                // Check for grade level change before updating state
                 if (name === 'nama_kelas') {
                     const oldGradeNumber = getGradeNumber(prev.nama_kelas);
                     const newGradeNumber = getGradeNumber(value);
