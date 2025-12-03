@@ -222,6 +222,68 @@ const calculateFinalGrade = (detailed, config, settings) => {
     return finalScore === null ? null : Math.round(finalScore);
 };
 
+// Helper function to calculate data completeness percentage
+const calculateDataCompleteness = (data) => {
+    const { students, grades, subjects, attendance, notes, studentExtracurriculars } = data;
+    if (!students || students.length === 0) return 0;
+
+    const totalStudents = students.length;
+    const activeSubjects = (subjects || []).filter(s => s.active);
+    
+    // 1. Student Data (Simplified check)
+    // Assuming if they exist in the array, they are somewhat complete.
+    // We give 20% weight to student existence.
+    const studentScore = 20;
+
+    // 2. Grades (40% weight)
+    let totalGradeSlots = totalStudents * activeSubjects.length;
+    let filledGradeSlots = 0;
+    if (grades && grades.length > 0) {
+        students.forEach(student => {
+            const studentGrade = grades.find(g => g.studentId === student.id);
+            if (studentGrade) {
+                activeSubjects.forEach(sub => {
+                    if (studentGrade.finalGrades?.[sub.id] !== undefined && studentGrade.finalGrades?.[sub.id] !== null) {
+                        filledGradeSlots++;
+                    }
+                });
+            }
+        });
+    }
+    const gradesScore = totalGradeSlots > 0 ? (filledGradeSlots / totalGradeSlots) * 40 : 0;
+
+    // 3. Attendance (10% weight)
+    let filledAttendance = 0;
+    if (attendance) {
+        students.forEach(s => {
+            const att = attendance.find(a => a.studentId === s.id);
+            if (att && (att.sakit != null || att.izin != null || att.alpa != null)) filledAttendance++;
+        });
+    }
+    const attendanceScore = (filledAttendance / totalStudents) * 10;
+
+    // 4. Notes (15% weight)
+    let filledNotes = 0;
+    if (notes) {
+        students.forEach(s => {
+            if (notes[s.id] && notes[s.id].trim() !== '') filledNotes++;
+        });
+    }
+    const notesScore = (filledNotes / totalStudents) * 15;
+
+    // 5. Extracurriculars (15% weight)
+    let filledExtra = 0;
+    if (studentExtracurriculars) {
+        students.forEach(s => {
+            const extra = studentExtracurriculars.find(se => se.studentId === s.id);
+            if (extra && extra.assignedActivities && extra.assignedActivities.some(a => a !== null)) filledExtra++;
+        });
+    }
+    const extraScore = (filledExtra / totalStudents) * 15;
+
+    return Math.round(studentScore + gradesScore + attendanceScore + notesScore + extraScore);
+};
+
 
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
@@ -246,6 +308,7 @@ const App = () => {
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState([]);
   const [isCheckingDrive, setIsCheckingDrive] = useState(false);
+  const [driveConflictData, setDriveConflictData] = useState(null); // Comparison state
 
   const [googleDriveFileId, setGoogleDriveFileId] = useState(null);
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
@@ -644,29 +707,31 @@ const App = () => {
     }
   }, [settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal, showToast]);
 
-    const importFromExcelBlob = useCallback(async (blob) => {
-    if (typeof XLSX === 'undefined') {
-        showToast('Pustaka impor (SheetJS) tidak termuat.', 'error');
-        return;
-    }
-    setIsLoading(true);
-    try {
+    // Function to parse Excel data *without* setting state immediately.
+    // Returns the data object or throws an error.
+    const parseExcelBlob = useCallback(async (blob) => {
+        if (typeof XLSX === 'undefined') {
+            throw new Error('Pustaka impor (SheetJS) tidak termuat.');
+        }
+        
         const data = await blob.arrayBuffer();
         const workbook = XLSX.read(data);
 
-        // --- Clear existing data before import ---
-        setSettings(initialSettings);
-        setStudents(initialStudents);
-        setGrades(initialGrades);
-        setNotes(initialNotes);
-        setCocurricularData(initialCocurricularData);
-        setAttendance(initialAttendance);
-        setExtracurriculars(presets?.extracurriculars || []);
-        setStudentExtracurriculars(initialStudentExtracurriculars);
-        setSubjects(defaultSubjects);
-        setLearningObjectives({});
-        setFormativeJournal(initialFormativeJournal);
-        
+        // Prepare return object
+        const parsedData = {
+            settings: { ...initialSettings },
+            students: [],
+            subjects: defaultSubjects,
+            extracurriculars: presets?.extracurriculars || [],
+            attendance: initialAttendance,
+            notes: initialNotes,
+            cocurricularData: initialCocurricularData,
+            studentExtracurriculars: initialStudentExtracurriculars,
+            learningObjectives: {},
+            grades: initialGrades,
+            formativeJournal: initialFormativeJournal
+        };
+
         let newSettings = { ...initialSettings };
         let newStudents = [];
         let newSubjects = [];
@@ -869,7 +934,6 @@ const App = () => {
             });
         }
 
-
         // 10. Parse Aset Gambar (dengan rekombinasi chunk)
         const wsImageAssets = workbook.Sheets["Aset Gambar"];
         if (wsImageAssets) {
@@ -901,28 +965,47 @@ const App = () => {
             }
         }
 
+        return {
+            settings: newSettings,
+            subjects: newSubjects,
+            extracurriculars: newExtracurriculars,
+            students: newStudents,
+            learningObjectives: newLearningObjectives,
+            grades: newGrades,
+            attendance: newAttendance,
+            notes: newNotes,
+            cocurricularData: newCocurricularData,
+            studentExtracurriculars: newStudentExtracurriculars,
+            formativeJournal: newFormativeJournal
+        };
+    }, [presets]);
 
-        setSettings(newSettings);
-        setSubjects(newSubjects);
-        setExtracurriculars(newExtracurriculars);
-        setStudents(newStudents);
-        setLearningObjectives(newLearningObjectives);
-        setGrades(newGrades);
-        setAttendance(newAttendance);
-        setNotes(newNotes);
-        setCocurricularData(newCocurricularData);
-        setStudentExtracurriculars(newStudentExtracurriculars);
-        setFormativeJournal(newFormativeJournal);
-        
-        showToast('Data berhasil diimpor dari file!', 'success');
-        
-    } catch (error) {
-        console.error("Gagal mengimpor data:", error);
-        showToast(`Format file tidak valid atau rusak: ${error.message}`, 'error');
-    } finally {
-        setIsLoading(false);
-    }
-    }, [showToast, presets]);
+    const importFromExcelBlob = useCallback(async (blob) => {
+        setIsLoading(true);
+        try {
+            const newData = await parseExcelBlob(blob);
+            
+            // Apply data to state
+            setSettings(newData.settings);
+            setSubjects(newData.subjects);
+            setExtracurriculars(newData.extracurriculars);
+            setStudents(newData.students);
+            setLearningObjectives(newData.learningObjectives);
+            setGrades(newData.grades);
+            setAttendance(newData.attendance);
+            setNotes(newData.notes);
+            setCocurricularData(newData.cocurricularData);
+            setStudentExtracurriculars(newData.studentExtracurriculars);
+            setFormativeJournal(newData.formativeJournal);
+            
+            showToast('Data berhasil diimpor dari file!', 'success');
+        } catch (error) {
+            console.error("Gagal mengimpor data:", error);
+            showToast(`Format file tidak valid atau rusak: ${error.message}`, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [showToast, parseExcelBlob]);
 
     const handleExportAll = useCallback(() => {
         const blob = exportToExcelBlob();
@@ -1281,23 +1364,82 @@ const App = () => {
     const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
     const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
     const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
+    
     const handleDriveFileSelection = async (fileId) => {
-        if (!fileId) { setIsDriveModalOpen(false); return; }
-        setIsDriveModalOpen(false);
+        if (!fileId) { setIsDriveModalOpen(false); setDriveConflictData(null); return; }
+        
         setIsLoading(true);
-        showToast("Mengunduh data dari Google Drive...", 'info');
+        showToast("Mengunduh data untuk verifikasi...", 'info');
         try {
             const blob = await downloadFile(fileId);
-            await importFromExcelBlob(blob);
+            const remoteData = await parseExcelBlob(blob);
             
-            setGoogleDriveFileId(fileId);
+            // Calculate completeness scores
+            const localScore = calculateDataCompleteness(appData);
+            const remoteScore = calculateDataCompleteness(remoteData);
+            
             const selectedFile = driveFiles.find(f => f.id === fileId);
-            setLastSyncTimestamp(selectedFile?.modifiedTime || new Date().toISOString());
-            showToast("Data berhasil diunduh dan dimuat!", 'success');
+            const remoteTimestamp = selectedFile?.modifiedTime || new Date().toISOString();
+            
+            // Set conflict data for modal to display
+            setDriveConflictData({
+                fileId,
+                local: {
+                    score: localScore,
+                    timestamp: lastSyncTimestamp || new Date().toISOString(), // Fallback if no sync yet
+                },
+                remote: {
+                    score: remoteScore,
+                    timestamp: remoteTimestamp,
+                    blob: blob, // Keep blob ready to load
+                    data: remoteData // Keep parsed data
+                }
+            });
+            // Don't close modal yet, it will switch views based on driveConflictData prop
+            
         } catch (error) {
-            console.error("Gagal mengunduh file yang dipilih:", error);
-            showToast(`Gagal mengunduh: ${error.message}`, 'error');
+            console.error("Gagal memproses file Drive:", error);
+            showToast(`Gagal: ${error.message}`, 'error');
+            setIsDriveModalOpen(false);
         } finally { setIsLoading(false); }
+    };
+    
+    const handleConfirmSyncAction = async (action, payload) => {
+        setIsLoading(true);
+        try {
+            if (action === 'overwrite_local') {
+                // User chose to download Drive data
+                const blob = payload;
+                await importFromExcelBlob(blob);
+                setGoogleDriveFileId(driveConflictData.fileId);
+                setLastSyncTimestamp(driveConflictData.remote.timestamp);
+                setDriveConflictData(null);
+                setIsDriveModalOpen(false);
+                showToast("Data perangkat berhasil diperbarui dari Drive.", 'success');
+            } else if (action === 'overwrite_drive') {
+                // User chose to upload Local data
+                const fileId = payload;
+                const blob = exportToExcelBlob();
+                const fileName = getDynamicRKTFileName(settings);
+                await uploadFile(fileId, fileName, blob, RKT_MIME_TYPE);
+                
+                // Update local sync state
+                setGoogleDriveFileId(fileId);
+                const newTime = new Date().toISOString();
+                setLastSyncTimestamp(newTime);
+                setIsDirty(false);
+                setSyncStatus('saved');
+                
+                setDriveConflictData(null);
+                setIsDriveModalOpen(false);
+                showToast("Data Drive berhasil diperbarui dengan data perangkat.", 'success');
+            }
+        } catch (error) {
+            console.error("Sync Action Failed:", error);
+            showToast(`Gagal melakukan sinkronisasi: ${error.message}`, 'error');
+        } finally {
+            setIsLoading(false);
+        }
     };
     
     const handleDriveFileDelete = async (fileId, fileName) => {
@@ -1392,7 +1534,16 @@ const App = () => {
     
   return React.createElement(React.Fragment, null,
       isUpdateAvailable && React.createElement('div', { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" }, React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'), React.createElement('button', { onClick: updateAssets, className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold' }, 'Perbarui Sekarang')),
-      React.createElement(DriveDataSelectionModal, { isOpen: isDriveModalOpen, onClose: () => setIsDriveModalOpen(false), onConfirm: handleDriveFileSelection, files: driveFiles, isLoading: isCheckingDrive, onDelete: handleDriveFileDelete }),
+      React.createElement(DriveDataSelectionModal, { 
+          isOpen: isDriveModalOpen, 
+          onClose: () => { setIsDriveModalOpen(false); setDriveConflictData(null); }, 
+          onConfirm: handleDriveFileSelection, 
+          files: driveFiles, 
+          isLoading: isCheckingDrive, 
+          onDelete: handleDriveFileDelete,
+          conflictData: driveConflictData,
+          onConfirmAction: handleConfirmSyncAction
+      }),
       React.createElement('div', { className: mainLayoutClass },
         React.createElement(Navigation, { 
             activePage, 
