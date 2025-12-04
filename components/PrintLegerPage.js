@@ -322,31 +322,17 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             return;
         }
 
-        const firstCell = nameCellRefs.current[0];
-        if (!firstCell) return;
-    
-        const tempSpan = document.createElement("span");
-        tempSpan.style.fontSize = `${currentSize}pt`;
-        tempSpan.style.fontFamily = "Times, serif";
-        tempSpan.style.visibility = "hidden";
-        tempSpan.style.position = "absolute";
-        tempSpan.innerText = "Test";
-        document.body.appendChild(tempSpan);
-        const singleLineHeight = tempSpan.offsetHeight;
-        document.body.removeChild(tempSpan);
-
-        if (singleLineHeight <= 0) return;
-
         let needsResize = false;
         for (const cell of nameCellRefs.current) {
-            if (cell && cell.offsetHeight > singleLineHeight * 1.5) {
+            // Check for horizontal overflow to detect if single-line name is too wide
+            if (cell && cell.scrollWidth > cell.clientWidth + 1) {
                 needsResize = true;
                 break;
             }
         }
-    
-        if (needsResize && currentSize > 6) { // Minimum font size of 6pt
-            setNameFontSize(size => Math.max(6, size - 0.2));
+        
+        if (needsResize && currentSize > 5) { 
+            setNameFontSize(size => Math.max(5, size - 0.2));
         }
     }, [isMeasuring, processedData, isCompact, nameFontSize, cmToPx]);
 
@@ -398,7 +384,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NISN"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NIS"),
                 React.createElement('td', { colSpan: displaySubjects.length, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NILAI MATA PELAJARAN"),
-                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JUMLAH"),
+                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JML"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RATA-RATA"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JUARA")
             ),
@@ -425,7 +411,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     };
 
     const renderTable = (rows) => (
-        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[7.5pt]' : 'text-[8pt]'}` },
+        React.createElement('table', { 
+            className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[7.5pt]' : 'text-[8pt]'}`,
+            style: { tableLayout: 'fixed' } 
+        },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
                 React.createElement('col', { style: { width: '22%' } }),
