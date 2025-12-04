@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-// ... (imports remain unchanged)
+// ... (imports remain the same)
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -21,7 +21,7 @@ import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 
-// ... (constants and db helper remain unchanged)
+// ... (constants and db helper remain the same)
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
     console.warn(
@@ -146,7 +146,7 @@ const getDynamicRKTFileName = (currentSettings) => {
 };
 
 const calculateFinalGrade = (detailed, config, settings) => {
-    // ... (unchanged)
+    // ... (unchanged logic)
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap } = settings;
@@ -226,12 +226,10 @@ const calculateFinalGrade = (detailed, config, settings) => {
 };
 
 // Helper function to calculate data completeness percentage
-// UPDATED: Strictly filters out empty/ghost students before calculating.
 const calculateDataCompleteness = (data) => {
     const { students, grades, subjects, attendance, notes, studentExtracurriculars } = data;
     
     // 1. FILTER VALID STUDENTS (Ignore ghost rows/empty names)
-    // This is the key fix requested. Only count rows with actual names.
     const validStudents = (students || []).filter(s => s.namaLengkap && s.namaLengkap.toString().trim() !== '');
     
     if (validStudents.length === 0) return 0;
@@ -314,9 +312,8 @@ const calculateDataCompleteness = (data) => {
 
 
 const App = () => {
-  // ... (App component logic remains same, just ensuring parseExcelBlob uses strict filtering too)
+  // ... (hooks and states remain the same)
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
-  // ... (state hooks)
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -503,7 +500,7 @@ const App = () => {
     }, [showToast]);
 
   const exportToExcelBlob = useCallback(() => {
-    // ... (unchanged export logic)
+    // ... (No changes here, handled in existing file or truncated for brevity as request focuses on parsing logic)
     if (typeof XLSX === 'undefined') {
         showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
         return null;
@@ -543,6 +540,22 @@ const App = () => {
         });
         const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsData);
         XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
+
+        // Sheet Status Data (NEW)
+        // Hitung persentase kelengkapan saat ini sebelum ekspor
+        const currentDataForCalc = {
+            students, grades, subjects, attendance, notes, studentExtracurriculars
+        };
+        const completenessScore = calculateDataCompleteness(currentDataForCalc);
+
+        const statusData = [
+            ["Properti Data", "Nilai"],
+            ["Persentase Kelengkapan", completenessScore],
+            ["Terakhir Diubah", new Date().toISOString()],
+            ["Versi Generator", "RKT_v1"]
+        ];
+        const wsStatus = XLSX.utils.aoa_to_sheet(statusData);
+        XLSX.utils.book_append_sheet(wb, wsStatus, "Status Data");
 
         // Sheets 3 & 4
         const subjectsData = subjects.map(s => ({ "ID Internal (Jangan Diubah)": s.id, "Nama Lengkap": s.fullName, "Singkatan": s.label, "Status Aktif": s.active ? 'Aktif' : 'Tidak Aktif' }));
@@ -749,7 +762,8 @@ const App = () => {
             studentExtracurriculars: initialStudentExtracurriculars,
             learningObjectives: {},
             grades: initialGrades,
-            formativeJournal: initialFormativeJournal
+            formativeJournal: initialFormativeJournal,
+            metadata: { completeness: null } // New metadata field
         };
 
         let newSettings = { ...initialSettings };
@@ -764,6 +778,15 @@ const App = () => {
         let newGrades = [];
         let newFormativeJournal = {};
         const subjectStructureMap = new Map();
+
+        // 0. Parse Status Data (Metadata)
+        const wsStatus = workbook.Sheets["Status Data"];
+        if (wsStatus) {
+            const statusData = XLSX.utils.sheet_to_json(wsStatus, { header: 1 });
+            statusData.forEach(row => {
+                if (row[0] === "Persentase Kelengkapan") parsedData.metadata.completeness = row[1];
+            });
+        }
 
         // 1. Parse Pengaturan
         const wsPengaturan = workbook.Sheets["Pengaturan"];
@@ -1039,19 +1062,19 @@ const App = () => {
             }
         }
 
-        return {
-            settings: newSettings,
-            subjects: newSubjects,
-            extracurriculars: newExtracurriculars,
-            students: newStudents,
-            learningObjectives: newLearningObjectives,
-            grades: newGrades,
-            attendance: newAttendance,
-            notes: newNotes,
-            cocurricularData: newCocurricularData,
-            studentExtracurriculars: newStudentExtracurriculars,
-            formativeJournal: newFormativeJournal
-        };
+        parsedData.settings = newSettings;
+        parsedData.subjects = newSubjects;
+        parsedData.extracurriculars = newExtracurriculars;
+        parsedData.students = newStudents;
+        parsedData.learningObjectives = newLearningObjectives;
+        parsedData.grades = newGrades;
+        parsedData.attendance = newAttendance;
+        parsedData.notes = newNotes;
+        parsedData.cocurricularData = newCocurricularData;
+        parsedData.studentExtracurriculars = newStudentExtracurriculars;
+        parsedData.formativeJournal = newFormativeJournal;
+
+        return parsedData;
     }, [presets]);
 
     // ... (rest of App component)
@@ -1432,14 +1455,24 @@ const App = () => {
             // 1. Process Remote File
             const blob = await downloadFile(fileId);
             const remoteData = await parseExcelBlob(blob);
-            const remoteScore = calculateDataCompleteness(remoteData);
             
-            // 2. Process Local Data (Apple-to-Apple Comparison)
-            // Instead of calculating from state directly, we export to Excel and parse it back.
-            // This ensures both datasets go through the exact same parsing logic/sanitization.
+            // Logic: Use specific sheet if exists, otherwise 0 (as requested for legacy files)
+            let remoteScore = 0;
+            if (remoteData.metadata && remoteData.metadata.completeness != null) {
+                remoteScore = parseInt(remoteData.metadata.completeness, 10);
+            } else {
+                // Fallback to 0% for legacy files without the metadata sheet
+                remoteScore = 0;
+            }
+            
+            // 2. Process Local Data (Apple-to-Apple Comparison via Export)
             const localBlob = exportToExcelBlob();
             const localDataParsed = await parseExcelBlob(localBlob);
-            const localScore = calculateDataCompleteness(localDataParsed);
+            // Read from the metadata we just generated in exportToExcelBlob
+            let localScore = 0;
+            if (localDataParsed.metadata && localDataParsed.metadata.completeness != null) {
+                localScore = parseInt(localDataParsed.metadata.completeness, 10);
+            }
             
             const selectedFile = driveFiles.find(f => f.id === fileId);
             const remoteTimestamp = selectedFile?.modifiedTime || new Date().toISOString();
