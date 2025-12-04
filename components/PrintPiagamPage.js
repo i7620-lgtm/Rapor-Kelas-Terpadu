@@ -81,8 +81,8 @@ const generateInitialPiagamLayout = (settings) => {
         ...adaptedKopElements,
         { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', dominantBaseline: 'middle' },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
-        // Updated default: Font 'Pinyon Script', size reduced to 45, y moved down to +91
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 91, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script' },
+        // Updated default: Font 'Pinyon Script', size 45, centered vertically (y=85, middle baseline) between 'diberikan' (45) and 'sebagai' (130)
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', dominantBaseline: 'middle' },
         { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
