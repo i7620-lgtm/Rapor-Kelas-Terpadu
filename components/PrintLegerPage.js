@@ -377,23 +377,23 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
     
     const tableHeader = useMemo(() => (
-        React.createElement('thead', { className: isCompact ? 'text-[7pt]' : 'text-[7.5pt]' },
+        React.createElement('thead', { className: isCompact ? 'text-[6pt]' : 'text-[6.5pt]' },
             React.createElement('tr', { className: "text-center font-bold" },
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NO"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NAMA MURID"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NISN"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NIS"),
-                React.createElement('td', { colSpan: displaySubjects.length, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NILAI MATA PELAJARAN"),
+                React.createElement('td', { colSpan: displaySubjects.length, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0.5' : 'px-1 py-0.5'}` }, "NILAI MATA PELAJARAN"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JML"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RATA-RATA"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JUARA")
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
-                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
+                    React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '1.75rem' : '2.45rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
-                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '5.5pt' : '6pt' }
+                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '6.5pt' : '7pt' }
                             }, subject.label)
                         )
                     )
@@ -417,13 +417,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
-                React.createElement('col', { style: { width: '22%' } }),
-                React.createElement('col', { style: { width: '8%' } }),
-                React.createElement('col', { style: { width: '6%' } }),
-                ...displaySubjects.map(() => React.createElement('col', { style: { width: `${(100 - 3 - 22 - 8 - 6 - 5 - 6 - 5) / displaySubjects.length}%` } })),
-                React.createElement('col', { style: { width: '5%' } }),
-                React.createElement('col', { style: { width: '6%' } }),
-                React.createElement('col', { style: { width: '5%' } })
+                React.createElement('col', { style: { width: '25%' } }), // Increased Name to 25%
+                React.createElement('col', { style: { width: '9%' } }), // Reduced NISN to 9%
+                React.createElement('col', { style: { width: '4.5%' } }),  // Reduced NIS to 4.5%
+                ...displaySubjects.map(() => React.createElement('col', { style: { width: `${(100 - 3 - 25 - 9 - 4.5 - 4.5 - 5.5 - 6.5) / displaySubjects.length}%` } })),
+                React.createElement('col', { style: { width: '4.5%' } }), // Reduced JML to 4.5%
+                React.createElement('col', { style: { width: '5.5%' } }), // Reduced Rata-rata to 5.5%
+                React.createElement('col', { style: { width: '6.5%' } })  // Reduced Juara to 6.5%
             ),
             tableHeader,
             React.createElement('tbody', { className: "leading-snug" },
