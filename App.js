@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-// ... (imports remain the same)
+// ... (imports remain unchanged)
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -21,7 +21,7 @@ import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 
-// ... (constants and db helper remain the same)
+// ... (constants and db helper remain unchanged)
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 if (!GOOGLE_CLIENT_ID) {
     console.warn(
@@ -146,7 +146,7 @@ const getDynamicRKTFileName = (currentSettings) => {
 };
 
 const calculateFinalGrade = (detailed, config, settings) => {
-    // ... (unchanged logic)
+    // ... (unchanged)
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap } = settings;
@@ -500,7 +500,7 @@ const App = () => {
     }, [showToast]);
 
   const exportToExcelBlob = useCallback(() => {
-    // ... (No changes here, handled in existing file or truncated for brevity as request focuses on parsing logic)
+    // ... (unchanged export logic)
     if (typeof XLSX === 'undefined') {
         showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
         return null;
@@ -978,7 +978,16 @@ const App = () => {
 
         // 9. Parse other sheets
         const wsAttendance = workbook.Sheets["Absensi"];
-        if (wsAttendance) newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ studentId: a.studentId, Sakit: a.Sakit, Izin: a.Izin, Alpa: a.Alpa }));
+        if (wsAttendance) {
+            // FIX: Map Excel columns (Sakit, Izin, Alpa) to state properties (sakit, izin, alpa) correctly.
+            newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ 
+                studentId: a.studentId, 
+                sakit: a.Sakit != null ? Number(a.Sakit) : null, 
+                izin: a.Izin != null ? Number(a.Izin) : null, 
+                alpa: a.Alpa != null ? Number(a.Alpa) : null 
+            }));
+        }
+        
         const wsNotes = workbook.Sheets["Catatan Wali Kelas"];
         if (wsNotes) newNotes = XLSX.utils.sheet_to_json(wsNotes).reduce((acc, n) => { acc[n["ID Siswa"]] = n["Catatan Wali Kelas"]; return acc; }, {});
         
