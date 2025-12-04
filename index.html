@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Alex+Brush&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {
@@ -117,7 +118,7 @@
         margin-top: 0 !important;
     }
     
-    .report-page {
+    .report-page, .leger-page {
       box-shadow: none !important;
       border: none !important;
       margin: 0 !important;
@@ -131,25 +132,12 @@
     }
 
     /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
-    .report-page:last-of-type {
+    .report-page:last-of-type, .leger-page:last-of-type {
       page-break-after: auto;
     }
 
     .print-hidden {
         display: none !important;
-    }
-
-    /* Leger specific print styles */
-    .leger-page {
-        border: none !important;
-        box-shadow: none !important;
-    }
-    .leger-table thead {
-      display: table-header-group; /* Repeat table header on each page */
-    }
-
-    .leger-table tr {
-      page-break-inside: avoid; /* Prevent table rows from breaking across pages */
     }
   }
 
