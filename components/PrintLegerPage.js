@@ -314,7 +314,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     
         nameCellRefs.current = nameCellRefs.current.slice(0, processedData.length);
     
-        const initialSize = isCompact ? 8.5 : 9;
+        // Reduced initial font size by ~1pt
+        const initialSize = isCompact ? 7.5 : 8;
         const currentSize = nameFontSize ?? initialSize;
     
         if (nameFontSize === null) {
@@ -344,9 +345,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 break;
             }
         }
-    
-        if (needsResize && currentSize > 6) { // Minimum font size of 6pt
-            setNameFontSize(size => Math.max(6, size - 0.2));
+        
+        // Reduced min font size to accommodate smaller table text
+        if (needsResize && currentSize > 5) { 
+            setNameFontSize(size => Math.max(5, size - 0.2));
         }
     }, [isMeasuring, processedData, isCompact, nameFontSize, cmToPx]);
 
@@ -391,7 +393,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
     
     const tableHeader = useMemo(() => (
-        React.createElement('thead', { className: isCompact ? 'text-[8pt]' : 'text-[8.5pt]' },
+        // Reduced base header font size
+        React.createElement('thead', { className: isCompact ? 'text-[7pt]' : 'text-[7.5pt]' },
             React.createElement('tr', { className: "text-center font-bold" },
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NO"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NAMA MURID"),
@@ -407,7 +410,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
-                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '7.5pt' : '8pt' }
+                                // Reduced font size for subjects further
+                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '6.5pt' : '7pt' }
                             }, subject.label)
                         )
                     )
@@ -425,7 +429,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     };
 
     const renderTable = (rows) => (
-        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[8.5pt]' : 'text-[9pt]'}` },
+        // Reduced base table font size
+        React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[7.5pt]' : 'text-[8pt]'}` },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
                 React.createElement('col', { style: { width: '22%' } }),
@@ -465,7 +470,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             ...displaySubjects.map(subject => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].max)
                             ),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.max),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Cleared JUMLAH
                             React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
@@ -474,7 +479,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             ...displaySubjects.map(subject => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].min)
                             ),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.min),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Cleared JUMLAH
                             React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
@@ -483,7 +488,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             ...displaySubjects.map(subject => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].sum)
                             ),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.sum),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Cleared JUMLAH
                             React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
@@ -492,7 +497,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             ...displaySubjects.map(subject => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].avg)
                             ),
-                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Cleared JUMLAH
                             React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         )
