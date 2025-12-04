@@ -23,6 +23,15 @@ const toRoman = (num) => {
     return str;
 };
 
+// Helper to measure text width
+const getTextWidth = (text, font) => {
+    if (typeof document === 'undefined') return 0;
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = font;
+    return context.measureText(text).width;
+};
+
 const generateInitialPiagamLayout = (settings) => {
     // Generate the base layout first, which now has dynamically correct Y positions.
     const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 
@@ -61,9 +70,9 @@ const generateInitialPiagamLayout = (settings) => {
     
     const contentStartY = kopBottomY + 35; 
     const rankBoxWidth = 300;
-    const rankBoxHeight = 50;
+    const rankBoxHeight = 38; // Reduced from 40 to 38
     const rankBoxX = (PIAGAM_WIDTH - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 130; 
+    const rankBoxY = contentStartY + 130 + 7; // Shifted down (original base 130 + 5 + 2)
 
     const paragraphY = rankBoxY + rankBoxHeight + 20; 
     const signatureY = paragraphY + 105;
@@ -72,11 +81,13 @@ const generateInitialPiagamLayout = (settings) => {
         ...adaptedKopElements,
         { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', dominantBaseline: 'middle' },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 36, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 115, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        // Updated default: Font 'Pinyon Script', size reduced to 45, y moved down to +91
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 91, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
         { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
-        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + 35, width: 1000, fontSize: 28, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e' },
+        // Updated rank text: smaller font, centered vertically with middle baseline
+        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e', dominantBaseline: 'middle' },
 
         { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
@@ -207,7 +218,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             let textAnchor = "start", xPos = el.x;
                                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
+                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
                                         } else if (el.type === 'image') {
                                             const imageUrl = String(settings[el.content] || '');
                                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
@@ -267,7 +278,14 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                      React.createElement(React.Fragment, null,
                                         React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Teks"), React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId, { content: e.target.value }), className: "w-full p-1 border rounded", rows: 3 })),
                                         React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded" })),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), React.createElement('option', { value: "system-ui" }, "System UI (Modern)"))),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId, { fontFamily: e.target.value }), className: "w-full p-1 border rounded" }, 
+                                            React.createElement('option', { value: "Tinos" }, "Tinos (Formal)"), 
+                                            React.createElement('option', { value: "Pinyon Script" }, "Pinyon Script (Elegan)"),
+                                            React.createElement('option', { value: "Alex Brush" }, "Alex Brush (Klasik)"),
+                                            React.createElement('option', { value: "Great Vibes" }, "Great Vibes (Artistik)"),
+                                            React.createElement('option', { value: "Dancing Script" }, "Dancing Script (Santai)"),
+                                            React.createElement('option', { value: "system-ui" }, "System UI (Modern)")
+                                        )),
                                         React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId, { fontWeight: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
                                         React.createElement('div', null, React.createElement('label', { className: "text-sm" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId, { textAlign: e.target.value }), className: "w-full p-1 border rounded" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan"))),
                                         React.createElement('div', null,
@@ -389,26 +407,43 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
         ? settings.piagam_layout
         : generateInitialPiagamLayout(settings);
 
+    // Calculate rank string and dynamic dimensions
+    const rankString = useMemo(() => {
+        if (!rank) return '';
+        if (rank <= 3) return `PERINGKAT ${toRoman(rank)}`;
+        return `HARAPAN ${toRoman(rank - 3)}`;
+    }, [rank]);
+
+    const { dynamicBoxWidth, dynamicBoxX } = useMemo(() => {
+        const rankTextDef = layout.find(el => el.id === 'rank_text');
+        if (rankTextDef && rankString) {
+            const fontSize = rankTextDef.fontSize || 24;
+            const fontFamily = rankTextDef.fontFamily || 'Tinos';
+            const fontWeight = rankTextDef.fontWeight || 'bold';
+            const fontSpec = `${fontWeight} ${fontSize}px ${fontFamily}`;
+            const textWidth = getTextWidth(rankString, fontSpec);
+            
+            // "lebar persegi panjang menjadi teks nama peringkat ditambah 4 spasi (kiri dan kanan)"
+            const fourSpacesWidth = getTextWidth('    ', fontSpec); 
+            const padding = fourSpacesWidth * 2; // Left + Right
+            
+            const width = textWidth + padding; 
+            
+            // Center box relative to the text element's visual center
+            const textCenterX = (rankTextDef.x || 0) + ((rankTextDef.width || 0) / 2);
+            const x = textCenterX - (width / 2);
+            
+            return { dynamicBoxWidth: width, dynamicBoxX: x };
+        }
+        return { dynamicBoxWidth: 300, dynamicBoxX: (PIAGAM_WIDTH - 300) / 2 };
+    }, [layout, rankString]);
+
     const replacePlaceholders = (text) => {
         if (!text) return '';
-        
-        let rankString = '';
-        let rankText = '[RANK TEXT]';
-        
-        if (rank) {
-            if (rank <= 3) {
-                rankString = `PERINGKAT ${toRoman(rank)}`;
-            } else {
-                // Assuming ranks > 3 are Hopeful Ranks (Harapan)
-                // Rank 4 -> Harapan I, Rank 5 -> Harapan II, etc.
-                rankString = `HARAPAN ${toRoman(rank - 3)}`;
-            }
-        }
-
         const classRoman = toRoman(parseInt(settings.nama_kelas, 10)) || settings.nama_kelas;
         
         return text
-            .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '').toUpperCase())
+            .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '')) // Removed .toUpperCase()
             .replace(/\[RANK\]/gi, rank ? toRoman(rank) : '') // Legacy support if user customized layout
             .replace(/\[RANK TEXT\]/gi, rankString) // New placeholder for full rank text
             .replace(/PERINGKAT \[RANK\]/gi, rankString) // Replace default combo if present
@@ -442,21 +477,36 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMid meet" },
                     !settings.piagam_background && React.createElement(DefaultPiagamBackground, null),
                     layout.map(el => {
+                        let currentEl = { ...el };
+                        
+                        // Dynamic Rank Box
+                        if (el.id === 'rank_box') {
+                            currentEl.width = dynamicBoxWidth;
+                            currentEl.x = dynamicBoxX;
+                            // Sync Y position with text offset to ensure vertical centering
+                            currentEl.y = el.y + 1;
+                        }
+                        
+                        // Dynamic Rank Text Y Adjustment
+                        if (el.id === 'rank_text') {
+                            currentEl.y = el.y + 3;
+                        }
+
                         let elementRender;
-                        if (el.type === 'text') {
-                            let textAnchor = "start", xPos = el.x;
-                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
-                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { textDecoration: el.textDecoration || 'none' } }, replacePlaceholders(el.content));
-                        } else if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || '');
-                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
-                        } else if (el.type === 'rect' || el.type === 'line') {
-                            elementRender = React.createElement('rect', { x: el.x, y: el.y, width: el.width, height: el.height, fill: el.fill || "black", rx: el.rx || 0, ry: el.ry || 0, stroke: el.stroke, strokeWidth: el.strokeWidth });
+                        if (currentEl.type === 'text') {
+                            let textAnchor = "start", xPos = currentEl.x;
+                            if (currentEl.textAlign === 'center') { textAnchor = "middle"; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
+                            else if (currentEl.textAlign === 'right') { textAnchor = "end"; xPos = currentEl.x + (currentEl.width ?? 0); }
+                            elementRender = React.createElement('text', { x: xPos, y: currentEl.y, fontSize: currentEl.fontSize, fontWeight: currentEl.fontWeight, textAnchor: textAnchor, fontFamily: currentEl.fontFamily, fill: currentEl.fill || 'black', dominantBaseline: currentEl.dominantBaseline || 'auto', style: { textDecoration: currentEl.textDecoration || 'none' } }, replacePlaceholders(currentEl.content));
+                        } else if (currentEl.type === 'image') {
+                            const imageUrl = String(settings[currentEl.content] || '');
+                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height }) : null;
+                        } else if (currentEl.type === 'rect' || currentEl.type === 'line') {
+                            elementRender = React.createElement('rect', { x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height, fill: currentEl.fill || "black", rx: currentEl.rx || 0, ry: currentEl.ry || 0, stroke: currentEl.stroke, strokeWidth: currentEl.strokeWidth });
                         } else {
                             return null;
                         }
-                        return React.createElement('g', { key: el.id }, elementRender);
+                        return React.createElement('g', { key: currentEl.id }, elementRender);
                     })
                 )
             )
