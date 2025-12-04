@@ -194,7 +194,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     const processedData = useMemo(() => {
         if (!students || !grades) return [];
-        return students.map((student, index) => {
+        const dataWithScores = students.map((student, index) => {
             const finalGrades = grades.find((g) => g.studentId === student.id)?.finalGrades || {};
             let total = 0, count = 0;
             const studentGrades = {};
@@ -217,9 +217,62 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 if (typeof grade === 'number') { total += grade; count++; }
                 studentGrades[ds.id] = grade;
             });
-            return { no: index + 1, namaLengkap: student.namaLengkap, nisn: student.nisn, nis: student.nis, grades: studentGrades, total, average: count > 0 ? (total / count).toFixed(2) : "0.00" };
+            return { id: student.id, no: index + 1, namaLengkap: student.namaLengkap, nisn: student.nisn, nis: student.nis, grades: studentGrades, total, average: count > 0 ? (total / count).toFixed(2) : "0.00" };
         });
+
+        // Calculate Rank based on Total
+        const sortedData = [...dataWithScores].sort((a, b) => b.total - a.total);
+        const rankMap = new Map();
+        if (sortedData.length > 0) {
+            let currentRank = 1;
+            rankMap.set(sortedData[0].id, currentRank);
+            for (let i = 1; i < sortedData.length; i++) {
+                if (sortedData[i].total < sortedData[i - 1].total) {
+                    currentRank = i + 1;
+                }
+                rankMap.set(sortedData[i].id, currentRank);
+            }
+        }
+
+        return dataWithScores.map(d => ({
+            ...d,
+            rank: rankMap.get(d.id)
+        }));
     }, [students, grades, activeSubjects, displaySubjects]);
+
+    const statistics = useMemo(() => {
+        if (!processedData.length) return null;
+
+        const subjectStats = {};
+        displaySubjects.forEach(s => {
+            const values = processedData.map(d => d.grades[s.id]).filter(v => typeof v === 'number');
+            subjectStats[s.id] = {
+                max: values.length ? Math.max(...values) : 0,
+                min: values.length ? Math.min(...values) : 0,
+                sum: values.reduce((a, b) => a + b, 0),
+                avg: values.length ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : "0.00"
+            };
+        });
+
+        const totalValues = processedData.map(d => d.total);
+        const avgValues = processedData.map(d => parseFloat(d.average));
+
+        return {
+            subjects: subjectStats,
+            total: {
+                max: totalValues.length ? Math.max(...totalValues) : 0,
+                min: totalValues.length ? Math.min(...totalValues) : 0,
+                sum: totalValues.reduce((a, b) => a + b, 0),
+                avg: totalValues.length ? (totalValues.reduce((a, b) => a + b, 0) / totalValues.length).toFixed(2) : "0.00"
+            },
+            average: {
+                max: avgValues.length ? Math.max(...avgValues).toFixed(2) : 0,
+                min: avgValues.length ? Math.min(...avgValues).toFixed(2) : 0,
+                sum: avgValues.reduce((a, b) => a + b, 0).toFixed(2),
+                avg: avgValues.length ? (avgValues.reduce((a, b) => a + b, 0) / avgValues.length).toFixed(2) : "0.00"
+            }
+        };
+    }, [processedData, displaySubjects]);
 
     useEffect(() => {
         setNameFontSize(null);
@@ -346,7 +399,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NIS"),
                 React.createElement('td', { colSpan: displaySubjects.length, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NILAI MATA PELAJARAN"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JUMLAH"),
-                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RATA-RATA")
+                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RATA-RATA"),
+                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "PERINGKAT")
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
@@ -362,16 +416,25 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         )
     ), [displaySubjects, isCompact]);
     
+    const getRankColor = (rank) => {
+        if (rank === 1) return 'bg-yellow-200';
+        if (rank === 2) return 'bg-slate-300';
+        if (rank === 3) return 'bg-orange-200';
+        if (rank >= 4 && rank <= 10) return 'bg-blue-100';
+        return '';
+    };
+
     const renderTable = (rows) => (
         React.createElement('table', { className: `w-full border-collapse border border-black font-times ${isCompact ? 'text-[8.5pt]' : 'text-[9pt]'}` },
             React.createElement('colgroup', null,
                 React.createElement('col', { style: { width: '3%' } }),
-                React.createElement('col', { style: { width: '25%' } }),
+                React.createElement('col', { style: { width: '22%' } }),
                 React.createElement('col', { style: { width: '8%' } }),
                 React.createElement('col', { style: { width: '6%' } }),
-                ...displaySubjects.map(() => React.createElement('col', { style: { width: `${(100 - 3 - 25 - 8 - 6 - 5 - 6) / displaySubjects.length}%` } })),
+                ...displaySubjects.map(() => React.createElement('col', { style: { width: `${(100 - 3 - 22 - 8 - 6 - 5 - 6 - 5) / displaySubjects.length}%` } })),
                 React.createElement('col', { style: { width: '5%' } }),
-                React.createElement('col', { style: { width: '6%' } })
+                React.createElement('col', { style: { width: '6%' } }),
+                React.createElement('col', { style: { width: '5%' } })
             ),
             tableHeader,
             React.createElement('tbody', { className: "leading-snug" },
@@ -387,9 +450,50 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                         React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nis),
                         ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.grades[subject.id] ?? '')),
                         React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.total),
-                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.average)
+                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.average),
+                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${getRankColor(student.rank)} ${isCompact ? 'py-0' : 'py-0'}` }, student.rank)
                     )
-                ))
+                )),
+                statistics && (
+                    React.createElement(React.Fragment, null,
+                        React.createElement('tr', { className: 'bg-slate-50 font-bold' },
+                            React.createElement('td', { colSpan: 4, className: `border border-black px-2 text-right ${isCompact ? 'py-0' : 'py-0'}` }, 'Nilai Tertinggi'),
+                            ...displaySubjects.map(subject => 
+                                React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].max)
+                            ),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.max),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.max),
+                            React.createElement('td', { className: `border border-black px-1 bg-white` })
+                        ),
+                        React.createElement('tr', { className: 'bg-slate-50 font-bold' },
+                            React.createElement('td', { colSpan: 4, className: `border border-black px-2 text-right ${isCompact ? 'py-0' : 'py-0'}` }, 'Nilai Terendah'),
+                            ...displaySubjects.map(subject => 
+                                React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].min)
+                            ),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.min),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.min),
+                            React.createElement('td', { className: `border border-black px-1 bg-white` })
+                        ),
+                        React.createElement('tr', { className: 'bg-slate-50 font-bold' },
+                            React.createElement('td', { colSpan: 4, className: `border border-black px-2 text-right ${isCompact ? 'py-0' : 'py-0'}` }, 'Total Nilai'),
+                            ...displaySubjects.map(subject => 
+                                React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].sum)
+                            ),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.sum),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.sum),
+                            React.createElement('td', { className: `border border-black px-1 bg-white` })
+                        ),
+                        React.createElement('tr', { className: 'bg-slate-50 font-bold' },
+                            React.createElement('td', { colSpan: 4, className: `border border-black px-2 text-right ${isCompact ? 'py-0' : 'py-0'}` }, 'Rata-rata Nilai'),
+                            ...displaySubjects.map(subject => 
+                                React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].avg)
+                            ),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.avg),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.avg),
+                            React.createElement('td', { className: `border border-black px-1 bg-white` })
+                        )
+                    )
+                )
             )
         )
     );
