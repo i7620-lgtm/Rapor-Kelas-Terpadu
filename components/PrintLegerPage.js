@@ -407,8 +407,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
-                                // Reduced font size by 1pt relative to the main table font
-                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '7pt' : '7.5pt' }
+                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '7.5pt' : '8pt' }
                             }, subject.label)
                         )
                     )
@@ -447,7 +446,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.no),
                             React.createElement('td', { 
                                 ref: el => nameCellRefs.current[index] = el,
-                                // Added whitespace-nowrap to enforce single line
                                 className: `border border-black px-2 ${isCompact ? 'py-0' : 'py-0'} whitespace-nowrap overflow-hidden`,
                                 style: nameFontSize ? { fontSize: `${nameFontSize}pt`, lineHeight: 1.2 } : {}
                             }, student.namaLengkap),
@@ -494,8 +492,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             ...displaySubjects.map(subject => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].avg)
                             ),
-                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Removed total avg data
-                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }), // Removed average of averages
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         )
                     )
