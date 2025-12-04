@@ -255,6 +255,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         });
 
         const totalValues = processedData.map(d => d.total);
+        // Average values are strings in processedData, need parsing
         const avgValues = processedData.map(d => parseFloat(d.average));
 
         return {
@@ -421,7 +422,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         if (rank === 2) return 'bg-slate-300';
         if (rank === 3) return 'bg-orange-200';
         if (rank >= 4 && rank <= 10) return 'bg-blue-100';
-        return '';
+        return null;
     };
 
     const renderTable = (rows) => (
@@ -438,22 +439,27 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             ),
             tableHeader,
             React.createElement('tbody', { className: "leading-snug" },
-                rows.map((student, index) => (
-                    React.createElement('tr', { key: student.no },
-                        React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.no),
-                        React.createElement('td', { 
-                            ref: el => nameCellRefs.current[index] = el,
-                            className: `border border-black px-2 ${isCompact ? 'py-0' : 'py-0'}`,
-                            style: nameFontSize ? { fontSize: `${nameFontSize}pt`, lineHeight: 1.2 } : {}
-                        }, student.namaLengkap),
-                        React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nisn),
-                        React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nis),
-                        ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.grades[subject.id] ?? '')),
-                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.total),
-                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.average),
-                        React.createElement('td', { className: `border border-black px-1 text-center font-bold ${getRankColor(student.rank)} ${isCompact ? 'py-0' : 'py-0'}` }, student.rank)
-                    )
-                )),
+                rows.map((student, index) => {
+                    const rowColor = getRankColor(student.rank);
+                    const stickyBg = rowColor || 'bg-white';
+                    
+                    return (
+                        React.createElement('tr', { key: student.no, className: rowColor ? `${rowColor} border-black` : '' },
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.no),
+                            React.createElement('td', { 
+                                ref: el => nameCellRefs.current[index] = el,
+                                className: `border border-black px-2 ${isCompact ? 'py-0' : 'py-0'}`,
+                                style: nameFontSize ? { fontSize: `${nameFontSize}pt`, lineHeight: 1.2 } : {}
+                            }, student.namaLengkap),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nisn),
+                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.nis),
+                            ...displaySubjects.map(subject => React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, student.grades[subject.id] ?? '')),
+                            React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.total),
+                            React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.average),
+                            React.createElement('td', { className: `border border-black px-1 text-center font-bold ${isCompact ? 'py-0' : 'py-0'}` }, student.rank)
+                        )
+                    );
+                }),
                 statistics && (
                     React.createElement(React.Fragment, null,
                         React.createElement('tr', { className: 'bg-slate-50 font-bold' },
@@ -462,7 +468,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].max)
                             ),
                             React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.max),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.max),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
                         React.createElement('tr', { className: 'bg-slate-50 font-bold' },
@@ -471,7 +477,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].min)
                             ),
                             React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.min),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.min),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
                         React.createElement('tr', { className: 'bg-slate-50 font-bold' },
@@ -480,7 +486,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].sum)
                             ),
                             React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.sum),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.sum),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         ),
                         React.createElement('tr', { className: 'bg-slate-50 font-bold' },
@@ -489,7 +495,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                                 React.createElement('td', { key: subject.id, className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.subjects[subject.id].avg)
                             ),
                             React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.total.avg),
-                            React.createElement('td', { className: `border border-black px-1 text-center ${isCompact ? 'py-0' : 'py-0'}` }, statistics.average.avg),
+                            React.createElement('td', { className: `border border-black px-1 bg-slate-100` }),
                             React.createElement('td', { className: `border border-black px-1 bg-white` })
                         )
                     )
