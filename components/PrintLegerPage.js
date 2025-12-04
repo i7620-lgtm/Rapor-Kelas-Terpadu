@@ -377,7 +377,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
     
     const tableHeader = useMemo(() => (
-        React.createElement('thead', { className: isCompact ? 'text-[8pt]' : 'text-[8.5pt]' },
+        React.createElement('thead', { className: isCompact ? 'text-[7pt]' : 'text-[7.5pt]' },
             React.createElement('tr', { className: "text-center font-bold" },
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NO"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "NAMA MURID"),
@@ -393,7 +393,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     React.createElement('td', { key: subject.id, className: "border border-black", style: { height: isCompact ? '2.5rem' : '3.5rem' } },
                         React.createElement('div', { className: "h-full flex items-center justify-center" },
                             React.createElement('div', {
-                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '6.5pt' : '7pt' }
+                                style: { writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '5.5pt' : '6pt' }
                             }, subject.label)
                         )
                     )
