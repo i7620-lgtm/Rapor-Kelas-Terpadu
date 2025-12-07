@@ -2,19 +2,19 @@
 {
   "Pendidikan Agama dan Budi Pekerti (Islam)": [
     {
-      "slm": "Bab 1: Al-Qur'an Pedoman Hidupku",
+      "slm": "Bab 1: Aku Cinta Al-Qur'an",
       "tp": [
         "membiasakan diri melafalkan ayat-ayat Al-Qur’an;",
         "memiliki sikap pemberani;",
         "menjelaskan Al-Qur’an dengan baik;",
-        "melafalkan huruf hijaiyah dengan fasih;",
+        "melafalkan huruf hijaiah dengan fasih;",
         "menyebutkan harakat sederhana dengan baik;",
-        "menyebutkan macam-macam harakat;",
+        "menyebutkan macam–macam harakat;",
         "menghafalkan surah Al-Fātihah dengan lancar"
       ]
     },
     {
-      "slm": "Bab 2: Aku Cinta Rukun Iman",
+      "slm": "Bab 2: Mengenal Rukun Iman",
       "tp": [
         "mempercayai enam rukun iman;",
         "membiasakan diri dengan sikap peduli;",
@@ -43,7 +43,7 @@
       ]
     },
     {
-      "slm": "Bab 4: Ayo Kita Mengenal Rukun Islam",
+      "slm": "Bab 4: Mengenal Rukun Islam",
       "tp": [
         "mempercayai rukun Islam;",
         "menyayangi ayah dan bunda;",
@@ -70,32 +70,32 @@
       ]
     },
     {
-      "slm": "Bab 6: Belajar Al-Qur'an Surah al-Ikhlas",
+      "slm": "Bab 6: Al Qur’an Pedoman Hidupku",
       "tp": [
         "meyakini keesaan Allah Swt.;",
         "memiliki sikap bertanggung jawab;",
-        "menyebutkan macam-macam harakat dengan baik;",
-        "melafalkan huruf hijaiyah berharakat dengan benar;",
-        "melafalkan surah al-Ikhlās dengan benar;",
-        "menunjukkan hafalan surah al-Ikhlās dengan lancar;",
-        "menyebutkan pesan pokok surah al-Ikhlās dengan benar."
+        "menyebutkan macam–macam harakat dengan baik;",
+        "melafalkan huruf hijaiah berharakat dengan benar;",
+        "melafalkan surah al-Ikhlāṣ dengan benar;",
+        "menunjukkan hafalan surah al-Ikhlāṣ dengan lancar;",
+        "menyebutkan pesan pokok surah al-Ikhlāṣ dengan benar."
       ]
     },
     {
-      "slm": "Bab 7: Aku Cinta Asmaulhusna",
+      "slm": "Bab 7: Kasih Sayang terhadap Sesama",
       "tp": [
         "meyakini Asmaulhusna;",
         "menampilkan sikap kasih sayang terhadap sesama;",
         "menyebutkan pengertian Asmaulhusna dengan benar;",
-        "menyebutkan arti Ar-Rahmān dan Ar-Rahīm dengan tepat;",
+        "menyebutkan arti Ar-Raḥmān dan Ar-Raḥīm dengan tepat;",
         "menyebutkan bentuk kasih sayang Allah Swt. terhadap makhluk-Nya dengan benar;",
         "menyebutkan bentuk kasih sayang Nabi Muhammad saw. dengan benar;",
-        "menyebutkan keteladanan Ar-Rahmān dan Ar-Rahīm;",
-        "membuat kaligrafi Ar-Rahmān, Ar-Rahīm, dan lafal Muhammad."
+        "menyebutkan keteladanan Ar-Raḥmān dan Ar-Raḥīm;",
+        "membuat kaligrafi Ar-Raḥmān, Ar-Raḥīm, dan lafal Muhammad."
       ]
     },
     {
-      "slm": "Bab 8: Ayo Belajar Berterima Kasih",
+      "slm": "Bab 8: Aku Suka Berterima Kasih dan Disiplin",
       "tp": [
         "Membiasakan diri tertib menjalankan salat lima waktu;",
         "Membiasakan diri bersikap penuh kasih sayang;",
@@ -108,7 +108,7 @@
       ]
     },
     {
-      "slm": "Bab 9: Ayo Kita Bersuci",
+      "slm": "Bab 9: Membiasakan Hidup Bersih",
       "tp": [
         "membiasakan bersuci dengan benar;",
         "menampilkan sikap hidup bersih setiap hari;",
@@ -121,10 +121,10 @@
       ]
     },
     {
-      "slm": "Bab 10: Nabi Adam Manusia Pertama",
+      "slm": "Bab 10: Nabi Adam a.s. Manusia Pertama",
       "tp": [
         "mengimani Nabi Adam a.s. sebagai manusia pertama;",
-        "membiasakan diri meminta maaf saat melakukan kesalahan; membiasakan diri bersikap santun;",
+        "membiasakan diri meminta maaf saat melakukan kesalahan dan bersikap santun;",
         "membiasakan diri bersabar menghadapi cobaan;",
         "menceritakan proses penciptaan Nabi Adam a.s. dengan benar;",
         "menceritakan kehidupan Nabi Adam a.s. dan Hawa di surga dengan benar;",
@@ -135,7 +135,7 @@
   ],
   "Pendidikan Agama dan Budi Pekerti (Kristen)": [
     {
-      "slm": "Unit 1: Diriku Ciptaan Tuhan",
+      "slm": "Pelajaran 1: Aku Istimewa",
       "tp": [
         "Menjelaskan bahwa dirinya adalah ciptaan Tuhan.",
         "Menjelaskan keistimewaan dirinya.",
@@ -145,24 +145,44 @@
       ]
     },
     {
-      "slm": "Unit 2: Anggota Tubuhku",
+      "slm": "Pelajaran 2: Bersyukur Untuk Mataku",
       "tp": [
         "Menyebutkan guna mata.",
         "Menyebutkan contoh perbuatan menggunakan mata sesuai kehendak Tuhan.",
         "Menunjukkan rasa syukur atas berkat Tuhan melalui mata yang dapat melihat.",
-        "Mempraktikkan penggunaan mata dengan rajin belajar membaca.",
+        "Mempraktikkan penggunaan mata dengan rajin belajar membaca."
+      ]
+    },
+    {
+      "slm": "Pelajaran 3: Mulutku Memuji Tuhan",
+      "tp": [
         "Menjelaskan guna mulut.",
         "Menyebutkan contoh perbuatan menggunakan mulut sesuai kehendak Tuhan.",
         "Menunjukkan rasa syukur atas berkat Tuhan melalui mulut.",
-        "Mempraktikkan penggunaan mulut dengan bertutur kata sopan.",
+        "Mempraktikkan penggunaan mulut dengan bertutur kata sopan."
+      ]
+    },
+    {
+      "slm": "Pelajaran 4: Telingaku Mendengar Nasihat",
+      "tp": [
         "Menyebutkan guna telinga.",
         "Menyebutkan contoh perbuatan menggunakan telinga sesuai kehendak Tuhan.",
         "Menunjukkan rasa syukur atas berkat Tuhan melalui telinga.",
-        "Mempraktikkan penggunaan telinga dengan mau mendengar nasihat dan firman Tuhan.",
+        "Mempraktikkan penggunaan telinga dengan mau mendengar nasihat dan firman Tuhan."
+      ]
+    },
+    {
+      "slm": "Pelajaran 5: Tanganku untuk Menolong",
+      "tp": [
         "Menyebutkan guna tangan.",
         "Menyebutkan contoh perbuatan menggunakan tangan sesuai kehendak Tuhan.",
         "Menunjukkan rasa syukur atas berkat Tuhan melalui tangan.",
-        "Mempraktikkan penggunaan tangan dengan mau menolong orang lain.",
+        "Mempraktikkan penggunaan tangan dengan mau menolong orang lain."
+      ]
+    },
+    {
+      "slm": "Pelajaran 6: Aku Merawat Tubuhku",
+      "tp": [
         "Menyebutkan pentingnya merawat tubuh.",
         "Menyebutkan contoh perbuatan merawat tubuh.",
         "Menunjukkan rasa syukur atas tubuh yang berfungsi dengan baik.",
@@ -170,7 +190,7 @@
       ]
     },
     {
-      "slm": "Unit 3: Keluargaku Anugerah Tuhan",
+      "slm": "Pelajaran 7: Aku Sayang Keluargaku",
       "tp": [
         "Menyebutkan anggota keluarga.",
         "Menjelaskan contoh kasih Tuhan melalui keluarga.",
@@ -179,7 +199,7 @@
       ]
     },
     {
-      "slm": "Unit 4: Teman dan Guruku",
+      "slm": "Pelajaran 8: Mengasihi Teman dan Guru",
       "tp": [
         "Menyebutkan nama teman dan gurunya.",
         "Menyebutkan contoh sikap yang baik kepada teman dan guru.",
@@ -189,7 +209,7 @@
       ]
     },
     {
-      "slm": "Unit 5: Lingkungan Sekolah Mingguku",
+      "slm": "Pelajaran 9: Aku Rajin Ke Sekolah Minggu",
       "tp": [
         "Menjelaskan pentingnya mengikuti ibadah di Sekolah Minggu.",
         "Menyebutkan contoh sikap yang baik di Sekolah Minggu.",
@@ -199,7 +219,7 @@
       ]
     },
     {
-      "slm": "Unit 6: Keragaman di Sekitarku",
+      "slm": "Pelajaran 10: Keragaman Suku dan Agama",
       "tp": [
         "Menyebutkan keragaman agama di lingkungan rumah dan sekolah.",
         "Menyebutkan keragaman suku di lingkungan rumah dan sekolah.",
@@ -208,12 +228,17 @@
       ]
     },
     {
-      "slm": "Unit 7: Alam Ciptaan Tuhan",
+      "slm": "Pelajaran 11: Bersyukur untuk Matahari, Bulan, dan Bintang",
       "tp": [
         "Menyebutkan guna matahari, bulan, dan bintang.",
         "Menjelaskan pemeliharaan Tuhan melalui kehadiran matahari, bulan, dan bintang.",
         "Menunjukan rasa syukur atas matahari, bulan, dan bintang.",
-        "Mempraktikkan aktivitas hidup sesuai waktu yang ditunjukkan oleh benda-benda penerang ciptaan Allah.",
+        "Mempraktikkan aktivitas hidup sesuai waktu yang ditunjukkan oleh benda-benda penerang ciptaan Allah."
+      ]
+    },
+    {
+      "slm": "Pelajaran 12: Merawat Tumbuhan di Lingkungan Rumah",
+      "tp": [
         "Menjelaskan bahwa Tuhan menciptakan tumbuhan.",
         "Menjelaskan manfaat tumbuhan.",
         "Menjelaskan pentingnya merawat tumbuhan ciptaan Tuhan.",
@@ -225,7 +250,7 @@
   ],
   "Pendidikan Agama dan Budi Pekerti (Katolik)": [
     {
-      "slm": "Bab 1: Aku Istimewa",
+      "slm": "Bab 1: Aku Bangga Menjadi Diriku",
       "tp": [
         "mengenal dirinya yang khas dan anggota tubuh yang dimilikinya sebagai anugerah Tuhan;",
         "mengungkapkan syukur atas dirinya yang khas dan anggota tubuh yang dimilikinya;",
@@ -233,7 +258,7 @@
       ]
     },
     {
-      "slm": "Bab 2: Lingkunganku",
+      "slm": "Bab 2: Aku Berkembang dalam Lingkungan",
       "tp": [
         "mengenal lingkungan rumah, sekolah, dan temannya;",
         "mengungkapkan syukur atas lingkungan rumah, sekolah, dan temannya yang dianugerahkan Allah;",
@@ -241,14 +266,14 @@
       ]
     },
     {
-      "slm": "Bab 3: Allah Mahabaik",
+      "slm": "Bab 3: Allah Sang Pencipta",
       "tp": [
         "mengenal dan percaya pada Allah sebagai Pencipta yang Mahabaik;",
         "menjaga dan memelihara ciptaan Allah yang Mahabaik."
       ]
     },
     {
-      "slm": "Bab 4: Kelahiran Yesus",
+      "slm": "Bab 4: Kisah Kelahiran Yesus Kristus",
       "tp": [
         "mengenal kisah kelahiran Yesus sebagai wujud kasih Allah yang Mahabaik;",
         "bersyukur atas kelahiran Yesus;",
@@ -256,7 +281,7 @@
       ]
     },
     {
-      "slm": "Bab 5: Doa-doa Harian",
+      "slm": "Bab 5: Doa dalam Gereja Katolik",
       "tp": [
         "mengenal doa-doa harian sebagai ungkapan iman kepada Allah;",
         "mengungkapkan rasa syukur kepada Allah melalui doa-doa harian;",
@@ -268,146 +293,334 @@
     {
       "slm": "Bab 1: Cerita Ramayana",
       "tp": [
-        "Memahami unsur-unsur agama/kepercayaan melalui cerita Ramayana.",
-        "Mengenali peran agama/kepercayaan dalam kehidupannya.",
-        "Menunjukkan cerita Ramayana sebagai salah satu kitab suci Hindu.",
-        "Menunjukkan karakter tokoh dalam cerita Ramayana yang dapat dijadikan teladan."
+        "mengenal cerita Ramayana sebagai bagian dari kitab suci Veda;",
+        "menceritakan kembali secara singkat isi cerita Ramayana;",
+        "menyebutkan nama tokoh-tokoh dalam cerita Ramayana;",
+        "meneladani karakter tokoh-tokoh baik dalam kisah Ramayana."
       ]
     },
     {
-      "slm": "Bab 2: Mengenal Hyang Widhi Wasa",
+      "slm": "Bab 2: Hyang Widhi Wasa",
       "tp": [
-        "Memahami kemahakuasaan Hyang Widhi Wasa sebagai pencipta segalanya.",
-        "Memahami berbagai kualitas atau sifat-sifat Hyang Widhi Wasa.",
-        "Menghubungkan kualitas positif Hyang Widhi Wasa dengan sikap pribadi.",
-        "Mengenal dan menunjukkan jenis-jenis ciptaan Hyang Widhi Wasa."
+        "mengenal Hyang Widhi Wasa sebagai pencipta alam semesta;",
+        "mengidentifikasi jenis-jenis ciptaan Hyang Widhi Wasa (makhluk hidup dan benda mati);",
+        "membedakan makhluk hidup dan benda mati;",
+        "mengenal ajaran Tri Pramana dan bagian-bagiannya;",
+        "menunjukkan sikap menghargai semua ciptaan Hyang Widhi Wasa."
       ]
     },
     {
-      "slm": "Bab 3: Ajaran Tri Kaya Parisudha",
+      "slm": "Bab 3: Tri Kaya Parisudha",
       "tp": [
-        "Mengenal ajaran moral dan etika Hindu melalui Tri Kaya Parisudha.",
-        "Melakukan tindakan sesuai norma-norma agama dan sosial (jujur, adil, rendah hati).",
-        "Memahami konsekuensi dari tindakan yang dilakukan.",
-        "Melakukan instrospeksi diri dengan bimbingan."
+        "menjelaskan pengertian Tri Kaya Parisudha;",
+        "menyebutkan bagian-bagian Tri Kaya Parisudha (Manacika, Wacika, Kayika);",
+        "menunjukkan contoh perilaku Tri Kaya Parisudha dalam kehidupan sehari-hari;",
+        "menjelaskan dampak perilaku yang melanggar Tri Kaya Parisudha (Tri Mala)."
       ]
     },
     {
-      "slm": "Bab 4: Berdoa dan Berkorban",
+      "slm": "Bab 4: Tri Sandhya dan Dainika Upasana",
       "tp": [
-        "Menirukan kegiatan persembahyangan Tri Sandhya.",
-        "Mengenal Dainika Upasana (doa sehari-hari).",
-        "Mempraktikkan pembiasaan doa setiap hari.",
-        "Mengembangkan keingintahuan tentang korban suci di lingkungan keluarga."
+        "memahami pengertian dan fungsi Tri Sandhya dan Dainika Upasana;",
+        "mempraktikkan tata cara dan sikap sembahyang yang benar;",
+        "melafalkan dan menghafal mantram Tri Sandhya;",
+        "melafalkan doa sehari-hari (Dainika Upasana) seperti doa makan, belajar, dan tidur."
       ]
     }
   ],
   "Pendidikan Agama dan Budi Pekerti (Buddha)": [
     {
-      "slm": "Unit 1: Identitas Diri sebagai Umat Buddha",
+      "slm": "Bab 1: Diriku",
       "tp": [
         "mengidentifikasi identitas diri;",
-        "menyimpulkan identitas diri sebagai bagian dari agama Buddha;",
-        "membuat struktur sederhana identitas diri sebagai bagian dari agama Buddha;",
-        "menyajikan struktur sederhana identitas diri sebagai bagian dari agama Buddha;",
-        "menerima identitas diri sebagai bagian dari agama Buddha."
+        "menunjukkan identitas diri sebagai manusia;",
+        "menerima diri sendiri sebagai manusia;",
+        "bersyukur dapat lahir sebagai manusia;",
+        "menyajikan dengan kata-kata sendiri cara menjaga tubuh dan batin;",
+        "mendemonstrasikan cara menjaga tubuh dan batin;",
+        "menunjukkan sikap dan perilaku sadar untuk menjaga tubuh dan batin;",
+        "menyimpulkan identitas diri sebagai bagian dari agama buddha;",
+        "membuat struktur sederhana identitas diri sebagai bagian dari agama buddha;",
+        "menyajikan struktur sederhana identitas diri sebagai bagian dari agama buddha;",
+        "menerima identitas diri sebagai bagian dari agama buddha."
+      ]
+    },
+    {
+      "slm": "Bab 2: Aku dan Teman-Temanku",
+      "tp": [
+        "menyebutkan nama teman-teman di lingkungan terdekatnya;",
+        "mendeskripsikan identitas teman-temannya;",
+        "menerima teman-teman di lingkungan terdekatnya;",
+        "menyajikan dengan kata-kata sendiri perbedaan identitas diri dengan identitas teman-teman di lingkungan terdekatnya;",
+        "menerima perbedaan identitas diri dengan identitas teman-temannya;",
+        "menunjukkan sikap dan perilaku menghargai perbedaan identitas diri dan identitas teman-temannya;",
+        "mendemonstrasikan cara menghormati teman yang sedang beribadah;",
+        "menceritakan pengalaman dalam berteman dengan teman yang berbeda identitas."
+      ]
+    },
+    {
+      "slm": "Bab 3: Menyayangi Diri Sendiri",
+      "tp": [
+        "menyajikan dengan kata-kata sendiri tentang pentingnya menjaga kesehatan jasmani;",
+        "menjelaskan pentingnya menjaga kesehatan batin;",
+        "menunjukkan perilaku sadar untuk menjaga kesehatan;",
+        "menyajikan dengan kata-kata sendiri cara menjaga kesehatan jasmani di rumah;",
+        "mendemonstrasikan cara menjaga kesehatan jasmani di sekolah;",
+        "menunjukkan sikap dan perilaku sadar untuk menjaga kesehatan jasmani;",
+        "menyajikan dengan kata-kata sendiri cara menjaga kesehatan batin di rumah;",
+        "mendemonstrasikan cara menjaga kesehatan batin di sekolah;",
+        "menunjukkan sikap dan perilaku peduli dalam menjaga kesehatan batin."
+      ]
+    },
+    {
+      "slm": "Bab 4: Menghargai Sesama",
+      "tp": [
+        "menemukenali beragam tingkatan sosial dan jenis kelamin yang menjadi siswa Buddha;",
+        "menyebutkan nama-nama profesi;",
+        "memperlakukan teman-teman dengan cinta kasih tanpa membedakan;",
+        "membangun sikap hormat sesama;",
+        "mendemonstrasikan cara menghormati teman yang sedang beribadah;",
+        "menceritakan pengalaman dalam berteman dengan teman yang berbeda identitas."
+      ]
+    },
+    {
+      "slm": "Bab 5: Identitas Agama Buddha",
+      "tp": [
+        "menjelaskan ragam identitas aliran agama Buddha yang dianut sebagai identitas diri;",
+        "menerima ragam identitas aliran agama Buddha yang dianut sebagai identitas diri;",
+        "menjelaskan identitas aliran-aliran agama Buddha sebagai identitas umat Buddha;",
+        "menerima ragam identitas aliran-aliran agama Buddha sebagai identitas umat Buddha;",
+        "menguraikan dengan kata-kata sederhana makna dan nilai identitas agama Buddha dalam kehidupan beragama;",
+        "menghargai makna dan nilai identitas agama Buddha dalam kehidupan beragama;",
+        "mendeskripsikan peran ragam identitas agama Buddha sebagai pemersatu agama Buddha;",
+        "menghargai ragam identitas agama Buddha."
+      ]
+    },
+    {
+      "slm": "Bab 6: Kita adalah Saudara",
+      "tp": [
+        "menemukenali beragam tata cara beragama;",
+        "menyebutkan doa aspirasi untuk kebahagiaan teman-teman yang berbeda agama;",
+        "memperlakukan teman-teman dengan kebaikan yang tidak membedakan;",
+        "memerinci sikap menghargai perbedaan sebagai saudara;",
+        "menyajikan dengan kata-kata sendiri perbedaan identitas diri cara menghargai agama lain;",
+        "menerima perbedaan agama yang ada;",
+        "membangun sikap menghargai agama lain;",
+        "mendemonstrasikan cara menghormati teman berbeda agama;",
+        "menerima teman lain yang berbeda-beda peribadatan;",
+        "membangun sikap bersatu dalam perbedaan;",
+        "mengkonstruksi sikap persatuan dalam perbedaan;",
+        "menerima perbedaan dalam negara kesatuan Republik Indonesia."
+      ]
+    },
+    {
+      "slm": "Bab 7: Bersikap Sopan",
+      "tp": [
+        "menunjukkan, menyebutkan, dan melakukan beragam sikap sopan di rumah;",
+        "menunjukkan, menyebutkan, dan melakukan beragam sikap sopan di sekolah;",
+        "menunjukkan, menyebutkan, dan melakukan beragam sikap sopan di Vihara;",
+        "membedakan, menyebutkan, dan melakukan beragam akibat tidak sopan di rumah, di sekolah, dan di Vihara."
+      ]
+    },
+    {
+      "slm": "Bab 8: Bersikap Disiplin",
+      "tp": [
+        "menjelaskan, menerima, dan menunjukkan sikap disiplin di rumah;",
+        "menjelaskan, menerima, dan menunjukkan sikap disiplin di sekolah;",
+        "mengidentifikasi, menerima, dan menunjukkan sikap disiplin di Vihara;",
+        "mengidentifikasi perilaku tidak disiplin dan menjelaskan akibatnya."
+      ]
+    },
+    {
+      "slm": "Bab 9: Pandai Berteman",
+      "tp": [
+        "menjelaskan kebutuhannya sebagai manusia sosial untuk bergaul dan berinteraksi;",
+        "menentukan sikap dalam berinteraksi dengan sesama;",
+        "mendeskripsikan peran nilai-nilai kediaman luhur dalam pergaulan;",
+        "menerima nilai-nilai kediaman luhur dalam pergaulan;",
+        "memberikan contoh masalah yang dihadapi dalam berteman;",
+        "menemukan masalah dan solusi dalam berinteraksi dengan sesama;",
+        "memilih sikap yang dilakukan untuk menghadapi masalah dalam pergaulan;",
+        "menunjukkan sikap serta perilaku sesuai nilai-nilai kediaman luhur."
       ]
     }
   ],
   "Pendidikan Agama dan Budi Pekerti (Khonghucu)": [
     {
-      "slm": "Bab 1: Aku dan Keluargaku",
+      "slm": "Pelajaran 1: Aku Karunia Tian",
       "tp": [
-        "beriman Khonghucu;",
-        "menghargai semua orang;",
-        "menulis huruf rén;",
-        "memahami orang tua sebagai wakil Tian;",
-        "mengetahui fungsi anggota tubuh dan merawatnya;",
-        "santun dan hormat pada orang tua;"
+        "Mengenal diri dengan anggota tubuhnya sebagai ciptaan Tian.",
+        "Mengenal tentang pentingnya laku bakti kepada orang tua.",
+        "Memahami sikap Delapan Kebajikan.",
+        "Mampu berdoa harian secara sederhana kepada Tian, Nabi Kongzi, dan leluhur.",
+        "Merawat tubuh sebagai wujud laku bakti kepada orang tua."
       ]
     },
     {
-      "slm": "Bab 2: Aku dan Sekolahku",
+      "slm": "Pelajaran 2: Aku Seorang Junzi",
       "tp": [
-        "hormat pada guru;",
-        "berlatih mandiri;",
-        "merawat sekolah;",
-        "mengetahui peran orang tua;",
-        "menunjukkan bakti di sekolah;"
+        "Mengenal lingkungan sosial terdekatnya (teman, keluarga, sekolah).",
+        "Membiasakan sikap hormat dan santun kepada orang tua dan guru.",
+        "Melatih kebiasaan hidup mandiri.",
+        "Memahami pentingnya perilaku bakti di sekolah."
       ]
     },
     {
-      "slm": "Bab 3: Kisah Nabi Kongzi",
+      "slm": "Pelajaran 3: Nabi Kongzi Idolaku",
       "tp": [
-        "meneladani Nabi Kongzi;",
-        "mendaftar nama anggota keluarga;",
-        "mengenal keluarga Nabi Kongzi;",
-        "mengetahui tanda tanda ajaib menjelang lahir Nabi Kongzi;",
-        "mengetahui kisah masa kecil Nabi Kongzi;"
+        "Mengenal keluarga Nabi Kongzi.",
+        "Mengetahui kisah masa kecil Nabi Kongzi.",
+        "Meyakini tanda-tanda kelahiran Nabi Kongzi.",
+        "Mengimani Nabi Kongzi dengan mengikuti keteladanan Nabi Kongzi.",
+        "Memahami Nabi Kongzi adalah manusia pilihan Tian."
       ]
     },
     {
-      "slm": "Bab 4: Aku dan Alam Ciptaan Tian",
+      "slm": "Pelajaran 4: Tian Yang Maha Esa",
       "tp": [
-        "Beriman kepada Tian;",
-        "Merawat lingkungan alam;",
-        "Mengetahui ciptaan Tian dan cara menjaganya;"
+        "Menerima konsep Tian sebagai Maha Pencipta.",
+        "Memupuk sikap peduli pada ciptaan-Nya.",
+        "Menunjukkan macam-macam ciptaan Tian.",
+        "Menerapkan pemeliharaan ciptaan Tian."
       ]
     },
     {
-      "slm": "Bab 5: Aku dan Leluhurku",
+      "slm": "Pelajaran 5: Aku Anak Berbakti",
       "tp": [
-        "Menghormati leluhur;",
-        "Meneladani sikap bakti Min Sun;",
-        "menyebutkan perlengkapan altar;",
-        "Bermain peran sebagai Min Sun;",
-        "Mengetahui tentang sembahyang leluhur;",
-        "Mengetahui kisah Min Sun;"
+        "Meyakini orang tua atau leluhur adalah wakil Tian di dunia.",
+        "Melaksanakan sembahyang leluhur sebagai wujud laku bakti.",
+        "Mengetahui kisah dan keteladanan Min Sun.",
+        "Memahami ayat-ayat tentang berbakti di dalam kitab Sishu dan Wujing."
       ]
     },
     {
-      "slm": "Bab 6: Aku dan Ibadahku",
+      "slm": "Pelajaran 6: Aku Berterima Kasih",
       "tp": [
-        "Berterima kasih, berdoa, dan bersyukur;",
-        "Bersembahyang kepada Tian dan Nabi Kongzi;",
-        "Menerapkan perilaku baik;",
-        "Mengetahui sikap bao xin bade;",
-        "Mengetahui saat-saat sembahyang kepada Tian dan Nabi Kongzi;"
+        "Membiasakan diri berbuat kebajikan sebagai wujud rasa terima kasih kepada Tian.",
+        "Mempraktikkan sikap dalam berdoa (sikap bade) yaitu bao xin bade.",
+        "Mengetahui tentang bersembahyang kepada Tian dan Nabi Kongzi."
+      ]
+    }
+  ],
+  "Pendidikan Kepercayaan Terhadap Tuhan Yang Maha Esa dan Budi Pekerti": [
+    {
+      "slm": "Pelajaran 1: Mengenal Diriku",
+      "tp": [
+        "menyebutkan nama-nama bagian anggota tubuh",
+        "menunjukkan bagian anggota tubuh",
+        "menyebutkan fungsi dari tiap anggota tubuh",
+        "menyebutkan nama-nama pancaindra",
+        "menunjukkan bagian pancaindra",
+        "menyebutkan tingkah laku baik dalam pemanfaatan pancaindra",
+        "menyebutkan cara merawat tubuh",
+        "menunjukkan kebiasaan cara merawat tubuh dengan baik"
+      ]
+    },
+    {
+      "slm": "Pelajaran 2: Rasa Sayang",
+      "tp": [
+        "menyebutkan cara menyayangi dan menghormati anggota keluarga",
+        "menunjukkan sikap menyayangi terhadap sesama anggota keluarga",
+        "menunjukkan cara berperilaku baik terhadap teman",
+        "menyebutkan ciri dari teman-temannya",
+        "menunjukkan sikap hormat dan patuh terhadap guru",
+        "menceritakan kebaikan guru"
+      ]
+    },
+    {
+      "slm": "Pelajaran 3: Kegiatanku",
+      "tp": [
+        "menyebutkan bentuk tanggung jawab di rumah",
+        "menunjukkan rasa tanggung jawab dalam keluarga",
+        "menyebutkan tanggung jawab di sekolah",
+        "menunjukkan tanggung jawabnya sebagai peserta didik di sekolah",
+        "menyebutkan perilaku menghargai dan menghormati di lingkungan sekitar",
+        "menunjukkan perilaku menghargai, menghormati perbedaan di lingkungan"
+      ]
+    },
+    {
+      "slm": "Pelajaran 4: Indahnya Alamku",
+      "tp": [
+        "menyebutkan sikap peduli terhadap lingkungan",
+        "menunjukkan rasa peduli terhadap lingkungan sekitarnya",
+        "menyebutkan kepedulian terhadap ciptaan Tuhan",
+        "menunjukkan rasa peduli terhadap ciptaan Tuhan",
+        "menyebutkan tanggung jawab dalam menjaga kebersihan",
+        "menunjukkan tanggung jawab menjaga lingkungan rumah, sekolah, dan alam"
+      ]
+    },
+    {
+      "slm": "Pelajaran 5: Karunia Tuhan",
+      "tp": [
+        "memahami pentingnya bersyukur sebagai wujud terima kasih kepada Tuhan",
+        "melakukan kebiasaan berdoa setiap hari",
+        "menyebutkan tempat peribadatan penghayat kepercayaan",
+        "menyebutkan fungsi tempat peribadatan",
+        "menyebutkan berbagai tarian daerah",
+        "menyebutkan permainan tradisional"
+      ]
+    },
+    {
+      "slm": "Pelajaran 6: Kewajibanku",
+      "tp": [
+        "menyebutkan contoh sikap hormat dan patuh pada orang tua",
+        "menunjukkan perilaku hormat dan patuh pada orang tua di rumah",
+        "menjaga ucapan yang baik dalam pergaulan sebagai penghayat kepercayaan",
+        "menunjukkan perilaku pemaaf bila melakukan kesalahan",
+        "menyebutkan contoh perilaku bersyukur",
+        "bersyukur sebagai wujud terima kasih kepada Tuhan Yang Maha Esa",
+        "mengingat arti sederhana dari heneng, hening, eling, dan waspada",
+        "menyebutkan bentuk larangan atau aturan di rumah dan di sekolah",
+        "menunjukkan kewajiban sebagai anak dan peserta didik di sekolah"
+      ]
+    },
+    {
+      "slm": "Pelajaran 7: Mari Saling Membantu",
+      "tp": [
+        "menyebutkan contoh perilaku membantu dalam kehidupan",
+        "menunjukkan perilaku saling membantu dengan sesama",
+        "menunjukkan keikhlasan dalam membantu",
+        "menyebutkan contoh perilaku gotong royong",
+        "menunjukkan perilaku gotong royong di lingkungan",
+        "menyebutkan manfaat dari gotong royong",
+        "menyebutkan contoh perilaku saling memberi",
+        "menunjukkan perilaku saling memberi pada sesama di lingkungan",
+        "menyebutkan manfaat dari perilaku memberi"
       ]
     }
   ],
   "Pendidikan Pancasila": [
     {
-      "slm": "Unit 1: Aku dan Teman Baruku",
+      "slm": "Bab 1: Aku dan Teman-Temanku",
       "tp": [
-        "mengenal diri sendiri;",
-        "mengenal perbedaan teman berdasarkan jenis kelamin;",
-        "memahami pentingnya aturan ketika bermain bersama teman-teman."
+        "mengenal dan menerima identitas diri;",
+        "menemukenali perbedaan identitas dirinya sesuai dengan jenis kelamin;",
+        "mengenal dan menerapkan aturan di lingkungan bermain."
       ]
     },
     {
-      "slm": "Unit 2: Aku Patuh Aturan",
+      "slm": "Bab 2: Aku Patuh pada Aturan",
       "tp": [
-        "mengenal tentang aturan;",
-        "mematuhi aturan;",
-        "peduli dengan lingkungan tempat tinggal."
+        "mengenal aturan di lingkungan keluarga;",
+        "menceritakan pengalaman dan menunjukkan sikap mematuhi aturan di lingkungan keluarga;",
+        "menunjukkan sikap peduli lingkungan tempat tinggal."
       ]
     },
     {
-      "slm": "Unit 3: Aku Cinta Indonesia",
+      "slm": "Bab 3: Aku Mengenal Indonesia",
       "tp": [
-        "mengenal bendera Negara;",
-        "mengenal lagu kebangsaan Indonesia Raya;",
-        "mengenal simbol-simbol Pancasila."
+        "menemukenali bendera negara Indonesia;",
+        "menemukenali lagu kebangsaan Indonesia Raya;",
+        "menyebutkan simbol-simbol dalam Lambang Burung Garuda Pancasila."
       ]
     },
     {
-      "slm": "Unit 4: Aku dan Lingkunganku",
+      "slm": "Bab 4: Aku dan Lingkunganku",
       "tp": [
-        "mengenal lingkungan tempat tinggal;",
-        "menerapkan sikap gotong royong;",
-        "mengenal lingkungan sekolah;",
-        "peduli pada lingkungan sekolah."
+        "menemukenali lingkungan tempat tinggal;",
+        "menerapkan nilai-nilai Pancasila, yaitu gotong royong di lingkungan keluarga;",
+        "menemukenali lingkungan sekolah;",
+        "mampu hidup bersih dan sehat serta memiliki tanggung jawab untuk kebersihan sekolah."
       ]
     }
   ],
@@ -415,58 +628,81 @@
     {
       "slm": "Bab 1: Bunyi Apa?",
       "tp": [
-        "menyimak cerita yang dibacakan guru;",
-        "berkenalan dengan teman baru;",
-        "menyanyi dan menirukan gerakan;",
-        "membaca dan menulis suku kata yang diawali dengan huruf ‘h’ dan ‘c’."
+        "menyimak dan menanggapi bacaan tentang bunyi dan pancaindra secara lisan;",
+        "mengenali bentuk dan melafalkan bunyi abjad;",
+        "merangkai suku kata yang diawali huruf ‘b’;",
+        "menulis huruf ‘B’ dan ‘b,’ serta menulis namanya sendiri;",
+        "memperkenalkan diri dengan lisan secara santun dan jelas."
       ]
     },
     {
-      "slm": "Bab 2: Ayo Bermain!",
+      "slm": "Bab 2: Ayo, Bermain!",
       "tp": [
-        "mengamati gambar dengan baik;",
-        "membaca dan menulis suku kata ‘ka-’, ‘ki-’, ‘ku-’, ‘ke-’, dan ‘ko-’."
+        "menyimak dan menanggapi bacaan tentang tempat dan aturan bermain;",
+        "mengenali tanda tanya dan tanda seru dalam kalimat;",
+        "membaca suku kata yang diawali dengan huruf ‘h’ dan ‘c’;",
+        "menulis suku kata yang diawali dengan huruf ‘h’ dan ‘c’;",
+        "menyampaikan pendapat tentang perbuatan yang boleh dan tidak boleh dilakukan."
       ]
     },
     {
       "slm": "Bab 3: Awas Kuman!",
       "tp": [
-        "menirukan gerakan dalam cerita;",
-        "membaca dan menulis suku kata ‘la-’, ‘li-’, ‘lu-’, ‘le-’, dan ‘lo-’."
+        "menyimak dan menanggapi bacaan tentang cara menjaga kebersihan diri;",
+        "membaca suku kata yang diawali dengan huruf ‘k’;",
+        "menulis suku kata yang diawali dengan huruf ‘k’;",
+        "menuliskan atau menggambarkan gagasan terkait tema bacaan;",
+        "menceritakan gagasan dengan jelas dan baik."
       ]
     },
     {
       "slm": "Bab 4: Aku Bisa!",
       "tp": [
-        "mengenali kata-kata yang sopan;",
-        "mengenali tanda titik (.);",
-        "membaca dan menulis suku kata ‘ma-‘, ‘mi-‘, ‘mu-‘, ‘me-‘, ‘mo-‘."
+        "menyimak, menanggapi, dan menirukan gerakan pada bacaan tentang aneka gerak;",
+        "melakukan instruksi;",
+        "membaca suku kata yang diawali dengan huruf ‘l’;",
+        "menulis suku kata yang diawali dengan huruf ‘l’;",
+        "mengungkapkan pengalaman dan pendapat dengan jelas dan tertib."
       ]
     },
     {
       "slm": "Bab 5: Teman Baru",
       "tp": [
-        "membaca dan menulis kata yang diawali dengan suku kata ‘ga-‘, ‘gi-‘, ‘gu-‘, ‘ge-‘, ‘go-‘;"
+        "menyimak dan menanggapi bacaan tentang sikap baik kepada teman;",
+        "mengenali tanda titik pada akhir kalimat;",
+        "membaca kata-kata yang diawali dengan huruf ‘m’;",
+        "menulis kata-kata yang diawali dengan huruf ‘m’;",
+        "berbicara dengan sopan menggunakan kata ajaib."
       ]
     },
     {
-      "slm": "Bab 6: Beda Itu Tak Apa",
+      "slm": "Bab 6: Temanku Berbeda",
       "tp": [
-        "menghitung benda dalam gambar;",
-        "mengenali bentuk uang melalui bacaan."
+        "menyimak dan menanggapi bacaan tentang keragaman di sekitar;",
+        "membaca kata yang diawali dengan huruf ‘g’;",
+        "menulis kata yang diawali dengan huruf ‘g’;",
+        "menuliskan atau menggambarkan simpulan dari bacaan;",
+        "berbicara dengan sopan dan menjawab pertanyaan tentang gambar."
       ]
     },
     {
       "slm": "Bab 7: Aku Ingin",
       "tp": [
-        "membaca dan menulis kata-kata sederhana."
+        "menyimak dan menanggapi bacaan tentang hidup hemat;",
+        "membaca kata yang sering ditemui sehari-hari;",
+        "menulis kata yang sering ditemui sehari-hari;",
+        "menjelaskan ide pokok dalam teks yang dibaca;",
+        "membicarakan tentang hubungan sebab-akibat sederhana."
       ]
     },
     {
-      "slm": "Bab 8: Di Mana?",
+      "slm": "Bab 8: Di Sekitar Rumah",
       "tp": [
-        "mengenali arah;",
-        "membaca dan menulis kata-kata sederhana tentang letak, arah, dan pekerja di sekitar."
+        "menyimak dan menanggapi bacaan tentang lingkungan dan pekerja di sekitar rumah;",
+        "membaca kata yang sering ditemui (letak, arah, dan profesi);",
+        "menulis kata yang sering ditemui;",
+        "menemukan dan mengidentifikasi informasi pada gambar (peta);",
+        "berbicara menyampaikan pendapat tentang letak benda."
       ]
     }
   ],
@@ -481,64 +717,69 @@
         "menunjukkan konsep sama banyak, lebih banyak, dan lebih sedikit dari dua kelompok benda menggunakan benda konkret;",
         "menghitung maju dan mundur sampai dengan 10;",
         "menyusun bilangan dengan menggunakan model konkret;",
-        "mengurai bilangan dengan menggunakan model konkret;"
+        "mengurai bilangan dengan menggunakan model konkret."
       ]
     },
     {
-      "slm": "Bab 2: Penjumlahan dan Pengurangan sampai dengan 10",
+      "slm": "Bab 2: Penjumlahan sampai dengan 10",
       "tp": [
-        "menunjukkan konsep penjumlahan sampai dengan 10 dengan benda konkret, gambar, cerita, atau manipulatif lainnya;",
+        "menunjukkan konsep penjumlahan sampai dengan 10 dengan benda konkret, gambar, cerita, atau cara manipulatif lainnya;",
         "menuliskan operasi hitung untuk memecahkan masalah penjumlahan;",
-        "menggunakan berbagai strategi penjumlahan (menghitung maju, pasangan bilangan, penjumlahan ganda, penjumlahan yang hasilnya 10);",
-        "menyelesaikan masalah terkait penjumlahan dengan satu langkah penyelesaian;",
-        "menunjukkan konsep pengurangan sampai dengan 10 dengan benda konkret, gambar, cerita, atau manipulatif lainnya;",
-        "menggunakan berbagai strategi pengurangan (menghitung mundur, pasangan bilangan, pengurangan dengan 10);",
-        "menunjukkan fakta hubungan antara operasi penjumlahan dan pengurangan;",
-        "menyelesaikan masalah terkait pengurangan dengan satu langkah penyelesaian;"
+        "menggunakan berbagai strategi penjumlahan (menghitung maju, pasangan bilangan/number bond, penjumlahan ganda, dan penjumlahan yang hasilnya 10);",
+        "menyelesaikan masalah terkait dengan penjumlahan dengan satu langkah penyelesaian."
       ]
     },
     {
-      "slm": "Bab 3: Mengenal Bentuk",
+      "slm": "Bab 3: Pengurangan sampai dengan 10",
+      "tp": [
+        "menunjukkan konsep penjumlahan dan pengurangan sampai dengan 10 dengan benda konkret, gambar, cerita, atau manipulatif lainnya;",
+        "menggunakan berbagai strategi pengurangan (menghitung mundur, pasangan bilangan/number bond, dan pengurangan dengan 10);",
+        "menunjukkan fakta hubungan antara operasi penjumlahan dan pengurangan;",
+        "menyelesaikan masalah terkait pengurangan dengan satu langkah penyelesaian."
+      ]
+    },
+    {
+      "slm": "Bab 4: Mengenal Bentuk",
       "tp": [
         "mendeskripsikan benda berdasarkan bentuknya;",
         "mengenal bentuk dasar, yaitu segitiga, segi empat, dan bentuk lengkung;",
         "memberi nama bentuk dasar, yaitu segitiga, segi empat, dan bentuk lengkung;",
         "mengelompokkan benda berdasarkan bentuk, warna, dan ukurannya;",
         "menyusun bentuk bangun;",
-        "mengurai bentuk bangun;"
+        "mengurai bentuk bangun."
       ]
     },
     {
-      "slm": "Bab 4: Ayo Membilang sampai dengan 20",
+      "slm": "Bab 5: Ayo Membilang sampai dengan 20",
       "tp": [
         "menghitung bilangan dari 11 sampai dengan 20;",
         "membaca bilangan dari 11 sampai dengan 20;",
         "menulis bilangan dari 11 sampai dengan 20;",
         "membandingkan dua bilangan;",
         "menghitung maju dan mundur;",
-        "menemukan pasangan bilangan;"
+        "menemukan pasangan bilangan."
       ]
     },
     {
-      "slm": "Bab 5: Penjumlahan dan Pengurangan sampai dengan 20",
+      "slm": "Bab 6: Penjumlahan dan Pengurangan sampai dengan 20",
       "tp": [
         "menunjukkan lebih dari, kurang dari, dan beda atau selisih dari dua kelompok benda menggunakan benda konkret;",
         "menggunakan berbagai strategi penjumlahan antarbilangan satuan (menghitung maju, menghitung dengan 10, dan penjumlahan berulang);",
         "menggunakan berbagai strategi penjumlahan antara bilangan puluhan dan bilangan satuan yang hasilnya kurang dari 20 (menghitung maju, pasangan bilangan, dan nilai tempat);",
-        "menggunakan berbagai strategi pengurangan yang hasilnya kurang dari 20 (menghitung mundur, pasangan bilangan, dan nilai tempat);"
+        "menggunakan berbagai strategi pengurangan yang hasilnya kurang dari 20 (menghitung mundur, pasangan bilangan, dan nilai tempat)."
       ]
     },
     {
-      "slm": "Bab 6: Pengukuran Panjang",
+      "slm": "Bab 7: Mengukur Panjang Benda",
       "tp": [
         "membandingkan panjang dari dua benda;",
         "mengurutkan benda berdasarkan panjang benda;",
         "mengestimasi panjang benda dengan menggunakan satuan tidak baku;",
-        "mengukur panjang benda menggunakan objek lain dalam satuan tidak baku;"
+        "mengukur panjang benda menggunakan objek lain dalam satuan tidak baku."
       ]
     },
     {
-      "slm": "Bab 7: Diagram",
+      "slm": "Bab 8: Mengenal Diagram",
       "tp": [
         "mengelompokkan objek;",
         "menghitung setiap kelompok objek;",
@@ -550,91 +791,96 @@
   ],
   "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
     {
-      "slm": "Unit 1: Aktivitas Gerak Dasar Non-Lokomotor",
+      "slm": "Bab 1: Asyiknya Gerak di Tempat",
       "tp": [
-        "menjelaskan dan mempraktikkan gerak dasar non lokomotor dalam berbagai situasi."
+        "menjelaskan dan mempraktikkan gerak dasar non lokomotor (seperti menekuk, memilin, mengayun) dalam berbagai situasi dengan percaya diri."
       ]
     },
     {
-      "slm": "Unit 2: Aktivitas Gerak Dasar Lokomotor",
+      "slm": "Bab 2: Serunya Gerak Berpindah Tempat",
       "tp": [
-        "menjelaskan dan mempraktikkan gerak dasar lokomotor dalam berbagai situasi."
+        "menjelaskan dan mempraktikkan gerak dasar lokomotor (seperti merangkak, berjalan, berlari, melompat, berguling) dalam berbagai situasi dengan percaya diri."
       ]
     },
     {
-      "slm": "Unit 3: Aktivitas Gerak Dasar Manipulatif",
+      "slm": "Bab 3: Bergerak Menggunakan Benda",
       "tp": [
-        "menjelaskan dan mempraktikkan gerak dasar manipulatif dalam berbagai situasi."
+        "menjelaskan dan mempraktikkan gerak dasar manipulatif (seperti melempar, menangkap, memukul, menendang, menggiring) dalam berbagai situasi dengan percaya diri."
       ]
     },
     {
-      "slm": "Unit 4: Aktivitas Permainan",
+      "slm": "Bab 4: Bermain Bersama",
       "tp": [
-        "mengidentifikasi dan mempraktikkan perilaku fair play dan kerjasama dalam berbagai aktivitas jasmani dan permainan sederhana."
+        "mengidentifikasi dan mempraktikkan perilaku fair play dan kerja sama dalam berbagai aktivitas jasmani dan permainan sederhana."
       ]
     },
     {
-      "slm": "Unit 5: Aktivitas Kebugaran Jasmani",
+      "slm": "Bab 5: Sehat dan Bugar",
       "tp": [
-        "menjelaskan dan mempraktikkan aktivitas kebugaran jasmani."
+        "menjelaskan dan mempraktikkan aktivitas kebugaran jasmani (seperti aktivitas aerobik, kekuatan, dan kelincahan) secara mandiri."
       ]
     },
     {
-      "slm": "Unit 6: Aktivitas Pola Hidup Sehat",
+      "slm": "Bab 6: Sehat dan Aman",
       "tp": [
-        "menjelaskan dan mengidentifikasi gaya hidup aktif dan sehat."
-      ]
-    },
-    {
-      "slm": "Unit 7: Aktivitas Keselamatan",
-      "tp": [
-        "menjelaskan situasi dan potensi yang beresiko terhadap keselamatan dalam aktivitas jasmani dan dalam kehidupan sehari-hari."
-      ]
-    },
-    {
-      "slm": "Unit 8: Aktivitas Mencari Bantuan",
-      "tp": [
+        "menjelaskan dan mengidentifikasi gaya hidup aktif dan sehat (kebersihan dan kesehatan diri);",
+        "menjelaskan situasi dan potensi yang beresiko terhadap keselamatan dalam aktivitas jasmani dan dalam kehidupan sehari-hari (jalan raya dan air);",
         "menjelaskan cara mencari bantuan kepada orang dewasa terpercaya disekitarnya."
       ]
     }
   ],
   "Seni Budaya (Seni Rupa)": [
     {
-      "slm": "Unit 1: Mengenal Seni Rupa di Sekitar",
+      "slm": "Bab 1: Eksplorasi Media Berkarya Seni Rupa",
       "tp": [
-        "menggunakan variasi alat dan bahan yang tersedia di lingkungan sekitar untuk berkarya;",
-        "menceritakan hasil pengamatan tiga unsur rupa di lingkungan sekitar dengan menggunakan bahasa sehari-hari;",
-        "menyimpulkan karakteristik alat dan bahan yang digunakan;",
+        "menggunakan variasi alat dan bahan yang tersedia di lingkungan sekitar untuk berkarya."
+      ]
+    },
+    {
+      "slm": "Bab 2: Menceritakan Hasil Pengamatan",
+      "tp": [
+        "menceritakan hasil pengamatan tiga unsur rupa di lingkungan sekitar dengan menggunakan bahasa sehari-hari."
+      ]
+    },
+    {
+      "slm": "Bab 3: Menyimpulkan Karakteristik Alat dan Bahan",
+      "tp": [
+        "menyimpulkan karakteristik alat dan bahan yang digunakan."
+      ]
+    },
+    {
+      "slm": "Bab 4: Menyimpulkan Hasil Temuan Tiga Unsur Rupa di Sekitar",
+      "tp": [
         "menyimpulkan hasil temuan tiga unsur rupa di lingkungan sekitar."
       ]
     }
   ],
   "Seni Budaya (Seni Musik)": [
     {
-      "slm": "Unit 1: Bernyanyi Bersama",
+      "slm": "Bab 1: Bermain dan Bernyanyi",
       "tp": [
-        "mengidentifikasi lagu nasional dan lagu daerah melalui kegiatan bernyanyi bersama;",
+        "mengidentifikasi lagu nasional dan lagu daerah melalui kegiatan bernyanyi bersama."
+      ]
+    },
+    {
+      "slm": "Bab 2: Tepuk Tangan dan Entakkan Kakimu",
+      "tp": [
         "mengidentifikasi unsur-unsur tempo dan ketukan;",
         "mengimitasi pulsa/ketukan, tempo, dan pola irama sederhana."
       ]
     },
     {
-      "slm": "Unit 2: Bermain Musik",
+      "slm": "Bab 3: Dengarkan dan Bunyikan",
       "tp": [
         "mengidentifikasi warna bunyi dan nada;",
         "mengimitasi bunyi-bunyi bernada dan susunan nada-nadanya."
       ]
     },
     {
-      "slm": "Unit 3: Bergerak Bersama Musik",
+      "slm": "Bab 4: Mari Bermain Musik",
       "tp": [
-        "mengidentiikasi lagu dalam berbagai macam tempo dan birama;",
-        "merespons aktivitas permainan imitasi bunyi dan bernyanyi bersama."
-      ]
-    },
-    {
-      "slm": "Unit 4: Pertunjukan Musik",
-      "tp": [
+        "mengidentifikasi lagu dalam berbagai macam tempo dan birama;",
+        "merespons aktivitas permainan imitasi bunyi dan bernyanyi bersama;",
         "mengekspresikan secara sederhana ragam nyanyian menggunakan anggota tubuh;",
         "menjalankan praktik bernyanyi lagu dolanan, lagu daerah, dan lagu nasional yang memberikan dampak positif bagi dirinya."
       ]
@@ -642,63 +888,65 @@
   ],
   "Seni Budaya (Seni Tari)": [
     {
-      "slm": "Unit 1: Tari sebagai Media Berekspresi",
+      "slm": "Bab 1: Bergerak dengan Rangsangan",
       "tp": [
-        "mengeksplorasi gerak dengan melakukan pengamatan dari gambar, video, contoh gerak dari guru, bunyi atau musik, atau gagasan cerita;",
-        "menceritakan perbedaan gerak yang dilakukan melalui visual, audio, dan gagasan atau cerita;",
-        "mendeskripsikan hasil pengamatan ke dalam bentuk gerak tari;",
-        "menjelaskan sumber rangsang gerak yang dihasilkan."
+        "mengenal berbagai rangsang gerak tari;",
+        "menilai kemampuan gerak dari berbagai rangsangan gerak tari;",
+        "menunjukkan gerak tari berdasarkan berbagai rangsang (visual, audio, gagasan/cerita);",
+        "membuat gerak sederhana berdasarkan rangsang yang digunakan;",
+        "menunjukkan perilaku bekerja sama, bergotong royong, toleransi, dan berpikir kritis."
       ]
     },
     {
-      "slm": "Unit 2: Gerak di Sekitarku",
+      "slm": "Bab 2: Gerak Tari",
       "tp": [
-        "mengidentifikasi gerak sehari-hari dan gerak tari;",
-        "menceritakan perbedaan gerak sehari-hari dan gerak tari yang dilakukannya;",
-        "menampilkan gerak tari sederhana dari gerak sehari-hari;",
-        "menunjukan etika sebagai penari dan penonton."
+        "membedakan gerak sehari-hari dan gerak tari;",
+        "membuat kesimpulan perbedaan gerak sehari-hari dengan gerak tari;",
+        "membuat gerak tari sederhana dari gerak sehari-hari;",
+        "menunjukkan etika sebagai penampil dan penonton;",
+        "mengikuti proses pembelajaran dengan baik."
       ]
     }
   ],
   "Seni Budaya (Seni Teater)": [
     {
-      "slm": "Unit 1: Ayo Bermain Peran!",
+      "slm": "Bab I: Mengenal Dunia Teater",
       "tp": [
         "mengamati, merespons, dan meniru berbagai macam gerak tubuh, suara, dan ekspresi;",
         "mengenali pengalaman emosi;",
         "menceritakan/memberi pendapat gerak tubuh dan ekspresi teman dalam permainan;",
-        "mengeksplorasi peran, properti, dan kostum yang sesuai dengan pertunjukan;",
-        "menghasilkan pertunjukan adegan sederhana untuk memperoleh dampak positif (percaya diri, kreatif, bekerja sama)."
+        "mengeksplorasi peran, properti, dan kostum yang sesuai dengan pertunjukan yang dimainkan;",
+        "menghasilkan pertunjukan adegan sederhana sehingga memperoleh dampak positif berupa percaya diri, kreatif, dan dapat bekerja sama."
       ]
     },
     {
-      "slm": "Unit 2: Tubuhku Berbicara",
+      "slm": "Bab II: Serunya Bermain Tablo",
       "tp": [
         "mengamati, merespons, dan meniru berbagai emosi dan peristiwa;",
         "mengenali pengalaman emosi dan peristiwa;",
         "menceritakan/memberi komentar emosi dan peristiwa;",
         "mengeksplorasi peran, properti, dan kostum yang sesuai dengan pertunjukan tablo;",
-        "menghasilkan pertunjukan tablo untuk memperoleh dampak positif (percaya diri, kreatif, bekerja sama)."
+        "menghasilkan pertunjukan tablo dan memperoleh dampak positif, berupa sikap percaya diri, kreatif, dapat bekerja sama, dan menghasilkan pertunjukan tablo."
       ]
     },
     {
-      "slm": "Unit 3: Aku dan Kamu Sama",
+      "slm": "Bab III: Serunya Bermain Pantomim",
       "tp": [
         "mengamati, merespons, dan meniru berbagai macam karakter;",
         "mengenali karakter yang pernah dilihatnya;",
         "menceritakan/memberi komentar karakter yang diciptakannya melalui gerak tubuh dan ekspresi;",
         "mengeksplorasi peran, properti, dan kostum yang sesuai dengan pertunjukan pantomim;",
-        "menghasilkan pertunjukan pantomim untuk memperoleh dampak positif (percaya diri, kreatif, mandiri, bekerja sama)."
+        "menghasilkan pertunjukan pantomim dan memperoleh dampak positif berupa sikap percaya diri, kreatif, mandiri, bekerja sama, serta menghasilkan pertunjukan pantomim."
       ]
     },
     {
-      "slm": "Unit 4: Aku Bisa Berakting",
+      "slm": "Bab IV: Berkreasi dan Berkolaborasi",
       "tp": [
         "mengamati, merespons, dan meniru tokoh yang diperankan;",
         "mengenali karakter tokoh yang diperankan;",
         "menceritakan/memberi komentar seputar karakter tokoh yang diperankan teman;",
-        "mengeksplorasi dan memainkan peran, properti, dan kostum yang sesuai;",
-        "menghasilkan pertunjukan adegan sederhana untuk memperoleh dampak positif (kerja sama, berpendapat santun, rela berkorban)."
+        "mengeksplorasi dan memainkan peran, properti, dan kostum yang sesuai dengan peran yang dimainkan;",
+        "menghasilkan pertunjukan adegan sederhana dan memperoleh dampak positif kerja sama, berpendapat dengan santun, serta rela berkorban."
       ]
     }
   ],
