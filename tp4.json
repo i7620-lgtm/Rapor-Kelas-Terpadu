@@ -230,224 +230,139 @@
       ]
     }
   ],
-  "Matematika": [
+  "Bahasa Indonesia": [
     {
-      "slm": "Bab 1: Bilangan Cacah Sampai 10.000",
+      "slm": "Bab 1: Sudah Besar",
       "tp": [
-        "membaca bilangan cacah sampai 10.000",
-        "menulis bilangan cacah sampai 10.000",
-        "menentukan nilai tempat bilangan cacah sampai 10.000",
-        "membandingkan dua bilangan cacah sampai 10.000",
-        "mengurutkan beberapa bilangan cacah sampai 10.000",
-        "menyusun (komposisi) bilangan cacah sampai 10.000",
-        "mengurai (dekomposisi) bilangan cacah sampai 10.000",
-        "menentukan hasil operasi penjumlahan bilangan cacah sampai 1.000",
-        "menentukan hasil operasi pengurangan bilangan cacah sampai 1.000",
-        "menentukan hasil operasi perkalian bilangan cacah sampai 100 menggunakan benda konkret, gambar dan simbol",
-        "menentukan hasil operasi pembagian bilangan cacah sampai 100 menggunakan benda konkret, gambar dan simbol",
-        "menyelesaikan masalah berkaitan dengan kelipatan dan faktor"
+        "memaknai teks narasi yang dibacakan; menggunakan kaidah kebahasaan berupa kalimat transitif dan intransitif;",
+        "memaknai kosakata baru dari teks yang dibaca mengenai hal-hal menarik di lingkungan sekitar;",
+        "menggunakan kosakata baru dengan makna denotatif; menulis kalimat dalam tulisan tegak bersambung;",
+        "memahami arti dari kosakata yang baru dipelajari."
       ]
     },
     {
-      "slm": "Bab 2: Pecahan",
+      "slm": "Bab 2: Di Bawah Atap",
       "tp": [
-        "membandingkan dua pecahan dengan pembilang satu",
-        "mengurutkan antar pecahan dengan pembilang satu",
-        "membandingkan dua pecahan dengan penyebut yang sama",
-        "mengurutkan antar pecahan dengan penyebut yang sama",
-        "mengenali pecahan senilai menggunakan gambar dan simbol matematika",
-        "menyatakan pecahan desimal persepuluhan dan perseratusan",
-        "menghubungkan pecahan desimal perseratusan dengan konsep persen"
+        "memahami ide pokok dari teks yang dibacakan;",
+        "membaca kata-kata baru dengan fasih;",
+        "menggunakan kaidah kebahasaan: awalan ‘me-’;",
+        "aktif berdiskusi dan dapat mengemukakan pendapat dengan kalimat yang jelas;",
+        "menceritakan kembali informasi yang dibaca atau didengar mengenai hal-hal menarik di lingkungan sekitar;",
+        "menggunakan kaidah kebahasaan: kalimat majemuk."
       ]
     },
     {
-      "slm": "Bab 3: Pola Gambar dan Pola Bilangan",
+      "slm": "Bab 3: Lihat Sekitar",
       "tp": [
-        "mengidentifikasi pola gambar membesar dan mengecil yang melibatkan penjumlahan dan pengurangan pada bilangan cacah sampai 100",
-        "mengembangkan pola gambar membesar dan mengecil yang melibatkan penjumlahan dan pengurangan pada bilangan cacah sampai 100",
-        "mengidentifikasi pola bilangan membesar dan mengecil yang melibatkan penjumlahan pengurangan pada bilangan cacah sampai 100",
-        "mengembangkan pola bilangan membesar dan mengecil yang melibatkan penjumlahan pengurangan pada bilangan cacah sampai 100"
+        "memaknai kosakata baru mengenai hal-hal menarik di lingkungan sekitar;",
+        "menulis teks argumentasi;",
+        "terlibat secara aktif dalam diskusi sesuai tata cara;",
+        "menggunakan kaidah kebahasaan: awalan ‘ber-’;",
+        "memahami instruksi lisan yang berkaitan dengan hal-hal menarik di lingkungan sekitar;",
+        "menulis teks deskripsi."
       ]
     },
     {
-      "slm": "Bab 4: Pengukuran Luas dan Volume",
+      "slm": "Bab 4: Meliuk dan Menerjang",
       "tp": [
-        "mengukur luas menggunakan satuan tidak baku dan satuan baku",
-        "mengestimasi luas menggunakan satuan tidak baku dan satuan baku",
-        "mengukur volume menggunakan satuan tidak baku dan satuan baku",
-        "mengestimasi volume menggunakan satuan tidak baku dan satuan baku"
+        "memahami ide pokok suatu pesan lisan;",
+        "memahami ide pokok dan ide pendukung pada teks informatif;",
+        "berbicara menggunakan volume dan intonasi yang tepat sesuai konteks;",
+        "menulis teks wawancara dan melakukan wawancara;",
+        "menulis informasi mengenai hal-hal menarik di lingkungan sekitar."
       ]
     },
     {
-      "slm": "Bab 5: Bangun Datar",
+      "slm": "Bab 5: Bertukar atau Membayar",
       "tp": [
-        "mendeskripsikan ciri berbagai bentuk bangun datar (segiempat, segitiga, segibanyak)",
-        "menyusun (komposisi) berbagai bangun datar dengan lebih dari satu cara (jika memungkinkan)",
-        "mengurai (dekomposisi) berbagai bangun datar dengan lebih dari satu cara (jika memungkinkan)"
+        "memahami pesan dan informasi yang ada di dalam teks;",
+        "menggunakan kaidah kebahasaan: penulisan nilai uang dengan angka dan huruf;",
+        "berbicara dengan kata-kata dan sikap yang santun;",
+        "menulis teks prosedur."
       ]
     },
     {
-      "slm": "Bab 6: Piktogram dan Diagram Batang",
+      "slm": "Bab 6: Satu Titik",
       "tp": [
-        "menyajikan data dalam bentuk piktogram",
-        "menginterpretasikan data dalam bentuk piktogram",
-        "menyajikan data dalam bentuk diagram batang",
-        "menginterpretasikan data dalam bentuk diagram batang"
+        "mengidentifikasi dan memahami kata-kata baru pada teks yang dibaca;",
+        "menggunakan kaidah kebahasaan: kalimat efektif;",
+        "memahami maksud yang disampaikan oleh suatu puisi;",
+        "menulis teks yang kalimat dan kata-katanya dipilih dan ditata secara cermat;",
+        "menceritakan kembali suatu informasi yang dibaca dari teks narasi/informasi;",
+        "memahami kejadian dalam teks narasi."
+      ]
+    },
+    {
+      "slm": "Bab 7: Asal-Usul",
+      "tp": [
+        "memahami teks yang diperdengarkan dari media audio;",
+        "memahami pesan dan informasi dari teks narasi;",
+        "berbicara untuk menyampaikan pendapat secara santun;",
+        "menggunakan kaidah kebahasan: kata penghubung antarkalimat."
+      ]
+    },
+    {
+      "slm": "Bab 8: Sehatlah Ragaku",
+      "tp": [
+        "memahami pesan dan informasi tentang kehidupan sehari-hari;",
+        "memahami dan memaknai teks informasi yang dibacakan;",
+        "memahami ide pokok dan ide pendukung pada teks informatif dan teks narasi;",
+        "menceritakan kembali suatu informasi yang dibaca atau didengar dari teks narasi mengenai hal-hal menarik di lingkungan sekitar;",
+        "menulis informasi mengenai hal-hal menarik di lingkungan sekitar menggunakan kaidah kebahasaan yang baik dan benar."
       ]
     }
   ],
-  "Seni Budaya (Seni Musik)": [
+  "Ilmu Pengetahuan Alam dan Sosial": [
     {
-      "slm": "Irama dan Ragam Alat Musik",
+      "slm": "Bab 1: Mengubah Bentuk Energi",
       "tp": [
-        "Mengidentifikasi karakteristik ragam alat musik dan bunyi yang dihasilkannya.",
-        "Mengimitasi tempo alat musik ritmis atau melodis.",
-        "Mengimitasi pola irama alat musik ritmis dan melodis.",
-        "Mengimitasi pola bunyi, baik yang menggunakan anggota tubuh maupun menggunakan alat musik ritmis dan melodis."
+        "Menjelaskan fenomena perubahan bentuk energi yang ada di sekitarnya.",
+        "Menggunakan pemahamannya tentang perubahan bentuk energi untuk mendeskripsikan bagaimana manfaat perubahan energi itu terhadap dirinya dan lingkungan di sekitarnya."
       ]
     },
     {
-      "slm": "Birama dan Bunyi",
+      "slm": "Bab 2: Gaya di Sekitar Kita",
       "tp": [
-        "Mengimitasi irama, baik yang menggunakan anggota tubuh maupun menggunakan alat musik ritmis dan melodis.",
-        "Memberikan tanggapan atau umpan balik mengenai praktik bermusik dirinya atau orang lain menggunakan istilah musik yang telah dipelajari.",
-        "Mengimitasi bunyi dasar ragam alat musik ritmis atau melodis."
+        "Menjelaskan penerapan gaya pada kehidupan sekitarnya.",
+        "Memahami gejala kemagnetan dalam kehidupan sehari-hari."
       ]
     },
     {
-      "slm": "Melodi dan Notasi Angka",
+      "slm": "Bab 3: Di Sini Tempat Tinggalku!",
       "tp": [
-        "Mengimitasi nada, baik yang menggunakan anggota tubuh maupun menggunakan alat musik melodis.",
-        "Memainkan instrumen musik yang digunakannya.",
-        "Merawat instrumen yang digunakannya."
+        "Menelaah kondisi geografis wilayah tempat tinggal melalui peta konvensional/digital."
       ]
     },
     {
-      "slm": "Musik Kreasi",
+      "slm": "Bab 4: Iklim dan Perubahannya",
       "tp": [
-        "Mengembangkan pola irama menggunakan alat musik melodis yang tersedia di lingkungan sekitar.",
-        "Mengembangkan pola irama menggunakan anggota tubuh atau alat musik ritmis yang tersedia di lingkungan sekitar.",
-        "Menjalankan praktik bermusik yang memberikan dampak positif bagi dirinya dan lingkungan terkecilnya."
-      ]
-    }
-  ],
-  "Pendidikan Agama dan Budi Pekerti (Buddha)": [
-    {
-      "slm": "Bab 9: Melatih Kesabaran",
-      "tp": [
-        "menerapkan kesabaran dalam kehidupan sehari-hari",
-        "membudayakan perilaku antri sebagai bagian dari kesabaran dalam kehidupan sehari-hari",
-        "selalu bersemangat dalam kehidupan sehari-hari",
-        "menunjukkan sikap yang tangguh dalam kehidupan sehari-hari"
-      ]
-    }
-  ],
-  "Seni Budaya (Seni Rupa)": [
-    {
-      "slm": "Bab 1: Menggambar Sketsa",
-      "tp": [
-        "menggambar sketsa yang terinsipirasi dari pengalaman."
+        "Menelaah masalah yang berkaitan dengan perubahan iklim."
       ]
     },
     {
-      "slm": "Bab 2: Menelaah Karakteristik Alat dan Bahan",
+      "slm": "Bab 5: Ini Khas Daerahku!",
       "tp": [
-        "menelaah karakteristik alat dan bahan untuk penciptaan karya berdasarkan ketersediaan di lingkungan sekitar/pilihannya."
+        "Menganalisis hubungan bentang alam di daerah tempat tinggal dengan keanekaragaman hayati dan profesi masyarakat sekitarnya."
       ]
     },
     {
-      "slm": "Bab 3: Mengkreasikan Karya Seni Rupa Dua Dimensi dan Tiga Dimensi",
+      "slm": "Bab 6: Peranku di Lingkungan Sekolah dan Masyarakat",
       "tp": [
-        "membuat karya dengan menerapkan lima unsur rupa dan prinsip keseimbangan."
+        "Menerapkan peran, tugas, dan tanggung jawab, serta interaksi sosial yang terjadi di sekitar tempat tinggal dan sekolah."
       ]
     },
     {
-      "slm": "Bab 4: Membuat Konstruksi Sederhana",
+      "slm": "Bab 7: Keragaman Budaya dan Kearifan Lokal",
       "tp": [
-        "menyusun ulang bentuk dan bangun ruang yang tersedia dengan menerapkan prinsip keseimbangan."
+        "Menceritakan keragaman budaya dan kearifan lokal di lingkup daerah."
       ]
     },
     {
-      "slm": "Bab 5: Menanggapi Karya Seni Rupa",
+      "slm": "Bab 8: Menjadi Pahlawan Lingkungan",
       "tp": [
-        "memberikan umpan balik mengenai dampak sebuah karya seni bagi diri dan lingkungan terkecil."
-      ]
-    },
-    {
-      "slm": "Bab 6: Membuat Karya Seni yang Berdampak",
-      "tp": [
-        "membuat karya seni rupa yang mengandung nilai positif untuk lingkungan terkecil."
-      ]
-    }
-  ],
-  "Seni Budaya (Seni Tari)": [
-    {
-      "slm": "Mengenal Gerak dan Makna pada Permainan Tradisional Egrang",
-      "tp": [
-        "Mengidentifikasi latar belakang sebuah penyajian tari.",
-        "Mengeksplorasi unsur utama tari sesuai level gerak, perubahan arah hadap dan desain lantai.",
-        "Mengeksplorasi unsur utama tari, konsep bermain egrang, konsep arah, dan lintasan.",
-        "Menganalisis dan menghargai nilai budaya dalam permainan tradisional.",
-        "Mengidentifikasi unsur pendukung tari dan menggunakan atribut tari sesuai ciri khas permainan.",
-        "Mengidentifikasi konten, melakukan eksplorasi gerak, dan merancang gerak tari sesuai desain.",
-        "Merancang dan mempresentasikan gerak tari sesuai dengan desain lantai bersama kelompok.",
-        "Mengulang kembali gerak, mendiskusikan kesan, dan mengapresiasi hasil karya permainan tradisional."
-      ]
-    },
-    {
-      "slm": "Mengenal Gerak dan Makna Permainan Tradisional Engklek",
-      "tp": [
-        "Menganalisis, mengklasifikasikan, dan mengapresiasi permainan tradisional berbasis teknologi AR.",
-        "Mengeksplorasi unsur tari, memeragakan ragam gerak, dan membuat lintasan perpindahan posisi.",
-        "Mengamati unsur tari, memeragakan gerak berpindah (lokomotor) dan tidak berpindah (nonlokomotor), serta mengembangkan gerak permainan menjadi tari.",
-        "Merangkai gerak hasil eksplorasi dan mengevaluasi hasil proses merangkai gerak bersama kelompok.",
-        "Mengidentifikasi unsur pendukung, menggunakan atribut, dan merancang gerak tari sesuai desain lantai bersama kelompok.",
-        "Mengulang kembali gerak, mendiskusikan kesan, dan mengapresiasi hasil karya.",
-        "Menganalisis dan menghargai nilai budaya dalam permainan tradisional."
-      ]
-    },
-    {
-      "slm": "Mengenal Tari Melalui Cerita Fabel",
-      "tp": [
-        "Mengidentifikasi latar belakang penyajian tari dari cerita fabel.",
-        "Mengidentifikasi konten, eksplorasi gerak, dan merancang gerak tari sesuai desain lantai kelompok dari karya permainan tradisional.",
-        "Mengamati unsur tari dan memeragakan gerak berpindah (lokomotor) dan tidak berpindah (nonlokomotor).",
-        "Mengidentifikasi, eksplorasi, merancang, dan mempresentasikan gerak tari dari cerita fabel secara berkelompok.",
-        "Mengidentifikasi unsur pendukung tari dan menggunakan atribut tari sesuai ciri khas cerita fabel.",
-        "Mengulang kembali gerak, mendiskusikan kesan, dan mengapresiasi hasil karya cerita fabel.",
-        "Menganalisis dan menghargai nilai budaya dalam permainan tradisional."
-      ]
-    }
-  ],
-  "Seni Budaya (Seni Teater)": [
-    {
-      "slm": "Bermain Peran Binatang dan Peristiwa Alam",
-      "tp": [
-        "mengenal teknik dasar akting (pemeranan).",
-        "mengeksplorasi dan mengidentifikasi gerak tubuh dan suara binatang dan peristiwa alam.",
-        "mengenal dan menceritakan gerak dan suara binatang dan peristiwa alam.",
-        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita.",
-        "menghasilkan pertunjukan cerita binatang dan peristiwa alam sehingga memberi dampak positif berupa sikap percaya diri, kreatif, dapat bekerja sama, serta menghasilkan pertunjukan."
-      ]
-    },
-    {
-      "slm": "Bermain Peran dari Cerita Kehidupan Sehari-Hari",
-      "tp": [
-        "mengenal dan mengeksplorasi dialog sederhana, gerak tubuh, suara, dan emosi dirinya sendiri serta orang-orang di sekitarnya.",
-        "mengidentifikasi inti cerita dan peran yang berbeda dalam sebuah naskah.",
-        "mengenal dan menceritakan gerak dan suara dirinya sendiri serta orang-orang di sekitarnya.",
-        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita.",
-        "menghasilkan pertunjukan cerita kehidupan sehari-hari sehingga memberi dampak positif, berupa sikap percaya diri, kreatif, dapat bekerja sama, dan menghasilkan pertunjukan."
-      ]
-    },
-    {
-      "slm": "Bermain Peran dari Cerita Fabel dan Legenda",
-      "tp": [
-        "mengenal dialog sederhana, mengeksplorasi gerak tubuh, suara, serta emosi manusia dan binatang.",
-        "mengidentifikasi inti cerita dan peran yang berbeda dalam sebuah naskah.",
-        "mengenal dan menceritakan gerak dan suara manusia dan binatang.",
-        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita.",
-        "menghasilkan pertunjukan cerita fabel dan legenda sehingga memberi dampak positif, berupa sikap percaya diri, kreatif, serta dapat bekerja sama."
+        "Menunjukkan sikap peduli terhadap permasalahan lingkungan di sekitar.",
+        "Berkontribusi dalam upaya melakukan mitigasi perubahan iklim melalui aktivitas sederhana yang bisa dilakukan dalam kehidupan sehari-hari.",
+        "Berkontribusi dalam upaya melestarikan budaya/kearifan lokal di lingkungan sekitarnya."
       ]
     }
   ],
@@ -538,6 +453,48 @@
         "Peserta didik mampu memahami isi dan makna dari satua bali",
         "Peserta didik mampu menceritakan kembali satua bali yang telah dibaca",
         "Peserta didik Mampu mesatua Bali dengan baik dan benar"
+      ]
+    }
+  ],
+  "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
+    {
+      "slm": "Bab 1: Ayo, Bergerak!",
+      "tp": [
+        "Peserta didik menerapkan keterampilan gerak fundamental dalam situasi gerak yang baru.",
+        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
+        "Peserta didik memecahkan masalah gerak."
+      ]
+    },
+    {
+      "slm": "Bab 2: Ayo, Bermain!",
+      "tp": [
+        "Peserta didik menyesuaikan strategi gerak untuk mendapatkan capaian keterampilan gerak.",
+        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
+        "Peserta didik menerapkan peraturan untuk mengembangkan fair play dalam aktivitas jasmani (permainan dan olahraga).",
+        "Peserta didik mengidentifikasi faktor-faktor yang menyebabkan aktivitas jasmani menyenangkan."
+      ]
+    },
+    {
+      "slm": "Bab 3: Ayo, Merangkai Gerak!",
+      "tp": [
+        "Peserta didik menerapkan konsep gerak dalam rangkaian gerak.",
+        "Peserta didik mempertunjukkan berbagai peran dengan cara terhormat untuk mendapatkan keberhasilan capaian."
+      ]
+    },
+    {
+      "slm": "Bab 4: Ayo, Bugarkan Tubuhmu!",
+      "tp": [
+        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
+        "Peserta didik mengidentifikasi faktor-faktor yang menyebabkan aktivitas jasmani menyenangkan.",
+        "Peserta didik berpartisipasi dalam berbagai aktivitas jasmani."
+      ]
+    },
+    {
+      "slm": "Bab 5: Hidup yang Menyehatkan",
+      "tp": [
+        "Peserta didik mengenali risiko akibat gaya hidup tidak sehat.",
+        "Peserta didik mengeksplorasi pola makanan sehat dan bergizi seimbang sesuai rekomendasi kesehatan untuk menunjang aktivitas sehari-hari.",
+        "Peserta didik mempraktikkan penanganan cedera ringan sesuai pemahaman prinsip pertolongan pertama (aktivitas jasmani atau olahraga)."
       ]
     }
   ]
