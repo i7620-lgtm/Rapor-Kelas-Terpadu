@@ -966,7 +966,7 @@
   ],
   "Muatan Lokal (Bahasa Bali)": [
     {
-      "slm": "Bab 1: Angga Sarira",
+      "slm": "Adan Angga Sarira",
       "tp": [
         "Mengenal nama anggota tubuh dalam bahasa Bali",
         "Mengenal nama jari-jari tangan dalam bahasa Bali",
@@ -974,7 +974,7 @@
       ]
     },
     {
-      "slm": "Bab 2: Dolanan Tradisional",
+      "slm": "Adan plalian",
       "tp": [
         "Mengenal nama-nama permainan tradisional",
         "Menyebutkan bahan-bahan dari permainan tradisional",
@@ -982,7 +982,7 @@
       ]
     },
     {
-      "slm": "Bab 3: Kulawarga",
+      "slm": "Adan angggota keluarwarga",
       "tp": [
         "Mengenal nama anggota keluarga dalam bahasa Bali",
         "Menyebutkan urutan dari keluarga",
@@ -990,7 +990,7 @@
       ]
     },
     {
-      "slm": "Bab 4: Dauh",
+      "slm": "Adan dauh",
       "tp": [
         "Mengenal adan-adan dauh",
         "Mengenal salam dalam bahasa Bali sesuai waktu",
@@ -998,18 +998,23 @@
       ]
     },
     {
-      "slm": "Bab 5: Idup Bersih lan Sehat",
+      "slm": "Parilaksana idup bersih dan sehat",
       "tp": [
         "Memahami prilaku idup bersih dan sehat",
         "Menyebutkan contoh idup bersih dan sehat",
-        "Mengenal jenis-jenis sampah",
-        "Menganal piranti anggen makedas-kedas",
+        "Mengenal jenis-jenis sampah"
+      ]
+    },
+    {
+      "slm": "Piranti makedas-kedas lan pengalaman",
+      "tp": [
+        "Mengenal piranti anggen makedas-kedas",
         "Mengetahui kegunaan piranti makedas-kedas",
         "Menulis contoh-contoh pengalaman yang disukai dan tidak disukai"
       ]
     },
     {
-      "slm": "Bab 6: Entik-entikan lan Buah-buahan",
+      "slm": "Adan woh-wohan",
       "tp": [
         "Mengenal nama buah dan tumbuhan dalam bahasa Bali",
         "Menyebutkan nama buah dan tumbuhan dalam bahasa Bali",
@@ -1017,7 +1022,7 @@
       ]
     },
     {
-      "slm": "Bab 7: Buron",
+      "slm": "Adan buron",
       "tp": [
         "Mengenal nama hewan",
         "Menyebutkan bunyi-bunyi hewan",
@@ -1025,7 +1030,7 @@
       ]
     },
     {
-      "slm": "Bab 8: Satua Bali",
+      "slm": "Satua Bali",
       "tp": [
         "Mengetahui satua Bali",
         "Menyimak salah satu satua Bali",
@@ -1034,7 +1039,7 @@
       ]
     },
     {
-      "slm": "Bab 9: Sekar Rare",
+      "slm": "Sekar rare",
       "tp": [
         "Mengetahui contoh-contoh sekar rare",
         "Menirukan salah satu lagu sekar rare",
@@ -1042,7 +1047,7 @@
       ]
     },
     {
-      "slm": "Bab 10: Kruna Matungkalik",
+      "slm": "Kruna matungkalik",
       "tp": [
         "Mengenal kruna-kruna matungkalik",
         "Menyebutkan kruna matungkalik",
