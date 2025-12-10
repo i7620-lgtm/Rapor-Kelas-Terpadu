@@ -856,6 +856,34 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 )
                             )
                         ),
+
+                        React.createElement('section', null,
+                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Tampilan Input Nilai"),
+                            React.createElement('div', { className: "space-y-4" },
+                                React.createElement('p', { className: "text-sm text-slate-600" }, "Pilih bagaimana Anda ingin melihat dan memasukkan data nilai per mata pelajaran."),
+                                React.createElement('div', { className: "space-y-2" },
+                                    ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                                        const labels = {
+                                            'kuantitatif & kualitatif': 'Tampilan Kartu (Bawaan)',
+                                            'kuantitatif saja': 'Tampilan Tabel (Nilai Angka)',
+                                            'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                        };
+                                        const descriptions = {
+                                            'kuantitatif & kualitatif': 'Tampilan ringkas per lingkup materi, membuka jendela terpisah untuk input nilai.',
+                                            'kuantitatif saja': 'Tampilan seperti spreadsheet dengan input nilai angka (0-100).',
+                                            'kualitatif saja': 'Tampilan seperti spreadsheet dengan input nilai kualitatif (BB, MB, BSH, SB).',
+                                        };
+                                        return React.createElement('label', { key: mode, className: "flex items-start p-3 border rounded-lg cursor-pointer hover:bg-slate-50" },
+                                            React.createElement('input', { type: "radio", name: "nilaiDisplayMode", value: mode, checked: (settings.nilaiDisplayMode || 'kuantitatif & kualitatif') === mode, onChange: onSettingsChange, className: "h-4 w-4 text-indigo-600 mt-1" }),
+                                            React.createElement('div', { className: "ml-3" },
+                                                React.createElement('span', { className: "block text-sm font-medium text-slate-800" }, labels[mode]),
+                                                React.createElement('span', { className: "block text-sm text-slate-500" }, descriptions[mode])
+                                            )
+                                        );
+                                    })
+                                )
+                            )
+                        ),
                         
                         React.createElement('section', { className: "pt-6 border-t" },
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Mata Pelajaran"),
@@ -873,7 +901,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
                                 React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
                                 React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", value: settings.predikats.d, readOnly: true, className: "bg-slate-100" })
+                                React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", readOnly: true, className: "bg-slate-100" })
                             ),
                             React.createElement(QualitativeGradingTable, null)
                         )
