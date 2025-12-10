@@ -201,38 +201,36 @@
   ],
   "Pendidikan Pancasila": [
     {
-      "slm": "Bab 1: Mengenal Lingkungan Sekitar",
+      "slm": "Bab 1: Aku Anak Indonesia",
       "tp": [
-        "Mengidentifikasi, membedakan, dan menghargai identitas diri, keluarga, dan teman-temannya sesuai budaya, suku bangsa, bahasa, serta agama dan kepercayaannya serta mempraktikkan di lingkungan masyarakat.",
-        "Mengenal dan mengidentifikasi lingkungan tempat tinggal (desa atau kelurahan, dan kecamatan) sebagai bagian tidak terpisahkan dari wilayah Negara Kesatuan Republik Indonesia."
+        "Peserta didik mampu menghargai identitas diri, teman, dan keluarga sesuai budaya, suku bangsa, bahasa, agama, dan kepercayaan.",
+        "Peserta didik mampu mengidentifikasi lingkungan tempat tinggal sebagai bagian tidak terpisahkan dari wilayah NKRI."
       ]
     },
     {
-      "slm": "Bab 2: Aku Anak yang Disiplin",
+      "slm": "Bab 2: Aku Patuh Aturan",
       "tp": [
-        "Memahami dan membuat aturan di lingkungan tempat tinggal.",
-        "Mengidentifikasi dan melaksanakan hak dan kewajiban sebagai warga sekolah."
+        "Peserta didik mampu mengidentifikasi dan melaksanakan aturan di sekolah, dan lingkungan tempat tinggal.",
+        "Peserta didik mampu mengidentifikasi dan melaksanakan hak dan kewajiban sebagai anggota keluarga dan warga sekolah."
       ]
     },
     {
-      "slm": "Bab 3: Kerja Sama di Lingkunganku",
+      "slm": "Bab 3: Berbeda Itu Indah",
       "tp": [
-        "Melakukan kerja sama dalam berbagai bentuk keberagaman sosial, dan budaya di Indonesia yang terkait persatuan dan kesatuan.",
-        "Menunjukkan sikap kompak dan bersatu dalam berbagai bentuk keberagaman sosial dan budaya di Indonesia yang terkait persatuan dan kesatuan.",
-        "Menunjukkan sikap bangga menjadi anak Indonesia yang memiliki bahasa Indonesia sebagai bahasa persatuan di lingkungan masyarakat."
+        "Mengidentifikasi, membedakan dan menghargai identitas diri, keluarga, dan teman-temannya sesuai budaya, suku bangsa, dan bahasa di lingkungan rumah, sekolah, dan masyarakat."
       ]
     },
     {
-      "slm": "Bab 4: Pancasila dalam Diriku",
+      "slm": "Bab 4: Ayo Mengenal Pancasila",
       "tp": [
-        "Menunjukkan, mengidentifikasi, dan mempraktikkan makna sila-sila Pancasila dalam kehidupan sehari-hari di lingkungan masyarakat.",
-        "Mengenal dan meneladani karakter para perumus Pancasila."
+        "Peserta didik mampu mempraktikkan makna sila-sila Pancasila dalam kehidupan sehari-hari di lingkungan keluarga dan sekolah.",
+        "Peserta didik mampu meneladani karakter para perumus Pancasila."
       ]
     }
   ],
   "Bahasa Indonesia": [
     {
-      "slm": "Bab 1: Sudah Besar",
+      "slm": "Bab 1: Kalimat Transitif dan Intransitif",
       "tp": [
         "memaknai teks narasi yang dibacakan; menggunakan kaidah kebahasaan berupa kalimat transitif dan intransitif;",
         "memaknai kosakata baru dari teks yang dibaca mengenai hal-hal menarik di lingkungan sekitar;",
@@ -241,39 +239,35 @@
       ]
     },
     {
-      "slm": "Bab 2: Di Bawah Atap",
+      "slm": "Bab 2: Ide Pokok dan Ide Pendukung",
       "tp": [
-        "memahami ide pokok dari teks yang dibacakan;",
-        "membaca kata-kata baru dengan fasih;",
-        "menggunakan kaidah kebahasaan: awalan ‘me-’;",
-        "aktif berdiskusi dan dapat mengemukakan pendapat dengan kalimat yang jelas;",
-        "menceritakan kembali informasi yang dibaca atau didengar mengenai hal-hal menarik di lingkungan sekitar;",
-        "menggunakan kaidah kebahasaan: kalimat majemuk."
+        "memaknai teks narasi yang dibacakan; menggunakan kaidah kebahasaan berupa kalimat transitif dan intransitif;",
+        "memaknai kosakata baru dari teks yang dibaca mengenai hal-hal menarik di lingkungan sekitar;",
+        "menggunakan kosakata baru dengan makna denotatif; menulis kalimat dalam tulisan tegak bersambung;",
+        "memahami arti dari kosakata yang baru dipelajari."
       ]
     },
     {
-      "slm": "Bab 3: Lihat Sekitar",
+      "slm": "Bab 3: Awalan 'ber-'",
       "tp": [
         "memaknai kosakata baru mengenai hal-hal menarik di lingkungan sekitar;",
-        "menulis teks argumentasi;",
-        "terlibat secara aktif dalam diskusi sesuai tata cara;",
-        "menggunakan kaidah kebahasaan: awalan ‘ber-’;",
+        "menulis teks argumentasi; terlibat secara aktif dalam diskusi sesuai tata cara;",
+        "menggunakan kaidah kebahasaan: awalan 'ber-';",
         "memahami instruksi lisan yang berkaitan dengan hal-hal menarik di lingkungan sekitar;",
         "menulis teks deskripsi."
       ]
     },
     {
-      "slm": "Bab 4: Meliuk dan Menerjang",
+      "slm": "Bab 4: Wawancara",
       "tp": [
-        "memahami ide pokok suatu pesan lisan;",
-        "memahami ide pokok dan ide pendukung pada teks informatif;",
+        "memahami ide pokok pada suatu pesan lisan; memahami ide pokok dan ide pendukung pada teks informatif;",
         "berbicara menggunakan volume dan intonasi yang tepat sesuai konteks;",
         "menulis teks wawancara dan melakukan wawancara;",
         "menulis informasi mengenai hal-hal menarik di lingkungan sekitar."
       ]
     },
     {
-      "slm": "Bab 5: Bertukar atau Membayar",
+      "slm": "Bab 5: Teks Prosedur",
       "tp": [
         "memahami pesan dan informasi yang ada di dalam teks;",
         "menggunakan kaidah kebahasaan: penulisan nilai uang dengan angka dan huruf;",
@@ -282,7 +276,7 @@
       ]
     },
     {
-      "slm": "Bab 6: Satu Titik",
+      "slm": "Bab 6: Kalimat Efektif",
       "tp": [
         "mengidentifikasi dan memahami kata-kata baru pada teks yang dibaca;",
         "menggunakan kaidah kebahasaan: kalimat efektif;",
@@ -293,22 +287,88 @@
       ]
     },
     {
-      "slm": "Bab 7: Asal-Usul",
+      "slm": "Bab 7: Kata Penghubung Antarkalimat",
       "tp": [
-        "memahami teks yang diperdengarkan dari media audio;",
+        "memahami teks yang didengarkan dari media audio;",
         "memahami pesan dan informasi dari teks narasi;",
         "berbicara untuk menyampaikan pendapat secara santun;",
-        "menggunakan kaidah kebahasan: kata penghubung antarkalimat."
+        "menggunakan kaidah kebahasaan: kata penghubung antarkalimat."
       ]
     },
     {
-      "slm": "Bab 8: Sehatlah Ragaku",
+      "slm": "Bab 8: Lingkungan",
       "tp": [
         "memahami pesan dan informasi tentang kehidupan sehari-hari;",
         "memahami dan memaknai teks informasi yang dibacakan;",
         "memahami ide pokok dan ide pendukung pada teks informatif dan teks narasi;",
-        "menceritakan kembali suatu informasi yang dibaca atau didengar dari teks narasi mengenai hal-hal menarik di lingkungan sekitar;",
+        "menceritakan kembali suatu informasi yang dibaca atau didengar dari teks narasi;",
         "menulis informasi mengenai hal-hal menarik di lingkungan sekitar menggunakan kaidah kebahasaan yang baik dan benar."
+      ]
+    }
+  ],
+  "Matematika": [
+    {
+      "slm": "Bab 1: Bilangan Cacah, Operasi Hitung, Kelipatan, dan Faktor",
+      "tp": [
+        "Membaca bilangan cacah sampai 10.000.",
+        "Menulis bilangan cacah sampai 10.000.",
+        "Menentukan nilai tempat bilangan cacah sampai 10.000.",
+        "Membandingkan dua bilangan cacah sampai 10.000.",
+        "Mengurutkan beberapa bilangan cacah sampai 10.000.",
+        "Menyusun (komposisi) bilangan cacah sampai 10.000.",
+        "Mengurai (dekomposisi) bilangan cacah sampai 10.000.",
+        "Menentukan hasil operasi penjumlahan bilangan cacah sampai 1.000.",
+        "Menentukan hasil operasi pengurangan bilangan cacah sampai 1.000.",
+        "Menentukan hasil operasi perkalian bilangan cacah sampai 100 menggunakan benda konkret, gambar dan simbol.",
+        "Menentukan hasil operasi pembagian bilangan cacah sampai 100 menggunakan benda konkret, gambar dan simbol.",
+        "Menyelesaikan masalah berkaitan dengan kelipatan dan faktor."
+      ]
+    },
+    {
+      "slm": "Bab 2: Pecahan",
+      "tp": [
+        "Membandingkan dua pecahan dengan pembilang satu.",
+        "Mengurutkan antarpecahan dengan pembilang satu.",
+        "Membandingkan dua pecahan dengan penyebut yang sama.",
+        "Mengurutkan antarpecahan dengan penyebut yang sama.",
+        "Mengenali pecahan senilai menggunakan gambar dan simbol matematika.",
+        "Menyatakan pecahan desimal persepuluhan dan perseratusan.",
+        "Menghubungkan pecahan desimal perseratusan dengan konsep persen."
+      ]
+    },
+    {
+      "slm": "Bab 3: Pola Gambar dan Pola Bilangan",
+      "tp": [
+        "Mengidentifikasi pola gambar membesar dan mengecil yang melibatkan penjumlahan dan pengurangan pada bilangan cacah sampai 100.",
+        "Mengembangkan pola gambar membesar dan mengecil yang melibatkan penjumlahan dan pengurangan pada bilangan cacah sampai 100.",
+        "Mengidentifikasi pola bilangan membesar dan mengecil yang melibatkan penjumlahan pengurangan pada bilangan cacah sampai 100.",
+        "Mengembangkan pola bilangan membesar dan mengecil yang melibatkan penjumlahan pengurangan pada bilangan cacah sampai 100."
+      ]
+    },
+    {
+      "slm": "Bab 4: Pengukuran Luas dan Volume",
+      "tp": [
+        "Mengukur luas menggunakan satuan tidak baku dan satuan baku.",
+        "Mengestimasi luas menggunakan satuan tidak baku dan satuan baku.",
+        "Mengukur volume menggunakan satuan tidak baku dan satuan baku.",
+        "Mengestimasi volume menggunakan satuan tidak baku dan satuan baku."
+      ]
+    },
+    {
+      "slm": "Bab 5: Bangun Datar",
+      "tp": [
+        "Mendeskripsikan ciri berbagai bentuk bangun datar (segiempat, segitiga, segibanyak).",
+        "Menyusun (komposisi) berbagai bangun datar dengan lebih dari satu cara (jika memungkinkan).",
+        "Mengurai (dekomposisi) bangun datar dengan lebih dari satu cara (jika memungkinkan)."
+      ]
+    },
+    {
+      "slm": "Bab 6: Piktogram dan Diagram Batang",
+      "tp": [
+        "Menyajikan data dalam bentuk piktogram.",
+        "Menginterpretasikan data dalam bentuk piktogram.",
+        "Menyajikan data dalam bentuk diagram batang.",
+        "Menginterpretasikan data dalam bentuk diagram batang."
       ]
     }
   ],
@@ -366,6 +426,205 @@
       ]
     }
   ],
+  "Bahasa Inggris": [
+    {
+      "slm": "Chapter 1: My Morning Routine",
+      "tp": [
+        "Peserta didik dapat mengubah/mengganti beberapa elemen kalimat untuk berpartisipasi dalam kegiatan pembelajaran perihal rutinitas pagi.",
+        "Peserta didik dapat mengamati teks pendek dan sederhana dalam bentuk komik tentang rutinitas pagi.",
+        "Peserta didik dapat mengomunikasikan ide dan pengalaman mereka tentang rutinitas pagi dalam bentuk tulisan dan lisan."
+      ]
+    },
+    {
+      "slm": "Chapter 2: Meal Time",
+      "tp": [
+        "Peserta didik dapat menggunakan bahasa Inggris untuk berinteraksi dalam menyajikan makanan menggunakan kalimat ajakan dan permintaan.",
+        "Peserta didik dapat membaca/mengamati teks prosedur pendek dan sederhana tentang penyajian makanan.",
+        "Peserta didik dapat mengomunikasikan ide dan pengalaman mereka tentang penyajian makananan dalam bentuk tulisan dan lisan."
+      ]
+    },
+    {
+      "slm": "Chapter 3: My Toys",
+      "tp": [
+        "Peserta didik dapat mengubah/mengganti beberapa elemen kalimat untuk berpartisipasi dalam kegiatan pembelajaran perihal kegiatan meminjam sebuah mainan.",
+        "Peserta didik dapat mengamati teks pendek dan sederhana dalam bentuk komik tentang kegiatan meminjam sebuah mainan.",
+        "Peserta didik dapat mengomunikasikan ide dan pengalaman mereka tentang deskripsi sebuah mainan dalam bentuk tulisan dan lisan."
+      ]
+    },
+    {
+      "slm": "Chapter 4: My School Activities",
+      "tp": [
+        "Peserta mengikuti instruksi sederhana perihal kegiatan di kelas melalui petunjuk visual.",
+        "Peserta didik dapat merespons teks pendek, sederhana, dan familiar dalam bentuk teks cetak atau digital, termasuk teks visual, multimodal, dan interaktif secara lisan perihal kegiatan di kelas.",
+        "Peserta didik dapat menulis salinan teks pendek dan sederhana tentang kegiatan di kelas."
+      ]
+    },
+    {
+      "slm": "Chapter 5: My PE Class",
+      "tp": [
+        "Peserta mengikuti instruksi sederhana perihal permainan melalui petunjuk visual.",
+        "Peserta didik dapat merespons teks pendek, sederhana, dan familiar dalam bentuk teks cetak atau digital, termasuk teks visual, multimodal, dan interaktif secara lisan perihal permainan dan perasaan.",
+        "Peserta didik dapat menulis salinan teks pendek dan sederhana tentang permainan dan perasaan."
+      ]
+    },
+    {
+      "slm": "Chapter 6: My School Days",
+      "tp": [
+        "Peserta mengikuti instruksi sederhana perihal hari, bulan, dan mata pelajaran melalui petunjuk visual.",
+        "Peserta didik dapat merespons teks pendek, sederhana, dan familiar dalam bentuk teks cetak atau digital, termasuk teks visual, multimodal, dan interaktif secara lisan perihal hari, bulan, dan mata pelajaran.",
+        "Peserta didik dapat menulis salinan teks pendek dan sederhana tentang hari, bulan, dan mata pelajaran."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Rupa)": [
+    {
+      "slm": "Bab 1: Menggambar Sketsa",
+      "tp": [
+        "Menggambar sketsa pakaian dengan proporsi yang tepat.",
+        "Menggambar sketsa dengan komposisi yang seimbang.",
+        "Menambahkan keterangan pendukung sketsa yang sesuai."
+      ]
+    },
+    {
+      "slm": "Bab 2: Menelaah Karakteristik Alat dan Bahan",
+      "tp": [
+        "Menampilkan perbedaan karya seni dua dimensi dan tiga dimensi dengan bahan lunak dan bahan keras.",
+        "Menampilkan perbedaan lukisan dengan pewarna kering dan pewarna basah.",
+        "Membedakan berbagai alat untuk menggambar, membentuk, dan memotong."
+      ]
+    },
+    {
+      "slm": "Bab 3: Mengkreasikan Karya Seni Rupa Dua Dimensi dan Tiga Dimensi",
+      "tp": [
+        "Menggambar rumah adat dengan komponen umum yang lengkap meliputi: atap, dinding, dan lantai.",
+        "Menggambar rumah adat dengan komposisi yang seimbang.",
+        "Mewarnai gambar rumah adat dengan harmoni antara latar dan objek utama."
+      ]
+    },
+    {
+      "slm": "Bab 4: Membuat Konstruksi Sederhana",
+      "tp": [
+        "Memilih objek dengan bentuk-bentuk permukaan yang sesuai.",
+        "Menghasilkan susunan yang seimbang.",
+        "Menghasilkan konstruksi dengan penempelan objek yang kuat."
+      ]
+    },
+    {
+      "slm": "Bab 5: Menanggapi Karya Seni Rupa",
+      "tp": [
+        "Menemukan dua hal postif dari karya yang diamati untuk diri sendiri.",
+        "Menemukan dua hal postif dari karya yang diamati untuk lingkungan terdekat."
+      ]
+    },
+    {
+      "slm": "Bab 6: Membuat Karya Seni yang Berdampak",
+      "tp": [
+        "Membuat karya seni rupa yang mengandung nilai positif.",
+        "Menjelaskan muatan positif yang ditemukan dalam sebuah karya."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Musik)": [
+    {
+      "slm": "Bab 1: Mengenal Musik dan Unsurnya",
+      "tp": [
+        "Mengenal dan membedakan lagu nasional, lagu daerah, dan lagu populer anak-anak.",
+        "Mengidentifikasi unsur-unsur musik (tempo, ketukan, warna suara, nada, dan irama).",
+        "Bernyanyi lagu daerah dan lagu populer anak-anak."
+      ]
+    },
+    {
+      "slm": "Bab 2: Bermain Melalui Musik",
+      "tp": [
+        "Merespons musik dengan mengimitasi dan berimprovisasi melodi dan ritmis menggunakan vokal, alat musik, anggota tubuh, atau benda sekitar.",
+        "Memberikan umpan balik atau komentar terhadap praktik bermusik secara musikal dan verbal."
+      ]
+    },
+    {
+      "slm": "Bab 3: Berkreasi dengan Alat Musik Sederhana",
+      "tp": [
+        "Mengimitasi bunyi menggunakan alat musik melalui pola irama serta bunyi dasar melodi dan ritmis.",
+        "Mempelajari jenis-jenis alat musik, bunyi yang dihasilkan, serta cara merawat dan membersihkannya."
+      ]
+    },
+    {
+      "slm": "Bab 4: Menggali Kekuatan Bunyi",
+      "tp": [
+        "Merespons unsur-unsur bunyi-musik nada dan irama.",
+        "Memproduksi bunyi dan pola irama menggunakan anggota tubuh atau alat musik yang tersedia di lingkungan sekitar."
+      ]
+    },
+    {
+      "slm": "Bab 5: Bermain Alat Musik Ensambel",
+      "tp": [
+        "Merespons aktivitas permainan imitasi bunyi dan bernyanyi bersama.",
+        "Mengidentifikasi penggabungan ragam alat musik ritmis dan melodis.",
+        "Menjalankan praktik bermain alat musik ritmis dan melodis."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Tari)": [
+    {
+      "slm": "Bab 1: Keragaman Bentuk Tari Tradisi dan Unsur Pendukungnya",
+      "tp": [
+        "Mengamati berbagai bentuk tari tradisi secara berkelompok.",
+        "Mengidentifikasi unsur pendukung tari dalam tari tradisi.",
+        "Mengklasifikasi unsur pendukung tari dalam tari tradisi.",
+        "Menghargai ciri khas dan keunikan gerak-gerak tari tradisi."
+      ]
+    },
+    {
+      "slm": "Bab 2: Desain Kelompok dalam Tari Tradisi",
+      "tp": [
+        "Mengidentifikasi bentuk desain kelompok (serempak/unison, berimbang/balance, dan selang-seling/alternate) bersumber dari tari tradisi.",
+        "Meragakan gerak tari tradisi sesuai unsur pendukung (musik, properti, tata rias, dan busana) dengan menggunakan desain kelompok (unison, balance, alternate).",
+        "Merangkai ragam gerak tari tradisi yang dipilih secara kelompok.",
+        "Menghargai keberagaman budaya melalui pemahaman unsur-unsur pendukung dan desain kelompok dari tari tradisi."
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Teater)": [
+    {
+      "slm": "Bab 1: Mengenal dan Menjadi",
+      "tp": [
+        "Peserta didik mengenal ragam karakter dalam cerita khayal.",
+        "Peserta didik menggunakan seluruh anggota tubuh dan suara untuk menunjukkan beberapa tokoh dalam cerita khayal.",
+        "Peserta didik memainkan penggalan cerita khayal dalam pertunjukan tablo dengan durasi pertunjukan 3-5 menit.",
+        "Peserta didik mengevaluasi karya sendiri dan orang lain.",
+        "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran dan cerita."
+      ]
+    },
+    {
+      "slm": "Bab 2: Eksplorasi Gerak dan Suara",
+      "tp": [
+        "Peserta didik mendeskripsikan tubuh dan suara karakter dalam setiap plot cerita pilihan mereka.",
+        "Peserta didik mengeksplorasi tubuh dan suara karakter sesuai plot narasi dalam cerita pilihan mereka.",
+        "Peserta didik merespons suara latar dengan gerakan spontan.",
+        "Peserta didik merancang pertunjukan tablo atau pantomim dengan potongan cerita yang dipilih.",
+        "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran."
+      ]
+    },
+    {
+      "slm": "Bab 3: Improvisasi",
+      "tp": [
+        "Peserta didik memberi contoh ragam improvisasi dalam teater (improvisasi solo, improvisasi dengan properti, dan improvisasi dengan pasangan).",
+        "Peserta didik memperagakan hasil eksplorasi tubuh dan suara mereka dengan emosi yang tepat.",
+        "Peserta didik menghasilkan dialog dan gerak tubuh sebagai respons terhadap deskripsi dan narasi yang diberikan.",
+        "Peserta didik mendemonstrasikan pertunjukan improvisasi sesuai ragam pilihan.",
+        "Peserta didik menciptakan pertunjukan spontan sebagai respons terhadap narasi dan properti yang diberikan.",
+        "Peserta didik mengevaluasi kelebihan dan kekurangan penampilan diri sendiri atau orang lain."
+      ]
+    },
+    {
+      "slm": "Bab 4: Pertunjukan",
+      "tp": [
+        "Peserta didik berdiskusi untuk menentukan cerita pilihan mereka.",
+        "Peserta didik memilih pemain yang diwakili sutradara dan tim produksi yang diwakili oleh pimpinan produksi.",
+        "Peserta didik mengidentifikasi karakter dan mempersiapkan unsur produksi lainnya.",
+        "Peserta didik menampilkan pertunjukan akhir."
+      ]
+    }
+  ],
   "Muatan Lokal (Bahasa Bali)": [
     {
       "slm": "Pengangge Tengenan",
@@ -390,7 +649,7 @@
       "slm": "Angka 1-100",
       "tp": [
         "Peserta didik mampu mengetahui istilah angka 1-100 dalam bahasa bali",
-        "Peserta didik mampu menyebutkan istilah angka 1-100 dalam bahasa bali"
+        "Peserta didik mampu menyebutkan istilah angka 1-100"
       ]
     },
     {
@@ -425,9 +684,9 @@
     {
       "slm": "Kruna Dwi Lingga (Terapan Kosa Kata)",
       "tp": [
-        "Peserta didik Mampu memahami jenis-jenis kruna dwi lingga",
-        "Peserta didik mampu menyebutkan jenis-jenis kruna",
-        "Peserta didik mampu mengklarifikasikan contoh-contoh kata sesuai jenis kruna dwi lingga"
+        "Mampu memahami jenis-jenis kruna dwi lingga",
+        "Mampu menyebutkan jenis-jenis kruna",
+        "Mampu mengklarifikasikan contoh-contoh kata sesuai jenis kruna dwi lingga"
       ]
     },
     {
@@ -458,43 +717,52 @@
   ],
   "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
     {
-      "slm": "Bab 1: Ayo, Bergerak!",
+      "slm": "Unit 1: Aktivitas Pola Gerak Dasar Lokomotor",
       "tp": [
-        "Peserta didik menerapkan keterampilan gerak fundamental dalam situasi gerak yang baru.",
-        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
-        "Peserta didik memecahkan masalah gerak."
+        "Mempraktikkan variasi pola gerak dasar lokomotor (berjalan, berlari, melompat, dan meloncat)."
       ]
     },
     {
-      "slm": "Bab 2: Ayo, Bermain!",
+      "slm": "Unit 2: Aktivitas Pola Gerak Dasar Nonlokomotor",
       "tp": [
-        "Peserta didik menyesuaikan strategi gerak untuk mendapatkan capaian keterampilan gerak.",
-        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
-        "Peserta didik menerapkan peraturan untuk mengembangkan fair play dalam aktivitas jasmani (permainan dan olahraga).",
-        "Peserta didik mengidentifikasi faktor-faktor yang menyebabkan aktivitas jasmani menyenangkan."
+        "Mempraktikkan variasi pola gerak dasar nonlokomotor (memutar, mengayun, menekuk, dan meliuk)."
       ]
     },
     {
-      "slm": "Bab 3: Ayo, Merangkai Gerak!",
+      "slm": "Unit 3: Aktivitas Pola Gerak Dasar Manipulatif",
       "tp": [
-        "Peserta didik menerapkan konsep gerak dalam rangkaian gerak.",
-        "Peserta didik mempertunjukkan berbagai peran dengan cara terhormat untuk mendapatkan keberhasilan capaian."
+        "Mempraktikkan variasi pola gerak dasar melempar, menangkap, menendang, dan menahan bola."
       ]
     },
     {
-      "slm": "Bab 4: Ayo, Bugarkan Tubuhmu!",
+      "slm": "Unit 4: Aktivitas Gerak Dominan Senam",
       "tp": [
-        "Peserta didik memperagakan konsep gerak dalam rangkaian gerak.",
-        "Peserta didik mengidentifikasi faktor-faktor yang menyebabkan aktivitas jasmani menyenangkan.",
-        "Peserta didik berpartisipasi dalam berbagai aktivitas jasmani."
+        "Mempraktikkan pola gerak dominan senam (keseimbangan, sikap lilin, dan lompat kangkang)."
       ]
     },
     {
-      "slm": "Bab 5: Hidup yang Menyehatkan",
+      "slm": "Unit 5: Aktivitas Gerak Berirama",
       "tp": [
-        "Peserta didik mengenali risiko akibat gaya hidup tidak sehat.",
-        "Peserta didik mengeksplorasi pola makanan sehat dan bergizi seimbang sesuai rekomendasi kesehatan untuk menunjang aktivitas sehari-hari.",
-        "Peserta didik mempraktikkan penanganan cedera ringan sesuai pemahaman prinsip pertolongan pertama (aktivitas jasmani atau olahraga)."
+        "Mempraktikkan variasi pola gerak langkah kaki dan ayunan lengan dalam aktivitas gerak berirama."
+      ]
+    },
+    {
+      "slm": "Unit 6: Aktivitas Permainan dan Olahraga di Air",
+      "tp": [
+        "Mempraktikkan gerak dasar posisi badan, gerakan kaki, gerakan lengan, dan cara mengambil napas dalam aktivitas air."
+      ]
+    },
+    {
+      "slm": "Unit 7: Aktivitas Kebugaran untuk Kesehatan",
+      "tp": [
+        "Mempraktikkan latihan kekuatan otot dan daya tahan otot."
+      ]
+    },
+    {
+      "slm": "Unit 8: Aktivitas Fisik dan Memilih Makanan Bergizi",
+      "tp": [
+        "Menerapkan konsep aktivitas fisik, istirahat, dan pengisian waktu luang.",
+        "Menerapkan cara memilih makanan bergizi dan seimbang."
       ]
     }
   ]
