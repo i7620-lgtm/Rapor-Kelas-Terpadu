@@ -762,101 +762,277 @@
   ],
   "Seni Budaya (Seni Musik)": [
     {
-      "slm": "Bab 1: Mengenal Musik dan Unsurnya",
+      "slm": "Bab 1: Irama dan Ragam Alat Musik",
       "tp": [
-        "",
-        "",
-        "",
-        ""
+        "mengidentiikasi karakteristik ragam alat musik dan bunyi yang dihasilkannya.",
+        "mengimitasi tempo alat musik ritmis atau melodis",
+        "mengimitasi pola irama alat musik ritmis dan melodis",
+        "mengimitasi pola bunyi, baik yang menggunakan anggota tubuh maupun yang menggunakan alat musik ritmis dan melodis"
       ]
     },
     {
-      "slm": "Bab 2: Bermain Melalui Musik",
+      "slm": "Bab 2: Birama dan Bunyi",
       "tp": [
-        "",
-        "",
-        "",
-        ""
+        "mengimitasi irama baik yang menggunakan anggota tubuh maupun yang menggunakan alat musik ritmis dan melodis",
+        "memberikan tanggapan atau umpan balik mengenai praktik bermusik dirinya atau orang lain menggunakan istilah musik yang telah dipelajari",
+        "mengimitasi bunyi dasar ragam alat musik ritmis atau melodis"
       ]
     },
     {
-      "slm": "Bab 3: Berkreasi dengan Alat Musik Sederhana",
+      "slm": "Bab 3: Melodi dan Notasi Angka",
       "tp": [
-        "",
-        "",
-        "",
-        ""
+        "mengimitasi nada, baik yang menggunakan anggota tubuh maupun yang menggunakan alat musik ritmis dan melodis",
+        "memainkan instrumen musik yang digunakannya",
+        "merawat instrumen yang digunakannya"
       ]
     },
     {
-      "slm": "Bab 4: Menggali Kekuatan Bunyi",
+      "slm": "Bab 4: Musik Kreasi",
       "tp": [
-        "",
-        "",
-        "",
-        ""
+        "mengembangkan pola irama menggunakan alat musik melodis yang tersedia di lingkungan sekitar",
+        "mengembangkan pola irama menggunakan anggota tubuh atau alat musik ritmis yang tersedia di lingkungan sekitar",
+        "menjalankan praktik bermusik yang memberikan dampak positif bagi dirinya dan lingkungan terkecilnya."
       ]
     }
   ],
   "Seni Budaya (Seni Tari)": [
     {
-      "slm": "Bab 1: Keragaman Bentuk Tari Tradisi dan Unsur Pendukungnya",
+      "slm": "Bab 1: Mengenal Gerak dan Makna pada Permainan Tradisional Egrang",
       "tp": [
-        "Mengamati berbagai bentuk tari tradisi secara berkelompok.",
-        "Mengidentifikasi unsur pendukung tari dalam tari tradisi.",
-        "Mengklasifikasi unsur pendukung tari dalam tari tradisi.",
-        "Menghargai ciri khas dan keunikan gerak-gerak tari tradisi."
+        "mengamati bentuk penyajian tari",
+        "mengidentiikasi latar belakang sebuah penyajian tari",
+        "mengenal bentuk level gerak, perubahan arah hadap, dan desain lantai",
+        "mengekplorasi unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai",
+        "mengingat kembali unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai",
+        "menjelaskan bentuk level gerak, perubahan arah hadap dan desain lantai",
+        "menyimpulkan hasil pencapaian dirinya di dalam proses pembelajaran tari",
+        "meragakan gerak tari sesuai level dan arah hadap secara individu",
+        "mempresentasikan karya tari kelompok sesuai dengan desain lantai",
+        "mengembangkan kemampuan bekerja sama dan saling menghargai demi tercapainya tujuan bersama",
+        "membuat bentuk gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "mengembangkan gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "merangkai gerak berdasarkan unsur utama tari, level, dan perubahan arah hadap",
+        "menunjukkan antusiasme dalam proses pembelajaran sehingga tumbuh rasa ingin tahu",
+        "menyelesaikan aktivitas pembelajaran tari"
       ]
     },
     {
-      "slm": "Bab 2: Desain Kelompok dalam Tari Tradisi",
+      "slm": "Bab 2: Mengenal Gerak dan Makna Permainan Tradisional Engklek",
       "tp": [
-        "Mengidentifikasi bentuk desain kelompok (serempak/unison, berimbang/balance, dan selang-seling/alternate) bersumber dari tari tradisi.",
-        "Meragakan gerak tari tradisi sesuai unsur pendukung (musik, properti, tata rias, dan busana) dengan menggunakan desain kelompok (unison, balance, alternate).",
-        "Merangkai ragam gerak tari tradisi yang dipilih secara kelompok.",
-        "Menghargai keberagaman budaya melalui pemahaman unsur-unsur pendukung dan desain kelompok dari tari tradisi."
+        "mengamati bentuk penyajian tari",
+        "mengidentiikasi latar belakang sebuah penyajian tari",
+        "mengenal bentuk level gerak, perubahan arah hadap, dan desain lantai",
+        "mengekplorasi unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai.",
+        "mengingat kembali unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai",
+        "menjelaskan bentuk level gerak, perubahan arah hadap dan desain lantai",
+        "menyimpulkan hasil pencapaian dirinya di dalam proses pembelajaran tari",
+        "meragakan gerak tari sesuai level dan arah hadap secara individu",
+        "mempresentasikan karya tari kelompok sesuai dengan desain lantai",
+        "mengembangkan kemampuan bekerja sama dan saling menghargai demi tercapainya tujuan bersama",
+        "membuat bentuk gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "mengembangkan gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "merangkai gerak berdasarkan unsur utama tari, level, dan perubahan arah hadap",
+        "menunjukkan antusiasme dalam proses pembelajaran sehingga tumbuh rasa ingin tahu",
+        "menyelesaikan aktivitas pembelajaran tari"
+      ]
+    },
+    {
+      "slm": "Bab 3: Mengenal Tari Melalui Cerita Fabel".
+      "tp":[
+        "mengamati bentuk penyajian tari",
+        "mengidentiikasi latar belakang sebuah penyajian tari",
+        "mengenal bentuk level gerak, perubahan arah hadap, dan desain lantai",
+        "mengekplorasi unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai.",
+        "mengingat kembali unsur utama tari sesuai level gerak, perubahan arah hadap, dan desain lantai",
+        "menjelaskan bentuk level gerak, perubahan arah hadap dan desain lantai",
+        "menyimpulkan hasil pencapaian dirinya di dalam proses pembelajaran tari",
+        "meragakan gerak tari sesuai level dan arah hadap secara individu",
+        "mempresentasikan karya tari kelompok sesuai dengan desain lantai",
+        "mengembangkan kemampuan bekerja sama dan saling menghargai demi tercapainya tujuan bersama",
+        "membuat bentuk gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "mengembangkan gerak dengan unsur utama tari, level, dan perubahan arah hadap",
+        "merangkai gerak berdasarkan unsur utama tari, level, dan perubahan arah hadap",
+        "menunjukkan antusiasme dalam proses pembelajaran sehingga tumbuh rasa ingin tahu",
+        "menyelesaikan aktivitas pembelajaran tari"
       ]
     }
   ],
   "Seni Budaya (Seni Teater)": [
     {
-      "slm": "Bab 1: Mengenal dan Menjadi",
+      "slm": "Bab 1: Bermain Peran Binatang dan Peristiwa Alam",
       "tp": [
-        "Peserta didik mengenal ragam karakter dalam cerita khayal.",
-        "Peserta didik menggunakan seluruh anggota tubuh dan suara untuk menunjukkan beberapa tokoh dalam cerita khayal.",
-        "Peserta didik memainkan penggalan cerita khayal dalam pertunjukan tablo dengan durasi pertunjukan 3-5 menit.",
-        "Peserta didik mengevaluasi karya sendiri dan orang lain.",
-        "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran dan cerita."
+        "mengenal teknik dasar akting (pemeranan)",
+        "mengeksplorasi gerak tubuh dan suara binatang dan peristiwa alam",
+        "mengidentiikasi gerak tubuh dan suara binatang dan peristiwa alam",
+        "mengenal gerak dan suara binatang dan peristiwa alam",
+        "menceritakan gerak dan suara binatang dan peristiwa alam",
+        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita",
+        "menghasilkan pertunjukan cerita binatang dan peristiwa alam sehingga memberi dampak positif berupa sikap percaya diri, kreatif, dapat bekerja sama, serta menghasilkan pertunjukan"
       ]
     },
     {
-      "slm": "Bab 2: Eksplorasi Gerak dan Suara",
+      "slm": "Bab 2: Bermain Peran dari Cerita Kehidupan Sehari-Hari",
       "tp": [
-        "Peserta didik mendeskripsikan tubuh dan suara karakter dalam setiap plot cerita pilihan mereka.",
-        "Peserta didik mengeksplorasi tubuh dan suara karakter sesuai plot narasi dalam cerita pilihan mereka.",
-        "Peserta didik merespons suara latar dengan gerakan spontan.",
-        "Peserta didik merancang pertunjukan tablo atau pantomim dengan potongan cerita yang dipilih.",
-        "Peserta didik mengeksplorasi penggunaan properti panggung untuk menunjang peran."
+        "mengenal dialog sederhana, gerak tubuh, suara, dan emosi dirinya sendiri serta orang-orang di sekitarnya",
+        "mengeksplorasi dialog sederhana, gerak tubuh, suara, dan emosi dirinya sendiri serta orang-orang di sekitarnya",
+        "mengidentiikasi inti cerita dan peran yang berbeda dalam sebuah naskah",
+        "mengenal gerak dan suara dirinya sendiri serta orang-orang di sekitarnya",
+        "menceritakan gerak dan suara dirinya sendiri serta orang-orang di sekitarnya",
+        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita",
+        "menghasilkan pertunjukan cerita kehidupan sehari-hari sehingga memberi dampak positif, berupa sikap percaya diri, kreatif, dapat bekerja sama, dan menghasilkan pertunjukan"
       ]
     },
     {
-      "slm": "Bab 3: Improvisasi",
+      "slm": "Bab 3: Bermain Peran dari Cerita Fabel dan Legenda",
       "tp": [
-        "Peserta didik memberi contoh ragam improvisasi dalam teater (improvisasi solo, improvisasi dengan properti, dan improvisasi dengan pasangan).",
-        "Peserta didik memperagakan hasil eksplorasi tubuh dan suara mereka dengan emosi yang tepat.",
-        "Peserta didik menghasilkan dialog dan gerak tubuh sebagai respons terhadap deskripsi dan narasi yang diberikan.",
-        "Peserta didik mendemonstrasikan pertunjukan improvisasi sesuai ragam pilihan.",
-        "Peserta didik menciptakan pertunjukan spontan sebagai respons terhadap narasi dan properti yang diberikan.",
-        "Peserta didik mengevaluasi kelebihan dan kekurangan penampilan diri sendiri atau orang lain."
+        "mengenal dialog sederhana, mengeksplorasi gerak tubuh, suara, serta emosi manusia dan binatang",
+        "mengidentiikasi inti cerita dan peran yang berbeda dalam sebuah naskah",
+        "mengenal gerak dan suara manusia dan binatang",
+        "menceritakan gerak dan suara manusia dan binatang",
+        "menggunakan tata artistik panggung sesuai dengan tokoh yang diperankan dan alur cerita",
+        "menghasilkan pertunjukan cerita fabel dan legenda sehingga memberi dampak positif, berupa sikap percaya diri, kreatif, serta dapat bekerja sama."
+      ]
+    }
+  ],
+  "Pendidikan Kepercayaan Terhadap Tuhan Yang Maha Esa dan Budi Pekerti":[
+    {
+      "slm": "Pelajaran 1: Keluarga Harmonis",
+      "tp":[
+        "mengidentifikasi diri dan keluarga dengan baik",
+        "melatih sikap menyayangi dan menghormati keluarga",
+        "menerapkan perilaku menyayangi dan menghormati keluarga",
+        "memahami pentingnya sikap jujur",
+        "melatih kejujuran",
+        "menerapkan perilaku jujur pada kehidupan sehari-hari",
+        "memahami pentingnya sikap patuh dan menghormati orang tua",
+        "melatih sikap patuh dan hormat pada orang tua",
+        "menerapkan perilaku patuh dan menghormati orang tua"
       ]
     },
-    {
-      "slm": "Bab 4: Pertunjukan",
-      "tp": [
-        "Peserta didik berdiskusi untuk menentukan cerita pilihan mereka.",
-        "Peserta didik memilih pemain yang diwakili sutradara dan tim produksi yang diwakili oleh pimpinan produksi.",
-        "Peserta didik mengidentifikasi karakter dan mempersiapkan unsur produksi lainnya.",
-        "Peserta didik menampilkan pertunjukan akhir."
+     {
+      "slm": "Pelajaran 2: Sopan Santun di Sekolah",
+      "tp":[
+        "menunjukkan sikap hormat kepada guru",
+        "menunjukkan sikap patuh akan nasihat guru",
+        "menerapkan perilaku menyayangi menghormati guru",
+        "menunjukkan rasa empati dan menghargai teman",
+        "menyayangi teman",
+        "menerapkan perilaku cinta kasih dan menghargai teman",
+        "menghormati simbol-simbol negara.",
+        "menerapkan sikap disiplin",
+        "menerapkan sikap patuh di sekolah"
+      ]
+    },
+     {
+      "slm": "Pelajaran 3: Persahabatan",
+      "tp":[
+        "menyadari kesalahan",
+        "membiasakan diri untuk meminta maaf atas kesalahan yang diperbuatnya",
+        "menjalin persahabatan yang baik",
+        "menyadari bahwa setiap manusia membutuhkan manusia lain",
+        "membiasakan diri untuk tolong-menolong",
+        "melatih sikap toleran",
+        "mendiskusikan kegiatan bersama dengan teman yang berbeda keyakinan",
+        "menerapkan sikap menghargai teman yang berbeda keyakinan"
+      ]
+    },
+     {
+      "slm": "Pelajaran 4: Cita-citaku",
+      "tp":[
+        "menjelaskan sikap gotong royong",
+        "menanggapi perilaku gotong royong",
+        "menerapkan perilaku gotong royong",
+        "menjelaskan sikap tanggung jawab dan rela berkorban",
+        "menerapkan perilaku tanggung jawab dan rela berkorban",
+        "menjelaskan nilai-nilai Pancasila",
+        "mencontohkan pengamalan nilai-nilai Pancasila dalam kehidupan sehari-hari",
+        "menerapkan pengamalan nilai-nilai Pancasila dalam kehidupan sehari-hari",
+        "mengidentifikasi cita-cita yang dimilikinya",
+        "melatih diri untuk disiplin",
+        "menggali potensi yang ada dalam dirinya untuk meraih cita-cita"
+      ]
+    },
+     {
+      "slm": "Pelajaran 5: Aku Tahu Kewajibanku",
+      "tp":[
+        "menyebutkan Tuhan sesuai dengan kepercayaannya",
+        "membiasakan diri beribadah sesuai dengan kepercayaannya",
+        "menyebutkan tata tertib di rumah dan sekolah",
+        "menaati tata tertib yang ada di rumah dan sekolah",
+        "menyebutkan kewajiban di masyarakat",
+        "menaati aturan yang ada di lingkungan masyarakat",
+        "menyebutkan kewajiban sebagai Penghayat Kepercayaan",
+        "menyebutkan larangan sebagai Penghayat Kepercayaan",
+        "melaksanakan kewajiban",
+        "menjauhi larangan"
+      ]
+    },
+     {
+      "slm": "Pelajaran 6: Keindahan Negeriku",
+      "tp":[
+        "memberikan tanggapan sederhana dari lagu “Desaku yang Kucinta” karya L. Manik",
+        "mendeskripsikan keindahan alam Indonesia berdasarkan gambar ilustrasi",
+        "mengungkapkan rasa syukur atas anugerah yang diberikan Tuhan dengan menciptakan sebuah puisi tentang keindahan alam Indonesia",
+        "memberikan tanggapan atas peristiwa atau masalah yang terjadi di lingkungan sekitarnya",
+        "memberikan saran sederhana atas peristiwa atau masalah yang dihadapinya dengan kalimat yang runtut dan sederhana",
+        "memahami kepedulian terhadap lingkungan sebagai anugerah Tuhan yang harus dijaga",
+        "membuat karya berupa poster imbauan untuk peduli alam semesta",
+        "memberikan tanggapan sederhana tentang upacara dalam rangka bersyukur kepada Tuhan",
+        "mendeskripsikan ungkapan rasa syukur",
+        "mengungkapkan rasa syukur atas anugerah yang diberikan Tuhan"
+      ]
+    },
+     {
+      "slm": "Pelajaran 7: Indahnya Keragaman",
+      "tp":[
+        "menyebutkan keragaman suku bangsa dan keyakinan di Indonesia",
+        "melatih toleransi dalam perbedaan",
+        "membiasakan diri hidup dalam perbedaan",
+        "menyebutkan adat yang ada di daerahnya",
+        "menjelaskan adat yang ada di daerahnya",
+        "menyebutkan busana adat Nusantara",
+        "mengidentifikasi busana adat di daerahnya masing-masing",
+        "membiasakan diri mengenakan busana adat masing-masing",
+        "menjelaskan Sasana Adirasa",
+        "mengidentifikasi ritual yang dilaksanakan di Sasana Adirasa",
+        "melatih diri agar taat dalam melaksanakan ritual sesuai kepercayaannya"
+      ]
+    },
+     {
+      "slm": "Pelajaran 8: Sejarah Kepercayaan Terhadap Tuhan Yang Maha Esa",
+      "tp":[
+        "mengenal istilah Kepercayaan",
+        "mendeskripsikan istilah Kepercayaan Terhadap Tuhan Yang Maha Esa",
+        "menjelaskan deskripsi dirinya sebagai Penghayat Kepercayaan",
+        "melatih kejujuran dalam permainan petak umpet",
+        "mengetahui Eksistensi Kepercayaan Terhadap Tuhan Yang Maha Esa",
+        "menjelaskan secara ringkas Eksistensi Kepercayaan Terhadap Tuhan Yang Maha Esa",
+        "memahami isi syair lagu daerah “Manuk Dadali",
+        "mengetahui sejarah Kepercayaan Terhadap Tuhan Yang Maha Esa di Indonesia.",
+        "menjelaskan secara ringkas sejarah Kepercayaan Terhadap Tuhan Yang Maha Esa"
+      ]
+    },
+     {
+      "slm": "Pelajaran 9: Mengenal Tokoh-tokoh Penghayat Kepercayaan",
+      "tp":[
+        "mengenal tokoh Sisingamangaraja XII",
+        "menjelaskan perjuangan yang telah dilakukan Sisingamangaraja XII",
+        "meneladani tokoh Sisingamangaraja XII",
+        "memahami dongeng fabel",
+        "menggali nilai-nilai dari dongeng fabel",
+        "mengenal tokoh Mei Kartawinata",
+        "menjelaskan perjuangan yang telah dilakukan Mei Kartawinata",
+        "memahami ajaran luhur Mei Kartawinata",
+        "melatih sopan santun dalam bertamu",
+        "mengenal tokoh Mr. K.R.M.T Wongsonagoro",
+        "menjelaskan perjuangan yang telah dilakukan Mr. K.R.M.T Wongsonagoro",
+        "memahami ajaran luhur Mr. K.R.M.T Wongsonagoro",
+        "membiasakan diri mengunjungi perpustakaan",
+        "mengidentifikasi bahan perpustakaan",
+        "mengenal tokoh R.K. Danoe Soebroto",
+        "menjelaskan perjuangan yang telah dilakukan R.K. Danoe Soebroto",
+        "memahami ajaran luhur R.K. Danoe Soebroto",
+        "mendemonstrasikan permainan tradisional egrang batok"
       ]
     }
   ],
