@@ -116,7 +116,7 @@
   ],
   "Pendidikan Agama dan Budi Pekerti (Kristen)": [
     {
-      "slm": "Pelajaran 1: Keluarga adalah Tempat Pertama dan Utama Aku Belajar",
+      "slm": "Pelajaran 1: Keluargaku Pemberian Tuhan",
       "tp": [
         "Menjelaskan alasan bersyukur untuk keluarga pemberian Allah",
         "Mendaftarkan hal-hal yang dapat dipelajari di keluarga",
@@ -312,12 +312,67 @@
   ],
   "Pendidikan Agama dan Budi Pekerti (Buddha)": [
     {
-      "slm": "Bab 9: Melatih Kesabaran",
+      "slm": "Ragam Budaya dan Tokoh Teladan",
       "tp": [
-        "menerapkan kesabaran dalam kehidupan sehari-hari",
-        "membudayakan perilaku antri sebagai bagian dari kesabaran dalam kehidupan sehari-hari",
-        "selalu bersemangat dalam kehidupan sehari-hari",
-        "menunjukkan sikap yang tangguh dalam kehidupan sehari-hari"
+        "Mendeskripsikan keragaman budaya benda dan nonbenda di Indonesia.",
+        "Menjelaskan permasalahan keragaman budaya bangsa Indonesia.",
+        "Menyelesaikan masalah keragaman budaya benda dan nonbenda di Indonesia.",
+        "Mendeskripsikan peran tokoh pendiri bangsa Indonesia dalam menerima keragaman budaya.",
+        "Menunjukkan sikap meneladan tokoh pendiri bangsa dan peran Buddha dalam menerima keragaman budaya.",
+        "Mendeskripsikan peran Buddha dalam menerima keragaman budaya.",
+        "Mengaitkan keragaman budaya bangsa dengan keragaman budaya agama Buddha di Indonesia."
+      ]
+    },
+    {
+      "slm": "Bahasa dan Budaya dalam Agamaku",
+      "tp": [
+        "Menggunakan bahasa agama Buddha membacakan doa dan kitab suci serta terjemahannya dalam bahasa Indonesia dan/atau bahasa daerah.",
+        "Menggunakan bahasa agama Buddha, bahasa daerah, dan bahasa Indonesia dalam doa dan kitab suci sebagai bagian dari budaya bangsa dan pembentuk identitas umat Buddha.",
+        "Membedakan bahasa dalam agama Buddha dengan budaya dan bahasa daerah di Indonesia sebagai pembentuk identitas agama dan pemersatu bangsa.",
+        "Menunjukkan perilaku baik dalam menggunakan bahasa dalam agama Buddha dan bahasa Indonesia."
+      ]
+    },
+    {
+      "slm": "Meneladan Bodhisattva dan Buddha",
+      "tp": [
+        "Mendeskripsikan sikap diri sendiri dan orang lain dalam berterima kasih atas pertolongan.",
+        "Menguraikan sifat Bodhisattva serta nilai-nilai moral Pangeran Siddharta dan Buddha dalam berterima kasih atas pertolongan.",
+        "Merelevansikan sifat Bodhisattva serta nilai-nilai moral dalam riwayat kehidupan Pangeran Siddharta dan Buddha dalam berterima kasih atas pertolongan.",
+        "Menunjukkan sikap untuk meneladan sifat Bodhisattva serta nilai-nilai moral dalam riwayat kehidupan Pangeran Siddharta dan Buddha dalam berterima kasih atas pertolongan.",
+        "Menguraikan sikap serta perilaku diri sendiri dan orang lain dalam menghadapi hambatan untuk meraih kesuksesan.",
+        "Merelevansikan sifat Bodhisattva serta nilai-nilai moral dalam riwayat kehidupan Pangeran Siddharta dan Buddha dalam menghadapi hambatan untuk meraih kesuksesan.",
+        "Meneladan sifat Bodhisattva serta nilai-nilai moral dalam riwayat kehidupan Pangeran Siddharta dan Buddha dalam menghadapi hambatan untuk meraih kesuksesan."
+      ]
+    },
+    {
+      "slm": "Aku Memuja",
+      "tp": [
+        "Menghargai puja dalam agama Buddha.",
+        "Menghargai cara dan peralatan puja aliran agama Buddha yang dianutnya.",
+        "Merencanakan dan melaksanakan kunjungan ke aliran agama Buddha lain untuk mengenal aneka ragam peralatan puja agama Buddha.",
+        "Menceritakankan dengan kata-kata sendiri fungsi serta makna cara dan peralatan puja dari berbagai aliran agama Buddha.",
+        "Menggunakan peralatan puja dalam kegiatan keagamaan salah satu dari aliran agama Buddha.",
+        "Menunjukkan sikap dan perilaku menghargai aliran lain ketika sedang melaksanakan puja dan menggunakan peralatan puja."
+      ]
+    },
+    {
+      "slm": "Keragaman dalam Masyarakat",
+      "tp": [
+        "Merespon masalah keragaman dalam kehidupan bermasyarakat, berbangsa, dan bernegara.",
+        "Menemukan solusi masalah keragaman di lingkungan sekolah, rumah, dan rumah ibadah melalui musyawarah dengan Pancasila dasar negara dan Pancasila Buddhis.",
+        "Menguraikan makna keragaman masyarakat dan penyelesaiannya berlandaskan kesadaran terhadap nilai-nilai umum Hukum Sebab Akibat yang Saling Bergantungan.",
+        "Membuat kreativitas penggambaran keragaman sebagai persatuan.",
+        "Menunjukkan sikap dan perilaku menghargai keragaman di lingkungan rumah, sekolah, dan rumah ibadah berpedoman pada nilai-nilai Pancasila dasar negara dan Pancasila Buddhis."
+      ]
+    },
+    {
+      "slm": "Lestari Alamku",
+      "tp": [
+        "Merespons potensi sumber daya alam dan kualitas lingkungan hidup di Indonesia.",
+        "Mengkritisi masalah pelestarian serta pengelolaan sumber daya alam dan lingkungan hidup dengan nilai-nilai Buddha Dharma dan nilai-nilai umum Hukum Sebab Akibat yang Saling Bergantungan.",
+        "Menemukan solusi pelestarian serta pengelolaan lingkungan hidup dengan nilai-nilai Buddha Dharma dan nilai-nilai umum Hukum Sebab Akibat yang Saling Bergantungan.",
+        "Bermusyawarah dengan mengamalkan nilai-nilai Pancasila dasar negara untuk menemukan solusi masalah pelestarian sumber daya alam dan lingkungan hidup sesuai dengan nilai-nilai Buddha Dharma dan Pancasila Buddhis.",
+        "Menunjukkan kontribusi terhadap penyelesaian masalah pelestarian sumber daya alam dan lingkungan sesuai dengan nilai-nilai Buddha Dharma dan Pancasila Buddhis."
       ]
     }
   ],
@@ -874,19 +929,15 @@
       "slm": "Bab 2: Eksplorasi Peran",
       "tp": [
         "melakukan imajinasi menggunakan stimulus.",
-        "menggunakan seluruh anggota tubuh untuk menunjang perannya.",
-        "menirukan cara bertutur dan cara bergerak sesuai sifat karakter yang diperankan.",
-        "mengevaluasi unsur-unsur seni teater dengan menggunakan kosakata teater yang tepat.",
-        "mengapresiasi yang sesuai terhadap kinerja kelompok dan individu.",
+        "membuat deskripsi dan catatan untuk tokoh yang diperankan.",
+        "mengatur dinamika suara dengan tepat sesuai interpretasi terhadap situasi.",
+        "menjelaskan berbagai emosi yang muncul dari sebuah penampilan.",
         "mengomunikasikan ide lewat kegiatan imajinatif.",
-        "menunjukkan keterlibatan sepanjang proses pembelajaran.",
-        "menceritakan dan mengembangkan berbagai situasi imajinatif.",
-        "melibatkan diri dalam situasi rekaan dengan mengandalkan beberapa stimulus.",
-        "menggunakan properti dengan memanfaatkan alat dan bahan yang ada di sekitar.",
-        "merancang pertunjukan sederhana secara mandiri.",
-        "menerapkan sikap kolaboratif dengan tim.",
-        "menampilkan pertunjukan sederhana dengan cerita berlatar pada minat peserta didik.",
-        "menampilkan pertunjukan secara mandiri."
+        "menunjukkan perilaku bertanggung jawab terhadap tugas dan perannya.",
+        "menirukan tokoh secara utuh lewat karakter, vokal, dan gestur.",
+        "menampilkan dengan percaya diri dan antusias.",
+        "menghargai sebuah pertunjukan dengan menjadi penonton yang apresiatif dan kritis.",
+        "menampilkan pertunjukan sederhana dengan cerita berlatar pada minat siswa."
       ]
     },
     {
@@ -943,7 +994,7 @@
       "slm": "Basa Alus Ajeng-Ajengan",
       "tp": [
         "Memahami perbedaan basa alus dan basa andap ajeng-ajengan",
-        "Menyebutkan Basa Alus Ajeng-ajengan lumrah"
+        "Menyebutkan Basa Alus Ajeng-Ajengan lumrah"
       ]
     },
     {
