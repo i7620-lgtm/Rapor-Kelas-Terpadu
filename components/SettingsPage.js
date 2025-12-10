@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
@@ -689,6 +690,41 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars, showToas
 const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
 
+    // State lokal untuk Nama Kelas untuk mencegah update kurikulum yang terlalu sering
+    const [localClassName, setLocalClassName] = useState(settings.nama_kelas || '');
+
+    // Sinkronisasi state lokal dengan props settings jika berubah dari luar
+    useEffect(() => {
+        setLocalClassName(settings.nama_kelas || '');
+    }, [settings.nama_kelas]);
+
+    // Handler untuk perubahan input (hanya update state lokal)
+    const handleLocalClassNameChange = (e) => {
+        setLocalClassName(e.target.value);
+    };
+
+    // Handler untuk menyimpan perubahan ke global state (onBlur atau Enter)
+    const commitClassNameChange = () => {
+        if (localClassName !== settings.nama_kelas) {
+            onSettingsChange({
+                target: {
+                    name: 'nama_kelas',
+                    value: localClassName
+                }
+            });
+            if (onSave) onSave();
+        }
+    };
+
+    // Handler khusus untuk Enter pada input Nama Kelas
+    const handleClassNameKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur(); // Ini akan memicu onBlur -> commitClassNameChange
+            showToast('Nama kelas disimpan.', 'success');
+        }
+    };
+
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -847,7 +883,15 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                              React.createElement('section', null,
                                 React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Periode Akademik"),
                                  React.createElement('div', { className: "space-y-4" },
-                                    React.createElement(FormField, { label: "Nama Kelas", id: "nama_kelas", placeholder: "e.g. 6a atau 6A atau VIA", value: settings.nama_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { 
+                                        label: "Nama Kelas", 
+                                        id: "nama_kelas", 
+                                        placeholder: "e.g. 6a atau 6A atau VIA", 
+                                        value: localClassName, // Menggunakan state lokal
+                                        onChange: handleLocalClassNameChange, // Update state lokal saat mengetik
+                                        onBlur: commitClassNameChange, // Simpan ke global saat onBlur
+                                        onKeyDown: handleClassNameKeyDown // Simpan ke global saat Enter
+                                    }),
                                     React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', null,
                                         React.createElement('label', { htmlFor: 'semester', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Semester'),
