@@ -1044,8 +1044,29 @@ const NilaiTableView = (props) => {
     const [tooltip, setTooltip] = useState({ visible: false, content: '', x: 0, y: 0 });
     const tableContainerRef = useRef(null);
 
+    // NEW: State for predefined SLMs to fix naming issue
+    const [predefinedSlms, setPredefinedSlms] = useState([]);
+
     const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
     
+    // NEW: Effect to fetch predefined SLMs
+    useEffect(() => {
+        if (gradeNumber) {
+            const fetchPredefinedSLMs = async () => {
+                try {
+                    const response = await fetch(`/tp${gradeNumber}.json`);
+                    if (!response.ok) throw new Error(`tp${gradeNumber}.json not found`);
+                    const data = await response.json();
+                    setPredefinedSlms(data[subject.fullName] || []);
+                } catch (error) {
+                    console.warn(`Could not fetch predefined SLMs for ${subject.fullName}:`, error);
+                    setPredefinedSlms([]);
+                }
+            };
+            fetchPredefinedSLMs();
+        }
+    }, [gradeNumber, subject.fullName]);
+
     // Check if weighting is enabled for this subject
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
     const isWeighting = calculationConfig.method === 'pembobotan';
@@ -1062,8 +1083,26 @@ const NilaiTableView = (props) => {
         // 1. Get from learning objectives (source of truth for TPs)
         objectivesForSubject.forEach((tp) => {
             if (!slmMap.has(tp.slmId)) {
-                const slmInGrade = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === tp.slmId) : null;
-                slmMap.set(tp.slmId, { id: tp.slmId, name: slmInGrade?.name || `Lingkup Materi (ID: ...${tp.slmId.slice(-4)})`, tps: [] });
+                // Try to find name in grades[0]
+                let slmName = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === tp.slmId)?.name : null;
+                
+                // NEW: Fallback to predefinedSlms if name is missing in grades
+                if (!slmName && tp.slmId.startsWith(`slm_predefined_${subject.id}_`)) {
+                    try {
+                        const parts = tp.slmId.split('_');
+                        const indexStr = parts[parts.length - 1];
+                        const index = parseInt(indexStr, 10);
+                        if (!isNaN(index) && predefinedSlms[index]) {
+                            slmName = predefinedSlms[index].slm;
+                        }
+                    } catch(e) {}
+                }
+
+                slmMap.set(tp.slmId, { 
+                    id: tp.slmId, 
+                    name: slmName || `Lingkup Materi (ID: ...${tp.slmId.slice(-4)})`, 
+                    tps: [] 
+                });
             }
             slmMap.get(tp.slmId).tps.push({ text: tp.text });
         });
@@ -1084,7 +1123,7 @@ const NilaiTableView = (props) => {
         });
 
         return Array.from(slmMap.values());
-    }, [objectivesForSubject, grades, subject.id]);
+    }, [objectivesForSubject, grades, subject.id, predefinedSlms]); // Added predefinedSlms to dep array
     
     // Initialize activeSlmIds with saved settings or default to all
     const [activeSlmIds, setActiveSlmIds] = useState(() => {
@@ -1324,8 +1363,7 @@ const NilaiTableView = (props) => {
         if (mode === 'kualitatif') {
              // For qualitative mode on summative exams, we assume input is numeric but display as qualitative or disable?
              // Usually STS/SAS are numeric. If 'kualitatif' mode implies inputs are qualitative, we need conversion back to number for storage if the system expects numbers.
-             // Given the complexity and standard practice, let's keep STS/SAS numeric even in qualitative mode or provide a dropdown if really needed.
-             // For now, let's stick to numeric input for STS/SAS even in qualitative mode view to allow calculation, or disable if not applicable.
+             // Given the complexity and standard practice, let's keep STS/SAS numeric even in qualitative mode view to allow calculation, or disable if not applicable.
              // Re-reading requirement: "kualitatif saja: Tampilan seperti spreadsheet dengan input nilai kualitatif".
              // If STS/SAS must be qualitative, we need a select.
              
