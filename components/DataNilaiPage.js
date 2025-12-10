@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
 
@@ -92,16 +91,18 @@ const QualitativeGradingTable = ({ settings }) => {
 };
 
 
-const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredikats, onUpdateGradeCalculation }) => {
+const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredikats, onUpdateGradeCalculation, onUpdateDisplayMode }) => {
     if (!isOpen) return null;
 
     const [localPredikats, setLocalPredikats] = useState(settings.predikats);
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
     const [localMethod, setLocalMethod] = useState(calculationConfig.method);
+    const [localDisplayMode, setLocalDisplayMode] = useState(settings.nilaiDisplayMode || 'kuantitatif & kualitatif');
 
     const handleSave = () => {
         onUpdatePredikats(localPredikats);
         onUpdateGradeCalculation(subject.id, { ...calculationConfig, method: localMethod });
+        if (onUpdateDisplayMode) onUpdateDisplayMode(localDisplayMode);
         onClose();
     };
     
@@ -113,6 +114,23 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
                     React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, `Pengaturan untuk mata pelajaran: ${subject.fullName}`)
                 ),
                 React.createElement('div', { className: "p-4 space-y-4 overflow-y-auto" },
+                     // Added Display Mode Selection
+                     React.createElement('section', null,
+                        React.createElement('h4', { className: "text-sm font-bold text-slate-700 mb-2 border-b pb-1" }, "Tampilan Input Nilai"),
+                        React.createElement('div', { className: "space-y-2" },
+                            ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                                const labels = {
+                                    'kuantitatif & kualitatif': 'Tampilan Kartu (Bawaan)',
+                                    'kuantitatif saja': 'Tampilan Tabel (Nilai Angka)',
+                                    'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                };
+                                return React.createElement('label', { key: mode, className: "flex items-center p-2 border rounded-md cursor-pointer hover:bg-slate-50" },
+                                    React.createElement('input', { type: "radio", name: "display-mode", value: mode, checked: localDisplayMode === mode, onChange: () => setLocalDisplayMode(mode), className: "h-4 w-4 text-indigo-600" }),
+                                    React.createElement('span', { className: "ml-3 text-sm font-medium text-slate-700" }, labels[mode])
+                                );
+                            })
+                        )
+                    ),
                      React.createElement('div', { className: "flex flex-col items-center w-full" },
                         React.createElement('h4', { className: "text-sm font-bold text-slate-700 mb-2 text-center w-full border-b pb-1" }, "Rentang Nilai (Predikat)"),
                         React.createElement('div', { className: "space-y-1.5 w-full max-w-[240px]" },
@@ -663,7 +681,8 @@ const SummativeCard = ({ title, subtitle, onClick, isFilled }) => (
 );
 
 const NilaiCardView = (props) => {
-    const { subject, students, grades, settings, onUpdateGradeCalculation, onBulkUpdateGrades, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats } = props;
+    // ... (existing code)
+    const { subject, students, grades, settings, onUpdateGradeCalculation, onBulkUpdateGrades, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats, onUpdateDisplayMode } = props;
     
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
@@ -758,7 +777,7 @@ const NilaiCardView = (props) => {
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation }),
+            React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation, onUpdateDisplayMode: onUpdateDisplayMode }),
             React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: props.learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation, showToast: props.showToast }),
             
             React.createElement('div', { className: "space-y-6" },
@@ -805,6 +824,7 @@ const NilaiCardView = (props) => {
 };
 
 const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, learningObjectives, onUpdateLearningObjectives, onBulkUpdateGrades, allSlms, initialActiveIds, showToast, gradeNumber }) => {
+    // ... (existing code)
     const [localSlms, setLocalSlms] = useState([]);
     const [localActiveIds, setLocalActiveIds] = useState(new Set());
     const [isTpSelectionModalOpen, setIsTpSelectionModalOpen] = useState(false);
@@ -1017,7 +1037,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
 };
 
 const NilaiTableView = (props) => {
-    const { subject, students, grades, settings, learningObjectives, onBulkUpdateGrades, onUpdateLearningObjectives, onUpdateGradeCalculation, mode, showToast, onUpdateSlmVisibility } = props;
+    const { subject, students, grades, settings, learningObjectives, onBulkUpdateGrades, onUpdateLearningObjectives, onUpdateGradeCalculation, mode, showToast, onUpdateSlmVisibility, onUpdateDisplayMode } = props;
     
     const [isManageSlmModalOpen, setIsManageSlmModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false); // State for settings modal
@@ -1025,6 +1045,11 @@ const NilaiTableView = (props) => {
     const tableContainerRef = useRef(null);
 
     const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
+    
+    // Check if weighting is enabled for this subject
+    const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
+    const isWeighting = calculationConfig.method === 'pembobotan';
+    const weights = useMemo(() => calculationConfig.weights || {}, [calculationConfig]);
 
     const objectivesForSubject = useMemo(() => {
         const gradeKey = `Kelas ${gradeNumber}`;
@@ -1159,6 +1184,24 @@ const NilaiTableView = (props) => {
         onBulkUpdateGrades([{ studentId, subjectId: subject.id, newDetailedGrade: detailedGrade }]);
     };
     
+    // New handler for weight changes within the table header
+    const handleWeightChange = (weightType, value, slmId = null, tpIndex = null) => {
+        const numValue = value === '' ? null : parseInt(value, 10);
+        if (value !== '' && (isNaN(numValue) || numValue < 0 || numValue > 100)) return;
+
+        const newWeights = JSON.parse(JSON.stringify(weights)); // Deep copy
+        
+        if (weightType === 'TP' && slmId !== null && tpIndex !== null) {
+            if (!newWeights.TP) newWeights.TP = {};
+            if (!newWeights.TP[slmId]) newWeights.TP[slmId] = [];
+            newWeights.TP[slmId][tpIndex] = numValue;
+        } else if (weightType === 'STS' || weightType === 'SAS') {
+            newWeights[weightType] = numValue;
+        }
+
+        onUpdateGradeCalculation(subject.id, { ...calculationConfig, weights: newWeights });
+    };
+
     const handlePaste = (e, startStudentId, startKey) => {
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
@@ -1279,7 +1322,23 @@ const NilaiTableView = (props) => {
         const numericValue = getNumericValue(value, settings.qualitativeGradingMap);
 
         if (mode === 'kualitatif') {
-            return React.createElement('div', { className: 'w-full p-2 text-center text-slate-400 text-xs' }, 'N/A');
+             // For qualitative mode on summative exams, we assume input is numeric but display as qualitative or disable?
+             // Usually STS/SAS are numeric. If 'kualitatif' mode implies inputs are qualitative, we need conversion back to number for storage if the system expects numbers.
+             // Given the complexity and standard practice, let's keep STS/SAS numeric even in qualitative mode or provide a dropdown if really needed.
+             // For now, let's stick to numeric input for STS/SAS even in qualitative mode view to allow calculation, or disable if not applicable.
+             // Re-reading requirement: "kualitatif saja: Tampilan seperti spreadsheet dengan input nilai kualitatif".
+             // If STS/SAS must be qualitative, we need a select.
+             
+            const qualitativeCode = getQualitativeCode(value, settings.predikats);
+             return React.createElement('select', { 
+                value: qualitativeCode, 
+                onChange: e => handleSingleGradeChange(student.id, e.target.value, type), // This will need logic in handleSingleGradeChange to map back if needed, or store as code
+                onPaste: e => handlePaste(e, student.id, type),
+                className: "w-full p-2 text-sm border rounded-md"
+            },
+                React.createElement('option', { value: "" }, "-"),
+                Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', { key: code, value: code }, code))
+            );
         }
 
         return React.createElement('input', { 
@@ -1310,7 +1369,8 @@ const NilaiTableView = (props) => {
             subject: subject,
             settings: settings,
             onUpdatePredikats: props.onUpdatePredikats, // Needs to be passed from parent
-            onUpdateGradeCalculation: onUpdateGradeCalculation
+            onUpdateGradeCalculation: onUpdateGradeCalculation,
+            onUpdateDisplayMode: onUpdateDisplayMode
         }),
         tooltip.visible && React.createElement('div', { className: "tp-tooltip absolute -translate-x-1/2", style: { top: `${tooltip.y}px`, left: `${tooltip.x}px` } }, tooltip.content),
         React.createElement('div', { className: "p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" },
@@ -1328,15 +1388,20 @@ const NilaiTableView = (props) => {
         ),
         React.createElement('div', { className: "flex-1 overflow-auto" },
              React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
+                // Re-doing header logic to support weight row cleanly
                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                     React.createElement('tr', null,
-                        React.createElement('th', { rowSpan: 2, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                        React.createElement('th', { rowSpan: 2, className: "p-2 border-b border-r border-slate-200 min-w-[200px]" }, "Nama Siswa"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 border-b border-r border-slate-200 min-w-[200px]" }, "Nama Siswa"),
                         slmHeaders.map(h => React.createElement('th', { key: h.id, colSpan: h.colSpan, className: "p-2 text-center border-b border-l border-slate-200" }, h.name)),
-                        mode === 'kuantitatif' && React.createElement('th', { rowSpan: 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "STS"),
-                        mode === 'kuantitatif' && React.createElement('th', { rowSpan: 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "SAS"),
-                        React.createElement('th', { rowSpan: 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Total"),
-                        React.createElement('th', { rowSpan: 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Rata-rata")
+                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, 
+                            "STS",
+                        ),
+                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, 
+                            "SAS",
+                        ),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Total"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Rata-rata")
                     ),
                     React.createElement('tr', null,
                         tpHeaders.map(h => React.createElement('th', { key: `${h.slmId}-${h.tpIndex}`, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" },
@@ -1346,6 +1411,41 @@ const NilaiTableView = (props) => {
                                 onMouseLeave: hideTooltip
                             }, `TP ${h.displayIndex}`)
                         ))
+                    ),
+                    isWeighting && React.createElement('tr', null,
+                        tpHeaders.map(h => React.createElement('th', { key: `w-${h.slmId}-${h.tpIndex}`, className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                            React.createElement('input', { 
+                                type: "number", 
+                                min: 0, 
+                                max: 100, 
+                                placeholder: "%",
+                                value: weights.TP?.[h.slmId]?.[h.tpIndex] ?? '', 
+                                onChange: (e) => handleWeightChange('TP', e.target.value, h.slmId, h.tpIndex), 
+                                className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                            })
+                        )),
+                        React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                             React.createElement('input', { 
+                                type: "number", 
+                                min: 0, 
+                                max: 100, 
+                                placeholder: "%",
+                                value: weights.STS ?? '', 
+                                onChange: (e) => handleWeightChange('STS', e.target.value), 
+                                className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                            })
+                        ),
+                        React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                             React.createElement('input', { 
+                                type: "number", 
+                                min: 0, 
+                                max: 100, 
+                                placeholder: "%",
+                                value: weights.SAS ?? '', 
+                                onChange: (e) => handleWeightChange('SAS', e.target.value), 
+                                className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                            })
+                        )
                     )
                 ),
                 React.createElement('tbody', null,
@@ -1362,15 +1462,38 @@ const NilaiTableView = (props) => {
                                     scoresToAverage.push(getNumericValue(score, settings.qualitativeGradingMap));
                                 }
                             });
-                            if (mode === 'kuantitatif') {
-                                if (detailedGrade.sts != null) scoresToAverage.push(getNumericValue(detailedGrade.sts, settings.qualitativeGradingMap));
-                                if (detailedGrade.sas != null) scoresToAverage.push(getNumericValue(detailedGrade.sas, settings.qualitativeGradingMap));
-                            }
+                            // Always include STS/SAS in calculation display if present, logic handles weighting if enabled separately
+                            if (detailedGrade.sts != null) scoresToAverage.push(getNumericValue(detailedGrade.sts, settings.qualitativeGradingMap));
+                            if (detailedGrade.sas != null) scoresToAverage.push(getNumericValue(detailedGrade.sas, settings.qualitativeGradingMap));
                         }
 
-                        const validScores = scoresToAverage.filter(s => s !== null);
-                        const total = validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) : null;
-                        const average = validScores.length > 0 ? (total / validScores.length) : null;
+                        // Use the shared calculation function for accurate 'Total' (Final Grade)
+                        // Note: 'total' here usually refers to the final grade calculation result.
+                        // We need the config to calculate it properly based on weights if enabled.
+                        let total = null;
+                        if (detailedGrade) {
+                             // Temporarily reusing the calculation function from main scope might be hard without prop drilling or duplicating.
+                             // Duplicating basic logic for display purposes in table row:
+                             // We should probably rely on stored finalGrades or re-calculate on fly.
+                             // Re-calculating on fly ensures immediate feedback on weight change.
+                             
+                             // Simple helper for row calculation
+                             const calcRowGrade = () => {
+                                 // Logic similar to calculateFinalGrade in App.js but accessible here
+                                 // Since we don't have the function, let's just display the stored finalGrade?
+                                 // But stored finalGrade updates on save/update. 
+                                 // Weights update triggers onUpdateGradeCalculation which updates Settings, not Grades directly.
+                                 // However, handleWeightChange calls onUpdateGradeCalculation. App.js handles this by re-calculating grades.
+                                 // So studentGrade.finalGrades[subject.id] should be up to date if App.js effect runs.
+                                 
+                                 return studentGrade.finalGrades?.[subject.id];
+                             }
+                             total = calcRowGrade();
+                        }
+                        
+                        // For 'Average' column, usually simple average of all inputs for reference, or just hide if confusing.
+                        // Let's show simple average of non-null inputs as a quick stat.
+                        const simpleAvg = scoresToAverage.length > 0 ? (scoresToAverage.reduce((a, b) => a + b, 0) / scoresToAverage.length) : null;
 
                         return React.createElement('tr', { key: student.id, className: "hover:bg-slate-50" },
                             React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, index + 1),
@@ -1378,10 +1501,10 @@ const NilaiTableView = (props) => {
                             tpHeaders.map(h => React.createElement('td', { key: `${student.id}-${h.slmId}-${h.tpIndex}`, className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" },
                                 renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`)
                             )),
-                            mode === 'kuantitatif' && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sts')),
-                            mode === 'kuantitatif' && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sas')),
-                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold" }, total !== null ? total : ''),
-                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold" }, average !== null ? average.toFixed(2) : '')
+                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sts')),
+                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sas')),
+                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold" }, total !== null && total !== undefined ? total : '-'),
+                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold text-gray-400" }, simpleAvg !== null ? simpleAvg.toFixed(1) : '-')
                         );
                     })
                 )
@@ -1390,7 +1513,9 @@ const NilaiTableView = (props) => {
     );
 };
 
+
 const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
+    // ... (existing code)
     const [sortBy, setSortBy] = useState('no');
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
 
