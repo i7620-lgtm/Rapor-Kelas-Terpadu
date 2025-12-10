@@ -1316,6 +1316,12 @@ const App = () => {
     const saveSettings = useCallback(() => console.log("Settings saved to state."), []);
     const onUpdateSubjects = useCallback((newSubjects) => setSubjects(newSubjects), []);
     const onUpdateExtracurriculars = useCallback((newExtracurriculars) => setExtracurriculars(newExtracurriculars), []);
+    
+    // New handler
+    const handleUpdateDisplayMode = useCallback((mode) => {
+        setSettings(prev => ({ ...prev, nilaiDisplayMode: mode }));
+    }, []);
+
     const handleSaveStudent = useCallback((studentData) => {
         if (studentData.id) {
             setStudents(prev => prev.map(s => s.id === studentData.id ? studentData : s));
@@ -1623,7 +1629,7 @@ const App = () => {
       case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
       case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
       case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, subjects, grades, learningObjectives, settings, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
-      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab, onUpdateSlmVisibility: handleUpdateSlmVisibility });
+      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab, onUpdateSlmVisibility: handleUpdateSlmVisibility, onUpdateDisplayMode: handleUpdateDisplayMode });
       case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
       case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
       case 'CATATAN_WALI_KELAS': return React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: handleUpdateNote, grades, subjects, settings, showToast: showToast });
