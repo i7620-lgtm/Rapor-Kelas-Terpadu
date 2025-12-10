@@ -724,6 +724,28 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
         }
     }, [settings, onSettingsChange, showToast]);
 
+    const handleGradeMethodChange = (subjectId, newMethod) => {
+        const currentCalc = settings.gradeCalculation || {};
+        const subjectConfig = currentCalc[subjectId] || {};
+        
+        const updatedCalc = {
+            ...currentCalc,
+            [subjectId]: {
+                ...subjectConfig,
+                method: newMethod,
+                // Preserve weights if switching back and forth, though UI might hide them
+                weights: subjectConfig.weights || {} 
+            }
+        };
+
+        onSettingsChange({
+            target: {
+                name: 'gradeCalculation',
+                value: updatedCalc
+            }
+        });
+    };
+
     const QualitativeGradingTable = () => {
         const { predikats, qualitativeGradingMap } = settings;
         if (!predikats || !qualitativeGradingMap) return null;
@@ -856,11 +878,23 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 )
                             )
                         ),
+                        
+                        React.createElement('section', { className: "pt-6 border-t" },
+                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Mata Pelajaran"),
+                            React.createElement(PengaturanMapel, { subjects: subjects, onUpdateSubjects: onUpdateSubjects, showToast: showToast })
+                        ),
 
                         React.createElement('section', null,
-                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Tampilan Input Nilai"),
-                            React.createElement('div', { className: "space-y-4" },
-                                React.createElement('p', { className: "text-sm text-slate-600" }, "Pilih bagaimana Anda ingin melihat dan memasukkan data nilai per mata pelajaran."),
+                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Ekstrakurikuler"),
+                            React.createElement(PengaturanEkstra, { extracurriculars: extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast })
+                        ),
+                        
+                        React.createElement('section', null,
+                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Tampilan Input Nilai, Rentang Nilai, Penilaian Kualitatif, dan Cara Pengolahan Nilai Akhir Mapel"),
+                            
+                            React.createElement('div', { className: "mb-6" },
+                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tampilan Input Nilai"),
+                                React.createElement('p', { className: "text-sm text-slate-600 mb-3" }, "Pilih bagaimana Anda ingin melihat dan memasukkan data nilai per mata pelajaran."),
                                 React.createElement('div', { className: "space-y-2" },
                                     ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
                                         const labels = {
@@ -882,28 +916,53 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                         );
                                     })
                                 )
-                            )
-                        ),
-                        
-                        React.createElement('section', { className: "pt-6 border-t" },
-                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Mata Pelajaran"),
-                            React.createElement(PengaturanMapel, { subjects: subjects, onUpdateSubjects: onUpdateSubjects, showToast: showToast })
-                        ),
-
-                        React.createElement('section', null,
-                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Ekstrakurikuler"),
-                            React.createElement(PengaturanEkstra, { extracurriculars: extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast })
-                        ),
-                        
-                        React.createElement('section', null,
-                            React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Rentang Nilai & Penilaian Kualitatif"),
-                            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-4 gap-4" },
-                                React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", readOnly: true, className: "bg-slate-100" })
                             ),
-                            React.createElement(QualitativeGradingTable, null)
+                            
+                            React.createElement('div', { className: "border-t pt-6" },
+                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Rentang Nilai (Predikat)"),
+                                React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-4 gap-4" },
+                                    React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", readOnly: true, className: "bg-slate-100" })
+                                ),
+                                React.createElement(QualitativeGradingTable, null)
+                            ),
+
+                            React.createElement('div', { className: "mt-8 border-t pt-6" },
+                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Cara Pengolahan Nilai Akhir Mapel"),
+                                React.createElement('div', { className: "overflow-x-auto border rounded-lg" },
+                                    React.createElement('table', { className: "w-full text-sm text-left text-slate-500" },
+                                        React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-50" },
+                                            React.createElement('tr', null,
+                                                React.createElement('th', { className: "px-6 py-3 border-b" }, "Mata Pelajaran"),
+                                                React.createElement('th', { className: "px-6 py-3 border-b" }, "Metode Pengolahan")
+                                            )
+                                        ),
+                                        React.createElement('tbody', null,
+                                            subjects.filter(s => s.active).map(sub => (
+                                                React.createElement('tr', { key: sub.id, className: "bg-white border-b hover:bg-slate-50" },
+                                                    React.createElement('td', { className: "px-6 py-4 font-medium text-slate-900" }, sub.fullName),
+                                                    React.createElement('td', { className: "px-6 py-4" },
+                                                        React.createElement('select', {
+                                                            value: settings.gradeCalculation?.[sub.id]?.method || 'rata-rata',
+                                                            onChange: (e) => handleGradeMethodChange(sub.id, e.target.value),
+                                                            className: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                                                        },
+                                                            React.createElement('option', { value: "rata-rata" }, "Rata-rata (Standar)"),
+                                                            React.createElement('option', { value: "pembobotan" }, "Pembobotan (Bobot TP, STS, SAS)"),
+                                                            React.createElement('option', { value: "persentase" }, "Persentase Ketuntasan")
+                                                        )
+                                                    )
+                                                )
+                                            ))
+                                        )
+                                    )
+                                ),
+                                React.createElement('p', { className: "mt-2 text-xs text-slate-500" },
+                                    React.createElement('span', { className: "text-amber-600 font-bold" }, "Catatan:"), " Jika memilih \"Pembobotan\", silakan atur persentase bobot di menu ", React.createElement('strong', null, "Data Nilai"), " pada masing-masing mata pelajaran."
+                                )
+                            )
                         )
                     )
                 )
