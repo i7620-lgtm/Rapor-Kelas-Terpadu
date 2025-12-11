@@ -2,7 +2,7 @@
 // sw.js
 
 // GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v2, v3, dst)
-const CACHE_NAME = 'rkt-cache-v3';
+const CACHE_NAME = 'rkt-cache-v4';
 
 const urlsToCache = [
   '/',
@@ -11,7 +11,6 @@ const urlsToCache = [
   '/index.js',
   '/App.js',
   '/constants.js',
-  '/components/Sidebar.js',
   '/components/Dashboard.js',
   '/components/PlaceholderPage.js',
   '/components/SettingsPage.js',
@@ -32,20 +31,30 @@ const urlsToCache = [
   '/hooks/useWindowDimensions.js',
   '/terms.html',
   '/privacy.html',
-  '/presets.json'
+  '/presets.json',
+  '/icon.svg',
+  '/config.js',
+  '/tp1.json',
+  '/tp2.json',
+  '/tp3.json',
+  '/tp4.json',
+  '/tp5.json',
+  '/tp6.json'
 ];
 
 // Event 'install': Cache file-file penting aplikasi
 self.addEventListener('install', (event) => {
   // Paksa SW baru untuk segera masuk fase waiting (jangan langsung aktif dulu, tunggu user klik update)
   // self.skipWaiting() DIHAPUS di sini agar user punya kendali kapan mau refresh via tombol.
-  // Kode di bawah akan men-trigger status 'installed' -> trigger notifikasi di React
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[SW] Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
+      })
+      .catch(error => {
+        console.error('[SW] Cache addAll failed:', error);
       })
   );
 });
@@ -111,7 +120,7 @@ self.addEventListener('fetch', (event) => {
       return;
   }
 
-  // Untuk aset lain (gambar, font), gunakan strategi Cache-First (lebih cepat)
+  // Untuk aset lain (gambar, font, json), gunakan strategi Cache-First (lebih cepat)
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
