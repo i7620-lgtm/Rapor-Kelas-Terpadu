@@ -7,36 +7,49 @@ const useServiceWorker = () => {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then(reg => {
-        if (reg) {
-          // 1. CEK PENTING: Jika sudah ada worker yang menunggu (diunduh di background sebelumnya)
-          // Ini menangani kasus dimana browser sudah download update tapi belum diterapkan.
-          if (reg.waiting) {
-            setWaitingWorker(reg.waiting);
-            setIsUpdateAvailable(true);
-          }
+      const handleSW = async () => {
+        try {
+          // Dapatkan pendaftaran SW yang sudah ada
+          const reg = await navigator.serviceWorker.getRegistration();
+          
+          if (reg) {
+            // PENTING: Paksa browser untuk mengecek apakah ada file sw.js baru di server.
+            // Tanpa ini, browser mungkin hanya menggunakan versi cache sampai 24 jam.
+            console.log('[RKT] Checking for Service Worker updates...');
+            await reg.update();
 
-          // 2. Dengarkan instalasi worker baru
-          reg.onupdatefound = () => {
-            const newWorker = reg.installing;
-            if (newWorker) {
-              newWorker.onstatechange = () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New worker is waiting to be activated
-                  setWaitingWorker(newWorker);
-                  setIsUpdateAvailable(true);
-                }
-              };
+            // 1. Cek worker yang sudah menunggu (waiting)
+            if (reg.waiting) {
+              console.log('[RKT] Found waiting worker (update ready).');
+              setWaitingWorker(reg.waiting);
+              setIsUpdateAvailable(true);
             }
-          };
+
+            // 2. Dengarkan jika ada worker baru yang sedang diinstall
+            reg.onupdatefound = () => {
+              const newWorker = reg.installing;
+              console.log('[RKT] Update found, installing...');
+              if (newWorker) {
+                newWorker.onstatechange = () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('[RKT] New worker installed and ready.');
+                    setWaitingWorker(newWorker);
+                    setIsUpdateAvailable(true);
+                  }
+                };
+              }
+            };
+          }
+        } catch (error) {
+          console.error('[RKT] Service Worker error:', error);
         }
-      }).catch(error => {
-        console.warn('Could not get Service Worker registration:', error);
-      });
+      };
+
+      handleSW();
       
       // Listen for controller change and reload the page
-      // Ini memastikan saat tombol "Update" diklik, halaman refresh otomatis
       const onControllerChange = () => {
+        console.log('[RKT] Controller changed, reloading page...');
         window.location.reload();
       };
       navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
@@ -49,7 +62,7 @@ const useServiceWorker = () => {
 
   const updateAssets = useCallback(() => {
     if (waitingWorker) {
-      // Mengirim pesan ke SW untuk menghentikan penundaan dan segera aktif
+      console.log('[RKT] Sending SKIP_WAITING to new worker...');
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     }
   }, [waitingWorker]);
