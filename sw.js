@@ -2,7 +2,7 @@
 // sw.js
 
 // GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v2, v3, dst)
-const CACHE_NAME = 'rkt-cache-v2';
+const CACHE_NAME = 'rkt-cache-v3';
 
 const urlsToCache = [
   '/',
@@ -37,13 +37,14 @@ const urlsToCache = [
 
 // Event 'install': Cache file-file penting aplikasi
 self.addEventListener('install', (event) => {
-  // Paksa SW baru untuk segera menggantikan yang lama di fase waiting
-  self.skipWaiting(); 
+  // Paksa SW baru untuk segera masuk fase waiting (jangan langsung aktif dulu, tunggu user klik update)
+  // self.skipWaiting() DIHAPUS di sini agar user punya kendali kapan mau refresh via tombol.
+  // Kode di bawah akan men-trigger status 'installed' -> trigger notifikasi di React
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('[SW] Opened cache:', CACHE_NAME);
         return cache.addAll(urlsToCache);
       })
   );
@@ -59,12 +60,15 @@ self.addEventListener('activate', (event) => {
           // Hapus cache yang namanya tidak sama dengan CACHE_NAME saat ini
           // Ini menghapus file lama, TAPI TIDAK MENGHAPUS LOCAL STORAGE (Data Siswa Aman)
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Deleting old cache:', cacheName);
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+        console.log('[SW] Clients claimed.');
+        return self.clients.claim();
+    })
   );
 });
 
