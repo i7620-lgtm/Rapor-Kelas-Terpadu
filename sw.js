@@ -1,6 +1,7 @@
+
 // sw.js
 
-const CACHE_NAME = 'rkt-cache-v1';
+const CACHE_NAME = 'rkt-cache-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -74,6 +75,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Untuk permintaan GET lainnya (aset aplikasi), gunakan strategi network-first.
+  // Strategi ini memastikan pengguna selalu mendapatkan versi terbaru jika online,
+  // namun tetap bisa membuka aplikasi jika offline.
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
