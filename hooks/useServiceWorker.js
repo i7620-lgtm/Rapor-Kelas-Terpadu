@@ -9,7 +9,8 @@ const useServiceWorker = () => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then(reg => {
         if (reg) {
-          // 1. Cek jika sudah ada worker yang menunggu (diunduh di background sebelumnya)
+          // 1. CEK PENTING: Jika sudah ada worker yang menunggu (diunduh di background sebelumnya)
+          // Ini menangani kasus dimana browser sudah download update tapi belum diterapkan.
           if (reg.waiting) {
             setWaitingWorker(reg.waiting);
             setIsUpdateAvailable(true);
@@ -34,6 +35,7 @@ const useServiceWorker = () => {
       });
       
       // Listen for controller change and reload the page
+      // Ini memastikan saat tombol "Update" diklik, halaman refresh otomatis
       const onControllerChange = () => {
         window.location.reload();
       };
@@ -47,6 +49,7 @@ const useServiceWorker = () => {
 
   const updateAssets = useCallback(() => {
     if (waitingWorker) {
+      // Mengirim pesan ke SW untuk menghentikan penundaan dan segera aktif
       waitingWorker.postMessage({ type: 'SKIP_WAITING' });
     }
   }, [waitingWorker]);
