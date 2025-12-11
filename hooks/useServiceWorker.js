@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 const useServiceWorker = () => {
@@ -8,7 +9,13 @@ const useServiceWorker = () => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then(reg => {
         if (reg) {
-          // Listen for new worker installation
+          // 1. Cek jika sudah ada worker yang menunggu (diunduh di background sebelumnya)
+          if (reg.waiting) {
+            setWaitingWorker(reg.waiting);
+            setIsUpdateAvailable(true);
+          }
+
+          // 2. Dengarkan instalasi worker baru
           reg.onupdatefound = () => {
             const newWorker = reg.installing;
             if (newWorker) {
