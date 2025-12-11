@@ -730,7 +730,7 @@ const App = () => {
         });
 
         // Other Data Sheets
-        const attendanceData = attendance.map(a => ({ studentId: a.studentId, Sakit: a.sakit, Izin: a.izin, Alpa: a.alpa }));
+        const attendanceData = attendance.map(a => ({ "ID Siswa": a.studentId, "Sakit": a.sakit, "Izin": a.izin, "Alpa": a.alpa }));
         const wsAttendance = XLSX.utils.json_to_sheet(attendanceData);
         XLSX.utils.book_append_sheet(wb, wsAttendance, "Absensi");
 
@@ -1006,8 +1006,39 @@ const App = () => {
         });
 
         // 9. Parse other sheets
+        // Modified Attendance Parsing Logic
         const wsAttendance = workbook.Sheets["Absensi"];
-        if (wsAttendance) newAttendance = XLSX.utils.sheet_to_json(wsAttendance).map(a => ({ studentId: a.studentId, Sakit: a.Sakit, Izin: a.Izin, Alpa: a.Alpa }));
+        if (wsAttendance) {
+            const rawAttendance = XLSX.utils.sheet_to_json(wsAttendance);
+            // Create map for O(1) lookup
+            const attendanceMap = new Map();
+            rawAttendance.forEach(row => {
+                // Support both export formats ("ID Siswa" is current, "studentId" is legacy/raw)
+                const id = row["ID Siswa"] || row["studentId"];
+                if (id) {
+                    attendanceMap.set(id, {
+                        sakit: row["Sakit"],
+                        izin: row["Izin"],
+                        alpa: row["Alpa"]
+                    });
+                }
+            });
+
+            // Reconstruct attendance array based on the NEW students list being imported
+            newAttendance = newStudents.map(student => {
+                const att = attendanceMap.get(student.id) || {};
+                return {
+                    studentId: student.id,
+                    sakit: typeof att.sakit === 'number' ? att.sakit : null,
+                    izin: typeof att.izin === 'number' ? att.izin : null,
+                    alpa: typeof att.alpa === 'number' ? att.alpa : null
+                };
+            });
+        } else {
+            // If sheet missing, init empty for all new students
+            newAttendance = newStudents.map(s => ({ studentId: s.id, sakit: null, izin: null, alpa: null }));
+        }
+
         const wsNotes = workbook.Sheets["Catatan Wali Kelas"];
         if (wsNotes) newNotes = XLSX.utils.sheet_to_json(wsNotes).reduce((acc, n) => { acc[n["ID Siswa"]] = n["Catatan Wali Kelas"]; return acc; }, {});
         
@@ -1688,4 +1719,3 @@ const App = () => {
 };
 
 export default App;
- 
