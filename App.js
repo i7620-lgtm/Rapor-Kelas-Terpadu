@@ -550,23 +550,61 @@ const App = () => {
                         newStructureMap.set(subjectId, slmsForGradeInitialization);
                     }
 
-                    const newGrades = students.map(student => {
-                        const gradeEntry = { studentId: student.id, detailedGrades: {}, finalGrades: {} };
-                        const activeSubjects = currentSubjects.filter(s => s.active);
-                        activeSubjects.forEach(subject => {
-                            gradeEntry.detailedGrades[subject.id] = {
-                                slm: newStructureMap.has(subject.id) ? JSON.parse(JSON.stringify(newStructureMap.get(subject.id))) : [],
-                                sts: null,
-                                sas: null
-                            };
-                            gradeEntry.finalGrades[subject.id] = null;
+                    // Smart Migration Logic
+                    setGrades(prevGrades => {
+                        return students.map(student => {
+                            const oldGradeEntry = prevGrades.find(g => g.studentId === student.id);
+                            const newGradeEntry = { studentId: student.id, detailedGrades: {}, finalGrades: {} };
+                            const activeSubjects = currentSubjects.filter(s => s.active);
+
+                            activeSubjects.forEach(subject => {
+                                const newSlmTemplates = newStructureMap.has(subject.id) ? JSON.parse(JSON.stringify(newStructureMap.get(subject.id))) : [];
+                                const oldDetailed = oldGradeEntry?.detailedGrades?.[subject.id];
+
+                                // 1. Preserve STS and SAS
+                                const newDetailed = {
+                                    slm: [],
+                                    sts: oldDetailed?.sts ?? null,
+                                    sas: oldDetailed?.sas ?? null
+                                };
+
+                                // 2. Smart Migration for SLM/TP Scores
+                                newDetailed.slm = newSlmTemplates.map((newSlm, slmIndex) => {
+                                    // Strategy A: Try to find matching SLM ID (Ideal)
+                                    let oldSlm = oldDetailed?.slm?.find(s => s.id === newSlm.id);
+
+                                    // Strategy B: Positional Mapping (Smart Migration)
+                                    // If ID mismatch (e.g. file changed), assume data at Index 0 belongs to New Index 0
+                                    if (!oldSlm && oldDetailed?.slm && oldDetailed.slm[slmIndex]) {
+                                        oldSlm = oldDetailed.slm[slmIndex];
+                                    }
+
+                                    // Map Scores
+                                    const migratedScores = newSlm.scores.map((_, tpIndex) => {
+                                        // Take score from old SLM if available at same index
+                                        if (oldSlm && oldSlm.scores && typeof oldSlm.scores[tpIndex] !== 'undefined') {
+                                            return oldSlm.scores[tpIndex];
+                                        }
+                                        return null;
+                                    });
+
+                                    return {
+                                        ...newSlm,
+                                        scores: migratedScores
+                                    };
+                                });
+
+                                newGradeEntry.detailedGrades[subject.id] = newDetailed;
+                                // Keep old final grade or recalculate later (simplified to keep old for now, UI will update)
+                                newGradeEntry.finalGrades[subject.id] = oldGradeEntry?.finalGrades?.[subject.id] ?? null;
+                            });
+
+                            return newGradeEntry;
                         });
-                        return gradeEntry;
                     });
                     
                     setLearningObjectives(newLearningObjectives);
-                    setGrades(newGrades);
-                    showToast(`Kurikulum Kelas ${newGradeNumber} berhasil dimuat.`, 'success');
+                    showToast(`Kurikulum Kelas ${newGradeNumber} berhasil dimuat dengan pemulihan data nilai.`, 'success');
 
                 } catch (error) {
                     console.error("Gagal memuat kurikulum otomatis:", error);
