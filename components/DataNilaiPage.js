@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
 
@@ -1429,17 +1430,17 @@ const NilaiTableView = (props) => {
                 // Re-doing header logic to support weight row cleanly
                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                     React.createElement('tr', null,
-                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 border-b border-r border-slate-200 min-w-[200px]" }, "Nama Siswa"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle" }, "No"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 border-b border-r border-slate-200 min-w-[200px] align-middle" }, "Nama Siswa"),
                         slmHeaders.map(h => React.createElement('th', { key: h.id, colSpan: h.colSpan, className: "p-2 text-center border-b border-l border-slate-200" }, h.name)),
-                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, 
+                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] align-middle" }, 
                             "STS",
                         ),
-                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, 
+                        React.createElement('th', { rowSpan: isWeighting ? 2 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] align-middle" }, 
                             "SAS",
                         ),
-                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Total"),
-                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Rata-rata")
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] align-middle" }, "Total"),
+                        React.createElement('th', { rowSpan: isWeighting ? 3 : 2, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] align-middle" }, "Rata-rata")
                     ),
                     React.createElement('tr', null,
                         tpHeaders.map(h => React.createElement('th', { key: `${h.slmId}-${h.tpIndex}`, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" },
@@ -1531,7 +1532,7 @@ const NilaiTableView = (props) => {
                         
                         // For 'Average' column, usually simple average of all inputs for reference, or just hide if confusing.
                         // Let's show simple average of non-null inputs as a quick stat.
-                        const simpleAvg = scoresToAverage.length > 0 ? (scoresToAverage.reduce((a, b) => a + b, 0) / scoresToAverage.length) : null;
+                        const simpleAvg = scoresToAverage.length > 0 ? Math.round(scoresToAverage.reduce((a, b) => a + b, 0) / scoresToAverage.length) : null;
 
                         return React.createElement('tr', { key: student.id, className: "hover:bg-slate-50" },
                             React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, index + 1),
@@ -1542,7 +1543,7 @@ const NilaiTableView = (props) => {
                             React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sts')),
                             React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem]" }, renderSummativeCell(student, 'sas')),
                             React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold" }, total !== null && total !== undefined ? total : '-'),
-                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold text-gray-400" }, simpleAvg !== null ? simpleAvg.toFixed(1) : '-')
+                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold text-gray-400" }, simpleAvg !== null ? simpleAvg : '-')
                         );
                     })
                 )
@@ -1643,7 +1644,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                 no: index + 1, 
                 grades: displayGrades, 
                 total, 
-                average: subjectCount > 0 ? (total / subjectCount).toFixed(2) : "0.00",
+                average: subjectCount > 0 ? Math.round(total / subjectCount) : 0,
                 hasFailingGrade
             };
         });
