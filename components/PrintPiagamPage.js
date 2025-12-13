@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 
@@ -79,7 +80,24 @@ const generateInitialPiagamLayout = (settings) => {
 
     return [
         ...adaptedKopElements,
-        { id: 'piagam_title', type: 'text', content: 'PIAGAM PENGHARGAAN', x: 61.5, y: contentStartY, width: 1000, fontSize: 40, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', dominantBaseline: 'middle' },
+        { 
+            id: 'piagam_title', 
+            type: 'text', 
+            content: 'PIAGAM PENGHARGAAN', 
+            x: 61.5, 
+            y: contentStartY, 
+            width: 1000, 
+            fontSize: 42, 
+            fontWeight: 'bold', 
+            textAlign: 'center', 
+            fontFamily: 'Tinos', 
+            fill: '#B8860B', // Dark Golden Rod color for luxury look
+            dominantBaseline: 'middle',
+            style: {
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.25)', // Drop shadow
+                letterSpacing: '0.1em'
+            }
+        },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         // Updated default: Font 'Pinyon Script', size 45, centered vertically (y=85, middle baseline) between 'diberikan' (45) and 'sebagai' (130)
         { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', dominantBaseline: 'middle' },
@@ -218,7 +236,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             let textAnchor = "start", xPos = el.x;
                                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none' } }, el.content);
+                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) } }, el.content);
                                         } else if (el.type === 'image') {
                                             const imageUrl = String(settings[el.content] || '');
                                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
@@ -497,7 +515,22 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                             let textAnchor = "start", xPos = currentEl.x;
                             if (currentEl.textAlign === 'center') { textAnchor = "middle"; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
                             else if (currentEl.textAlign === 'right') { textAnchor = "end"; xPos = currentEl.x + (currentEl.width ?? 0); }
-                            elementRender = React.createElement('text', { x: xPos, y: currentEl.y, fontSize: currentEl.fontSize, fontWeight: currentEl.fontWeight, textAnchor: textAnchor, fontFamily: currentEl.fontFamily, fill: currentEl.fill || 'black', dominantBaseline: currentEl.dominantBaseline || 'auto', style: { textDecoration: currentEl.textDecoration || 'none' } }, replacePlaceholders(currentEl.content));
+                            
+                            // UPDATED: Render text with support for styles passed from layout (e.g. textShadow)
+                            elementRender = React.createElement('text', { 
+                                x: xPos, 
+                                y: currentEl.y, 
+                                fontSize: currentEl.fontSize, 
+                                fontWeight: currentEl.fontWeight, 
+                                textAnchor: textAnchor, 
+                                fontFamily: currentEl.fontFamily, 
+                                fill: currentEl.fill || 'black', 
+                                dominantBaseline: currentEl.dominantBaseline || 'auto', 
+                                style: { 
+                                    textDecoration: currentEl.textDecoration || 'none',
+                                    ...(currentEl.style || {}) // Apply style object from layout config
+                                } 
+                            }, replacePlaceholders(currentEl.content));
                         } else if (currentEl.type === 'image') {
                             const imageUrl = String(settings[currentEl.content] || '');
                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height }) : null;
@@ -630,7 +663,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     ),
                     React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
                         React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'filterSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Tampilkan Peringkat'),
+                            React.createElement('label', { htmlFor: 'filterSelector', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tampilkan Peringkat'),
                             React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-64 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 React.createElement('option', { value: "all" }, "Cetak Semua Peringkat"),
                                 React.createElement('option', { value: "top3" }, "Cetak Peringkat 1-3"),
@@ -638,7 +671,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                             )
                         ),
                         React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'paperSizeSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Ukuran Kertas'),
+                            React.createElement('label', { htmlFor: 'paperSizeSelector', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Ukuran Kertas'),
                             React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
