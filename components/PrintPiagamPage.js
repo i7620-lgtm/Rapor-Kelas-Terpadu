@@ -428,8 +428,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
     // Calculate rank string and dynamic dimensions
     const rankString = useMemo(() => {
         if (!rank) return '';
-        if (rank <= 3) return `PERINGKAT ${toRoman(rank)}`;
-        return `HARAPAN ${toRoman(rank - 3)}`;
+        return `PERINGKAT ${toRoman(rank)}`;
     }, [rank]);
 
     const { dynamicBoxWidth, dynamicBoxX } = useMemo(() => {
@@ -549,7 +548,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
 
 const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamLayout, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
-    const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top6'
+    const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top10'
     const [isPrinting, setIsPrinting] = useState(false);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
 
@@ -625,10 +624,10 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                 const rank = studentRankings.get(s.id).rank;
                 return rank >= 1 && rank <= 3;
             });
-        } else if (selectedFilter === 'top6') {
+        } else if (selectedFilter === 'top10') {
              return rankedStudents.filter(s => {
                 const rank = studentRankings.get(s.id).rank;
-                return rank >= 1 && rank <= 6;
+                return rank >= 1 && rank <= 10;
             });
         }
         
@@ -667,7 +666,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                             React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-64 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 React.createElement('option', { value: "all" }, "Cetak Semua Peringkat"),
                                 React.createElement('option', { value: "top3" }, "Cetak Peringkat 1-3"),
-                                React.createElement('option', { value: "top6" }, "Cetak Peringkat 1-3 dan Harapan 1-3")
+                                React.createElement('option', { value: "top10" }, "Cetak Peringkat 1-10")
                             )
                         ),
                         React.createElement('div', null,
@@ -698,3 +697,4 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 };
 
 export default PrintPiagamPage;
+
