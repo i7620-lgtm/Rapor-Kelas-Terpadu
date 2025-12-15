@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout } from './TransliterationUtil.js';
+import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
 
@@ -204,7 +205,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
     
     if (gradedTps.length === 1) {
-        return { highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
+        return { highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
     }
 
     const scores = gradedTps.map(tp => tp.score);
@@ -230,7 +231,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
         }
         
         return { 
-            highest: `${studentName} menunjukkan penguasaan yang sangat baik dalam ${lowercaseFirst(highestTp.text)}.`,
+            highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(highestTp.text)}.`,
             lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
         };
     }
@@ -526,7 +527,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         let descriptionParts = [];
 
         if (theme) {
-            descriptionParts.push(`berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
+            descriptionParts.push(`${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
         }
         
         const strongDimensions = COCURRICULAR_DIMENSIONS
