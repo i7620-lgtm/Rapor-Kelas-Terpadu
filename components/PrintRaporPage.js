@@ -613,10 +613,10 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
                 React.createElement('div', { className: 'min-h-[2rem]' }, cocurricularDescription)
             ),
-            showExtra && React.createElement('div', { ref: extraRef, className: 'mt-1' },
+            (showExtra && extraActivities.length > 0) && React.createElement('div', { ref: extraRef, className: 'mt-1' },
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
                     React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[32%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[63%]' }, 'Keterangan'))),
-                    React.createElement('tbody', null, extraActivities.length > 0 ? extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))) : React.createElement('tr', null, React.createElement('td', { colSpan: 3, className: 'border border-black p-2 text-center h-8' }, '-')))
+                    React.createElement('tbody', null, extraActivities.map((item, index) => (React.createElement('tr', { key: index, className: 'align-top' }, React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)))))
                 )
             ),
             (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-1 items-stretch' },
@@ -820,9 +820,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         setAcademicPageChunks(null); // Set to null to trigger measurement render
 
         const calculateChunks = () => {
-            const refs = [studentInfoRef, tableHeaderRef, tableBodyRef, cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef];
-            if (refs.some(ref => !ref.current)) {
-                // If any ref is not ready, retry
+            // FIX: Only wait for mandatory refs. Optional refs (like extraRef) might legitimately be null if data is empty.
+            // If we wait for them, we get an infinite loop.
+            const mandatoryRefs = [studentInfoRef, tableHeaderRef, tableBodyRef];
+            
+            if (mandatoryRefs.some(ref => !ref.current)) {
+                // If any mandatory ref is not ready, retry
                 setTimeout(calculateChunks, 50);
                 return;
             }
@@ -838,15 +841,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
             });
 
+            // Calculate if there are active extras for this student
+            const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+            const hasExtras = (studentExtraData?.assignedActivities || []).some(id => id && extracurriculars.some(e => e.id === id));
+
             const footerItems = [
                 { type: 'cocurricular', ref: cocurricularRef },
-                { type: 'extra', ref: extraRef },
+                hasExtras ? { type: 'extra', ref: extraRef } : null,
                 { type: 'attendanceAndNotes', ref: attendanceAndNotesRef },
                 { type: 'decision', ref: decisionRef },
                 { type: 'parentFeedback', ref: parentFeedbackRef },
                 { type: 'signatures', ref: signaturesRef },
                 { type: 'headmaster', ref: headmasterRef }
-            ];
+            ].filter(Boolean);
 
             footerItems.forEach(item => {
                 const element = item.ref.current;
