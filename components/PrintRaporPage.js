@@ -530,25 +530,45 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             descriptionParts.push(`${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
         }
         
-        const strongDimensions = COCURRICULAR_DIMENSIONS
-            .filter(dim => ['SB', 'BSH'].includes(ratings[dim.id]))
+        const sbDimensions = COCURRICULAR_DIMENSIONS
+            .filter(dim => ratings[dim.id] === 'SB')
+            .map(dim => dim.label.toLowerCase());
+
+        const bshDimensions = COCURRICULAR_DIMENSIONS
+            .filter(dim => ratings[dim.id] === 'BSH')
             .map(dim => dim.label.toLowerCase());
 
         const developingDimensions = COCURRICULAR_DIMENSIONS
             .filter(dim => ['MB', 'BB'].includes(ratings[dim.id]))
             .map(dim => dim.label.toLowerCase());
         
-        if (strongDimensions.length > 0) {
-            const last = strongDimensions.pop();
-            const first = strongDimensions.join(', ');
-            const dimensionText = strongDimensions.length > 0 ? `${first}, dan ${last}` : last;
-            descriptionParts.push(`Ia menunjukkan perkembangan yang sangat baik dalam aspek ${dimensionText}.`);
+        // Helper to format list: "a, b, dan c"
+        const formatDims = (list) => {
+            if (list.length === 0) return '';
+            if (list.length === 1) return list[0];
+            const last = list[list.length - 1];
+            const rest = list.slice(0, -1).join(', ');
+            return `${rest}, dan ${last}`;
+        };
+
+        if (sbDimensions.length > 0 || bshDimensions.length > 0) {
+            let positiveSentence = "Ia menunjukkan perkembangan yang ";
+            const parts = [];
+            
+            if (sbDimensions.length > 0) {
+                parts.push(`sangat baik dalam aspek ${formatDims(sbDimensions)}`);
+            }
+            
+            if (bshDimensions.length > 0) {
+                parts.push(`baik dalam aspek ${formatDims(bshDimensions)}`);
+            }
+            
+            positiveSentence += parts.join(' serta ') + ".";
+            descriptionParts.push(positiveSentence);
         }
 
         if (developingDimensions.length > 0) {
-            const last = developingDimensions.pop();
-            const first = developingDimensions.join(', ');
-            const dimensionText = developingDimensions.length > 0 ? `${first}, dan ${last}` : last;
+            const dimensionText = formatDims(developingDimensions);
             descriptionParts.push(`Perlu bimbingan untuk lebih meningkatkan kemampuan dalam aspek ${dimensionText}.`);
         }
 
@@ -1220,3 +1240,4 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 };
 
 export default PrintRaporPage;
+
