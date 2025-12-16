@@ -19,8 +19,10 @@ const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
 // New derived constant for the 'bottom' CSS property of the main content area
-// Increased buffer to prevent collision with page number footer
-const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 1.2;
+// Reduced buffer significantly to maximize space. 
+// Footer top line is at 2.5cm (1.5 margin + 1.0 footer height).
+// We set content bottom to 2.6cm (approx 4px buffer above the line).
+const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.1;
 
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
@@ -829,7 +831,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 return;
             }
 
-            const SAFETY_MARGIN_PX = 20; // Safety buffer to ensure content doesn't hit the bottom edge abruptly
+            const SAFETY_MARGIN_PX = 5; // Reduced from 50 to 5 to maximize space
             const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
             const firstPageAvailableHeight = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
             const subsequentPageAvailableHeight = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
@@ -878,7 +880,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             let isFirstPage = true;
             
             // Fixed buffer to ensure space between last academic item and footer items
-            const ITEM_SPACING_BUFFER = 20;
+            const ITEM_SPACING_BUFFER = 5; // Reduced from 40 to 5
 
             while (currentItemIndex < allItems.length) {
                 let currentChunk = [];
