@@ -19,10 +19,9 @@ const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
 // New derived constant for the 'bottom' CSS property of the main content area
-// Reduced buffer significantly to maximize space. 
-// Footer top line is at 2.5cm (1.5 margin + 1.0 footer height).
-// We set content bottom to 2.6cm (approx 4px buffer above the line).
-const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.1;
+// Adjusted to provide a safer buffer (0.5cm) above the footer line to prevents overlap
+// Footer line is at 2.5cm from bottom. Content stops at 3.0cm from bottom.
+const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
 
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
@@ -831,7 +830,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 return;
             }
 
-            const SAFETY_MARGIN_PX = 5; // Reduced from 50 to 5 to maximize space
+            const SAFETY_MARGIN_PX = 30; // Increased to be safer (was 5, now ~8mm visually)
             const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
             const firstPageAvailableHeight = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
             const subsequentPageAvailableHeight = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
@@ -880,7 +879,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             let isFirstPage = true;
             
             // Fixed buffer to ensure space between last academic item and footer items
-            const ITEM_SPACING_BUFFER = 5; // Reduced from 40 to 5
+            const ITEM_SPACING_BUFFER = 10; // Increased spacing (was 5)
 
             while (currentItemIndex < allItems.length) {
                 let currentChunk = [];
@@ -890,6 +889,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 const hasAcademicItemsRemaining = allItems.slice(currentItemIndex).some(item => item.type === 'academic');
                 if (hasAcademicItemsRemaining) {
                     heightUsed += tableHeaderRef.current.getBoundingClientRect().height;
+                    heightUsed += 5; // Add buffer for table margin-top
                 }
 
                 for (let i = currentItemIndex; i < allItems.length; i++) {
