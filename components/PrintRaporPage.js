@@ -19,9 +19,8 @@ const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
 // New derived constant for the 'bottom' CSS property of the main content area
-// This includes the standard bottom margin, the height of the page number footer,
-// and an additional buffer (0.5cm) to ensure space between report footer content and page number footer.
-const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
+// Increased buffer from 0.5 to 1.0 to prevent collision with page number footer
+const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 1.0;
 
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
@@ -876,6 +875,9 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             let currentItemIndex = 0;
             let isFirstPage = true;
+            
+            // Fixed buffer to ensure space between last academic item and footer items
+            const ITEM_SPACING_BUFFER = 20;
 
             while (currentItemIndex < allItems.length) {
                 let currentChunk = [];
@@ -889,9 +891,20 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
                 for (let i = currentItemIndex; i < allItems.length; i++) {
                     const item = allItems[i];
-                    if (heightUsed + item.height <= availableHeight) {
+                    
+                    // Add buffer if we are transitioning from academic table to footer section on the same page
+                    // This accounts for margins that might not be captured in individual item heights
+                    let spacingBuffer = 0;
+                    if (currentChunk.length > 0) {
+                        const lastItem = currentChunk[currentChunk.length - 1];
+                        if (lastItem.type === 'academic' && item.type !== 'academic') {
+                            spacingBuffer = ITEM_SPACING_BUFFER;
+                        }
+                    }
+
+                    if (heightUsed + item.height + spacingBuffer <= availableHeight) {
                         currentChunk.push(item);
-                        heightUsed += item.height;
+                        heightUsed += (item.height + spacingBuffer);
                     } else {
                         break;
                     }
