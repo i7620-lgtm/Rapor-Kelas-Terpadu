@@ -463,7 +463,64 @@ const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
     )
 });
 
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA, studentId }, ref) => (
+const EditableDescription = ({ value, onSave, placeholder }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [localValue, setLocalValue] = useState(value);
+    const textareaRef = useRef(null);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleStartEditing = () => {
+        setIsEditing(true);
+    };
+
+    const handleSave = () => {
+        setIsEditing(false);
+        if (localValue !== value) {
+            onSave(localValue);
+        }
+    };
+
+    useEffect(() => {
+        if (isEditing && textareaRef.current) {
+            textareaRef.current.focus();
+            // Adjust height
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+        }
+    }, [isEditing]);
+
+    if (isEditing) {
+        return React.createElement('textarea', {
+            ref: textareaRef,
+            value: localValue,
+            onChange: (e) => {
+                setLocalValue(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+            },
+            onBlur: handleSave,
+            className: "w-full bg-white border border-blue-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight",
+            style: { minHeight: '1.5em', overflow: 'hidden' }
+        });
+    }
+
+    return React.createElement('div', {
+        onClick: handleStartEditing,
+        className: "cursor-text relative group hover:bg-yellow-50 rounded px-1 -mx-1 transition-colors print:hover:bg-transparent"
+    },
+        localValue || React.createElement('span', { className: "text-gray-400 italic print:hidden" }, placeholder),
+        React.createElement('span', { className: "absolute top-0 right-0 opacity-0 group-hover:opacity-100 text-gray-400 print:hidden pointer-events-none" }, 
+            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" })
+            )
+        )
+    );
+};
+
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA, studentId, onUpdateDescription }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '10pt', tableLayout: 'fixed' } },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
@@ -484,10 +541,18 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                         React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, item.grade ?? '')
                     ),
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
-                        React.createElement('p', null, item.description.highest),
-                        item.description.lowest && React.createElement(React.Fragment, null,
+                        React.createElement(EditableDescription, { 
+                            value: item.description.highest, 
+                            onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val),
+                            placeholder: "Klik untuk edit deskripsi capaian tertinggi..."
+                        }),
+                        React.createElement(React.Fragment, null,
                             React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
-                            React.createElement('p', null, item.description.lowest)
+                            React.createElement(EditableDescription, { 
+                                value: item.description.lowest, 
+                                onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val),
+                                placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)..."
+                            })
                         )
                     )
                 )
@@ -758,7 +823,7 @@ const PageFooter = ({ student, settings, currentPage }) => {
 
 
 const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, paperSize, rank, rankingOption, hideGradesForFaseA, printOptions, ...restProps }) => {
-    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData } = restProps;
+    const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData, onUpdateDescription } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
 
@@ -1007,7 +1072,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
                 } },
                     React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                         rank: rank, rankingOption: rankingOption,
@@ -1067,7 +1132,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id }),
+                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
                         React.createElement(ReportFooterContent, { 
                             student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
                             rank: rank, rankingOption: rankingOption,
@@ -1351,6 +1416,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         rankingOption: rankingOption,
                         hideGradesForFaseA: isFaseA && hideGradesForFaseA,
                         printOptions: printOptions,
+                        onUpdateDescription: restProps.onUpdateDescription,
                         ...restProps
                     })
                 })
