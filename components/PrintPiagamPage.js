@@ -91,22 +91,24 @@ const generateInitialPiagamLayout = (settings) => {
             fontWeight: 'bold', 
             textAlign: 'center', 
             fontFamily: 'Tinos', 
-            fill: '#7F1D1D', // Maroon (Matching Inner Border) - Mewah & Profesional
+            fill: '#800000', // Merah Marun (Solid & Elegan)
             dominantBaseline: 'middle',
             style: {
-                textShadow: '3px 3px 0px #FFFFFF', // White Shadow for Contrast & Elegance against Blue
+                textShadow: '2px 2px 0px #F59E0B', // Bayangan Emas Tegas (Amber 500)
                 letterSpacing: '0.15em'
             }
         },
-        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#451a03' },
-        // Updated default: Font 'Pinyon Script', size 45, centered vertically (y=85, middle baseline) between 'diberikan' (45) and 'sebagai' (130)
-        // Changed to Black for better visibility
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', fill: '#000000', dominantBaseline: 'middle' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#451a03' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
         
-        { id: 'rank_box', type: 'rect', fill: '#FEF3C7', stroke: '#B45309', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
-        // Updated rank text: smaller font, centered vertically with middle baseline
-        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#B45309', dominantBaseline: 'middle' },
+        // Nama Siswa Hitam Pekat
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', fill: '#000000', dominantBaseline: 'middle' },
+        
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        
+        // Rank Box Biru dengan Garis Tebal
+        { id: 'rank_box', type: 'rect', fill: '#EFF6FF', stroke: '#1E3A8A', strokeWidth: 4, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
+        // Rank Text Biru Tua
+        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#1E3A8A', dominantBaseline: 'middle' },
 
         { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
         { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
@@ -329,12 +331,11 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 const DefaultPiagamBackground = () => {
     const width = PIAGAM_WIDTH;
     const height = PIAGAM_HEIGHT;
-    const margin = 20; // Overall margin from the edge
+    const margin = 20; 
 
     const ornamentGradientId = "ornamentGradient";
-    const backgroundGradientId = "backgroundGradient";
 
-    // A more intricate corner design using SVG path
+    // Design sudut yang lebih tegas dan tebal
     const cornerPath = "M 0,120 L 0,30 Q 0,0 30,0 L 120,0 M 80,0 Q 100,0 100,20 L 100,60 M 0,80 Q 0,100 20,100 L 60,100";
     
     return React.createElement('g', { 'data-name': "default-background" },
@@ -344,46 +345,42 @@ const DefaultPiagamBackground = () => {
                 React.createElement('stop', { offset: "0%", style: { stopColor: '#FCD34D', stopOpacity: 1 } }), // Amber 300 (Gold Light)
                 React.createElement('stop', { offset: "50%", style: { stopColor: '#D97706', stopOpacity: 1 } }), // Amber 600 (Gold Medium)
                 React.createElement('stop', { offset: "100%", style: { stopColor: '#B45309', stopOpacity: 1 } }) // Amber 700 (Gold Dark)
-            ),
-            React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "80%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#CFFAFE', stopOpacity: 1 } }), // Cyan 100 (Light Ocean Blue center)
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#22D3EE', stopOpacity: 1 } }) // Cyan 400 (Vibrant Ocean Blue outer)
             )
         ),
 
-        // Background fill
+        // Background fill - WHITE
         React.createElement('rect', {
             x: 0, y: 0, width: width, height: height,
-            fill: `url(#${backgroundGradientId})`
+            fill: "white"
         }),
 
-        // Main outer border - Brownish Yellow (Kuning Kecoklatan)
+        // Main outer border - Dark Blue & Thick
         React.createElement('rect', {
             x: margin, y: margin,
             width: width - margin * 2,
             height: height - margin * 2,
             fill: "none",
-            stroke: '#B45309', // Amber 700
-            strokeWidth: "5"
+            stroke: '#1E3A8A', // Blue 900
+            strokeWidth: "15" // Very Thick
         }),
-        // Inner decorative border - Maroon (Merah Marun)
+        // Inner decorative border - Light Gold & Thick
         React.createElement('rect', {
-            x: margin + 10, y: margin + 10,
-            width: width - (margin + 10) * 2,
-            height: height - (margin + 10) * 2,
+            x: margin + 12, y: margin + 12, // Offset slightly more due to thick outer border
+            width: width - (margin + 12) * 2,
+            height: height - (margin + 12) * 2,
             fill: "none",
-            stroke: '#7F1D1D', // Red 900
-            strokeWidth: "3"
+            stroke: '#FBBF24', // Amber 400 (Gold)
+            strokeWidth: "8" // Thick
         }),
 
-        // Corner Ornaments - Gold Gradient
+        // Corner Ornaments - Gold Gradient & Very Thick
         // Top-Left
         React.createElement('g', { transform: `translate(${margin}, ${margin})` },
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${ornamentGradientId})`,
-                strokeWidth: "6",
+                strokeWidth: "12",
                 strokeLinecap: "round"
             })
         ),
@@ -393,7 +390,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${ornamentGradientId})`,
-                strokeWidth: "6",
+                strokeWidth: "12",
                 strokeLinecap: "round"
             })
         ),
@@ -403,7 +400,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${ornamentGradientId})`,
-                strokeWidth: "6",
+                strokeWidth: "12",
                 strokeLinecap: "round"
             })
         ),
@@ -413,7 +410,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${ornamentGradientId})`,
-                strokeWidth: "6",
+                strokeWidth: "12",
                 strokeLinecap: "round"
             })
         )
