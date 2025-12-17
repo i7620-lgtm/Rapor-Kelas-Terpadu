@@ -483,6 +483,13 @@ const EditableDescription = ({ value, onSave, placeholder }) => {
         }
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent new line
+            handleSave(); // Trigger save immediately
+        }
+    };
+
     useEffect(() => {
         if (isEditing && textareaRef.current) {
             textareaRef.current.focus();
@@ -502,6 +509,7 @@ const EditableDescription = ({ value, onSave, placeholder }) => {
                 e.target.style.height = e.target.scrollHeight + 'px';
             },
             onBlur: handleSave,
+            onKeyDown: handleKeyDown,
             className: "w-full bg-white border border-blue-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight",
             style: { minHeight: '1.5em', overflow: 'hidden' }
         });
