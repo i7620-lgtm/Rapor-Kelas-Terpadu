@@ -363,7 +363,8 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 const DefaultPiagamBackground = () => {
     const width = PIAGAM_WIDTH;
     const height = PIAGAM_HEIGHT;
-    const margin = 20; 
+    // Reduced from 20 to 10 to push borders closer to the viewbox edge
+    const margin = 10; 
 
     const ornamentGradientId = "ornamentGradient";
 
@@ -397,9 +398,9 @@ const DefaultPiagamBackground = () => {
         }),
         // Inner decorative border - Light Gold & Thick
         React.createElement('rect', {
-            x: margin + 12, y: margin + 12, // Offset slightly more due to thick outer border
-            width: width - (margin + 12) * 2,
-            height: height - (margin + 12) * 2,
+            x: margin + 15, y: margin + 15, // Offset slightly more due to thick outer border
+            width: width - (margin + 15) * 2,
+            height: height - (margin + 15) * 2,
             fill: "none",
             stroke: '#FBBF24', // Amber 400 (Gold)
             strokeWidth: "8" // Thick
@@ -515,10 +516,10 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
             React.createElement('div', {
                 style: {
                     position: 'absolute',
-                    top: '1.5cm',
-                    left: '1.5cm',
-                    right: '1.5cm',
-                    bottom: '1.5cm',
+                    top: '0.5cm',
+                    left: '0.5cm',
+                    right: '0.5cm',
+                    bottom: '0.5cm',
                 }
             },
                 React.createElement('svg', { width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "xMidYMid meet" },
