@@ -9,7 +9,7 @@ const PAPER_SIZES = {
 };
 
 const PIAGAM_WIDTH = 1115;
-const PIAGAM_HEIGHT = 749; // Further reduced to prevent spilling
+const PIAGAM_HEIGHT = 749; 
 const PIAGAM_VIEWBOX = `0 0 ${PIAGAM_WIDTH} ${PIAGAM_HEIGHT}`;
 
 const toRoman = (num) => {
@@ -71,9 +71,9 @@ const generateInitialPiagamLayout = (settings) => {
     
     const contentStartY = kopBottomY + 35; 
     const rankBoxWidth = 300;
-    const rankBoxHeight = 38; // Reduced from 40 to 38
+    const rankBoxHeight = 38; 
     const rankBoxX = (PIAGAM_WIDTH - rankBoxWidth) / 2;
-    const rankBoxY = contentStartY + 130 + 7; // Shifted down (original base 130 + 5 + 2)
+    const rankBoxY = contentStartY + 130 + 7; 
 
     const paragraphY = rankBoxY + rankBoxHeight + 20; 
     const signatureY = paragraphY + 105;
@@ -91,34 +91,35 @@ const generateInitialPiagamLayout = (settings) => {
             fontWeight: 'bold', 
             textAlign: 'center', 
             fontFamily: 'Tinos', 
-            fill: '#1e3a8a', // Ubah ke Deep Navy Blue agar kontras dan tegas
+            fill: '#7F1D1D', // Maroon (Matching Inner Border) - Mewah & Profesional
             dominantBaseline: 'middle',
             style: {
-                textShadow: '1px 1px 0px #F59E0B', // Sedikit shadow emas agar elegan
+                textShadow: '3px 3px 0px #FFFFFF', // White Shadow for Contrast & Elegance against Blue
                 letterSpacing: '0.15em'
             }
         },
-        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#451a03' },
         // Updated default: Font 'Pinyon Script', size 45, centered vertically (y=85, middle baseline) between 'diberikan' (45) and 'sebagai' (130)
-        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', dominantBaseline: 'middle' },
-        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
+        // Changed to Black for better visibility
+        { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', fill: '#000000', dominantBaseline: 'middle' },
+        { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos', fill: '#451a03' },
         
-        { id: 'rank_box', type: 'rect', fill: '#DBEAFE', stroke: '#1e3a8a', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
+        { id: 'rank_box', type: 'rect', fill: '#FEF3C7', stroke: '#B45309', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
         // Updated rank text: smaller font, centered vertically with middle baseline
-        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#1e3a8a', dominantBaseline: 'middle' },
+        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#B45309', dominantBaseline: 'middle' },
 
-        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        { id: 'motivation_text_2', type: 'text', content: 'serta menginspirasi teman-teman lainnya.', x: 61.5, y: paragraphY + 50, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
         
-        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'headmaster_label', type: 'text', content: 'Kepala Sekolah', x: 150, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        { id: 'headmaster_name', type: 'text', content: '[nama kepala sekolah]', x: 150, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline', fill: '#1F2937' },
+        { id: 'headmaster_nip', type: 'text', content: 'NIP. [nip kepala sekolah]', x: 150, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
 
-        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
-        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline' },
-        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
+        { id: 'teacher_date_place', type: 'text', content: 'Tempat, Tanggal Rapor', x: 673, y: signatureY - 20, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        { id: 'teacher_label', type: 'text', content: 'Wali Kelas', x: 673, y: signatureY, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
+        { id: 'teacher_name', type: 'text', content: '[nama wali kelas]', x: 673, y: signatureY + 80, width: 300, fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', textDecoration: 'underline', fill: '#1F2937' },
+        { id: 'teacher_nip', type: 'text', content: 'NIP. [nip wali kelas]', x: 673, y: signatureY + 100, width: 300, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos', fill: '#1F2937' },
     ];
 };
 
@@ -330,7 +331,7 @@ const DefaultPiagamBackground = () => {
     const height = PIAGAM_HEIGHT;
     const margin = 20; // Overall margin from the edge
 
-    const goldGradientId = "goldGradient";
+    const ornamentGradientId = "ornamentGradient";
     const backgroundGradientId = "backgroundGradient";
 
     // A more intricate corner design using SVG path
@@ -339,49 +340,49 @@ const DefaultPiagamBackground = () => {
     return React.createElement('g', { 'data-name': "default-background" },
         // Define gradients
         React.createElement('defs', null,
-            React.createElement('linearGradient', { id: goldGradientId, x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#B45309', stopOpacity: 1 } }), // Bronze/Dark Gold
-                React.createElement('stop', { offset: "50%", style: { stopColor: '#F59E0B', stopOpacity: 1 } }), // Amber/Gold
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#78350F', stopOpacity: 1 } }) // Dark Bronze
+            React.createElement('linearGradient', { id: ornamentGradientId, x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#FCD34D', stopOpacity: 1 } }), // Amber 300 (Gold Light)
+                React.createElement('stop', { offset: "50%", style: { stopColor: '#D97706', stopOpacity: 1 } }), // Amber 600 (Gold Medium)
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#B45309', stopOpacity: 1 } }) // Amber 700 (Gold Dark)
             ),
             React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "80%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFFFF', stopOpacity: 1 } }), // White center for text readability
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#FFD700', stopOpacity: 1 } }) // Bold Gold (CSS Gold) edges for printing punch
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#CFFAFE', stopOpacity: 1 } }), // Cyan 100 (Light Ocean Blue center)
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#22D3EE', stopOpacity: 1 } }) // Cyan 400 (Vibrant Ocean Blue outer)
             )
         ),
 
-        // Background fill with subtle texture color
+        // Background fill
         React.createElement('rect', {
             x: 0, y: 0, width: width, height: height,
             fill: `url(#${backgroundGradientId})`
         }),
 
-        // Main outer border - Thick and Navy Blue for strong contrast
+        // Main outer border - Brownish Yellow (Kuning Kecoklatan)
         React.createElement('rect', {
             x: margin, y: margin,
             width: width - margin * 2,
             height: height - margin * 2,
             fill: "none",
-            stroke: '#1e3a8a', // Deep Navy Blue
+            stroke: '#B45309', // Amber 700
             strokeWidth: "5"
         }),
-        // Inner decorative border - High contrast Gold
+        // Inner decorative border - Maroon (Merah Marun)
         React.createElement('rect', {
             x: margin + 10, y: margin + 10,
             width: width - (margin + 10) * 2,
             height: height - (margin + 10) * 2,
             fill: "none",
-            stroke: `url(#${goldGradientId})`,
+            stroke: '#7F1D1D', // Red 900
             strokeWidth: "3"
         }),
 
-        // Corner Ornaments - Bold Gold
+        // Corner Ornaments - Gold Gradient
         // Top-Left
         React.createElement('g', { transform: `translate(${margin}, ${margin})` },
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
-                stroke: `url(#${goldGradientId})`,
+                stroke: `url(#${ornamentGradientId})`,
                 strokeWidth: "6",
                 strokeLinecap: "round"
             })
@@ -391,7 +392,7 @@ const DefaultPiagamBackground = () => {
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
-                stroke: `url(#${goldGradientId})`,
+                stroke: `url(#${ornamentGradientId})`,
                 strokeWidth: "6",
                 strokeLinecap: "round"
             })
@@ -401,7 +402,7 @@ const DefaultPiagamBackground = () => {
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
-                stroke: `url(#${goldGradientId})`,
+                stroke: `url(#${ornamentGradientId})`,
                 strokeWidth: "6",
                 strokeLinecap: "round"
             })
@@ -411,7 +412,7 @@ const DefaultPiagamBackground = () => {
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
-                stroke: `url(#${goldGradientId})`,
+                stroke: `url(#${ornamentGradientId})`,
                 strokeWidth: "6",
                 strokeLinecap: "round"
             })
