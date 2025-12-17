@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
 
@@ -107,7 +108,7 @@ const LegerHeader = React.forwardRef(({ settings, isCompact }, ref) => (
     )
 ));
 
-const LegerFooter = React.forwardRef(({ settings, isCompact }, ref) => {
+const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref) => {
     const getTanggalRapor = () => {
         if (!settings.tanggal_rapor) {
             return `${settings.kota_kabupaten || '[Tempat]'}, _________________`;
@@ -121,18 +122,35 @@ const LegerFooter = React.forwardRef(({ settings, isCompact }, ref) => {
     return (
         React.createElement('div', { ref: ref, className: `font-times w-full ${isCompact ? 'mt-0.5 text-xs' : 'mt-2 text-sm'}` },
             React.createElement('div', { className: "pt-2 flex justify-between" },
-                React.createElement('div', { className: "text-center w-2/5" },
+                React.createElement('div', { className: "text-center w-2/5 relative" },
                     React.createElement('p', null, "Mengetahui,"),
                     React.createElement('p', null, "Kepala Sekolah,"),
-                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
-                    React.createElement('p', { className: "font-bold underline" }, settings.nama_kepala_sekolah || '____________________'),
+                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '3.5rem' }, className: "flex justify-center items-center relative" },
+                        settings.ttd_kepala_sekolah && printOptions?.showPrincipalSignature && React.createElement('img', {
+                            src: settings.ttd_kepala_sekolah,
+                            alt: "TTD Kepala Sekolah",
+                            className: `object-contain absolute z-10 ${isCompact ? 'h-10' : 'h-16'}`
+                        }),
+                        settings.cap_sekolah && printOptions?.showStamp && React.createElement('img', {
+                            src: settings.cap_sekolah,
+                            alt: "Cap Sekolah",
+                            className: `object-contain absolute z-0 opacity-80 ${isCompact ? 'h-10 -ml-6' : 'h-16 -ml-8'}`
+                        })
+                    ),
+                    React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_kepala_sekolah || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
-                React.createElement('div', { className: "text-center w-2/5" },
+                React.createElement('div', { className: "text-center w-2/5 relative" },
                     React.createElement('p', null, getTanggalRapor()),
                     React.createElement('p', null, "Wali Kelas,"),
-                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '2.5rem' } }),
-                    React.createElement('p', { className: "font-bold underline" }, settings.nama_wali_kelas || '____________________'),
+                    React.createElement('div', { style: { height: isCompact ? '1.8rem' : '3.5rem' }, className: "flex justify-center items-center relative" },
+                        settings.ttd_wali_kelas && printOptions?.showTeacherSignature && React.createElement('img', {
+                            src: settings.ttd_wali_kelas,
+                            alt: "TTD Wali Kelas",
+                            className: `object-contain absolute z-10 ${isCompact ? 'h-8' : 'h-14'}`
+                        })
+                    ),
+                    React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_wali_kelas || '____________________'),
                     React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
                 )
             )
@@ -147,6 +165,11 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const [isCompact, setIsCompact] = useState(false);
     const [isMeasuring, setIsMeasuring] = useState(true);
     const [nameFontSize, setNameFontSize] = useState(null);
+    const [printOptions, setPrintOptions] = useState({
+        showPrincipalSignature: true,
+        showTeacherSignature: true,
+        showStamp: true
+    });
     const nameCellRefs = useRef([]);
 
     const pageRef = useRef(null);
@@ -336,6 +359,12 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }
     }, [isMeasuring, processedData, isCompact, nameFontSize, cmToPx]);
 
+    const handlePrintOptionChange = (key) => {
+        setPrintOptions(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }));
+    };
 
     const handlePrint = () => {
         setIsPrinting(true);
@@ -508,6 +537,23 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     ),
                     React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
                 )
+            ),
+            React.createElement('div', { className: "border-t pt-4 mt-4" },
+                React.createElement('div', { className: "flex flex-wrap items-center gap-x-6 gap-y-2" },
+                    React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-0" }, "Opsi Tanda Tangan:"),
+                    React.createElement('label', { className: "flex items-center space-x-2" },
+                        React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature, onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                        React.createElement('span', { className: "text-sm" }, "TTD Kepala Sekolah")
+                    ),
+                    React.createElement('label', { className: "flex items-center space-x-2" },
+                        React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                        React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
+                    ),
+                    React.createElement('label', { className: "flex items-center space-x-2" },
+                        React.createElement('input', { type: "checkbox", checked: printOptions.showStamp, onChange: () => handlePrintOptionChange('showStamp'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                        React.createElement('span', { className: "text-sm" }, "Cap Sekolah")
+                    )
+                )
             )
         ),
         React.createElement('div', { id: "print-area" },
@@ -530,7 +576,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     React.createElement('div', null,
                        renderTable(processedData)
                     ),
-                    React.createElement(LegerFooter, { settings: settings, isCompact: isCompact })
+                    React.createElement(LegerFooter, { settings: settings, isCompact: isCompact, printOptions: printOptions })
                 )
             )
         )
