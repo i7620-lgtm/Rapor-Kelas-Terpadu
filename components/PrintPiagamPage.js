@@ -94,7 +94,8 @@ const generateInitialPiagamLayout = (settings) => {
             fill: '#800000', // Merah Marun (Solid & Elegan)
             dominantBaseline: 'middle',
             style: {
-                textShadow: '2px 2px 0px #F59E0B', // Bayangan Emas Tegas (Amber 500)
+                // Hapus textShadow CSS karena sering tidak ter-print. 
+                // Kita akan gunakan teknik layering (duplikat teks) di fungsi render.
                 letterSpacing: '0.15em'
             }
         },
@@ -239,7 +240,38 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             let textAnchor = "start", xPos = el.x;
                                             if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
                                             else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
-                                            elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) } }, el.content);
+                                            
+                                            if (el.id === 'piagam_title') {
+                                                // MANUAL LAYERING FOR SHADOW (Guarantees Print Output)
+                                                elementRender = React.createElement('g', null,
+                                                    // Shadow Layer
+                                                    React.createElement('text', {
+                                                        x: xPos + 3,
+                                                        y: el.y + 3,
+                                                        fontSize: el.fontSize,
+                                                        fontWeight: el.fontWeight,
+                                                        textAnchor: textAnchor,
+                                                        fontFamily: el.fontFamily,
+                                                        fill: '#F59E0B', // Emas
+                                                        dominantBaseline: el.dominantBaseline || 'auto',
+                                                        style: { userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }
+                                                    }, el.content),
+                                                    // Main Text Layer
+                                                    React.createElement('text', {
+                                                        x: xPos,
+                                                        y: el.y,
+                                                        fontSize: el.fontSize,
+                                                        fontWeight: el.fontWeight,
+                                                        textAnchor: textAnchor,
+                                                        fontFamily: el.fontFamily,
+                                                        fill: el.fill || 'black',
+                                                        dominantBaseline: el.dominantBaseline || 'auto',
+                                                        style: { userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }
+                                                    }, el.content)
+                                                );
+                                            } else {
+                                                elementRender = React.createElement('text', { x: xPos, y: el.y, fontSize: el.fontSize, fontWeight: el.fontWeight, textAnchor: textAnchor, fontFamily: el.fontFamily, fill: el.fill || 'black', dominantBaseline: el.dominantBaseline || 'auto', style: { userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) } }, el.content);
+                                            }
                                         } else if (el.type === 'image') {
                                             const imageUrl = String(settings[el.content] || '');
                                             elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: el.x, y: el.y, width: el.width, height: el.height }) : null;
@@ -516,23 +548,64 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
                             if (currentEl.textAlign === 'center') { textAnchor = "middle"; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
                             else if (currentEl.textAlign === 'right') { textAnchor = "end"; xPos = currentEl.x + (currentEl.width ?? 0); }
                             
-                            elementsToRender.push(
-                                React.createElement('text', { 
-                                    key: `text_${currentEl.id}`,
-                                    x: xPos, 
-                                    y: currentEl.y, 
-                                    fontSize: currentEl.fontSize, 
-                                    fontWeight: currentEl.fontWeight, 
-                                    textAnchor: textAnchor, 
-                                    fontFamily: currentEl.fontFamily, 
-                                    fill: currentEl.fill || 'black', 
-                                    dominantBaseline: currentEl.dominantBaseline || 'auto', 
-                                    style: { 
-                                        textDecoration: currentEl.textDecoration || 'none',
-                                        ...(currentEl.style || {}) 
-                                    } 
-                                }, replacePlaceholders(currentEl.content))
-                            );
+                            if (currentEl.id === 'piagam_title') {
+                                // MANUAL LAYERING FOR SHADOW (Guarantees Print Output)
+                                // Layer 1: Shadow (Gold)
+                                elementsToRender.push(
+                                    React.createElement('text', {
+                                        key: `shadow_${currentEl.id}`,
+                                        x: xPos + 3,
+                                        y: currentEl.y + 3,
+                                        fontSize: currentEl.fontSize,
+                                        fontWeight: currentEl.fontWeight,
+                                        textAnchor: textAnchor,
+                                        fontFamily: currentEl.fontFamily,
+                                        fill: '#F59E0B', // Gold Shadow Color
+                                        dominantBaseline: currentEl.dominantBaseline || 'auto',
+                                        style: { 
+                                            userSelect: 'none', 
+                                            letterSpacing: '0.15em' 
+                                        }
+                                    }, replacePlaceholders(currentEl.content))
+                                );
+                                // Layer 2: Main Text (Maroon)
+                                elementsToRender.push(
+                                    React.createElement('text', {
+                                        key: `main_${currentEl.id}`,
+                                        x: xPos,
+                                        y: currentEl.y,
+                                        fontSize: currentEl.fontSize,
+                                        fontWeight: currentEl.fontWeight,
+                                        textAnchor: textAnchor,
+                                        fontFamily: currentEl.fontFamily,
+                                        fill: currentEl.fill || '#800000',
+                                        dominantBaseline: currentEl.dominantBaseline || 'auto',
+                                        style: { 
+                                            userSelect: 'none', 
+                                            letterSpacing: '0.15em' 
+                                        }
+                                    }, replacePlaceholders(currentEl.content))
+                                );
+                            } else {
+                                // Normal text rendering
+                                elementsToRender.push(
+                                    React.createElement('text', { 
+                                        key: `text_${currentEl.id}`,
+                                        x: xPos, 
+                                        y: currentEl.y, 
+                                        fontSize: currentEl.fontSize, 
+                                        fontWeight: currentEl.fontWeight, 
+                                        textAnchor: textAnchor, 
+                                        fontFamily: currentEl.fontFamily, 
+                                        fill: currentEl.fill || 'black', 
+                                        dominantBaseline: currentEl.dominantBaseline || 'auto', 
+                                        style: { 
+                                            textDecoration: currentEl.textDecoration || 'none',
+                                            ...(currentEl.style || {}) 
+                                        } 
+                                    }, replacePlaceholders(currentEl.content))
+                                );
+                            }
 
                             // Inject Images based on specific Text IDs
                             if (currentEl.id === 'headmaster_name') {
