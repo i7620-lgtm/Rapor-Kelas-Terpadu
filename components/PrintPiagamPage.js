@@ -91,11 +91,11 @@ const generateInitialPiagamLayout = (settings) => {
             fontWeight: 'bold', 
             textAlign: 'center', 
             fontFamily: 'Tinos', 
-            fill: '#B8860B', // Dark Golden Rod color for luxury look
+            fill: '#1e3a8a', // Ubah ke Deep Navy Blue agar kontras dan tegas
             dominantBaseline: 'middle',
             style: {
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.25)', // Drop shadow
-                letterSpacing: '0.1em'
+                textShadow: '1px 1px 0px #F59E0B', // Sedikit shadow emas agar elegan
+                letterSpacing: '0.15em'
             }
         },
         { id: 'diberikan_kepada', type: 'text', content: 'dengan bangga diberikan kepada:', x: 61.5, y: contentStartY + 45, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
@@ -103,9 +103,9 @@ const generateInitialPiagamLayout = (settings) => {
         { id: 'student_name', type: 'text', content: '[NAMA SISWA]', x: 61.5, y: contentStartY + 85, width: 1000, fontSize: 45, fontWeight: 'normal', textAlign: 'center', fontFamily: 'Pinyon Script', dominantBaseline: 'middle' },
         { id: 'sebagai_text', type: 'text', content: 'sebagai', x: 61.5, y: contentStartY + 130, width: 1000, fontSize: 18, textAlign: 'center', fontFamily: 'Tinos' },
         
-        { id: 'rank_box', type: 'rect', fill: '#e0f2fe', stroke: '#0c4a6e', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
+        { id: 'rank_box', type: 'rect', fill: '#DBEAFE', stroke: '#1e3a8a', strokeWidth: 2, x: rankBoxX, y: rankBoxY, width: rankBoxWidth, height: rankBoxHeight, rx: 8 },
         // Updated rank text: smaller font, centered vertically with middle baseline
-        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#0c4a6e', dominantBaseline: 'middle' },
+        { id: 'rank_text', type: 'text', content: '[RANK TEXT]', x: 61.5, y: rankBoxY + (rankBoxHeight / 2), width: 1000, fontSize: 24, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tinos', fill: '#1e3a8a', dominantBaseline: 'middle' },
 
         { id: 'detail_text_1', type: 'text', content: 'pada Kelas [nama kelas] Semester [semester] Tahun Pelajaran [tahun pelajaran] dengan rata-rata nilai [nilai rata-rata].', x: 61.5, y: paragraphY, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
         { id: 'motivation_text_1', type: 'text', content: 'Penghargaan ini diberikan sebagai bentuk apresiasi dan motivasi untuk terus berusaha, berkembang,', x: 61.5, y: paragraphY + 25, width: 1000, fontSize: 16, textAlign: 'center', fontFamily: 'Tinos' },
@@ -340,49 +340,49 @@ const DefaultPiagamBackground = () => {
         // Define gradients
         React.createElement('defs', null,
             React.createElement('linearGradient', { id: goldGradientId, x1: "0%", y1: "0%", x2: "100%", y2: "100%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#FDE047', stopOpacity: 1 } }), // Lighter gold
-                React.createElement('stop', { offset: "50%", style: { stopColor: '#F59E0B', stopOpacity: 1 } }), // Richer gold
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#FDE047', stopOpacity: 1 } }) // Lighter gold
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#B45309', stopOpacity: 1 } }), // Bronze/Dark Gold
+                React.createElement('stop', { offset: "50%", style: { stopColor: '#F59E0B', stopOpacity: 1 } }), // Amber/Gold
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#78350F', stopOpacity: 1 } }) // Dark Bronze
             ),
             React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "70%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFEF9', stopOpacity: 1 } }), // Very light cream
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#FFFBEB', stopOpacity: 1 } }) // Light yellow
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFFFF', stopOpacity: 1 } }), // White center
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#FEF3C7', stopOpacity: 1 } }) // Creamy/Parchment edges
             )
         ),
 
-        // Subtle background fill
+        // Background fill with subtle texture color
         React.createElement('rect', {
             x: 0, y: 0, width: width, height: height,
             fill: `url(#${backgroundGradientId})`
         }),
 
-        // Main outer border
+        // Main outer border - Thick and Navy Blue for strong contrast
         React.createElement('rect', {
             x: margin, y: margin,
             width: width - margin * 2,
             height: height - margin * 2,
             fill: "none",
             stroke: '#1e3a8a', // Deep Navy Blue
-            strokeWidth: "3"
+            strokeWidth: "5"
         }),
-        // Inner decorative border
+        // Inner decorative border - High contrast Gold
         React.createElement('rect', {
-            x: margin + 8, y: margin + 8,
-            width: width - (margin + 8) * 2,
-            height: height - (margin + 8) * 2,
+            x: margin + 10, y: margin + 10,
+            width: width - (margin + 10) * 2,
+            height: height - (margin + 10) * 2,
             fill: "none",
             stroke: `url(#${goldGradientId})`,
-            strokeWidth: "1.5"
+            strokeWidth: "3"
         }),
 
-        // Corner Ornaments
+        // Corner Ornaments - Bold Gold
         // Top-Left
         React.createElement('g', { transform: `translate(${margin}, ${margin})` },
             React.createElement('path', {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${goldGradientId})`,
-                strokeWidth: "5",
+                strokeWidth: "6",
                 strokeLinecap: "round"
             })
         ),
@@ -392,7 +392,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${goldGradientId})`,
-                strokeWidth: "5",
+                strokeWidth: "6",
                 strokeLinecap: "round"
             })
         ),
@@ -402,7 +402,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${goldGradientId})`,
-                strokeWidth: "5",
+                strokeWidth: "6",
                 strokeLinecap: "round"
             })
         ),
@@ -412,7 +412,7 @@ const DefaultPiagamBackground = () => {
                 d: cornerPath,
                 fill: "none",
                 stroke: `url(#${goldGradientId})`,
-                strokeWidth: "5",
+                strokeWidth: "6",
                 strokeLinecap: "round"
             })
         )
@@ -754,7 +754,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     return React.createElement(PiagamPage, { 
                         key: student.id, 
                         student: student, 
-                        settings: settings,
+                        settings: settings, 
                         pageStyle: pageStyle,
                         rank: studentData?.rank,
                         average: studentData?.average,
