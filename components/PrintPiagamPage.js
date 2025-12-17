@@ -344,9 +344,9 @@ const DefaultPiagamBackground = () => {
                 React.createElement('stop', { offset: "50%", style: { stopColor: '#F59E0B', stopOpacity: 1 } }), // Amber/Gold
                 React.createElement('stop', { offset: "100%", style: { stopColor: '#78350F', stopOpacity: 1 } }) // Dark Bronze
             ),
-            React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "70%" },
-                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFFFF', stopOpacity: 1 } }), // White center
-                React.createElement('stop', { offset: "100%", style: { stopColor: '#FEF3C7', stopOpacity: 1 } }) // Creamy/Parchment edges
+            React.createElement('radialGradient', { id: backgroundGradientId, cx: "50%", cy: "50%", r: "80%" },
+                React.createElement('stop', { offset: "0%", style: { stopColor: '#FFFFFF', stopOpacity: 1 } }), // White center for text readability
+                React.createElement('stop', { offset: "100%", style: { stopColor: '#FFD700', stopOpacity: 1 } }) // Bold Gold (CSS Gold) edges for printing punch
             )
         ),
 
