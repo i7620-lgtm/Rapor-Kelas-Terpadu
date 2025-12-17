@@ -6,6 +6,7 @@ const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
     F4: { width: '33cm', height: '21.5cm' },
     Letter: { width: '27.94cm', height: '21.59cm' },
+    Legal: {width: '35.56cm', height: '21.59cm'}
 };
 
 const PIAGAM_WIDTH = 1115;
