@@ -266,7 +266,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                 React.createElement('h3', { className: "font-semibold" }, "Properti Elemen"),
                                 React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
                                     React.createElement('div', null,
-                                        React.createElement('label', { className: 'text-sm' }, 'Posisi X'),
+                                        React.createElement('label', { className: "text-sm" }, 'Posisi X'),
                                         React.createElement('input', {
                                             type: 'number',
                                             step: GRID_SIZE,
@@ -276,7 +276,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                         })
                                     ),
                                     React.createElement('div', null,
-                                        React.createElement('label', { className: 'text-sm' }, 'Posisi Y'),
+                                        React.createElement('label', { className: "text-sm" }, 'Posisi Y'),
                                         React.createElement('input', {
                                             type: 'number',
                                             step: GRID_SIZE,
@@ -420,7 +420,7 @@ const DefaultPiagamBackground = () => {
 };
 
 
-const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
+const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions }) => {
     const layout = settings.piagam_layout && settings.piagam_layout.length > 0
         ? settings.piagam_layout
         : generateInitialPiagamLayout(settings);
@@ -510,35 +510,75 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average }) => {
                         }
 
                         let elementRender;
+                        // Use array for multiple elements (signature images injection)
+                        const elementsToRender = [];
+
                         if (currentEl.type === 'text') {
                             let textAnchor = "start", xPos = currentEl.x;
                             if (currentEl.textAlign === 'center') { textAnchor = "middle"; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
                             else if (currentEl.textAlign === 'right') { textAnchor = "end"; xPos = currentEl.x + (currentEl.width ?? 0); }
                             
-                            // UPDATED: Render text with support for styles passed from layout (e.g. textShadow)
-                            elementRender = React.createElement('text', { 
-                                x: xPos, 
-                                y: currentEl.y, 
-                                fontSize: currentEl.fontSize, 
-                                fontWeight: currentEl.fontWeight, 
-                                textAnchor: textAnchor, 
-                                fontFamily: currentEl.fontFamily, 
-                                fill: currentEl.fill || 'black', 
-                                dominantBaseline: currentEl.dominantBaseline || 'auto', 
-                                style: { 
-                                    textDecoration: currentEl.textDecoration || 'none',
-                                    ...(currentEl.style || {}) // Apply style object from layout config
-                                } 
-                            }, replacePlaceholders(currentEl.content));
+                            elementsToRender.push(
+                                React.createElement('text', { 
+                                    key: `text_${currentEl.id}`,
+                                    x: xPos, 
+                                    y: currentEl.y, 
+                                    fontSize: currentEl.fontSize, 
+                                    fontWeight: currentEl.fontWeight, 
+                                    textAnchor: textAnchor, 
+                                    fontFamily: currentEl.fontFamily, 
+                                    fill: currentEl.fill || 'black', 
+                                    dominantBaseline: currentEl.dominantBaseline || 'auto', 
+                                    style: { 
+                                        textDecoration: currentEl.textDecoration || 'none',
+                                        ...(currentEl.style || {}) 
+                                    } 
+                                }, replacePlaceholders(currentEl.content))
+                            );
+
+                            // Inject Images based on specific Text IDs
+                            if (currentEl.id === 'headmaster_name') {
+                                if (printOptions.showPrincipalSignature && settings.ttd_kepala_sekolah) {
+                                    // Signature placed slightly above the name
+                                    const sigWidth = 100;
+                                    const sigHeight = 70;
+                                    // Assuming xPos is center of text box
+                                    const sigX = xPos - (sigWidth / 2);
+                                    const sigY = currentEl.y - 65; // Approx height above name
+                                    elementsToRender.push(
+                                        React.createElement('image', { key: 'sig_head', href: settings.ttd_kepala_sekolah, x: sigX, y: sigY, width: sigWidth, height: sigHeight, preserveAspectRatio: "xMidYMid meet" })
+                                    );
+                                }
+                                if (printOptions.showStamp && settings.cap_sekolah) {
+                                    // Stamp placed to the left of signature
+                                    const stampWidth = 90;
+                                    const stampHeight = 90;
+                                    const stampX = xPos - 90; // Shift left
+                                    const stampY = currentEl.y - 75;
+                                    elementsToRender.push(
+                                        React.createElement('image', { key: 'stamp_head', href: settings.cap_sekolah, x: stampX, y: stampY, width: stampWidth, height: stampHeight, opacity: 0.8, preserveAspectRatio: "xMidYMid meet" })
+                                    );
+                                }
+                            } else if (currentEl.id === 'teacher_name') {
+                                if (printOptions.showTeacherSignature && settings.ttd_wali_kelas) {
+                                    const sigWidth = 100;
+                                    const sigHeight = 60;
+                                    const sigX = xPos - (sigWidth / 2);
+                                    const sigY = currentEl.y - 55;
+                                    elementsToRender.push(
+                                        React.createElement('image', { key: 'sig_teacher', href: settings.ttd_wali_kelas, x: sigX, y: sigY, width: sigWidth, height: sigHeight, preserveAspectRatio: "xMidYMid meet" })
+                                    );
+                                }
+                            }
+
                         } else if (currentEl.type === 'image') {
                             const imageUrl = String(settings[currentEl.content] || '');
-                            elementRender = imageUrl ? React.createElement('image', { href: imageUrl, x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height }) : null;
+                            if(imageUrl) elementsToRender.push(React.createElement('image', { key: `img_${currentEl.id}`, href: imageUrl, x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height }));
                         } else if (currentEl.type === 'rect' || currentEl.type === 'line') {
-                            elementRender = React.createElement('rect', { x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height, fill: currentEl.fill || "black", rx: currentEl.rx || 0, ry: currentEl.ry || 0, stroke: currentEl.stroke, strokeWidth: currentEl.strokeWidth });
-                        } else {
-                            return null;
+                            elementsToRender.push(React.createElement('rect', { key: `rect_${currentEl.id}`, x: currentEl.x, y: currentEl.y, width: currentEl.width, height: currentEl.height, fill: currentEl.fill || "black", rx: currentEl.rx || 0, ry: currentEl.ry || 0, stroke: currentEl.stroke, strokeWidth: currentEl.strokeWidth }));
                         }
-                        return React.createElement('g', { key: currentEl.id }, elementRender);
+
+                        return React.createElement('g', { key: currentEl.id }, elementsToRender);
                     })
                 )
             )
@@ -551,6 +591,11 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top10'
     const [isPrinting, setIsPrinting] = useState(false);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
+    const [printOptions, setPrintOptions] = useState({
+        showPrincipalSignature: true,
+        showTeacherSignature: true,
+        showStamp: true
+    });
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -590,6 +635,13 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         }
         return rankMap;
     }, [students, grades, subjects]);
+
+    const handlePrintOptionChange = (key) => {
+        setPrintOptions(prev => ({
+            ...prev,
+            [key]: !prev[key]
+        }));
+    };
 
     const handlePrint = () => {
         setIsPrinting(true);
@@ -677,6 +729,23 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
                         React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
                     )
+                ),
+                React.createElement('div', { className: "border-t pt-4 mt-4" },
+                    React.createElement('div', { className: "flex flex-wrap items-center gap-x-6 gap-y-2" },
+                        React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-0" }, "Opsi Tanda Tangan:"),
+                        React.createElement('label', { className: "flex items-center space-x-2" },
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature, onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                            React.createElement('span', { className: "text-sm" }, "TTD Kepala Sekolah")
+                        ),
+                        React.createElement('label', { className: "flex items-center space-x-2" },
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                            React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
+                        ),
+                        React.createElement('label', { className: "flex items-center space-x-2" },
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showStamp, onChange: () => handlePrintOptionChange('showStamp'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                            React.createElement('span', { className: "text-sm" }, "Cap Sekolah")
+                        )
+                    )
                 )
             ),
             React.createElement('div', { id: "print-area", className: "space-y-8" },
@@ -688,7 +757,8 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         settings: settings,
                         pageStyle: pageStyle,
                         rank: studentData?.rank,
-                        average: studentData?.average
+                        average: studentData?.average,
+                        printOptions: printOptions
                     });
                 }) : React.createElement('p', {className: "text-center text-slate-500 py-10"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak sesuai filter yang dipilih.")
             )
