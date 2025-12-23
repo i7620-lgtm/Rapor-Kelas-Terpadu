@@ -317,8 +317,78 @@ const App = () => {
       loadDataSafe('appFormativeJournal', initialFormativeJournal)
   );
   
-  const [currentCurriculum, setCurrentCurriculum] = useState(null);
+  const [predefinedCurriculum, setPredefinedCurriculum] = useState(null);
   const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
+
+  const showToast = useCallback((message, type) => { setToast({ message, type }); }, []);
+  
+  const handleSettingsChange = useCallback((e) => {
+    const { name, value, type, files } = e.target;
+
+    if (type === 'file') {
+        const file = files && files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSettings(prev => ({ ...prev, [name]: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+        return;
+    }
+    
+    if (type === 'file_processed') {
+         setSettings(prev => ({ ...prev, [name]: value }));
+         return;
+    }
+    
+    if (name && name.startsWith('predikats.')) {
+        const predikatKey = name.split('.')[1];
+        setSettings(prev => {
+            const newPredikats = { ...prev.predikats, [predikatKey]: value };
+            
+            const valA = parseInt(newPredikats.a, 10);
+            const valB = parseInt(newPredikats.b, 10);
+            const valC = parseInt(newPredikats.c, 10);
+            
+            if (!isNaN(valA) && !isNaN(valB) && !isNaN(valC)) {
+                const newQualitativeMap = {
+                    SB: Math.round((valA + 100) / 2),
+                    BSH: Math.round((valB + valA - 1) / 2),
+                    MB: Math.round((valC + valB - 1) / 2),
+                    BB: Math.round((0 + valC - 1) / 2),
+                };
+                return { ...prev, predikats: newPredikats, qualitativeGradingMap: newQualitativeMap };
+            }
+            return { ...prev, predikats: newPredikats };
+        });
+        return;
+    }
+    
+    if (type === 'class_change_confirmed') {
+        const newGradeNumber = getGradeNumber(value);
+
+        // Update the class name
+        setSettings(prev => ({ ...prev, nama_kelas: value }));
+
+        // Reset grades
+        setGrades(prevGrades => prevGrades.map(g => ({
+            studentId: g.studentId,
+            detailedGrades: {},
+            finalGrades: {}
+        })));
+        
+        // Also reset SLM visibility as the SLMs will be different
+        setSettings(prev => ({ ...prev, slmVisibility: {} }));
+        
+        showToast(`Kelas diubah ke Kelas ${newGradeNumber}. Semua data nilai telah direset.`, 'success');
+        return;
+    }
+    
+    if (name) { // Standard input change
+        setSettings(prev => ({ ...prev, [name]: value }));
+    }
+}, [showToast]);
 
   useEffect(() => {
       if (gradeNumber) {
@@ -327,13 +397,13 @@ const App = () => {
                   if (!res.ok) throw new Error(`Curriculum file for grade ${gradeNumber} not found.`);
                   return res.json();
               })
-              .then(data => setCurrentCurriculum(data))
+              .then(data => setPredefinedCurriculum(data))
               .catch(err => {
                   console.warn(err);
-                  setCurrentCurriculum({});
+                  setPredefinedCurriculum({});
               });
       } else {
-          setCurrentCurriculum(null);
+          setPredefinedCurriculum(null);
       }
   }, [gradeNumber]);
 
@@ -401,8 +471,6 @@ const App = () => {
       settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal
   ]);
 
-  const showToast = useCallback((message, type) => { setToast({ message, type }); }, []);
-    
     useEffect(() => {
         const initializeApp = async () => {
             try {
@@ -494,10 +562,10 @@ const App = () => {
         const gradeKey = `Kelas ${gradeNumber}`;
         const masterCurriculum = new Map();
 
-        if (currentCurriculum) {
+        if (predefinedCurriculum) {
             subjects.filter(s => s.active).forEach(subject => {
                 const curriculumKey = subject.curriculumKey || subject.fullName;
-                const predefinedData = currentCurriculum[curriculumKey];
+                const predefinedData = predefinedCurriculum[curriculumKey];
                 if (predefinedData) {
                     const slms = predefinedData.map((slm, slmIndex) => ({
                         id: `slm_predefined_${subject.id}_${slmIndex}`,
@@ -685,7 +753,7 @@ const App = () => {
         console.error("Export Error:", e);
         return null; 
     }
-  }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, currentCurriculum]);
+  }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, predefinedCurriculum]);
 
     const parseExcelBlob = useCallback(async (blob) => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
@@ -1019,7 +1087,7 @@ const App = () => {
             learningObjectives: nLO,
             formativeJournal: nFJ
         };
-    }, [currentCurriculum]);
+    }, [predefinedCurriculum]);
 
     const importFromExcelBlob = useCallback(async (blob) => {
         setIsLoading(true);
@@ -1140,10 +1208,11 @@ const App = () => {
                         return { ...g, detailedGrades: { ...g.detailedGrades, [subjectId]: d } };
                     }));
                 },
+                predefinedCurriculum: predefinedCurriculum,
                 showToast 
             }) :
-            activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: (e) => setSettings(prev => ({...prev, [e.target.name]: e.target.value})), onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
-            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: (e) => setSettings(prev => ({...prev, [e.target.name]: e.target.value})), onSave: () => setIsDirty(true), onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
+            activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: handleSettingsChange, onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
+            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: () => setIsDirty(true), onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
             activePage === 'DATA_ABSENSI' ? React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: (sid, t, v) => setAttendance(prev => {
                 const n = [...prev]; const i = n.findIndex(a => a.studentId === sid);
                 if(i>-1) n[i][t] = v===''?null:parseInt(v); else n.push({studentId:sid, [t]: v===''?null:parseInt(v)}); return n;
@@ -1181,7 +1250,7 @@ const App = () => {
                 const idx = next[sid].findIndex(n => n.id === data.id);
                 if(idx > -1) next[sid][idx] = data; else next[sid].push({ ...data, id: Date.now() });
                 return next;
-            }), onDelete: (sid, id) => setFormativeJournal(prev => ({...prev, [sid]: prev[sid].filter(n => n.id !== id)})), showToast, subjects, grades, settings }) :
+            }), onDelete: (sid, id) => setFormativeJournal(prev => ({...prev, [sid]: prev[sid].filter(n => n.id !== id)})), showToast, subjects, grades, settings, predefinedCurriculum: predefinedCurriculum }) :
             React.createElement(PlaceholderPage, { title: activePage })
         )
       )
