@@ -23,6 +23,85 @@ const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number
 // Footer line is at 2.5cm from bottom. Content stops at 3.0cm from bottom.
 const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
 
+const EditableDescription = ({ value, onSave, placeholder, className, style, multiline = false }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [localValue, setLocalValue] = useState(value);
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleStartEditing = (e) => {
+        e.stopPropagation();
+        setIsEditing(true);
+    };
+
+    const handleSave = () => {
+        setIsEditing(false);
+        if (localValue !== value) {
+            onSave(localValue);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) { // Shift+Enter for new line in textarea
+            e.preventDefault(); 
+            handleSave(); 
+        }
+    };
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            if (multiline) {
+                inputRef.current.style.height = 'auto';
+                inputRef.current.style.height = inputRef.current.scrollHeight + 'px';
+            }
+        }
+    }, [isEditing, multiline]);
+
+    if (isEditing) {
+        if (multiline) {
+            return React.createElement('textarea', {
+                ref: inputRef,
+                value: localValue,
+                onChange: (e) => {
+                    setLocalValue(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = e.target.scrollHeight + 'px';
+                },
+                onBlur: handleSave,
+                onKeyDown: handleKeyDown,
+                className: `w-full bg-white border border-blue-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight ${className || ''}`,
+                style: { minHeight: '1.5em', overflow: 'hidden', ...style }
+            });
+        }
+        return React.createElement('input', {
+            ref: inputRef,
+            value: localValue,
+            onChange: (e) => setLocalValue(e.target.value),
+            onBlur: handleSave,
+            onKeyDown: handleKeyDown,
+            className: `w-full bg-white border border-blue-500 rounded p-1 outline-none font-inherit text-inherit leading-tight ${className || ''}`,
+            style: { ...style }
+        });
+    }
+
+    return React.createElement('div', {
+        onClick: handleStartEditing,
+        className: `cursor-text relative group hover:bg-yellow-50 rounded px-1 -mx-1 transition-colors print:hover:bg-transparent ${className || ''}`,
+        style: style
+    },
+        localValue || React.createElement('span', { className: "text-gray-400 italic print:hidden" }, placeholder),
+        React.createElement('span', { className: "absolute top-0 right-0 opacity-0 group-hover:opacity-100 text-gray-400 print:hidden pointer-events-none" }, 
+            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" })
+            )
+        )
+    );
+};
+
 const ReportHeader = ({ settings }) => {
     const layout = settings.kop_layout && settings.kop_layout.length > 0
         ? settings.kop_layout
@@ -70,8 +149,8 @@ const ReportHeader = ({ settings }) => {
                             );
                         }
                         if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                            if (!imageUrl) return null; // Don't render image if URL is empty
+                            const imageUrl = String(settings[el.content] || ''); 
+                            if (!imageUrl) return null; 
                             return (
                                 React.createElement('image', {
                                     key: el.id,
@@ -140,19 +219,15 @@ const lowercaseFirst = (s) => {
 
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
-    // --- UPDATED LOGIC: Prefer Stored Description ---
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
     
-    // 1. Check if manually generated/saved descriptions exist
     if (detailedGrade?.descriptions) {
         const { highest, lowest } = detailedGrade.descriptions;
-        // Only return if at least one is present and not empty
         if ((highest && highest.trim()) || (lowest && lowest.trim())) {
             return { highest, lowest };
         }
     }
 
-    // 2. Fallback: Auto-generate on the fly (Legacy logic)
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
 
@@ -185,7 +260,6 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     const gradedTps = [];
     
     if (detailedGrade && detailedGrade.slm) {
-        // Create a lookup map for faster access to TP texts, grouped by slmId.
         const tpTextMap = new Map();
         objectivesForSubject.forEach(obj => {
             if (!tpTextMap.has(obj.slmId)) {
@@ -194,12 +268,10 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
-        // Iterate over the student's graded SLMs.
         detailedGrade.slm.forEach(slm => {
             const tpTextsForThisSlm = tpTextMap.get(slm.id);
             if (tpTextsForThisSlm && slm.scores) {
                 slm.scores.forEach((score, index) => {
-                    // Normalize Qualitative scores for generation if necessary
                     let numericScore = score;
                     if (typeof score === 'string') {
                          if (score === 'SB') numericScore = 95;
@@ -256,11 +328,10 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
 };
 
-const CoverPage = ({ student, settings }) => {
+const CoverPage = ({ student, settings, onUpdateStudent }) => {
     const year = useMemo(() => {
         if (settings.tanggal_rapor) {
             try {
-                // Handle format "Denpasar, 20 Desember 2024"
                 const parts = settings.tanggal_rapor.split(' ');
                 if (parts.length >= 3) {
                     const yearPart = parts[parts.length - 1];
@@ -269,7 +340,6 @@ const CoverPage = ({ student, settings }) => {
 
                     if (!isNaN(parseInt(yearPart, 10)) && monthIndex !== -1) {
                         const reportYear = parseInt(yearPart, 10);
-                        // If report date is in the first half of the year (Jan-June), it belongs to the previous academic year end
                         if (monthIndex < 6) {
                             return `${reportYear - 1}/${reportYear}`;
                         }
@@ -290,7 +360,7 @@ const CoverPage = ({ student, settings }) => {
         return `${currentYear}/${currentYear + 1}`;
     }, [settings.tanggal_rapor, settings.tahun_ajaran]);
 
-    const coverLogo = settings.logo_cover || ''; // Now falls back to empty string
+    const coverLogo = settings.logo_cover || '';
 
     return React.createElement('div', {
         className: 'flex flex-col items-center text-center p-8 box-border font-times',
@@ -305,7 +375,7 @@ const CoverPage = ({ student, settings }) => {
     },
         React.createElement('div', { className: 'w-full pt-16' },
             React.createElement('div', { className: 'flex justify-center mb-10' },
-                coverLogo && React.createElement('img', { // Only render img if coverLogo exists
+                coverLogo && React.createElement('img', { 
                     src: coverLogo,
                     alt: "Logo Cover Rapor",
                     className: 'h-48 w-48 object-contain'
@@ -319,11 +389,22 @@ const CoverPage = ({ student, settings }) => {
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, (student.namaLengkap || 'NAMA MURID').toUpperCase())
+                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider' },
+                        React.createElement(EditableDescription, {
+                            value: (student.namaLengkap || 'NAMA MURID').toUpperCase(),
+                            onSave: (val) => onUpdateStudent(student.id, 'namaLengkap', val),
+                            placeholder: "NAMA MURID",
+                            className: "text-center w-full"
+                        })
+                    )
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
                 React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('p', { className: 'text-2xl font-bold tracking-wider' }, `${student.nisn || '-'} / ${student.nis || '-'}`)
+                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider flex justify-center gap-1' },
+                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "NISN", className: "w-32 text-right" }),
+                        React.createElement('span', null, '/'),
+                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "NIS", className: "w-24 text-left" })
+                    )
                 )
             )
         ),
@@ -336,20 +417,19 @@ const CoverPage = ({ student, settings }) => {
     );
 };
 
-const SchoolIdentityPage = ({ settings }) => {
+const SchoolIdentityPage = ({ settings, onUpdateSettings }) => {
     const identitasSekolah = [
-        { label: "Nama Sekolah", value: settings.nama_sekolah },
-        { label: "NPSN", value: settings.npsn },
-        { label: "NIS/NSS/NDS", value: '-'},
-        { label: "Alamat Sekolah", value: settings.alamat_sekolah },
-        { label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
-        { label: 'Kecamatan', value: settings.kecamatan },
-        { label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
-        { label: 'Provinsi', value: settings.provinsi },
-        { label: 'Website', value: settings.website_sekolah },
-        { label: 'E-mail', value: settings.email_sekolah },
-        { label: 'Kode Pos', value: settings.kode_pos },
-        { label: 'Telepon', value: settings.telepon_sekolah },
+        { key: 'nama_sekolah', label: "Nama Sekolah", value: settings.nama_sekolah },
+        { key: 'npsn', label: "NPSN", value: settings.npsn },
+        { key: 'alamat_sekolah', label: "Alamat Sekolah", value: settings.alamat_sekolah },
+        { key: 'desa_kelurahan', label: 'Kelurahan/Desa', value: settings.desa_kelurahan },
+        { key: 'kecamatan', label: 'Kecamatan', value: settings.kecamatan },
+        { key: 'kota_kabupaten', label: 'Kabupaten/Kota', value: settings.kota_kabupaten },
+        { key: 'provinsi', label: 'Provinsi', value: settings.provinsi },
+        { key: 'website_sekolah', label: 'Website', value: settings.website_sekolah },
+        { key: 'email_sekolah', label: 'E-mail', value: settings.email_sekolah },
+        { key: 'kode_pos', label: 'Kode Pos', value: settings.kode_pos },
+        { key: 'telepon_sekolah', label: 'Telepon', value: settings.telepon_sekolah },
     ];
 
     return(
@@ -362,7 +442,17 @@ const SchoolIdentityPage = ({ settings }) => {
                             React.createElement('td', { className: 'w-[5%] py-[2px]' }, `${index + 1}.`),
                             React.createElement('td', { className: 'w-[30%] py-[2px]' }, item.label),
                             React.createElement('td', { className: 'w-[5%] py-[2px]' }, ':'),
-                            React.createElement('td', { className: 'w-[60%] py-[2px]' }, item.value || '-')
+                            React.createElement('td', { className: 'w-[60%] py-[2px]' }, 
+                                item.key ? (
+                                    React.createElement(EditableDescription, {
+                                        value: item.value || '-',
+                                        onSave: (val) => onUpdateSettings(item.key, val),
+                                        placeholder: "-"
+                                    })
+                                ) : (
+                                    item.value || '-'
+                                )
+                            )
                         )
                     ))
                 )
@@ -371,26 +461,28 @@ const SchoolIdentityPage = ({ settings }) => {
     );
 };
 
-const StudentIdentityPage = ({ student, settings }) => {
+const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
     const identitasSiswa = [
-        { no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
-        { no: '2.', label: 'NISN/NIS', value: `${student.nisn || '-'} / ${student.nis || '-'}` },
-        { no: '3.', label: 'Tempat, Tanggal Lahir', value: student.ttl || '-' },
-        { no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
-        { no: '5.', label: 'Agama', value: student.agama },
-        { no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
-        { no: '7.', 'label': 'Alamat Murid', value: student.alamatSiswa },
+        { key: 'namaLengkap', no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
+        { key: 'nisn', no: '2.', label: 'NISN', value: student.nisn || '-' }, // Splitting NISN/NIS for easier edit
+        { key: 'nis', label: 'NIS', value: student.nis || '-', sameLine: true },
+        { key: 'ttl', no: '3.', label: 'Tempat, Tanggal Lahir', value: student.ttl || '-' },
+        { key: 'jenisKelamin', no: '4.', label: 'Jenis Kelamin', value: student.jenisKelamin },
+        { key: 'agama', no: '5.', label: 'Agama', value: student.agama },
+        { key: 'asalTk', no: '6.', label: 'Pendidikan Sebelumnya', value: student.asalTk },
+        { key: 'alamatSiswa', no: '7.', 'label': 'Alamat Murid', value: student.alamatSiswa },
         { no: '8.', label: 'Nama Orang Tua' },
-        { sub: true, label: 'a. Ayah', value: student.namaAyah },
-        { sub: true, label: 'b. Ibu', value: student.namaIbu },
+        { key: 'namaAyah', sub: true, label: 'a. Ayah', value: student.namaAyah },
+        { key: 'namaIbu', sub: true, label: 'b. Ibu', value: student.namaIbu },
         { no: '9.', label: 'Pekerjaan Orang Tua' },
-        { sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
-        { sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
-        { no: '10.', label: 'Alamat Orang Tua', value: student.alamatOrangTua },
-        { no: '11.', label: 'Wali Murid' },
-        { sub: true, label: 'a. Nama', value: student.namaWali },
-        { sub: true, label: 'b. Pekerjaan', value: student.pekerjaanWali },
-        { sub: true, label: 'c. Alamat', value: student.alamatWali },
+        { key: 'pekerjaanAyah', sub: true, label: 'a. Ayah', value: student.pekerjaanAyah },
+        { key: 'pekerjaanIbu', sub: true, label: 'b. Ibu', value: student.pekerjaanIbu },
+        { key: 'alamatOrangTua', no: '10.', label: 'Alamat Orang Tua', value: student.alamatOrangTua },
+        { key: 'teleponOrangTua', no: '11.', label: 'Telepon Orang Tua', value: student.teleponOrangTua },
+        { no: '12.', label: 'Wali Murid' },
+        { key: 'namaWali', sub: true, label: 'a. Nama', value: student.namaWali },
+        { key: 'pekerjaanWali', sub: true, label: 'b. Pekerjaan', value: student.pekerjaanWali },
+        { key: 'alamatWali', sub: true, label: 'c. Alamat', value: student.alamatWali },
     ];
     
     return (
@@ -398,32 +490,54 @@ const StudentIdentityPage = ({ student, settings }) => {
             React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS MURID'),
             React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
                 React.createElement('tbody', null,
-                    identitasSiswa.map((item, index) => (
-                        React.createElement('tr', { key: index, className: 'align-top' },
-                            React.createElement('td', { className: 'w-[5%] py-[1.5px]' }, item.no || ''),
-                            React.createElement('td', { className: `w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}` }, item.label),
-                            React.createElement('td', { className: 'w-[3%] py-[1.5px] text-center' }, item.label ? ':' : ''),
-                            React.createElement('td', { className: 'w-[57%] py-[1.5px]' }, item.value || (item.sub ? '-' : ''))
-                        )
-                    ))
+                    identitasSiswa.map((item, index) => {
+                        if (item.sameLine) return null; // Skip direct render, handled in parent
+                        
+                        let valueRender;
+                        if (item.label === 'NISN') {
+                             // Custom merge for NISN/NIS
+                             const nextItem = identitasSiswa[index + 1];
+                             valueRender = (
+                                React.createElement('div', { className: 'flex gap-1' },
+                                    React.createElement(EditableDescription, { value: item.value, onSave: (val) => onUpdateStudent(student.id, item.key, val), placeholder: "-" }),
+                                    React.createElement('span', null, '/'),
+                                    React.createElement(EditableDescription, { value: nextItem.value, onSave: (val) => onUpdateStudent(student.id, nextItem.key, val), placeholder: "-" })
+                                )
+                             );
+                        } else if (item.key) {
+                            valueRender = (
+                                React.createElement(EditableDescription, {
+                                    value: item.value || '-',
+                                    onSave: (val) => onUpdateStudent(student.id, item.key, val),
+                                    placeholder: "-",
+                                    multiline: item.key.includes('alamat')
+                                })
+                            );
+                        } else {
+                            valueRender = item.value || (item.sub ? '-' : '');
+                        }
+
+                        return (
+                            React.createElement('tr', { key: index, className: 'align-top' },
+                                React.createElement('td', { className: 'w-[5%] py-[1.5px]' }, item.no || ''),
+                                React.createElement('td', { className: `w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}` }, item.label),
+                                React.createElement('td', { className: 'w-[3%] py-[1.5px] text-center' }, item.label ? ':' : ''),
+                                React.createElement('td', { className: 'w-[57%] py-[1.5px]' }, valueRender)
+                            )
+                        );
+                    })
                 )
             ),
             React.createElement('div', { className: 'flex justify-between items-end pt-10' },
                 React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
                 React.createElement('div', { className: 'text-center relative' },
-                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`),
+                    React.createElement(EditableDescription, { value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, onSave: (val) => onUpdateSettings('tanggal_rapor', val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
                     React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
                     React.createElement('div', { className: 'h-20 w-full relative flex items-center justify-center' },
                         settings.ttd_kepala_sekolah && React.createElement('img', { 
                             src: settings.ttd_kepala_sekolah, 
                             alt: "TTD Kepala Sekolah", 
                             className: 'h-20 object-contain absolute z-10' 
-                        }),
-                        settings.cap_sekolah && React.createElement('img', {
-                            src: settings.cap_sekolah,
-                            alt: "Cap Sekolah",
-                            className: 'h-20 object-contain absolute z-0 opacity-80',
-                            style: { left: '-10px' }
                         })
                     ),
                     React.createElement('div', { className: 'font-bold underline relative z-20' }, settings.nama_kepala_sekolah || '_________________'),
@@ -434,99 +548,78 @@ const StudentIdentityPage = ({ student, settings }) => {
     );
 };
 
-const ReportStudentInfo = React.forwardRef(({ student, settings }, ref) => {
+const ReportStudentInfo = React.forwardRef(({ student, settings, onUpdateStudent, onUpdateSettings }, ref) => {
     const gradeNumber = getGradeNumber(settings.nama_kelas);
     const phase = getPhase(gradeNumber);
     
     return React.createElement('div', { ref: ref },
         React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-1', style: { fontSize: '10.5pt', tableLayout: 'fixed' } },
+        React.createElement('table', { className: 'w-full mb-2', style: { fontSize: '11pt', tableLayout: 'fixed' } },
             React.createElement('tbody', null,
+                // Row 1: Nama & Kelas
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'w-[20%] py-0 px-1' }, 'Nama Murid'), React.createElement('td', { className: 'w-[45%] py-0 px-1' }, `: ${(student.namaLengkap || '').toUpperCase()}`),
-                    React.createElement('td', { className: 'w-[15%] py-0 px-1' }, 'Kelas'), React.createElement('td', { className: 'w-[20%] py-0 px-1' }, `: ${settings.nama_kelas || ''}`)
+                    React.createElement('td', { className: 'align-top py-0.5', style: { width: '15%' } }, 'Nama Murid'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '50%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, {
+                            value: (student.namaLengkap || '').toUpperCase(),
+                            onSave: (val) => onUpdateStudent(student.id, 'namaLengkap', val),
+                            placeholder: "NAMA MURID",
+                            className: "font-bold uppercase w-full",
+                            style: { display: 'inline-block' }
+                        })
+                    ),
+                    React.createElement('td', { className: 'align-top py-0.5', style: { width: '15%' } }, 'Kelas'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '20%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: settings.nama_kelas || '', onSave: (val) => onUpdateSettings('nama_kelas', val), placeholder: "Kelas", className: "w-full" })
+                    )
                 ),
+                // Row 2: NISN/NIS & Fase
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'NISN/NIS'), React.createElement('td', { className: 'py-0 px-1' }, `: ${student.nisn || '-'} / ${student.nis || '-'}`),
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Fase'), React.createElement('td', { className: 'py-0 px-1' }, `: ${phase}`)
+                    React.createElement('td', { className: 'align-top py-0.5' }, 'NISN/NIS'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '50%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "-", className: "inline-block min-w-[80px]" }),
+                        React.createElement('span', { className: "mx-1" }, "/"),
+                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "-", className: "inline-block" })
+                    ),
+                    React.createElement('td', { className: 'align-top py-0.5', style: { width: '15%' } }, 'Fase'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '20%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement('span', null, phase)
+                    )
                 ),
+                // Row 3: Nama Sekolah & Semester
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Nama Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.nama_sekolah || ''}`),
-                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Semester'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.semester ? (settings.semester.toLowerCase().includes('ganjil') ? '1 (Ganjil)' : '2 (Genap)') : ''}`)
+                    React.createElement('td', { className: 'align-top py-0.5' }, 'Nama Sekolah'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '50%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: settings.nama_sekolah || '', onSave: (val) => onUpdateSettings('nama_sekolah', val), placeholder: "Nama Sekolah", className: "w-full" })
+                    ),
+                    React.createElement('td', { className: 'align-top py-0.5', style: { width: '15%' } }, 'Semester'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '20%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: settings.semester || '', onSave: (val) => onUpdateSettings('semester', val), placeholder: "Semester", className: "w-full" })
+                    )
                 ),
+                // Row 4: Alamat Sekolah & Tahun Pelajaran
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0 px-1' }, 'Alamat Sekolah'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.alamat_sekolah || ''}`),
-                    React.createElement('td', { className: 'whitespace-nowrap py-0 px-1' }, 'Tahun Pelajaran'), React.createElement('td', { className: 'py-0 px-1' }, `: ${settings.tahun_ajaran || ''}`)
+                    React.createElement('td', { className: 'align-top py-0.5' }, 'Alamat Sekolah'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '50%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: settings.alamat_sekolah || '', onSave: (val) => onUpdateSettings('alamat_sekolah', val), placeholder: "Alamat", className: "w-full" })
+                    ),
+                    React.createElement('td', { className: 'align-top py-0.5', style: { width: '15%' } }, 'Tahun Pelajaran'),
+                    React.createElement('td', { className: 'align-top py-0.5 px-1 flex', style: { width: '20%' } },
+                        React.createElement('span', { className: 'mr-1' }, ':'),
+                        React.createElement(EditableDescription, { value: settings.tahun_ajaran || '', onSave: (val) => onUpdateSettings('tahun_ajaran', val), placeholder: "TA", className: "w-full" })
+                    )
                 )
             )
         )
     )
 });
-
-const EditableDescription = ({ value, onSave, placeholder }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [localValue, setLocalValue] = useState(value);
-    const textareaRef = useRef(null);
-
-    useEffect(() => {
-        setLocalValue(value);
-    }, [value]);
-
-    const handleStartEditing = () => {
-        setIsEditing(true);
-    };
-
-    const handleSave = () => {
-        setIsEditing(false);
-        if (localValue !== value) {
-            onSave(localValue);
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault(); // Prevent new line
-            handleSave(); // Trigger save immediately
-        }
-    };
-
-    useEffect(() => {
-        if (isEditing && textareaRef.current) {
-            textareaRef.current.focus();
-            // Adjust height
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-        }
-    }, [isEditing]);
-
-    if (isEditing) {
-        return React.createElement('textarea', {
-            ref: textareaRef,
-            value: localValue,
-            onChange: (e) => {
-                setLocalValue(e.target.value);
-                e.target.style.height = 'auto';
-                e.target.style.height = e.target.scrollHeight + 'px';
-            },
-            onBlur: handleSave,
-            onKeyDown: handleKeyDown,
-            className: "w-full bg-white border border-blue-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight",
-            style: { minHeight: '1.5em', overflow: 'hidden' }
-        });
-    }
-
-    return React.createElement('div', {
-        onClick: handleStartEditing,
-        className: "cursor-text relative group hover:bg-yellow-50 rounded px-1 -mx-1 transition-colors print:hover:bg-transparent"
-    },
-        localValue || React.createElement('span', { className: "text-gray-400 italic print:hidden" }, placeholder),
-        React.createElement('span', { className: "absolute top-0 right-0 opacity-0 group-hover:opacity-100 text-gray-400 print:hidden pointer-events-none" }, 
-            React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
-                React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" })
-            )
-        )
-    );
-};
 
 const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA, studentId, onUpdateDescription }, ref) => (
     React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '10pt', tableLayout: 'fixed' } },
@@ -552,14 +645,16 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                         React.createElement(EditableDescription, { 
                             value: item.description.highest, 
                             onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val),
-                            placeholder: "Klik untuk edit deskripsi capaian tertinggi..."
+                            placeholder: "Klik untuk edit deskripsi capaian tertinggi...",
+                            multiline: true
                         }),
                         React.createElement(React.Fragment, null,
                             React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
                             React.createElement(EditableDescription, { 
                                 value: item.description.lowest, 
                                 onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val),
-                                placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)..."
+                                placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)...",
+                                multiline: true
                             })
                         )
                     )
@@ -575,7 +670,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         rank, rankingOption, // New props
         showCocurricular, showExtra, showNotes, showAttendance, showDecision, 
         showParentFeedback, showParentTeacherSignature, showHeadmasterSignature,
-        printOptions
+        printOptions,
+        onUpdateNote, onUpdateAttendance, onUpdateExtraDescription, onUpdateCocurricularManual, onUpdateSettings
     } = props;
     const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = ref || {};
 
@@ -588,6 +684,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
 
     const originalNote = notes[student.id] || '';
     let studentNoteContent;
+    
     if (shouldDisplayRank) {
         const rankMessageStart = `Selamat! berhasil meraih `;
         const rankText = `Peringkat ${rank}`;
@@ -595,10 +692,22 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         studentNoteContent = React.createElement(React.Fragment, null, 
             React.createElement('span', null, rankMessageStart),
             React.createElement('strong', null, rankText),
-            React.createElement('span', null, rankMessageEnd + originalNote)
+            React.createElement('span', null, rankMessageEnd),
+            React.createElement(EditableDescription, { 
+                value: originalNote, 
+                onSave: (val) => onUpdateNote(student.id, val), 
+                placeholder: "Tulis catatan...", 
+                multiline: true,
+                className: "inline"
+            })
         );
     } else {
-        studentNoteContent = originalNote || 'Tidak ada catatan.';
+        studentNoteContent = React.createElement(EditableDescription, { 
+            value: originalNote, 
+            onSave: (val) => onUpdateNote(student.id, val), 
+            placeholder: "Tidak ada catatan.", 
+            multiline: true 
+        });
     }
 
     const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
@@ -613,11 +722,17 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             if (!activityId) return null;
             const activity = extracurriculars.find(e => e.id === activityId);
             const description = studentExtraData.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.';
-            return { name: activity?.name, description };
+            return { id: activityId, name: activity?.name, description };
         }).filter(Boolean);
         
     const cocurricularDescription = useMemo(() => {
+        // Priority: Manual > Auto
         const studentCoData = cocurricularData?.[student.id];
+        
+        if (studentCoData?.manualDescription) {
+            return studentCoData.manualDescription;
+        }
+
         const theme = settings.cocurricular_theme;
         const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
             ? studentCoData.dimensionRatings
@@ -647,7 +762,6 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             .filter(dim => ['MB', 'BB'].includes(ratings[dim.id]))
             .map(dim => dim.label.toLowerCase());
         
-        // Helper to format list: "a, b, dan c"
         const formatDims = (list) => {
             if (list.length === 0) return '';
             if (list.length === 1) return list[0];
@@ -707,16 +821,23 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 `Berdasarkan hasil belajar yang dicapai, ${nickname} dinyatakan:`
             ),
             React.createElement('div', { className: 'font-bold mt-1 text-center py-1' },
-                promotionText
+                React.createElement(EditableDescription, { value: promotionText, onSave: () => {}, placeholder: promotionText, className: "text-center justify-center font-bold" }) // Decision text usually auto, but can be editable if we add logic. For now acts as visual edit but no save
             )
         );
     };
 
     return (
         React.createElement('div', { className: 'mt-1' },
-            showCocurricular && cocurricularDescription && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
+            showCocurricular && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
-                React.createElement('div', { className: 'min-h-[2rem]' }, cocurricularDescription)
+                React.createElement('div', { className: 'min-h-[2rem]' }, 
+                    React.createElement(EditableDescription, {
+                        value: cocurricularDescription,
+                        onSave: (val) => onUpdateCocurricularManual(student.id, val),
+                        placeholder: "Deskripsi kokurikuler...",
+                        multiline: true
+                    })
+                )
             ),
             (showExtra && extraActivities.length > 0) && React.createElement('div', { ref: extraRef, className: 'mt-1' },
                 React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
@@ -725,7 +846,14 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                         React.createElement('tr', { key: index, className: 'align-top', id: `row-extra-${student.id}-${index}` }, 
                             React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), 
                             React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), 
-                            React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.description)
+                            React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, 
+                                React.createElement(EditableDescription, {
+                                    value: item.description,
+                                    onSave: (val) => onUpdateExtraDescription(student.id, item.id, val),
+                                    placeholder: "Keterangan...",
+                                    multiline: true
+                                })
+                            )
                         )
                     )))
                 )
@@ -735,7 +863,9 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
                      React.createElement('div', { className: 'flex-grow flex flex-col' },
                         ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
+                            const typeKey = item === 'Sakit' ? 'sakit' : item === 'Izin' ? 'izin' : 'alpa';
                             const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
+                            
                             return React.createElement('div', {
                                 key: item,
                                 id: `row-attendance-${student.id}-${item.toLowerCase().replace(/\s+/g, '-')}`,
@@ -743,7 +873,15 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                             },
                                 React.createElement('span', { className: 'w-28' }, item),
                                 React.createElement('span', { className: 'px-1' }, ':'),
-                                React.createElement('span', { className: 'flex-1 text-left' }, `${value} hari`)
+                                React.createElement('div', { className: 'flex-1 text-left flex gap-1 items-center' },
+                                    React.createElement(EditableDescription, {
+                                        value: value,
+                                        onSave: (val) => onUpdateAttendance(student.id, typeKey, val),
+                                        placeholder: "0",
+                                        className: "w-8 text-center"
+                                    }),
+                                    React.createElement('span', null, 'hari')
+                                )
                             )
                         })
                     )
@@ -763,7 +901,12 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-1 flex justify-between', style: { fontSize: '12pt' } },
                 React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-12' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center relative' }, 
-                    React.createElement('div', null, settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`), 
+                    React.createElement(EditableDescription, { 
+                        value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, 
+                        onSave: (val) => onUpdateSettings('tanggal_rapor', val), 
+                        placeholder: "Tempat, Tanggal",
+                        className: "text-center justify-center"
+                    }), 
                     React.createElement('div', null, 'Wali Kelas,'), 
                     React.createElement('div', { className: 'h-12 w-full flex items-center justify-center relative' },
                         settings.ttd_wali_kelas && printOptions?.showTeacherSignature && React.createElement('img', { 
@@ -772,8 +915,22 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                             className: 'h-16 object-contain absolute z-10' 
                         })
                     ), 
-                    React.createElement('div', { className: 'font-bold underline relative z-20' }, settings.nama_wali_kelas || '_________________'), 
-                    React.createElement('div', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
+                    React.createElement('div', { className: 'font-bold underline relative z-20' }, 
+                        React.createElement(EditableDescription, { 
+                            value: settings.nama_wali_kelas || '_________________', 
+                            onSave: (val) => onUpdateSettings('nama_wali_kelas', val), 
+                            placeholder: "Nama Wali Kelas",
+                            className: "text-center justify-center font-bold"
+                        })
+                    ), 
+                    React.createElement('div', { className: 'flex justify-center gap-1' }, 
+                        'NIP.', 
+                        React.createElement(EditableDescription, { 
+                            value: settings.nip_wali_kelas || '-', 
+                            onSave: (val) => onUpdateSettings('nip_wali_kelas', val), 
+                            placeholder: "-" 
+                        })
+                    )
                 )
             ),
             showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-1 flex justify-center text-center', style: { fontSize: '12pt' } }, 
@@ -785,16 +942,24 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                             src: settings.ttd_kepala_sekolah, 
                             alt: "TTD Kepala Sekolah", 
                             className: 'h-20 object-contain absolute z-10' 
-                        }),
-                        settings.cap_sekolah && printOptions?.showStamp && React.createElement('img', {
-                            src: settings.cap_sekolah,
-                            alt: "Cap Sekolah",
-                            className: 'h-20 object-contain absolute z-0 opacity-80',
-                            style: { left: '-30px' }
                         })
                     ), 
-                    React.createElement('div', { className: 'font-bold underline relative z-20' }, settings.nama_kepala_sekolah || '_________________'), 
-                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('div', { className: 'font-bold underline relative z-20' }, 
+                        React.createElement(EditableDescription, { 
+                            value: settings.nama_kepala_sekolah || '_________________', 
+                            onSave: (val) => onUpdateSettings('nama_kepala_sekolah', val), 
+                            placeholder: "Nama Kepala Sekolah",
+                            className: "text-center justify-center font-bold"
+                        })
+                    ), 
+                    React.createElement('div', { className: 'flex justify-center gap-1' }, 
+                        'NIP.', 
+                        React.createElement(EditableDescription, { 
+                            value: settings.nip_kepala_sekolah || '-', 
+                            onSave: (val) => onUpdateSettings('nip_kepala_sekolah', val), 
+                            placeholder: "-" 
+                        })
+                    )
                 )
             )
         )
@@ -879,12 +1044,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         
         const groupConfigs = {
             'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
-                const studentReligion = student.agama?.trim().toLowerCase();
-                const representative = groupSubjects.find(s => {
-                    const match = s.fullName.match(/\(([^)]+)\)/);
-                    return match && match[1].trim().toLowerCase() === studentReligion;
-                });
-                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
+                const studentReligionLower = student.agama?.trim().toLowerCase();
+                if (!studentReligionLower) return null;
+
+                let representative = null;
+                if (studentReligionLower === 'kepercayaan') {
+                    representative = groupSubjects.find(s => s.id === 'PAKTTMYME');
+                } else {
+                    representative = groupSubjects.find(s => {
+                        const match = s.fullName.toLowerCase().match(/\(([^)]+)\)/);
+                        return match && match[1].trim().toLowerCase() === studentReligionLower;
+                    });
+                }
+                return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekudi' } : null;
             },
             'Seni Budaya': (groupSubjects) => {
                 const chosen = groupSubjects.find(s => gradeData?.finalGrades?.[s.id] != null) || groupSubjects.find(s => s.fullName.includes("Seni Rupa")) || groupSubjects[0];
@@ -916,6 +1088,13 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         
         allActiveSubjects.forEach(subject => {
             const isGrouped = Object.keys(groupConfigs).some(groupName => subject.fullName.startsWith(groupName));
+            
+            // Check specifically for PAKTTMYME (Kepercayaan) to exclude it if student is not 'Kepercayaan'
+            if (subject.id === 'PAKTTMYME') {
+                const studentReligion = student.agama?.trim().toLowerCase();
+                if (studentReligion !== 'kepercayaan') return; 
+            }
+
             if (!isGrouped) {
                 const grade = gradeData?.finalGrades?.[subject.id];
                 const description = generateDescription(student, subject, gradeData, learningObjectives, settings);
@@ -1079,7 +1258,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                  React.createElement('div', { className: 'absolute flex flex-col', style: {
                     top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
                 } },
-                    React.createElement(ReportStudentInfo, { student, settings, ref: studentInfoRef }),
+                    React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings, ref: studentInfoRef }),
                     React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
@@ -1087,6 +1266,11 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         showCocurricular: true, showExtra: true, showNotes: true, showAttendance: true, showDecision: true,
                         showParentFeedback: true, showParentTeacherSignature: true, showHeadmasterSignature: true,
                         printOptions: printOptions,
+                        onUpdateNote: restProps.onUpdateNote,
+                        onUpdateAttendance: restProps.onUpdateAttendance,
+                        onUpdateExtraDescription: restProps.onUpdateExtraDescription,
+                        onUpdateCocurricularManual: restProps.onUpdateCocurricularManual,
+                        onUpdateSettings: restProps.onUpdateSettings,
                         ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef }
                     })
                 )
@@ -1100,18 +1284,18 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         React.createElement(React.Fragment, null,
             React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
-                React.createElement(CoverPage, { student: student, settings: settings })
+                React.createElement(CoverPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
             ),
             selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
-                    React.createElement(SchoolIdentityPage, { settings: settings })
+                    React.createElement(SchoolIdentityPage, { settings: settings, onUpdateSettings: restProps.onUpdateSettings })
                 )
             ),
             selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
-                    React.createElement(StudentIdentityPage, { student: student, settings: settings })
+                    React.createElement(StudentIdentityPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
                 )
             ),
             selectedPages.academic && academicPageChunks?.map((chunk, pageIndex) => {
@@ -1139,10 +1323,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
                     }},
-                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings }),
+                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings }),
                         hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
                         React.createElement(ReportFooterContent, { 
-                            student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
+                            student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                             rank: rank, rankingOption: rankingOption,
                             showCocurricular: chunkItemTypes.has('cocurricular'),
                             showExtra: chunkItemTypes.has('extra'),
@@ -1152,7 +1336,12 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                             showParentFeedback: chunkItemTypes.has('parentFeedback'),
                             showParentTeacherSignature: chunkItemTypes.has('signatures'),
                             showHeadmasterSignature: chunkItemTypes.has('headmaster'),
-                            printOptions: printOptions
+                            printOptions: printOptions,
+                            onUpdateNote: restProps.onUpdateNote,
+                            onUpdateAttendance: restProps.onUpdateAttendance,
+                            onUpdateExtraDescription: restProps.onUpdateExtraDescription,
+                            onUpdateCocurricularManual: restProps.onUpdateCocurricularManual,
+                            onUpdateSettings: restProps.onUpdateSettings
                         })
                     ),
                     
@@ -1186,8 +1375,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     const [hideGradesForFaseA, setHideGradesForFaseA] = useState(true);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
-        showTeacherSignature: true,
-        showStamp: true
+        showTeacherSignature: true
     });
 
     const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
@@ -1206,14 +1394,23 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 return { studentId: student.id, totalScore: 0 };
             }
 
-            const studentReligion = student.agama?.trim().toLowerCase();
+            const studentReligionLower = student.agama?.trim().toLowerCase();
             
             const totalScore = Object.entries(gradeData.finalGrades)
                 .reduce((sum, [subjectId, score]) => {
                     const subjectInfo = allActiveSubjects.find(s => s.id === subjectId);
                     if (subjectInfo && typeof score === 'number') {
-                        if (subjectInfo.fullName.startsWith('Pendidikan Agama')) {
-                            if (studentReligion && subjectInfo.fullName.toLowerCase().includes(`(${studentReligion})`)) {
+                        const subjectFullNameLower = subjectInfo.fullName.toLowerCase();
+
+                        if (subjectFullNameLower.startsWith('pendidikan agama')) {
+                            if (!studentReligionLower) return sum;
+
+                            const religionMatch = subjectFullNameLower.match(/\(([^)]+)\)/);
+                            if (religionMatch) {
+                                if (religionMatch[1].trim().toLowerCase() === studentReligionLower) {
+                                    return sum + score;
+                                }
+                            } else if (subjectInfo.id === 'PAKTTMYME' && studentReligionLower === 'kepercayaan') {
                                 return sum + score;
                             }
                             return sum; 
@@ -1231,13 +1428,13 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         const ranksMap = new Map();
         if (sortedStudents.length > 0) {
             let currentRank = 1;
-            ranksMap.set(sortedStudents[0].studentId, currentRank);
+            ranksMap.set(sortedStudents[0].studentId, { ...sortedStudents[0], rank: sortedStudents[0].totalScore > 0 ? currentRank : null });
             for (let i = 1; i < sortedStudents.length; i++) {
                 if (sortedStudents[i].totalScore < sortedStudents[i - 1].totalScore) {
                     currentRank = i + 1;
                 }
                 if (sortedStudents[i].totalScore > 0) {
-                    ranksMap.set(sortedStudents[i].studentId, currentRank);
+                    ranksMap.set(sortedData[i].studentId, { ...sortedStudents[i], rank: currentRank });
                 }
             }
         }
@@ -1382,10 +1579,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                                 React.createElement('label', { className: "flex items-center space-x-2" },
                                     React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                                     React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
-                                ),
-                                React.createElement('label', { className: "flex items-center space-x-2" },
-                                    React.createElement('input', { type: "checkbox", checked: printOptions.showStamp, onChange: () => handlePrintOptionChange('showStamp'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                                    React.createElement('span', { className: "text-sm" }, "Cap Sekolah")
                                 )
                             )
                         ),
@@ -1412,11 +1605,11 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             
             React.createElement('div', { id: "print-area", className: "space-y-8" },
                 studentsToRender.map(student => {
-                    const rank = studentRanks.get(student.id);
+                    const rank = studentRanks.get(student.id)?.rank;
                     return React.createElement(ReportPagesForStudent, { 
                         key: student.id, 
                         student: student, 
-                        settings: settings,
+                        settings: settings, 
                         pageStyle: pageStyle,
                         selectedPages: selectedPages,
                         paperSize: paperSize,
@@ -1425,6 +1618,12 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         hideGradesForFaseA: isFaseA && hideGradesForFaseA,
                         printOptions: printOptions,
                         onUpdateDescription: restProps.onUpdateDescription,
+                        onUpdateStudent: restProps.onUpdateStudent,
+                        onUpdateSettings: restProps.onUpdateSettings,
+                        onUpdateNote: restProps.onUpdateNote,
+                        onUpdateAttendance: restProps.onUpdateAttendance,
+                        onUpdateExtraDescription: restProps.onUpdateExtraDescription,
+                        onUpdateCocurricularManual: restProps.onUpdateCocurricularManual,
                         ...restProps
                     })
                 })
@@ -1434,4 +1633,3 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 };
 
 export default PrintRaporPage;
-
