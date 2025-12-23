@@ -1,3 +1,4 @@
+
 {
   "Pendidikan Agama dan Budi Pekerti (Islam)": [
     {
@@ -1051,6 +1052,24 @@
         "mengenal kruna-kruna matungkalik",
         "menyebutkan kruna matungkalik",
         "menulis contoh-contoh kruna matungkalik"
+      ]
+    }
+  ],
+  "Koding dan Kecerdasan Artifisial": [
+    {
+      "slm": "Bab 1: Mengenal Komputer dan Robot",
+      "tp": [
+        "Menyebutkan bagian-bagian komputer sederhana.",
+        "Mengenali apa itu robot dalam kehidupan sehari-hari.",
+        "Mengidentifikasi perbedaan manusia dan robot dalam melakukan tugas sederhana."
+      ]
+    },
+    {
+      "slm": "Bab 2: Perintah Sederhana untuk Komputer",
+      "tp": [
+        "Memberikan instruksi langkah demi langkah untuk melakukan tugas (algoritma dasar).",
+        "Menjelaskan konsep 'input' dan 'output' melalui permainan.",
+        "Menggambar urutan instruksi sederhana."
       ]
     }
   ]
