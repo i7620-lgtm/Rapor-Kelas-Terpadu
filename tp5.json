@@ -98,6 +98,7 @@
       "tp": [
         "meyakini ketentuan pelaksaan ibadah haji dan kurban dengan benar.",
         "membiasakan perilaku terpuji rela berkurban sebagai bukti mengimani ibadah haji dan kurban dengan benar.",
+        "menumbuhkan sifat sabar dan percaya diri sebagai wujud meyakini kebenaran khulafaurrasyidin dengan baik.",
         "menjelaskan ketentuan pelaksanaan ibadah haji dan kurban dengan benar.",
         "menemukan hikmah pelaksanaan ibadah haji dan kurban dengan benar.",
         "mempraktikkan manasik haji dan kurban sesuai ketentuan dengan benar."
@@ -574,7 +575,6 @@
         "menentukan faktor suatu bilangan.",
         "menentukan faktor persekutuan dua bilangan atau lebih.",
         "menentukan faktor persekutuan terbesar suatu bilangan atau lebih.",
-        "menyelesaikan masalah yang berkaitan dengan FPB.",
         "memahami bilangan prima.",
         "menentukan bilangan prima di bawah 100.",
         "menentukan faktor prima suatu bilangan.",
@@ -1048,6 +1048,24 @@
         "memahami puisi Bali anyar",
         "menulis puisi Bali anyar",
         "membaca puisi Bali anyar"
+      ]
+    }
+  ],
+  "Koding dan Kecerdasan Artifisial": [
+    {
+      "slm": "Bab 1: Algoritma dan Pemrograman Visual",
+      "tp": [
+        "Membuat algoritma sederhana untuk menyelesaikan masalah sehari-hari.",
+        "Menggunakan perangkat lunak pemrograman visual (misal: Scratch) untuk membuat animasi atau game sederhana.",
+        "Mengidentifikasi bug (kesalahan) dalam kode visual dan memperbaikinya."
+      ]
+    },
+    {
+      "slm": "Bab 2: Kecerdasan Artifisial dalam Kehidupan",
+      "tp": [
+        "Menjelaskan konsep dasar kecerdasan artifisial (AI) dan contohnya.",
+        "Menganalisis bagaimana AI digunakan dalam aplikasi sehari-hari (misal: rekomendasi, asisten suara).",
+        "Mengidentifikasi potensi dampak AI pada masyarakat."
       ]
     }
   ]
