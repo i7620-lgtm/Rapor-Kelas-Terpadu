@@ -1,33 +1,15 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { FORMATIVE_ASSESSMENT_TYPES } from '../constants.js';
 import { getGradeNumber } from './DataNilaiPage.js';
 
-const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, showToast, subjects = [], grades = [], settings = {} }) => {
+const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, showToast, subjects = [], grades = [], settings = {}, predefinedCurriculum }) => {
     const isEditing = !!noteToEdit;
     const [noteData, setNoteData] = useState({});
     
-    // Derive grade number for looking up TPs
-    const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
-
     // State for dependent dropdowns
-    const [curriculumData, setCurriculumData] = useState({});
     const [availableSlms, setAvailableSlms] = useState([]);
     const [availableTps, setAvailableTps] = useState([]);
-
-    // Fetch curriculum data based on grade
-    useEffect(() => {
-        if (gradeNumber) {
-            fetch(`/tp${gradeNumber}.json`)
-                .then(res => {
-                    if (!res.ok) throw new Error("Failed to fetch curriculum");
-                    return res.json();
-                })
-                .then(data => setCurriculumData(data))
-                .catch(err => console.error("Error fetching curriculum:", err));
-        } else {
-            setCurriculumData({});
-        }
-    }, [gradeNumber]);
 
     useEffect(() => {
         if (isOpen) {
@@ -46,42 +28,52 @@ const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, sho
 
     // Update available SLMs when Subject changes
     useEffect(() => {
-        if (!noteData.subjectId || !curriculumData) {
+        if (!noteData.subjectId || !predefinedCurriculum) {
             setAvailableSlms([]);
             return;
         }
         
         const subject = subjects.find(s => s.id === noteData.subjectId);
-        if (subject && curriculumData[subject.fullName]) {
-            // Map curriculum data to SLM options. 
-            // Using the SLM string itself as both ID and Name for consistency in the journal
-            const slms = curriculumData[subject.fullName].map(item => ({
-                id: item.slm, 
-                name: item.slm
-            }));
-            setAvailableSlms(slms);
+        if (subject) {
+            const curriculumKey = subject.curriculumKey || subject.fullName;
+            if (predefinedCurriculum[curriculumKey]) {
+                const slms = predefinedCurriculum[curriculumKey].map(item => ({
+                    id: item.slm, 
+                    name: item.slm
+                }));
+                setAvailableSlms(slms);
+            } else {
+                setAvailableSlms([]);
+            }
         } else {
             setAvailableSlms([]);
         }
-    }, [noteData.subjectId, curriculumData, subjects]);
+    }, [noteData.subjectId, predefinedCurriculum, subjects]);
 
     // Update available TPs when SLM changes
     useEffect(() => {
-        if (!noteData.subjectId || !noteData.slmId || !curriculumData) {
+        if (!noteData.subjectId || !noteData.slmId || !predefinedCurriculum) {
             setAvailableTps([]);
             return;
         }
         
         const subject = subjects.find(s => s.id === noteData.subjectId);
-        if (subject && curriculumData[subject.fullName]) {
-            const slmItem = curriculumData[subject.fullName].find(item => item.slm === noteData.slmId);
-            if (slmItem && slmItem.tp) {
-                setAvailableTps(slmItem.tp);
+        if (subject) {
+            const curriculumKey = subject.curriculumKey || subject.fullName;
+            if (predefinedCurriculum[curriculumKey]) {
+                const slmItem = predefinedCurriculum[curriculumKey].find(item => item.slm === noteData.slmId);
+                if (slmItem && slmItem.tp) {
+                    setAvailableTps(slmItem.tp);
+                } else {
+                    setAvailableTps([]);
+                }
             } else {
                 setAvailableTps([]);
             }
+        } else {
+            setAvailableTps([]);
         }
-    }, [noteData.subjectId, noteData.slmId, curriculumData, subjects]);
+    }, [noteData.subjectId, noteData.slmId, predefinedCurriculum, subjects]);
 
 
     if (!isOpen) return null;
@@ -183,7 +175,7 @@ const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, sho
     );
 };
 
-const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDelete, showToast, subjects, grades, settings }) => {
+const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDelete, showToast, subjects, grades, settings, predefinedCurriculum }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [noteToEdit, setNoteToEdit] = useState(null);
 
@@ -232,7 +224,8 @@ const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDele
                 showToast: showToast,
                 subjects: subjects,
                 grades: grades,
-                settings: settings
+                settings: settings,
+                predefinedCurriculum: predefinedCurriculum
             }),
             React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4" },
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" },
@@ -299,7 +292,7 @@ const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDele
 };
 
 
-const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, showToast, subjects, grades, settings }) => {
+const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, showToast, subjects, grades, settings, predefinedCurriculum }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
 
@@ -320,7 +313,8 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                 showToast: showToast,
                 subjects: subjects,
                 grades: grades,
-                settings: settings
+                settings: settings,
+                predefinedCurriculum: predefinedCurriculum
             }),
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Jurnal Formatif"),
