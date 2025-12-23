@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 
 const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
@@ -145,7 +146,7 @@ const Dashboard = ({
     const currentStudents = students || [];
     const currentGrades = grades || [];
 
-    if (isNaN(minGrade) || currentStudents.length === 0 || activeSubjects.length === 0) {
+    if (currentStudents.length === 0 || activeSubjects.length === 0) {
         return items;
     }
     
@@ -153,44 +154,68 @@ const Dashboard = ({
         const studentGrade = currentGrades.find(g => g.studentId === student.id);
         if (!studentGrade) return;
 
-        const studentReligion = student.agama?.trim().toLowerCase();
+        const studentReligion = student.agama ? student.agama.trim().toLowerCase() : '';
 
         const relevantSubjects = activeSubjects.filter(subject => {
-            if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
+            const subjectName = subject.fullName.toLowerCase();
+            
+            // Handle Kepercayaan explicitly
+            if (subject.id === 'PAKTTMYME' || subjectName.includes('kepercayaan terhadap tuhan')) {
+                 return studentReligion === 'kepercayaan';
+            }
+
+            // Handle Standard Religions (Islam, Kristen, etc.)
+            if (subjectName.startsWith('pendidikan agama')) {
                 if (!studentReligion) return false;
-                
-                const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
+                const subjectReligionMatch = subjectName.match(/\(([^)]+)\)/);
                 if (subjectReligionMatch) {
-                    const subjectReligion = subjectReligionMatch[1].trim().toLowerCase();
-                    return subjectReligion === studentReligion;
+                    return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
                 }
                 return false;
             }
+            
+            // General subjects
             return true;
         });
 
         const failingSubjects = [];
-        let firstFailingSubjectId = null;
-
+        const missingSubjects = [];
+        
         relevantSubjects.forEach(subject => {
-            const grade = studentGrade?.finalGrades?.[subject.id];
+            let grade = studentGrade?.finalGrades?.[subject.id];
+            const hasGrade = grade !== undefined && grade !== null && grade !== '';
             
-            const isMissing = grade === undefined || grade === null || grade === '';
-            const isBelowKKM = typeof grade === 'number' && grade < minGrade;
-
-            if (isMissing || isBelowKKM) {
-                const gradeDisplay = isMissing ? 'Kosong' : grade;
-                failingSubjects.push(`${subject.label} (${gradeDisplay})`);
-                if (!firstFailingSubjectId) firstFailingSubjectId = subject.id;
+            if (!hasGrade) {
+                missingSubjects.push(subject);
+            } else {
+                if (typeof grade === 'string') grade = parseFloat(grade);
+                if (!isNaN(grade) && !isNaN(minGrade) && grade < minGrade) {
+                    failingSubjects.push({ ...subject, grade });
+                }
             }
         });
 
+        // 1. Alerts for Failing Grades (Priority: High / Red)
         if (failingSubjects.length > 0) {
             items.push({
                 title: student.namaLengkap,
-                description: `Nilai perlu perhatian: ${failingSubjects.join(', ')}`,
+                description: `Nilai di bawah KKM (${minGrade}): ${failingSubjects.map(s => `${s.label} (${s.grade})`).join(', ')}`,
                 status: 'attention',
-                actionSubjectId: firstFailingSubjectId,
+                actionSubjectId: failingSubjects[0].id,
+            });
+        }
+
+        // 2. Alerts for Missing Grades (Priority: Medium / Yellow)
+        if (missingSubjects.length > 0) {
+             const missingText = missingSubjects.length > 5 
+                ? `${missingSubjects.slice(0, 5).map(s => s.label).join(', ')}, dan ${missingSubjects.length - 5} lainnya.`
+                : missingSubjects.map(s => s.label).join(', ');
+
+             items.push({
+                title: student.namaLengkap,
+                description: `Nilai belum lengkap: ${missingText}`,
+                status: 'incomplete',
+                actionSubjectId: missingSubjects[0].id,
             });
         }
     });
@@ -219,48 +244,6 @@ const Dashboard = ({
             results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'bad', message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`, actionText: 'Lengkapi di Pengaturan', onActionClick: () => setActivePage('PENGATURAN'), percentage: settingsPercentage });
         }
 
-        // New Check: Weighting Validation
-        const subjectsWithBadWeights = [];
-        let firstInvalidSubjectId = null;
-        for (const subjectId in settings.gradeCalculation) {
-            const config = settings.gradeCalculation[subjectId];
-            if (config.method === 'pembobotan') {
-                const weights = config.weights || {};
-                let totalWeight = 0;
-                
-                if (weights.TP) {
-                    for (const slmId in weights.TP) {
-                        (weights.TP[slmId] || []).forEach(w => totalWeight += (w || 0));
-                    }
-                }
-                totalWeight += weights.STS || 0;
-                totalWeight += weights.SAS || 0;
-                
-                if (Math.round(totalWeight) !== 100) {
-                    const subject = activeSubjects.find(s => s.id === subjectId);
-                    if (subject) {
-                        subjectsWithBadWeights.push(subject.label);
-                        if (!firstInvalidSubjectId) {
-                            firstInvalidSubjectId = subjectId;
-                        }
-                    }
-                }
-            }
-        }
-
-        if (subjectsWithBadWeights.length > 0) {
-            results.push({
-                category: 'Pengaturan',
-                title: 'Bobot Nilai Tidak Tepat',
-                status: 'bad',
-                message: `Total bobot untuk mapel ${subjectsWithBadWeights.join(', ')} tidak sama dengan 100%.`,
-                actionText: 'Perbaiki Bobot',
-                onActionClick: () => onNavigateToNilai(firstInvalidSubjectId),
-                percentage: 0
-            });
-        }
-
-
         if (totalStudents === 0) {
             const emptyDataMessages = [
                 { category: 'Data Siswa', title: 'Data Siswa', message: 'Belum ada data siswa.', actionText: 'Tambah Siswa', page: 'DATA_SISWA' },
@@ -286,33 +269,59 @@ const Dashboard = ({
             results.push({ category: 'Data Siswa', title: 'Data Siswa', status: 'bad', message: `Terdapat ${totalStudentDataFields - filledStudentDataFields} data pribadi/orang tua yang belum diisi.`, actionText: 'Lengkapi Data Siswa', onActionClick: () => setActivePage('DATA_SISWA'), percentage: studentDataPercentage });
         }
 
-        // 3. Data Nilai
-        let studentsWithCompleteGrades = 0;
-        const minGrade = parseInt(settings.predikats?.c || '70', 10);
+        // 3. Data Nilai (LOGIC UPDATED: Cell-based calculation to accurately reflect partial data)
+        let totalRequiredGrades = 0;
+        let totalFilledGrades = 0;
+
         currentStudents.forEach(student => {
             const studentGrade = currentGrades.find(g => g.studentId === student.id);
-            const studentReligion = student.agama?.trim().toLowerCase();
+            const studentReligion = student.agama ? student.agama.trim().toLowerCase() : '';
+            
             const relevantSubjects = activeSubjects.filter(subject => {
-                if (subject.fullName.startsWith('Pendidikan Agama dan Budi Pekerti')) {
-                    if (!studentReligion) return false;
-                    const subjectReligionMatch = subject.fullName.match(/\(([^)]+)\)/);
-                    return subjectReligionMatch && subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                const subjectName = subject.fullName.toLowerCase();
+                
+                // Handle Kepercayaan explicitly
+                if (subject.id === 'PAKTTMYME' || subjectName.includes('kepercayaan terhadap tuhan')) {
+                     return studentReligion === 'kepercayaan';
                 }
+
+                if (subjectName.startsWith('pendidikan agama')) {
+                    if (!studentReligion) return false;
+                    const subjectReligionMatch = subjectName.match(/\(([^)]+)\)/);
+                    if (subjectReligionMatch) {
+                        return subjectReligionMatch[1].trim().toLowerCase() === studentReligion;
+                    }
+                    return false;
+                }
+                
+                // General Subjects
                 return true;
             });
-            if (relevantSubjects.every(sub => {
+
+            relevantSubjects.forEach(sub => {
+                totalRequiredGrades++;
                 const grade = studentGrade?.finalGrades?.[sub.id];
-                return typeof grade === 'number' && grade >= minGrade;
-            })) {
-                studentsWithCompleteGrades++;
-            }
+                if (grade !== undefined && grade !== null && grade !== '') {
+                    totalFilledGrades++;
+                }
+            });
         });
-        const gradesPercentage = Math.round((studentsWithCompleteGrades / totalStudents) * 100);
+        
+        const gradesPercentage = totalRequiredGrades > 0 ? Math.round((totalFilledGrades / totalRequiredGrades) * 100) : (totalStudents > 0 ? 0 : 100);
 
         if (gradesPercentage === 100) {
-            results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'good', message: 'Semua siswa memiliki nilai akhir lengkap dan di atas KKM.', percentage: 100 });
+            results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'good', message: 'Nilai akhir untuk semua siswa telah terisi.', percentage: 100 });
         } else {
-            results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'bad', message: `${totalStudents - studentsWithCompleteGrades} siswa dengan nilai belum lengkap atau di bawah KKM.`, actionText: 'Periksa Data Nilai', onActionClick: () => setActivePage('DATA_NILAI'), percentage: gradesPercentage });
+            const missingCount = totalRequiredGrades - totalFilledGrades;
+            results.push({ 
+                category: 'Data Nilai', 
+                title: 'Data Nilai', 
+                status: 'bad', 
+                message: `Terdapat ${missingCount} nilai mata pelajaran yang belum terisi.`, 
+                actionText: 'Periksa Data Nilai', 
+                onActionClick: () => setActivePage('DATA_NILAI'), 
+                percentage: gradesPercentage 
+            });
         }
 
         // 4. Kokurikuler
@@ -386,7 +395,7 @@ const Dashboard = ({
               academicAlerts.map(item => React.createElement(AnalysisItem, { 
                 key: item.title, 
                 ...item,
-                actionText: item.actionSubjectId ? "Perbaiki Nilai" : null,
+                actionText: item.actionSubjectId ? (item.status === 'incomplete' ? "Lengkapi Nilai" : "Perbaiki Nilai") : null,
                 onActionClick: item.actionSubjectId ? () => onNavigateToNilai(item.actionSubjectId) : null,
               }))
             )
