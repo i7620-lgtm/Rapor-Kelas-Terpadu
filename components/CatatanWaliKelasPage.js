@@ -1,78 +1,133 @@
+
 import React from 'react';
 
 const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings, showToast }) => {
 
     const handleGenerateNote = (student) => {
-        const predA = parseInt(settings.predikats?.a || 90, 10);
-        const predB = parseInt(settings.predikats?.b || 80, 10);
         const nickname = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
-
-        const studentGradeData = grades.find(g => g.studentId === student.id);
-        if (!studentGradeData || !studentGradeData.finalGrades) {
-            onUpdateNote(student.id, `${nickname} menunjukkan perkembangan yang baik dalam berbagai aspek. Pertahankan semangat belajar.`);
-            return;
-        }
-
         const activeSubjects = subjects.filter(s => s.active);
-        const finalGrades = studentGradeData.finalGrades;
 
-        // Condition A: Check for >= 5 'A' grades
-        const aGradeSubjects = activeSubjects
-            .filter(s => finalGrades[s.id] >= predA)
-            .map(s => {
-                let name = s.fullName;
-                if (name.startsWith('Pendidikan Agama')) return 'P. Agama';
-                if (name.startsWith('Pendidikan Pancasila')) return 'Pancasila';
-                if (name.startsWith('Ilmu Pengetahuan Alam dan Sosial')) return 'IPAS';
-                if (name.startsWith('Pendidikan Jasmani')) return 'PJOK';
-                return name;
+        // --- STEP 1: Calculate Rank for the current student ---
+        const studentAverages = students.map(s => {
+            const sGradeData = grades.find(g => g.studentId === s.id);
+            if (!sGradeData || !sGradeData.finalGrades) return { id: s.id, avg: 0 };
+
+            let totalScore = 0;
+            let count = 0;
+
+            activeSubjects.forEach(sub => {
+                const score = sGradeData.finalGrades[sub.id];
+                if (typeof score === 'number') {
+                    totalScore += score;
+                    count++;
+                }
             });
 
-        if (aGradeSubjects.length >= 5) {
-            const note = `${nickname} menunjukkan keaktifan dan prestasi akademik yang sangat baik, terutama dalam ${aGradeSubjects.slice(0, 2).join(' dan ')}. Pertahankan terus prestasi yang telah dicapai.`;
-            onUpdateNote(student.id, note);
-            return;
-        }
+            return { 
+                id: s.id, 
+                avg: count > 0 ? totalScore / count : 0 
+            };
+        });
 
-        // Condition C: Check for Religion and Pancasila grades >= B
-        const studentReligion = student.agama?.trim().toLowerCase();
-        const religionSubject = activeSubjects.find(s => 
-            s.fullName.startsWith('Pendidikan Agama dan Budi Pekerti') && 
-            s.fullName.toLowerCase().includes(`(${studentReligion})`)
-        );
-        const pancasilaSubject = activeSubjects.find(s => s.id === 'PP');
+        // Sort descending by average score
+        studentAverages.sort((a, b) => b.avg - a.avg);
 
-        const religionGrade = religionSubject ? finalGrades[religionSubject.id] : null;
-        const pancasilaGrade = pancasilaSubject ? finalGrades[pancasilaSubject.id] : null;
+        // Find current student's rank (1-based index)
+        const rankIndex = studentAverages.findIndex(s => s.id === student.id);
+        const rank = rankIndex + 1;
 
-        if (typeof religionGrade === 'number' && typeof pancasilaGrade === 'number' && religionGrade >= predB && pancasilaGrade >= predB) {
-            const note = `${nickname} menunjukkan sikap dan perilaku yang baik, santun, dan bertanggung jawab. Selalu aktif dalam diskusi dan menunjukkan kepedulian terhadap teman.`;
-            onUpdateNote(student.id, note);
-            return;
-        }
-
-        // Condition B: Fallback to general academic development
-        let highestGrade = -1;
-        let highestSubject = null;
+        // --- STEP 2: Find Highest Grade(s) & Subject Names ---
+        const studentGradeData = grades.find(g => g.studentId === student.id);
+        const finalGrades = studentGradeData ? studentGradeData.finalGrades : {};
+        
+        let maxScore = -1;
+        // Find max
         activeSubjects.forEach(s => {
             const grade = finalGrades[s.id];
-            if (typeof grade === 'number' && grade > highestGrade) {
-                highestGrade = grade;
-                let name = s.fullName;
-                if (name.startsWith('Pendidikan Agama')) highestSubject = 'P. Agama';
-                else highestSubject = name;
+            if (typeof grade === 'number' && grade > maxScore) {
+                maxScore = grade;
             }
         });
 
-        if (highestSubject) {
-            const note = `${nickname} menunjukkan perkembangan akademik yang positif secara keseluruhan. Terlihat menonjol dalam ${highestSubject}. Perlu terus didukung untuk meningkatkan konsentrasi dan partisipasi di beberapa mata pelajaran lain.`;
-            onUpdateNote(student.id, note);
-            return;
+        let subjectsString = '';
+        
+        if (maxScore > 0) {
+            const topSubjects = activeSubjects.filter(s => finalGrades[s.id] === maxScore);
+            
+            // Format subject names
+            const subjectNames = topSubjects.map(s => {
+                const name = s.fullName;
+                const id = s.id;
+
+                if (id === 'PJOK') return 'PJOK';
+                if (id === 'IPAS') return 'IPAS';
+
+                if (name.startsWith('Pendidikan Agama')) {
+                    const match = name.match(/\(([^)]+)\)/);
+                    if (match) return `Agama ${match[1]}`;
+                    return 'Pendidikan Agama';
+                }
+
+                if (name.startsWith('Muatan Lokal')) {
+                     const match = name.match(/\(([^)]+)\)/);
+                     return match ? match[1] : 'Muatan Lokal';
+                }
+
+                if (name.startsWith('Seni Budaya')) {
+                    const match = name.match(/\(([^)]+)\)/);
+                    return match ? match[1] : name;
+               }
+
+                return name; 
+            });
+
+            // Join names grammatically
+            if (subjectNames.length === 1) {
+                subjectsString = subjectNames[0];
+            } else if (subjectNames.length === 2) {
+                subjectsString = `${subjectNames[0]} dan ${subjectNames[1]}`;
+            } else {
+                const last = subjectNames.pop();
+                subjectsString = `${subjectNames.join(', ')}, dan ${last}`;
+            }
+        } else {
+            // Fallback if no grades
+            subjectsString = "berbagai kegiatan";
         }
 
-        // Absolute fallback
-        const fallbackNote = `${nickname} menunjukkan perkembangan yang baik dalam berbagai aspek. Pertahankan semangat belajar.`;
-        onUpdateNote(student.id, fallbackNote);
+        // --- STEP 3: Determine Mastery Description based on Predicate ---
+        const predA = parseInt(settings.predikats?.a || 90, 10);
+        const predB = parseInt(settings.predikats?.b || 80, 10);
+        const predC = parseInt(settings.predikats?.c || 70, 10);
+
+        let masteryDescription = "menunjukkan kemampuan dalam"; // Default fallback
+
+        if (maxScore >= predA) {
+            masteryDescription = "sangat baik dalam";
+        } else if (maxScore >= predB) {
+            masteryDescription = "baik dalam";
+        } else if (maxScore >= predC) {
+            masteryDescription = "cukup baik dalam";
+        }
+
+        // --- STEP 4: Generate Description based on Rank using "Ia" ---
+        let note = "";
+
+        if (rank <= 10) {
+            // Top 10: Excellence, Leadership, Maintenance
+            note = `${nickname} menunjukkan prestasi akademik yang sangat membanggakan dan konsisten sepanjang semester. Ia ${masteryDescription} mata pelajaran ${subjectsString}. Pertahankan semangat belajar yang luar biasa ini, rendah hati, dan jadilah inspirasi bagi teman-teman di kelas.`;
+        } else if (rank <= 20) {
+            // 11-20: Good Progress, Potential, Detail-oriented
+            note = `${nickname} menunjukkan perkembangan akademik yang positif dan stabil. Potensinya terlihat kuat, dimana ia ${masteryDescription} mata pelajaran ${subjectsString}. Dengan meningkatkan ketelitian dan lebih aktif berdiskusi di kelas, Ibu/Bapak yakin ia dapat meraih hasil yang lebih maksimal di semester depan.`;
+        } else if (rank <= 30) {
+            // 21-30: Effort, Motivation, Focus
+            note = `${nickname} telah berusaha mengikuti kegiatan pembelajaran dengan cukup baik. Capaiannya ${masteryDescription} mata pelajaran ${subjectsString}. Untuk meningkatkan prestasi secara keseluruhan, ia perlu lebih fokus saat di kelas, berani bertanya, dan menambah waktu belajar mandiri di rumah.`;
+        } else {
+            // > 30: Support, Discipline, Spirit
+            note = `${nickname} memiliki bakat yang unik. Ia ${masteryDescription} mata pelajaran ${subjectsString}. Namun, ia perlu lebih disiplin dan tekun dalam mengejar ketertinggalan di mata pelajaran lainnya. Jangan mudah menyerah, dengan bimbingan yang tepat dan kemauan yang kuat, ia pasti bisa lebih baik lagi.`;
+        }
+
+        onUpdateNote(student.id, note);
     };
 
     const handleNoteChange = (studentId, note) => {
@@ -83,9 +138,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
         e.preventDefault();
         const pasteData = e.clipboardData.getData('text');
         
-        // Split rows by newline, PRESERVING empty rows to maintain index alignment
         let rows = pasteData.split(/\r\n|\n|\r/);
-        // Remove the last element if it's empty (trailing newline from Excel copy)
         if (rows.length > 0 && rows[rows.length - 1] === '') {
             rows.pop();
         }
@@ -102,12 +155,9 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
             if (currentStudentIndex >= students.length) return;
 
             const student = students[currentStudentIndex];
-            // Handle potential multiple columns in paste data (though usually notes are 1 col)
-            // We take the first column for the note
             const columns = row.split('\t');
             const noteValue = columns[0];
 
-            // Update note (allow empty string to clear)
             onUpdateNote(student.id, noteValue);
             updatedCount++;
         });
@@ -158,7 +208,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                                 React.createElement('button', {
                                                     onClick: () => handleGenerateNote(student),
                                                     className: "px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-100 rounded-full hover:bg-indigo-200 transition-colors",
-                                                    title: "Buat catatan dasar berdasarkan data nilai dan sikap siswa"
+                                                    title: "Buat catatan cerdas berdasarkan peringkat dan nilai siswa"
                                                 }, "Buat Catatan Otomatis")
                                             )
                                         )
