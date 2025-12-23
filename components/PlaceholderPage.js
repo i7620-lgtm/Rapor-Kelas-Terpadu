@@ -11,4 +11,4 @@ const PlaceholderPage = ({ title }) => {
   );
 };
 
-export default PlaceholderPage;
+export default PlaceholderPage; 
