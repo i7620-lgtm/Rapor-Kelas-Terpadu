@@ -22,18 +22,10 @@ import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
-if (!GOOGLE_CLIENT_ID) {
-    console.warn(
-        "Gagal mendapatkan GOOGLE_CLIENT_ID dari 'window.RKT_CONFIG'. " +
-        "Fitur sinkronisasi Google Drive akan dinaktifkan. " +
-        "Ini biasanya berarti variabel environment 'RKT_GOOGLE_CLIENT_ID' tidak diatur dengan benar di Vercel, atau build script gagal membuat file 'config.js'."
-    );
-}
-
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open('RKT_OfflineDB', 1);
+    const request = indexedDB.open('RKT_OfflineDB', 2);
     request.onerror = () => reject("Error opening IndexedDB.");
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = event => {
@@ -41,61 +33,32 @@ const dbPromise = new Promise((resolve, reject) => {
         if (!db.objectStoreNames.contains('pendingSyncs')) {
             db.createObjectStore('pendingSyncs', { keyPath: 'id' });
         }
+        if (!db.objectStoreNames.contains('backups')) {
+            db.createObjectStore('backups', { keyPath: 'id' });
+        }
     };
 });
 
-const db = {
-    get: async (storeName, key) => {
-        const db = await dbPromise;
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(storeName, 'readonly');
-            const store = tx.objectStore(storeName);
-            const request = store.get(key);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-    put: async (storeName, value) => {
-        const db = await dbPromise;
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.put(value);
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    },
-    delete: async (storeName, key) => {
-        const db = await dbPromise;
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(storeName, 'readwrite');
-            const store = tx.objectStore(storeName);
-            const request = store.delete(key);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    }
-};
-
 const defaultSubjects = [
-    { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true },
-    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: true },
-    { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: false },
-    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: true },
-    { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: false },
-    { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: false },
-    { id: 'PP', fullName: 'Pendidikan Pancasila', label: 'PP', active: true },
-    { id: 'BIndo', fullName: 'Bahasa Indonesia', label: 'B. Indo', active: true },
-    { id: 'MTK', fullName: 'Matematika', label: 'MTK', active: true },
-    { id: 'IPAS', fullName: 'Ilmu Pengetahuan Alam dan Sosial', label: 'IPAS', active: true },
-    { id: 'SeniMusik', fullName: 'Seni Budaya (Seni Musik)', label: 'S. Musik', active: false },
-    { id: 'SeniRupa', fullName: 'Seni Budaya (Seni Rupa)', label: 'S. Rupa', active: true },
-    { id: 'SeniTari', fullName: 'Seni Budaya (Seni Tari)', label: 'S. Tari', active: false },
-    { id: 'SeniTeater', fullName: 'Seni Budaya (Seni Teater)', label: 'S. Teater', active: false },
-    { id: 'PJOK', fullName: 'Pendidikan Jasmani, Olahraga, dan Kesehatan', label: 'PJOK', active: true },
-    { id: 'BIng', fullName: 'Bahasa Inggris', label: 'B. Ing', active: true },
-    { id: 'BSunda', fullName: 'Muatan Lokal (Bahasa Sunda)', label: 'B. Sunda', active: false },
-    { id: 'BBali', fullName: 'Muatan Lokal (Bahasa Bali)', label: 'B. Bali', active: true },
+    { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Islam)' },
+    { id: 'PAKristen', fullName: 'Pendidikan Agama dan Budi Pekerti (Kristen)', label: 'PA Kristen', active: true, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Kristen)' },
+    { id: 'PAKatolik', fullName: 'Pendidikan Agama dan Budi Pekerti (Katolik)', label: 'PA Katolik', active: false, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Katolik)' },
+    { id: 'PAHindu', fullName: 'Pendidikan Agama dan Budi Pekerti (Hindu)', label: 'PA Hindu', active: true, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Hindu)' },
+    { id: 'PABuddha', fullName: 'Pendidikan Agama dan Budi Pekerti (Buddha)', label: 'PA Buddha', active: false, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Buddha)' },
+    { id: 'PAKhonghucu', fullName: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)', label: 'PA Khonghucu', active: false, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Khonghucu)' },
+    { id: 'PAKTTMYME', fullName: 'Pendidikan Kepercayaan Terhadap Tuhan Yang Maha Esa dan Budi Pekerti', label: 'Kepercayaan', active: true, curriculumKey: 'Pendidikan Kepercayaan Terhadap Tuhan Yang Maha Esa dan Budi Pekerti' },
+    { id: 'PP', fullName: 'Pendidikan Pancasila', label: 'PP', active: true, curriculumKey: 'Pendidikan Pancasila' },
+    { id: 'BIndo', fullName: 'Bahasa Indonesia', label: 'B. Indo', active: true, curriculumKey: 'Bahasa Indonesia' },
+    { id: 'MTK', fullName: 'Matematika', label: 'MTK', active: true, curriculumKey: 'Matematika' },
+    { id: 'IPAS', fullName: 'Ilmu Pengetahuan Alam dan Sosial', label: 'IPAS', active: true, curriculumKey: 'Ilmu Pengetahuan Alam dan Sosial' },
+    { id: 'SeniMusik', fullName: 'Seni Budaya (Seni Musik)', label: 'S. Musik', active: false, curriculumKey: 'Seni Budaya (Seni Musik)' },
+    { id: 'SeniRupa', fullName: 'Seni Budaya (Seni Rupa)', label: 'S. Rupa', active: true, curriculumKey: 'Seni Budaya (Seni Rupa)' },
+    { id: 'SeniTari', fullName: 'Seni Budaya (Seni Tari)', label: 'S. Tari', active: false, curriculumKey: 'Seni Budaya (Seni Tari)' },
+    { id: 'SeniTeater', fullName: 'Seni Budaya (Seni Teater)', label: 'S. Teater', active: false, curriculumKey: 'Seni Budaya (Seni Teater)' },
+    { id: 'PJOK', fullName: 'Pendidikan Jasmani, Olahraga, dan Kesehatan', label: 'PJOK', active: true, curriculumKey: 'Pendidikan Jasmani, Olahraga, dan Kesehatan' },
+    { id: 'BIng', fullName: 'Bahasa Inggris', label: 'B. Ing', active: true, curriculumKey: 'Bahasa Inggris' },
+    { id: 'BBali', fullName: 'Muatan Lokal (Bahasa Bali)', label: 'B. Bali', active: true, curriculumKey: 'Muatan Lokal (Bahasa Bali)' },
+    { id: 'KodingAI', fullName: 'Koding dan Kecerdasan Artifisial', label: 'KKA', active: true, curriculumKey: 'Koding dan Kecerdasan Artifisial' },
 ];
 
 const initialSettings = {
@@ -103,16 +66,17 @@ const initialSettings = {
   kecamatan: '', kota_kabupaten: '', provinsi: '', kode_pos: '', email_sekolah: '',
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
   logo_dinas: null, logo_cover: null, piagam_background: null,
+  ttd_kepala_sekolah: null, ttd_wali_kelas: null,
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   cocurricular_theme: '',
   predikats: { a: '90', b: '80', c: '70', d: '0' },
   gradeCalculation: {},
   qualitativeGradingMap: {},
-  slmVisibility: {}, // Stores active SLM IDs per subject { subjectId: [id1, id2] }
+  slmVisibility: {}, 
   kop_layout: [],
   piagam_layout: [],
-  nilaiDisplayMode: 'kuantitatif & kualitatif',
+  nilaiDisplayMode: 'kuantitatif saja', 
 };
 
 const initialStudents = [];
@@ -122,6 +86,38 @@ const initialCocurricularData = {};
 const initialAttendance = [];
 const initialStudentExtracurriculars = [];
 const initialFormativeJournal = {};
+
+/**
+ * Safely loads data from localStorage with validation and default fallback.
+ */
+const loadDataSafe = (key, fallbackValue, validator = null) => {
+    try {
+        const saved = localStorage.getItem(key);
+        if (!saved) return fallbackValue;
+        const parsed = JSON.parse(saved);
+        
+        // Custom validation if provided
+        if (validator && !validator(parsed)) {
+            console.warn(`Data validation failed for key: ${key}. Reverting to fallback.`);
+            return fallbackValue;
+        }
+        
+        // For arrays, ensure it is an array
+        if (Array.isArray(fallbackValue) && !Array.isArray(parsed)) {
+            return fallbackValue;
+        }
+        
+        // For objects, merge with fallback to ensure all keys exist (deep merge simple level)
+        if (typeof fallbackValue === 'object' && !Array.isArray(fallbackValue) && fallbackValue !== null) {
+             return { ...fallbackValue, ...parsed };
+        }
+
+        return parsed;
+    } catch (e) {
+        console.error(`Error loading ${key} from storage:`, e);
+        return fallbackValue;
+    }
+};
 
 const getAppData = (settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal) => ({
     settings,
@@ -144,6 +140,11 @@ const getDynamicRKTFileName = (currentSettings) => {
     const academicYear = sanitize(currentSettings.tahun_ajaran || 'TA').replace(/\//g, '-');
     const semester = sanitize(currentSettings.semester || 'Semester');
     return `RKT_${schoolName}_${className}_${academicYear}_${semester}.xlsx`.toUpperCase();
+};
+
+const excelRound = (num) => {
+    if (num === null || typeof num === 'undefined') return null;
+    return Math.round(num + Number.EPSILON);
 };
 
 const calculateFinalGrade = (detailed, config, settings) => {
@@ -215,97 +216,25 @@ const calculateFinalGrade = (detailed, config, settings) => {
         
         const allSummatives = [...slmAvgScores];
         const stsScore = getNumericScore(detailed.sts);
-        const sasScore = getNumericScore(detailed.sas);
+        const sasScore = getNumericScore(detailed.sts);
         if(stsScore !== null) allSummatives.push(stsScore);
         if(sasScore !== null) allSummatives.push(sasScore);
         
         if (allSummatives.length > 0) finalScore = (allSummatives.filter(s => s >= kkm).length / allSummatives.length) * 100;
     }
 
-    return finalScore === null ? null : Math.round(finalScore);
+    return finalScore === null ? null : excelRound(finalScore);
 };
 
-// Helper function to calculate data completeness percentage
-const calculateDataCompleteness = (data) => {
-    const { students, grades, subjects, attendance, notes, studentExtracurriculars } = data;
-    if (!students || students.length === 0) return 0;
-
-    const totalStudents = students.length;
-    const activeSubjects = (subjects || []).filter(s => s.active);
-    
-    // 1. Student Data (20% weight)
-    const requiredStudentFields = ['nis', 'nisn', 'namaLengkap']; 
-    let filledStudentData = 0;
-    students.forEach(s => {
-        if (requiredStudentFields.every(k => s[k] && s[k].toString().trim() !== '')) filledStudentData++;
-    });
-    const studentScore = (filledStudentData / totalStudents) * 20;
-
-    // 2. Grades (40% weight) - UPDATED: Check Raw Inputs (Detailed Grades) instead of Final Grades
-    // This ensures consistency even if calculation logic/weights are missing in the Drive file.
-    let totalGradeSlots = totalStudents * activeSubjects.length;
-    let filledGradeSlots = 0;
-    
-    const hasData = (val) => val !== null && val !== '' && val !== undefined;
-
-    if (grades && grades.length > 0 && totalGradeSlots > 0) {
-        students.forEach(student => {
-            const studentGrade = grades.find(g => g.studentId === student.id);
-            if (studentGrade && studentGrade.detailedGrades) {
-                activeSubjects.forEach(sub => {
-                    const details = studentGrade.detailedGrades[sub.id];
-                    if (details) {
-                        // Check for ANY significant data entry (STS, SAS, or any SLM score)
-                        const hasSts = hasData(details.sts);
-                        const hasSas = hasData(details.sas);
-                        let hasTp = false;
-                        if (details.slm && Array.isArray(details.slm)) {
-                            hasTp = details.slm.some(s => s.scores && s.scores.some(sc => hasData(sc)));
-                        }
-
-                        if (hasSas || hasSts || hasTp) {
-                            filledGradeSlots++;
-                        }
-                    }
-                });
-            }
-        });
+// Helper: Chunk string for Excel
+const chunkString = (str, len) => {
+    const size = Math.ceil(str.length / len);
+    const r = Array(size);
+    for (let i = 0; i < size; i++) {
+        r[i] = str.substr(i * len, len);
     }
-    const gradesScore = totalGradeSlots > 0 ? (filledGradeSlots / totalGradeSlots) * 40 : 0;
-
-    // 3. Attendance (10% weight)
-    let filledAttendance = 0;
-    if (attendance) {
-        students.forEach(s => {
-            const att = attendance.find(a => a.studentId === s.id);
-            if (att && (att.sakit != null || att.izin != null || att.alpa != null)) filledAttendance++;
-        });
-    }
-    const attendanceScore = (filledAttendance / totalStudents) * 10;
-
-    // 4. Notes (15% weight)
-    let filledNotes = 0;
-    if (notes) {
-        students.forEach(s => {
-            if (notes[s.id] && notes[s.id].trim() !== '') filledNotes++;
-        });
-    }
-    const notesScore = (filledNotes / totalStudents) * 15;
-
-    // 5. Extracurriculars (15% weight)
-    let filledExtra = 0;
-    if (studentExtracurriculars) {
-        students.forEach(s => {
-            const extra = studentExtracurriculars.find(se => se.studentId === s.id);
-            if (extra && extra.assignedActivities && extra.assignedActivities.some(a => a !== null)) filledExtra++;
-        });
-    }
-    const extraScore = (filledExtra / totalStudents) * 15;
-
-    const total = Math.round(studentScore + gradesScore + attendanceScore + notesScore + extraScore);
-    return isNaN(total) ? 0 : total;
+    return r;
 };
-
 
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
@@ -313,10 +242,11 @@ const App = () => {
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [presets, setPresets] = useState(null);
-  const [dataNilaiInitialTab, setDataNilaiInitialTab] = useState('keseluruhan');
+  const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [backupStatus, setBackupStatus] = useState(null); 
     
   const isInitialMount = useRef(true);
   const [isDirty, setIsDirty] = useState(false);
@@ -325,137 +255,153 @@ const App = () => {
   const { isSignedIn, userProfile, googleToken, signIn, signOut,
           uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles, deleteFile } = useGoogleAuth(GOOGLE_CLIENT_ID);
   
-  const prevUserProfile = useRef(userProfile);
-  
   const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
   const [driveFiles, setDriveFiles] = useState([]);
   const [isCheckingDrive, setIsCheckingDrive] = useState(false);
-  const [driveConflictData, setDriveConflictData] = useState(null); // Comparison state
+  const [driveConflictData, setDriveConflictData] = useState(null); 
 
-  const [googleDriveFileId, setGoogleDriveFileId] = useState(null);
-  const [lastSyncTimestamp, setLastSyncTimestamp] = useState(null);
-
-  const isDefaultAppData = useCallback((data, currentPresets, defaultSubjects) => {
-      const defaultExtracurriculars = currentPresets?.extracurriculars || [];
-      return JSON.stringify(data.settings) === JSON.stringify(initialSettings) &&
-             JSON.stringify(data.students) === JSON.stringify(initialStudents) &&
-             JSON.stringify(data.grades) === JSON.stringify(initialGrades) &&
-             JSON.stringify(data.notes) === JSON.stringify(initialNotes) &&
-             JSON.stringify(data.cocurricularData) === JSON.stringify(initialCocurricularData) &&
-             JSON.stringify(data.attendance) === JSON.stringify(initialAttendance) &&
-             JSON.stringify(data.extracurriculars) === JSON.stringify(defaultExtracurriculars) &&
-             JSON.stringify(data.studentExtracurriculars) === JSON.stringify(initialStudentExtracurriculars) &&
-             JSON.stringify(data.subjects) === JSON.stringify(defaultSubjects) &&
-             JSON.stringify(data.learningObjectives) === JSON.stringify({}) &&
-             JSON.stringify(data.formativeJournal) === JSON.stringify(initialFormativeJournal);
-  }, []);
-
+  // --- STATE INITIALIZATION WITH ROBUST LOADING ---
   const [settings, setSettings] = useState(() => {
-    try {
-        const saved = localStorage.getItem('appSettings');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            return {
-                ...initialSettings,
-                ...parsed,
-                predikats: { ...initialSettings.predikats, ...(parsed.predikats || {}) },
-                gradeCalculation: parsed.gradeCalculation || {},
-                slmVisibility: parsed.slmVisibility || {},
-            };
-        }
-        return initialSettings;
-    } catch (e) { return initialSettings; }
+      const loaded = loadDataSafe('appSettings', initialSettings);
+      return {
+          ...initialSettings,
+          ...loaded,
+          predikats: { ...initialSettings.predikats, ...(loaded.predikats || {}) },
+      };
   });
-  const [students, setStudents] = useState(() => {
-    try {
-        const saved = localStorage.getItem('appStudents');
-        return saved ? JSON.parse(saved) : initialStudents;
-    } catch (e) { return initialStudents; }
-  });
-  const [grades, setGrades] = useState(() => {
-    try {
-        const saved = localStorage.getItem('appGrades');
-        return saved ? JSON.parse(saved) : initialGrades;
-    } catch (e) { return initialGrades; }
-  });
-  const [notes, setNotes] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appNotes');
-          return saved ? JSON.parse(saved) : initialNotes;
-      } catch (e) { return initialNotes; }
-  });
-  const [cocurricularData, setCocurricularData] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appCocurricularData');
-          return saved ? JSON.parse(saved) : initialCocurricularData;
-      } catch (e) { return initialCocurricularData; }
-  });
-  const [attendance, setAttendance] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appAttendance');
-          const parsed = saved ? JSON.parse(saved) : initialAttendance;
-          return parsed.map(att => ({
-              studentId: att.studentId,
-              sakit: att.sakit === 0 ? 0 : (att.sakit ?? null),
-              izin: att.izin === 0 ? 0 : (att.izin ?? null),
-              alpa: att.alpa === 0 ? 0 : (att.alpa ?? null)
-          }));
-      } catch (e) { return initialAttendance; }
-  });
-  const [extracurriculars, setExtracurriculars] = useState([]);
-  const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appStudentExtracurriculars');
-          return saved ? JSON.parse(saved) : initialStudentExtracurriculars;
-    } catch (e) { return initialStudentExtracurriculars; }
-  });
-  const [subjects, setSubjects] = useState(() => {
-    try {
-        const saved = localStorage.getItem('appSubjects');
-        return saved ? JSON.parse(saved) : defaultSubjects;
-    } catch (e) { return defaultSubjects; }
-  });
-  const [learningObjectives, setLearningObjectives] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appLearningObjectives');
-          return saved ? JSON.parse(saved) : {};
-      } catch (e) { return {}; }
-  });
-  const [formativeJournal, setFormativeJournal] = useState(() => {
-      try {
-          const saved = localStorage.getItem('appFormativeJournal');
-          return saved ? JSON.parse(saved) : initialFormativeJournal;
-      } catch (e) { return initialFormativeJournal; }
-  });
-  
-  useEffect(() => {
-    const { a, b, c, d } = settings.predikats;
-    const valA = parseInt(a, 10);
-    const valB = parseInt(b, 10);
-    const valC = parseInt(c, 10);
-    const valD = parseInt(d, 10);
 
-    if (![valA, valB, valC, valD].some(isNaN)) {
-        const newMap = {
-            SB: Math.round((valA + 100) / 2),
-            BSH: Math.round((valB + (valA - 1)) / 2),
-            MB: Math.round((valC + (valB - 1)) / 2),
-            BB: Math.round((valD + (valC - 1)) / 2),
-        };
-        // Only update state if the map has actually changed to prevent infinite loops.
-        if (JSON.stringify(newMap) !== JSON.stringify(settings.qualitativeGradingMap)) {
-            setSettings(prev => ({...prev, qualitativeGradingMap: newMap}));
-        }
-    }
-  }, [settings.predikats, settings.qualitativeGradingMap]);
+  const [students, setStudents] = useState(() => 
+      loadDataSafe('appStudents', initialStudents, Array.isArray)
+  );
+
+  const [grades, setGrades] = useState(() => 
+      loadDataSafe('appGrades', initialGrades, Array.isArray)
+  );
+
+  const [notes, setNotes] = useState(() => 
+      loadDataSafe('appNotes', initialNotes)
+  );
+
+  const [cocurricularData, setCocurricularData] = useState(() => 
+      loadDataSafe('appCocurricularData', initialCocurricularData)
+  );
+
+  const [attendance, setAttendance] = useState(() => {
+      const loaded = loadDataSafe('appAttendance', initialAttendance, Array.isArray);
+      // Data scrubbing: ensure numeric fields are numbers or null
+      return loaded.map(att => ({
+          studentId: att.studentId,
+          sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
+          izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
+          alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
+      }));
+  });
+
+  const [extracurriculars, setExtracurriculars] = useState(() => 
+      loadDataSafe('appExtracurriculars', [], Array.isArray)
+  );
+
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => 
+      loadDataSafe('appStudentExtracurriculars', initialStudentExtracurriculars, Array.isArray)
+  );
+
+  const [subjects, setSubjects] = useState(() => 
+      loadDataSafe('appSubjects', defaultSubjects, Array.isArray)
+  );
+
+  const [learningObjectives, setLearningObjectives] = useState(() => 
+      loadDataSafe('appLearningObjectives', {})
+  );
+
+  const [formativeJournal, setFormativeJournal] = useState(() => 
+      loadDataSafe('appFormativeJournal', initialFormativeJournal)
+  );
+  
+  const [currentCurriculum, setCurrentCurriculum] = useState(null);
+  const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
+
+  useEffect(() => {
+      if (gradeNumber) {
+          fetch(`/tp${gradeNumber}.json`)
+              .then(res => {
+                  if (!res.ok) throw new Error(`Curriculum file for grade ${gradeNumber} not found.`);
+                  return res.json();
+              })
+              .then(data => setCurrentCurriculum(data))
+              .catch(err => {
+                  console.warn(err);
+                  setCurrentCurriculum({});
+              });
+      } else {
+          setCurrentCurriculum(null);
+      }
+  }, [gradeNumber]);
+
+  // Data Integrity Check: Ensure every student has a corresponding entry in grades/attendance/etc
+  // This prevents crashes in sub-pages if data is partially loaded or corrupt.
+  useEffect(() => {
+      if (students.length > 0) {
+          let hasChanges = false;
+          
+          // 1. Repair Grades
+          const newGrades = [...grades];
+          students.forEach(s => {
+              if (!newGrades.find(g => g.studentId === s.id)) {
+                  newGrades.push({ studentId: s.id, detailedGrades: {}, finalGrades: {} });
+                  hasChanges = true;
+              }
+          });
+          if (hasChanges) setGrades(newGrades);
+
+          // 2. Repair Attendance
+          // (Logic handled in DataAbsensiPage mostly, but good to init here)
+      }
+  }, [students.length]); // Only run when student count changes
+
+  // --- AUTOMATIC RECALCULATION EFFECT ---
+  // Calculates final grades whenever settings (like KKM, calculation method) or subjects change.
+  // This ensures data consistency on load and after settings updates.
+  useEffect(() => {
+      setGrades(currentGrades => {
+          let anyChanged = false;
+          const newGrades = currentGrades.map(studentGrade => {
+              const newFinalGrades = { ...studentGrade.finalGrades };
+              let studentChanged = false;
+
+              subjects.forEach(subj => {
+                  const detailed = studentGrade.detailedGrades?.[subj.id];
+                  if (detailed) {
+                      const config = settings.gradeCalculation?.[subj.id] || { method: 'rata-rata' };
+                      const calculated = calculateFinalGrade(detailed, config, settings);
+                      
+                      // Check if calculation differs from stored (or if stored is missing)
+                      // Be careful with 0 vs null comparison
+                      if (calculated !== newFinalGrades[subj.id]) {
+                          newFinalGrades[subj.id] = calculated;
+                          studentChanged = true;
+                      }
+                  }
+              });
+
+              if (studentChanged) {
+                  anyChanged = true;
+                  return { ...studentGrade, finalGrades: newFinalGrades };
+              }
+              return studentGrade;
+          });
+
+          return anyChanged ? newGrades : currentGrades;
+      });
+  }, [settings.gradeCalculation, settings.predikats, settings.qualitativeGradingMap, subjects]);
+
+  const learningObjectivesRef = useRef(learningObjectives);
+  useEffect(() => { learningObjectivesRef.current = learningObjectives; }, [learningObjectives]);
 
   const appData = useMemo(() => getAppData(settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal), [
       settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal
   ]);
 
-  const showToast = useCallback((message, type) => {
-    setToast({ message, type });
-  }, []);
+  const showToast = useCallback((message, type) => { setToast({ message, type }); }, []);
     
     useEffect(() => {
         const initializeApp = async () => {
@@ -464,756 +410,649 @@ const App = () => {
                 if (!response.ok) throw new Error('Failed to fetch presets');
                 const presetsData = await response.json();
                 setPresets(presetsData);
-
-                const savedExtracurricularsJSON = localStorage.getItem('appExtracurriculars');
-                let extrasToLoad = [];
-                if (savedExtracurricularsJSON) {
-                    try {
-                        const parsedExtras = JSON.parse(savedExtracurricularsJSON);
-                        if (Array.isArray(parsedExtras) && parsedExtras.length > 0) {
-                            extrasToLoad = parsedExtras;
-                        }
-                    } catch (e) { console.error("Error parsing extracurriculars from localStorage", e); }
-                }
-                
-                if (extrasToLoad.length === 0) {
-                    extrasToLoad = presetsData.extracurriculars || [];
-                }
-                setExtracurriculars(extrasToLoad);
-
+                // If local extracurriculars are empty, seed from presets
+                setExtracurriculars(prev => prev.length === 0 ? presetsData.extracurriculars || [] : prev);
             } catch (error) {
-                console.error("Error during app initialization:", error);
-                showToast('Gagal memuat data preset ekstrakurikuler.', 'error');
-                setExtracurriculars([]);
-            } finally {
-                setIsLoading(false);
-            }
+                console.error("Error initialization:", error);
+                // Non-blocking error
+            } finally { setIsLoading(false); }
         };
-
         initializeApp();
-    }, [showToast]);
+    }, []);
 
-    // Ref to store the previous class name to detect grade level changes
-    const prevClassNameRef = useRef(settings.nama_kelas);
-
-    // Effect for automatic curriculum loading on grade level change
-    useEffect(() => {
-        if (isInitialMount.current) {
-            return;
-        }
-
-        const oldClassName = prevClassNameRef.current;
-        const newClassName = settings.nama_kelas;
-        const oldGradeNumber = getGradeNumber(oldClassName);
-        const newGradeNumber = getGradeNumber(newClassName);
-        
-        prevClassNameRef.current = newClassName;
-
-        if (newGradeNumber !== null && newGradeNumber >= 1 && newGradeNumber <= 6 && newGradeNumber !== oldGradeNumber) {
-            const loadCurriculum = async () => {
-                showToast(`Mengatur ulang & memuat kurikulum untuk Kelas ${newGradeNumber}...`, 'info');
-                setIsLoading(true);
-
-                try {
-                    const response = await fetch(`/tp${newGradeNumber}.json`);
-                    if (!response.ok) throw new Error(`File kurikulum tp${newGradeNumber}.json tidak ditemukan.`);
-                    
-                    const curriculumData = await response.json();
-                    const gradeKey = `Kelas ${newGradeNumber}`;
-                    const newLearningObjectives = { [gradeKey]: {} };
-                    const currentSubjects = subjects;
-                    const subjectFullNameMap = new Map(currentSubjects.map(s => [s.fullName, s.id]));
-                    const newStructureMap = new Map();
-
-                    for (const subjectFullName in curriculumData) {
-                        if (!subjectFullNameMap.has(subjectFullName)) continue;
-                        
-                        const subjectId = subjectFullNameMap.get(subjectFullName);
-                        const slmDataForSubject = curriculumData[subjectFullName];
-                        if (!Array.isArray(slmDataForSubject)) continue;
-
-                        newLearningObjectives[gradeKey][subjectFullName] = [];
-                        const slmsForGradeInitialization = [];
-
-                        slmDataForSubject.forEach((slmEntry, slmIndex) => {
-                            if (!slmEntry || !slmEntry.slm || !Array.isArray(slmEntry.tp)) return;
-                            const slmId = `slm_predefined_${subjectId}_${slmIndex}`;
-                            slmsForGradeInitialization.push({
-                                id: slmId,
-                                name: slmEntry.slm,
-                                scores: Array(slmEntry.tp.length).fill(null)
-                            });
-                            slmEntry.tp.forEach(tpText => {
-                                newLearningObjectives[gradeKey][subjectFullName].push({ slmId, text: tpText });
-                            });
-                        });
-                        newStructureMap.set(subjectId, slmsForGradeInitialization);
-                    }
-
-                    // Smart Migration Logic
-                    setGrades(prevGrades => {
-                        return students.map(student => {
-                            const oldGradeEntry = prevGrades.find(g => g.studentId === student.id);
-                            const newGradeEntry = { studentId: student.id, detailedGrades: {}, finalGrades: {} };
-                            const activeSubjects = currentSubjects.filter(s => s.active);
-
-                            activeSubjects.forEach(subject => {
-                                const newSlmTemplates = newStructureMap.has(subject.id) ? JSON.parse(JSON.stringify(newStructureMap.get(subject.id))) : [];
-                                const oldDetailed = oldGradeEntry?.detailedGrades?.[subject.id];
-
-                                // 1. Preserve STS and SAS
-                                const newDetailed = {
-                                    slm: [],
-                                    sts: oldDetailed?.sts ?? null,
-                                    sas: oldDetailed?.sas ?? null
-                                };
-
-                                // 2. Smart Migration for SLM/TP Scores
-                                newDetailed.slm = newSlmTemplates.map((newSlm, slmIndex) => {
-                                    // Strategy A: Try to find matching SLM ID (Ideal)
-                                    let oldSlm = oldDetailed?.slm?.find(s => s.id === newSlm.id);
-
-                                    // Strategy B: Positional Mapping (Smart Migration)
-                                    // If ID mismatch (e.g. file changed), assume data at Index 0 belongs to New Index 0
-                                    if (!oldSlm && oldDetailed?.slm && oldDetailed.slm[slmIndex]) {
-                                        oldSlm = oldDetailed.slm[slmIndex];
-                                    }
-
-                                    // Map Scores
-                                    const migratedScores = newSlm.scores.map((_, tpIndex) => {
-                                        // Take score from old SLM if available at same index
-                                        if (oldSlm && oldSlm.scores && typeof oldSlm.scores[tpIndex] !== 'undefined') {
-                                            return oldSlm.scores[tpIndex];
-                                        }
-                                        return null;
-                                    });
-
-                                    return {
-                                        ...newSlm,
-                                        scores: migratedScores
-                                    };
-                                });
-
-                                newGradeEntry.detailedGrades[subject.id] = newDetailed;
-                                // Keep old final grade or recalculate later (simplified to keep old for now, UI will update)
-                                newGradeEntry.finalGrades[subject.id] = oldGradeEntry?.finalGrades?.[subject.id] ?? null;
-                            });
-
-                            return newGradeEntry;
-                        });
-                    });
-                    
-                    setLearningObjectives(newLearningObjectives);
-                    showToast(`Kurikulum Kelas ${newGradeNumber} berhasil dimuat dengan pemulihan data nilai.`, 'success');
-
-                } catch (error) {
-                    console.error("Gagal memuat kurikulum otomatis:", error);
-                    showToast(`Gagal memuat kurikulum: ${error.message}`, 'error');
-                    setLearningObjectives({});
-                    setGrades(initialGrades);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            loadCurriculum();
-        }
-    }, [settings.nama_kelas, subjects, students, showToast, setIsLoading]);
-
-  const exportToExcelBlob = useCallback(() => {
-    // ... (No changes here, handled in existing file or truncated for brevity as request focuses on parsing logic)
-    if (typeof XLSX === 'undefined') {
-        showToast('Pustaka ekspor (SheetJS) tidak termuat.', 'error');
-        return null;
-    }
+  const exportToExcelBlob = useCallback(async () => {
+    if (typeof XLSX === 'undefined') return null;
     try {
         const wb = XLSX.utils.book_new();
-        // ... (standard export logic)
-        const petunjukData = [
+        
+        // --- 1. Sheet: Petunjuk ---
+        const wsPetunjuk = XLSX.utils.aoa_to_sheet([
             ["Petunjuk Penggunaan Template RKT"],
             ["1. Jangan mengubah nama-nama sheet (lembar kerja) yang sudah ada."],
-            // ...
-        ];
-        const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
+            ["2. Jangan mengubah header (baris pertama) pada setiap sheet."],
+            ["3. Untuk kolom tanggal, gunakan format YYYY-MM-DD atau DD/MM/YYYY."],
+            ["4. Simpan file ini dan unggah kembali ke aplikasi RKT untuk mengembalikan data."]
+        ]);
         XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
 
-        // Sheet 2: Pengaturan
-        const settingsData = Object.entries(initialSettings)
-            .filter(([key]) => !['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout', 'qualitativeGradingMap', 'slmVisibility'].includes(key))
-            .map(([key, _]) => [key, settings[key] || '']);
-        settingsData.unshift(["Kunci Pengaturan", "Nilai"]);
+        // --- 2. Sheet: Pengaturan ---
+        // Exclude specific heavy keys to handle them separately or in other sheets
+        const excludeKeys = ['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
         
-        settingsData.push([]);
-        settingsData.push(["Pengaturan Rentang Nilai (Predikat)"]);
-        settingsData.push(["Predikat", "Nilai Minimum"]);
-        settingsData.push(['A', settings.predikats.a]);
-        settingsData.push(['B', settings.predikats.b]);
-        settingsData.push(['C', settings.predikats.c]);
-        settingsData.push(['D', settings.predikats.d]);
+        const settingsRows = [
+            ["Kunci Pengaturan", "Nilai"],
+            ["format_version", "2"], // <-- Mark as new format
+            ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => [key, val || '']),
+            [],
+            ["Pengaturan Rentang Nilai (Predikat)"],
+            ["Predikat", "Nilai Minimum"],
+            ["A", settings.predikats.a],
+            ["B", settings.predikats.b],
+            ["C", settings.predikats.c],
+            ["D", settings.predikats.d],
+            [],
+            ["Pengaturan Cara Pengolahan Nilai Rapor"],
+            ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot (JSON)", "SLM Visibility (JSON)"]
+        ];
 
-        settingsData.push([]);
-        settingsData.push(["Pengaturan Cara Pengolahan Nilai Rapor"]);
-        const gradeCalcHeader = ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot (JSON)", "SLM Visibility (JSON)"];
-        settingsData.push(gradeCalcHeader);
-        Object.entries(settings.gradeCalculation).forEach(([subjectId, config]) => {
-            const weightsString = config.weights ? JSON.stringify(config.weights) : '';
-            const visibilityString = settings.slmVisibility && settings.slmVisibility[subjectId] ? JSON.stringify(settings.slmVisibility[subjectId]) : '';
-            settingsData.push([ subjectId, config.method, weightsString, visibilityString ]);
+        subjects.forEach(s => {
+            const config = settings.gradeCalculation?.[s.id] || {};
+            const visibility = settings.slmVisibility?.[s.id] || [];
+            settingsRows.push([
+                s.id,
+                config.method || 'rata-rata',
+                JSON.stringify(config.weights || {}),
+                JSON.stringify(visibility)
+            ]);
         });
-        const wsPengaturan = XLSX.utils.aoa_to_sheet(settingsData);
-        XLSX.utils.book_append_sheet(wb, wsPengaturan, "Pengaturan");
 
-        // Sheets 3 & 4
-        const subjectsData = subjects.map(s => ({ "ID Internal (Jangan Diubah)": s.id, "Nama Lengkap": s.fullName, "Singkatan": s.label, "Status Aktif": s.active ? 'Aktif' : 'Tidak Aktif' }));
-        const wsSubjects = XLSX.utils.json_to_sheet(subjectsData);
-        XLSX.utils.book_append_sheet(wb, wsSubjects, "Mata Pelajaran");
-        
-        const extraData = extracurriculars.map(e => ({ "ID Unik (Jangan Diubah)": e.id, "Nama Ekstrakurikuler": e.name, "Status Aktif": e.active ? 'Aktif' : 'Tidak Aktif' }));
-        const wsExtra = XLSX.utils.json_to_sheet(extraData);
-        XLSX.utils.book_append_sheet(wb, wsExtra, "Ekstrakurikuler");
-        
-        // Sheet 5: Daftar Siswa
-        const studentsData = students.map(s => ({
-          'ID Siswa (Otomatis)': s.id, 'Nama Lengkap': s.namaLengkap, 'Nama Panggilan': s.namaPanggilan, 'NIS': s.nis, 'NISN': s.nisn, 'Tempat, Tanggal Lahir': s.ttl, 'Jenis Kelamin': s.jenisKelamin, 'Agama': s.agama, 'Asal TK': s.asalTk, 'Alamat Siswa': s.alamatSiswa, 'Diterima di Kelas': s.diterimaDiKelas, 'Diterima Tanggal': s.diterimaTanggal, 'Nama Ayah': s.namaAyah, 'Nama Ibu': s.namaIbu, 'Pekerjaan Ayah': s.pekerjaanAyah, 'Pekerjaan Ibu': s.pekerjaanIbu, 'Alamat Orang Tua': s.alamatOrangTua, 'Telepon Orang Tua': s.teleponOrangTua, 'Nama Wali': s.namaWali, 'Pekerjaan Wali': s.pekerjaanWali, 'Alamat Wali': s.alamatWali, 'Telepon Wali': s.teleponWali,
-        }));
-        const wsStudents = XLSX.utils.json_to_sheet(studentsData);
-        XLSX.utils.book_append_sheet(wb, wsStudents, "Daftar Siswa");
+        const wsSettings = XLSX.utils.aoa_to_sheet(settingsRows);
+        XLSX.utils.book_append_sheet(wb, wsSettings, "Pengaturan");
 
-        // Sheet 6: Tujuan Pembelajaran
-        const tpExportData = [];
-        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
-        const objectivesForClass = learningObjectives[gradeKey] || {};
+        // --- 3. Sheet: Mata Pelajaran (Format 1: . | Nama Lengkap | Singkatan | Status Aktif) ---
+        const mapelHeader = [".", "Nama Lengkap", "Singkatan", "Status Aktif", "Kunci Kurikulum"];
+        const mapelRows = [mapelHeader, ...subjects.map(s => [s.id, s.fullName, s.label, s.active ? "Aktif" : "Tidak Aktif", s.curriculumKey || s.fullName])];
+        const wsMapel = XLSX.utils.aoa_to_sheet(mapelRows);
+        XLSX.utils.book_append_sheet(wb, wsMapel, "Mata Pelajaran");
 
-        const gradedTpIdentifiers = new Set();
-        grades.forEach(studentGrade => {
-            Object.entries(studentGrade.detailedGrades).forEach(([subjectId, subjectData]) => {
-                (subjectData.slm || []).forEach(slm => {
-                    (slm.scores || []).forEach((score, tpIndex) => {
-                        if (score !== null && score !== undefined && score !== '') {
-                            const identifier = `${subjectId}|${slm.id}|${tpIndex}`;
-                            gradedTpIdentifiers.add(identifier);
-                        }
-                    });
-                });
+        // --- 4. Sheet: Ekstrakurikuler ---
+        const ekstraHeader = ["ID Unik (Jangan Diubah)", "Nama Ekstrakurikuler", "Status Aktif"];
+        const ekstraRows = [ekstraHeader, ...extracurriculars.map(e => [e.id, e.name, e.active ? "Aktif" : "Tidak Aktif"])];
+        const wsEkstra = XLSX.utils.aoa_to_sheet(ekstraRows);
+        XLSX.utils.book_append_sheet(wb, wsEkstra, "Ekstrakurikuler");
+
+        // --- 5. Sheet: Daftar Siswa ---
+        const siswaHeader = ["ID Siswa (Otomatis)", "Nama Lengkap", "Nama Panggilan", "NIS", "NISN", "Tempat, Tanggal Lahir", "Jenis Kelamin", "Agama", "Asal TK", "Alamat Siswa", "Diterima di Kelas", "Diterima Tanggal", "Nama Ayah", "Nama Ibu", "Pekerjaan Ayah", "Pekerjaan Ibu", "Alamat Orang Tua", "Telepon Orang Tua", "Nama Wali", "Pekerjaan Wali", "Alamat Wali", "Telepon Wali"];
+        const siswaRows = [siswaHeader, ...students.map(s => [
+            s.id, s.namaLengkap, s.namaPanggilan, s.nis, s.nisn, s.ttl, s.jenisKelamin, s.agama, s.asalTk, s.alamatSiswa, s.diterimaDiKelas, s.diterimaTanggal, s.namaAyah, s.namaIbu, s.pekerjaanAyah, s.pekerjaanIbu, s.alamatOrangTua, s.teleponOrangTua, s.namaWali, s.pekerjaanWali, s.alamatWali, s.teleponWali
+        ])];
+        const wsSiswa = XLSX.utils.aoa_to_sheet(siswaRows);
+        XLSX.utils.book_append_sheet(wb, wsSiswa, "Daftar Siswa");
+
+        // --- 6. Sheet: Tujuan Pembelajaran (Reconstruction) ---
+        const gradeNumber = getGradeNumber(settings.nama_kelas);
+        const gradeKey = `Kelas ${gradeNumber}`;
+        const masterCurriculum = new Map();
+
+        if (currentCurriculum) {
+            subjects.filter(s => s.active).forEach(subject => {
+                const curriculumKey = subject.curriculumKey || subject.fullName;
+                const predefinedData = currentCurriculum[curriculumKey];
+                if (predefinedData) {
+                    const slms = predefinedData.map((slm, slmIndex) => ({
+                        id: `slm_predefined_${subject.id}_${slmIndex}`,
+                        name: slm.slm,
+                        tps: slm.tp.map(tpText => ({ text: tpText }))
+                    }));
+                    masterCurriculum.set(subject.id, slms);
+                }
             });
-        });
-        
-        for (const subjectFullName in objectivesForClass) {
-            const subject = subjects.find(s => s.fullName === subjectFullName);
-            if (!subject) continue;
-
-            const objectivesForSubject = objectivesForClass[subjectFullName] || [];
-            const slmsInGrades = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []) : [];
-
-            const tpsBySlm = objectivesForSubject.reduce((acc, obj) => {
-                if (!acc[obj.slmId]) acc[obj.slmId] = [];
-                acc[obj.slmId].push(obj.text);
-                return acc;
-            }, {});
-
-            for (const slmId in tpsBySlm) {
-                const tpTexts = tpsBySlm[slmId];
-                tpTexts.forEach((tpText, tpIndex) => {
-                    const identifier = `${subject.id}|${slmId}|${tpIndex}`;
-                    if (gradedTpIdentifiers.has(identifier)) {
-                        const slmInfo = slmsInGrades.find(s => s.id === slmId);
-                        tpExportData.push({
-                            "ID Mata Pelajaran": subject.id,
-                            "Nama Mata Pelajaran": subject.fullName,
-                            "ID SLM": slmId,
-                            "Nama SLM": slmInfo?.name || "Nama SLM tidak ditemukan",
-                            "Deskripsi Tujuan Pembelajaran (TP)": tpText,
-                        });
-                    }
-                });
-            }
         }
         
-        const wsTP = XLSX.utils.json_to_sheet(tpExportData, {header: ["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"]});
+        if (learningObjectives[gradeKey]) {
+            subjects.filter(s => s.active).forEach(subject => {
+                const curriculumKey = subject.curriculumKey || subject.fullName;
+                const userTpsForSubject = learningObjectives[gradeKey][curriculumKey];
+                if (!userTpsForSubject) return;
+
+                let subjectSlms = masterCurriculum.get(subject.id) || [];
+                const userTpsBySlm = userTpsForSubject.reduce((acc, tp) => {
+                    if (!acc[tp.slmId]) acc[tp.slmId] = [];
+                    acc[tp.slmId].push({ text: tp.text });
+                    return acc;
+                }, {});
+
+                Object.entries(userTpsBySlm).forEach(([slmId, tps]) => {
+                    const existingSlmIndex = subjectSlms.findIndex(s => s.id === slmId);
+                    if (existingSlmIndex > -1) {
+                        subjectSlms[existingSlmIndex].tps = tps;
+                        const slmNameFromGrades = grades[0]?.detailedGrades?.[subject.id]?.slm.find(s => s.id === slmId)?.name;
+                        if (slmNameFromGrades) subjectSlms[existingSlmIndex].name = slmNameFromGrades;
+                    } else {
+                        const slmName = grades[0]?.detailedGrades?.[subject.id]?.slm.find(s => s.id === slmId)?.name || 'Lingkup Materi Kustom';
+                        subjectSlms.push({ id: slmId, name: slmName, tps: tps });
+                    }
+                });
+                masterCurriculum.set(subject.id, subjectSlms);
+            });
+        }
+        
+        const tpHeader = ["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"];
+        const tpRows = [tpHeader];
+        masterCurriculum.forEach((slms, subjectId) => {
+            const subject = subjects.find(s => s.id === subjectId);
+            if (subject) {
+                const curriculumKey = subject.curriculumKey || subject.fullName;
+                slms.forEach(slm => {
+                    slm.tps.forEach(tp => {
+                        tpRows.push([subject.id, curriculumKey, slm.id, slm.name, tp.text]);
+                    });
+                });
+            }
+        });
+        const wsTP = XLSX.utils.aoa_to_sheet(tpRows);
         XLSX.utils.book_append_sheet(wb, wsTP, "Tujuan Pembelajaran");
 
-        // Sheets 7...N: Nilai per Mapel
-        const activeSubjects = subjects.filter(s => s.active);
-        activeSubjects.forEach(subject => {
-            const nilaiSheetData = [];
-            const header = ["ID Siswa", "Nama Siswa"];
-            
-            const objectivesForSubject = (objectivesForClass || {})[subject.fullName] || [];
-            const slmsForSubject = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []) : [];
+        // --- 7. Sheets: Nilai_{MapelID} ---
+        subjects.filter(s => s.active).forEach(sub => {
+            const subjectSlms = masterCurriculum.get(sub.id);
+            const headers = ["ID Siswa", "Nama Siswa"];
+            const colMap = [];
 
-            slmsForSubject.forEach(slm => {
-                const tpCount = objectivesForSubject.filter(o => o.slmId === slm.id).length;
-                for (let i = 1; i <= tpCount; i++) header.push(`${slm.id}_TP${i}`);
-            });
-            header.push("STS", "SAS");
-            nilaiSheetData.push(header);
-
-            students.forEach(student => {
-                const row = { "ID Siswa": student.id, "Nama Siswa": student.namaLengkap };
-                const studentGrade = grades.find(g => g.studentId === student.id);
-                const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-
-                slmsForSubject.forEach(slm => {
-                    const tpCount = objectivesForSubject.filter(o => o.slmId === slm.id).length;
-                    const slmData = detailedGrade?.slm?.find(s => s.id === slm.id);
-                    for (let i = 0; i < tpCount; i++) row[`${slm.id}_TP${i + 1}`] = slmData?.scores?.[i] ?? '';
+            if (subjectSlms) {
+                subjectSlms.forEach(slm => {
+                    slm.tps.forEach((tp, idx) => {
+                        headers.push(`${slm.id}_TP${idx + 1}`);
+                        colMap.push({ type: 'tp', slmId: slm.id, index: idx });
+                    });
                 });
-                row["STS"] = detailedGrade?.sts ?? '';
-                row["SAS"] = detailedGrade?.sas ?? '';
-                
-                nilaiSheetData.push(header.map(h => row[h]));
-            });
-            
-            const wsNilai = XLSX.utils.aoa_to_sheet(nilaiSheetData);
-            XLSX.utils.book_append_sheet(wb, wsNilai, `Nilai_${subject.id}`);
-        });
-
-        // Other Data Sheets
-        const attendanceData = attendance.map(a => ({ "ID Siswa": a.studentId, "Sakit": a.sakit, "Izin": a.izin, "Alpa": a.alpa }));
-        const wsAttendance = XLSX.utils.json_to_sheet(attendanceData);
-        XLSX.utils.book_append_sheet(wb, wsAttendance, "Absensi");
-
-        const studentExtraData = studentExtracurriculars.flatMap(se => {
-            return (se.assignedActivities || []).map((activityId, index) => {
-                if (!activityId) return null;
-                return { "ID Siswa": se.studentId, "Nama Siswa": students.find(s => s.id === se.studentId)?.namaLengkap || '', "Urutan Ekstra": index + 1, "ID Ekstrakurikuler": activityId, "Deskripsi": se.descriptions?.[activityId] || '' };
-            }).filter(Boolean);
-        });
-        const wsStudentExtra = XLSX.utils.json_to_sheet(studentExtraData);
-        XLSX.utils.book_append_sheet(wb, wsStudentExtra, "Data Ekstra");
-
-        const notesData = Object.entries(notes).map(([studentId, note]) => ({ "ID Siswa": studentId, "Catatan Wali Kelas": note }));
-        const wsNotes = XLSX.utils.json_to_sheet(notesData);
-        XLSX.utils.book_append_sheet(wb, wsNotes, "Catatan Wali Kelas");
-
-        const cocurricularSheetData = [];
-        const cocurricHeader = ["ID Siswa", "Nama Siswa", ...COCURRICULAR_DIMENSIONS.map(d => d.id)];
-        cocurricularSheetData.push(cocurricHeader);
-        students.forEach(student => {
-            const row = { "ID Siswa": student.id, "Nama Siswa": student.namaLengkap };
-            const studentCoData = cocurricularData[student.id];
-            COCURRICULAR_DIMENSIONS.forEach(dim => {
-                row[dim.id] = studentCoData?.dimensionRatings?.[dim.id] || '';
-            });
-            cocurricularSheetData.push(cocurricHeader.map(h => row[h]));
-        });
-        const wsCocurricular = XLSX.utils.aoa_to_sheet(cocurricularSheetData);
-        XLSX.utils.book_append_sheet(wb, wsCocurricular, "Data Kokurikuler");
-
-        const formativeJournalData = [];
-        const journalHeader = ["ID Siswa", "Nama Siswa", "ID Catatan", "Tanggal", "Topik", "Jenis", "Catatan"];
-        formativeJournalData.push(journalHeader);
-        Object.entries(formativeJournal).forEach(([studentId, notesArray]) => {
-            const studentName = students.find(s => s.id === studentId)?.namaLengkap || '';
-            notesArray.forEach(note => {
-                formativeJournalData.push([studentId, studentName, note.id, note.date, note.topic, note.type, note.note]);
-            });
-        });
-        const wsFormativeJournal = XLSX.utils.aoa_to_sheet(formativeJournalData);
-        XLSX.utils.book_append_sheet(wb, wsFormativeJournal, "Jurnal Formatif");
-
-        const imageAssetsData = [];
-        const imageKeys = ['logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background'];
-        const CHUNK_SIZE = 32000;
-
-        imageKeys.forEach(key => {
-            const base64String = settings[key];
-            if (base64String && typeof base64String === 'string') {
-                if (base64String.length > CHUNK_SIZE) {
-                    for (let i = 0; i < base64String.length; i += CHUNK_SIZE) {
-                        const chunk = base64String.substring(i, i + CHUNK_SIZE);
-                        const partKey = `${key}_part_${Math.floor(i / CHUNK_SIZE) + 1}`;
-                        imageAssetsData.push([partKey, chunk]);
-                    }
-                } else {
-                    imageAssetsData.push([key, base64String]);
-                }
             }
+            headers.push("STS", "SAS");
+            
+            const sheetRows = [headers];
+            students.forEach(st => {
+                const sGrade = grades.find(g => g.studentId === st.id)?.detailedGrades?.[sub.id];
+                const row = [st.id, st.namaLengkap];
+                
+                colMap.forEach(map => {
+                    const slm = sGrade?.slm?.find(s => s.id === map.slmId);
+                    const val = slm?.scores?.[map.index];
+                    row.push(val !== undefined && val !== null ? val : '');
+                });
+                
+                row.push(sGrade?.sts ?? '', sGrade?.sas ?? '');
+                sheetRows.push(row);
+            });
+            const wsNilai = XLSX.utils.aoa_to_sheet(sheetRows);
+            XLSX.utils.book_append_sheet(wb, wsNilai, `Nilai_${sub.id}`);
         });
 
-        if (imageAssetsData.length > 0) {
-            imageAssetsData.unshift(["Kunci Aset", "Data Base64"]);
-            const wsImageAssets = XLSX.utils.aoa_to_sheet(imageAssetsData);
-            XLSX.utils.book_append_sheet(wb, wsImageAssets, "Aset Gambar");
-        }
+        // --- 8. Sheet: Absensi (Format 1: No Name Column) ---
+        const absensiHeader = ["ID Siswa", "Sakit", "Izin", "Alpa"];
+        const absensiRows = [absensiHeader];
+        students.forEach(s => {
+            const att = attendance.find(a => a.studentId === s.id);
+            absensiRows.push([s.id, att?.sakit ?? '', att?.izin ?? '', att?.alpa ?? '']);
+        });
+        const wsAbsensi = XLSX.utils.aoa_to_sheet(absensiRows);
+        XLSX.utils.book_append_sheet(wb, wsAbsensi, "Absensi");
 
-        const wbout = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
-        return new Blob([wbout], { type: 'application/octet-stream' });
-    } catch (error) {
-        console.error("Gagal mengekspor data:", error);
-        showToast(`Gagal mengekspor data: ${error.message}`, 'error');
-        return null;
-    }
-  }, [settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal, showToast]);
+        // --- 9. Sheet: Data Ekstra ---
+        // Flatten the structure: one row per assigned extra per student
+        const dataEkstraHeader = ["ID Siswa", "Nama Siswa", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"];
+        const dataEkstraRows = [dataEkstraHeader];
+        studentExtracurriculars.forEach(se => {
+            const student = students.find(s => s.id === se.studentId);
+            if (!student) return;
+            
+            (se.assignedActivities || []).forEach((actId, idx) => {
+                if (actId) {
+                    const desc = se.descriptions?.[actId] || '';
+                    dataEkstraRows.push([se.studentId, student.namaLengkap, idx + 1, actId, desc]);
+                }
+            });
+        });
+        const wsDataEkstra = XLSX.utils.aoa_to_sheet(dataEkstraRows);
+        XLSX.utils.book_append_sheet(wb, wsDataEkstra, "Data Ekstra");
 
-    // Function to parse Excel data *without* setting state immediately.
-    // Returns the data object or throws an error.
-    const parseExcelBlob = useCallback(async (blob) => {
-        if (typeof XLSX === 'undefined') {
-            throw new Error('Pustaka impor (SheetJS) tidak termuat.');
-        }
-        
-        const data = await blob.arrayBuffer();
-        const workbook = XLSX.read(data);
+        // --- 10. Sheet: Data Kokurikuler (Format 1: Headers are keys/IDs) ---
+        const kokurHeader = ["ID Siswa", "Nama Siswa", ...COCURRICULAR_DIMENSIONS.map(d => d.id)];
+        const kokurRows = [kokurHeader];
+        students.forEach(s => {
+            const coData = cocurricularData[s.id]?.dimensionRatings || {};
+            const row = [s.id, s.namaLengkap];
+            COCURRICULAR_DIMENSIONS.forEach(d => row.push(coData[d.id] || ''));
+            kokurRows.push(row);
+        });
+        const wsKokur = XLSX.utils.aoa_to_sheet(kokurRows);
+        XLSX.utils.book_append_sheet(wb, wsKokur, "Data Kokurikuler");
 
-        // Prepare return object
-        const parsedData = {
-            settings: { ...initialSettings },
-            students: [],
-            subjects: defaultSubjects,
-            extracurriculars: presets?.extracurriculars || [],
-            attendance: initialAttendance,
-            notes: initialNotes,
-            cocurricularData: initialCocurricularData,
-            studentExtracurriculars: initialStudentExtracurriculars,
-            learningObjectives: {},
-            grades: initialGrades,
-            formativeJournal: initialFormativeJournal
+        // --- 11. Sheet: Catatan Wali Kelas (Format 1: No Name Column) ---
+        const catatanHeader = ["ID Siswa", "Catatan Wali Kelas"];
+        const catatanRows = [catatanHeader];
+        students.forEach(s => {
+            catatanRows.push([s.id, notes[s.id] || '']);
+        });
+        const wsCatatan = XLSX.utils.aoa_to_sheet(catatanRows);
+        XLSX.utils.book_append_sheet(wb, wsCatatan, "Catatan Wali Kelas");
+
+        // --- 12. Sheet: Jurnal Formatif ---
+        const jurnalHeader = ["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan"];
+        const jurnalRows = [jurnalHeader];
+        Object.entries(formativeJournal).forEach(([studentId, notes]) => {
+            notes.forEach(note => {
+                jurnalRows.push([
+                    studentId,
+                    note.id,
+                    note.date,
+                    note.type,
+                    note.subjectId || '',
+                    note.slmId || '',
+                    note.tpId || '',
+                    note.topic || '',
+                    note.note || ''
+                ]);
+            });
+        });
+        const wsJurnal = XLSX.utils.aoa_to_sheet(jurnalRows);
+        XLSX.utils.book_append_sheet(wb, wsJurnal, "Jurnal Formatif");
+
+        // --- 13. Sheet: Aset Gambar (Chunked) ---
+        const asetHeader = ["Kunci Aset", "Data Base64"];
+        const asetRows = [asetHeader];
+        const assetsToSave = {
+            'logo_sekolah': settings.logo_sekolah,
+            'logo_dinas': settings.logo_dinas,
+            'logo_cover': settings.logo_cover,
+            'piagam_background': settings.piagam_background,
+            'ttd_kepala_sekolah': settings.ttd_kepala_sekolah,
+            'ttd_wali_kelas': settings.ttd_wali_kelas
         };
 
-        let newSettings = { ...initialSettings };
-        let newStudents = [];
-        let newSubjects = defaultSubjects; // Use defaults initially
-        let newExtracurriculars = presets?.extracurriculars || []; // Use defaults initially
-        let newAttendance = [];
-        let newNotes = {};
-        let newCocurricularData = {};
-        let newStudentExtracurriculars = [];
-        let newLearningObjectives = {};
-        let newGrades = [];
-        let newFormativeJournal = {};
-        const subjectStructureMap = new Map();
+        Object.entries(assetsToSave).forEach(([key, base64Str]) => {
+            if (base64Str && typeof base64Str === 'string' && base64Str.length > 0) {
+                const chunks = chunkString(base64Str, 30000); // 30k char limit safe for Excel cell
+                chunks.forEach((chunk, idx) => {
+                    asetRows.push([`${key}_part_${idx}`, chunk]);
+                });
+            }
+        });
+        const wsAset = XLSX.utils.aoa_to_sheet(asetRows);
+        XLSX.utils.book_append_sheet(wb, wsAset, "Aset Gambar");
 
-        // 1. Parse Pengaturan
-        const wsPengaturan = workbook.Sheets["Pengaturan"];
-        if (wsPengaturan) {
-            const pengaturanData = XLSX.utils.sheet_to_json(wsPengaturan, { header: 1 });
-            let isCalcSection = false;
-            for (const row of pengaturanData) {
-                if (row[0] === 'Pengaturan Cara Pengolahan Nilai Rapor') { isCalcSection = true; continue; }
-                if (!isCalcSection) {
-                    if (row[0] in newSettings) newSettings[row[0]] = row[1];
-                    if (row[0] === 'A') newSettings.predikats.a = String(row[1]);
-                    if (row[0] === 'B') newSettings.predikats.b = String(row[1]);
-                    if (row[0] === 'C') newSettings.predikats.c = String(row[1]);
-                    if (row[0] === 'D') newSettings.predikats.d = String(row[1]);
-                } else {
-                    if (row[0] === 'ID Mata Pelajaran') continue;
-                    const [subjectId, method, weightsString, visibilityString] = row;
-                    if (subjectId) {
-                        let weights = {};
-                        try {
-                            if(weightsString) weights = JSON.parse(weightsString);
-                        } catch(e) { console.error(`Gagal mem-parsing bobot JSON untuk ${subjectId}:`, e)}
-                        
-                        let visibility = null;
-                        try {
-                            if(visibilityString) visibility = JSON.parse(visibilityString);
-                        } catch(e) { console.error(`Gagal mem-parsing slmVisibility JSON untuk ${subjectId}:`, e)}
+        return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
+    } catch (e) { 
+        console.error("Export Error:", e);
+        return null; 
+    }
+  }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, currentCurriculum]);
 
-                        newSettings.gradeCalculation[subjectId] = { method: method || 'rata-rata', weights: weights };
-                        if (visibility) {
-                            if (!newSettings.slmVisibility) newSettings.slmVisibility = {};
-                            newSettings.slmVisibility[subjectId] = visibility;
-                        }
+    const parseExcelBlob = useCallback(async (blob) => {
+        if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
+        const workbook = XLSX.read(await blob.arrayBuffer());
+        
+        let news = { ...initialSettings };
+        let nStud = [];
+        let nAtt = [];
+        let nNot = {};
+        let nStEx = [];
+        let nCo = {};
+        let nGr = []; 
+        let nSub = [...defaultSubjects];
+        let nEx = [];
+        let nLO = {};
+        let nFJ = {}; // Jurnal Formatif
+
+        const findSheet = (names) => {
+            for (const name of names) {
+                const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, '_'));
+                if (found) return workbook.Sheets[found];
+            }
+            return null;
+        };
+
+        const normalizeKey = (k) => String(k || '').toLowerCase().trim();
+
+        // 1. Aset Gambar (Reassemble first so Settings can use them)
+        const wsAset = findSheet(["Aset Gambar", "Images", "Assets"]);
+        const assetMap = {};
+        if (wsAset) {
+            const assetData = XLSX.utils.sheet_to_json(wsAset, { header: 1 });
+            // Group by key prefix
+            const chunksByKey = {};
+            assetData.forEach(row => {
+                const keyPart = row[0];
+                const data = row[1];
+                if (keyPart && data) {
+                    const match = keyPart.match(/^(.*)_part_(\d+)$/);
+                    if (match) {
+                        const realKey = match[1];
+                        const idx = parseInt(match[2], 10);
+                        if (!chunksByKey[realKey]) chunksByKey[realKey] = [];
+                        chunksByKey[realKey][idx] = data;
                     }
                 }
-            }
+            });
+            // Rejoin
+            Object.entries(chunksByKey).forEach(([key, chunks]) => {
+                assetMap[key] = chunks.join('');
+            });
         }
 
-        // 2 & 3. Parse Mata Pelajaran & Ekstrakurikuler
-        const wsSubjects = workbook.Sheets["Mata Pelajaran"];
-        if (wsSubjects) {
-            // If the sheet exists, overwrite the default subjects
-            newSubjects = XLSX.utils.sheet_to_json(wsSubjects).map(s => ({
-                id: s["ID Internal (Jangan Diubah)"],
-                fullName: s["Nama Lengkap"],
-                label: s["Singkatan"],
-                // Strict check for active status to ensure consistency
-                active: (s["Status Aktif"] || '').toString().trim().toLowerCase() === 'aktif'
-            }));
+        // 2. Settings
+        const wsP = findSheet(["Pengaturan", "Settings", "Info Sekolah"]);
+        if (wsP) {
+            const data = XLSX.utils.sheet_to_json(wsP, { header: 1 });
+            data.forEach(r => {
+                if (r[0] && r[0] !== 'ID Mata Pelajaran') { // Skip config table headers
+                    if (['A', 'B', 'C', 'D'].includes(String(r[0]).toUpperCase())) {
+                        news.predikats[String(r[0]).toLowerCase()] = String(r[1]);
+                    } else if (r[0] in news) {
+                        news[r[0]] = r[1];
+                    }
+                }
+                // Restore Config Table Logic
+                // Columns: [ID Mapel, Method, WeightsJSON, VisibilityJSON]
+                // We detect this by checking if r[0] matches a subject ID
+                const subjectId = r[0];
+                // Simple heuristic: if it looks like a subject ID
+                if (defaultSubjects.some(ds => ds.id === subjectId)) {
+                    try {
+                        const weights = r[2] ? JSON.parse(r[2]) : {};
+                        const visibility = r[3] ? JSON.parse(r[3]) : [];
+                        
+                        if (!news.gradeCalculation) news.gradeCalculation = {};
+                        news.gradeCalculation[subjectId] = {
+                            method: r[1] || 'rata-rata',
+                            weights: weights
+                        };
+                        
+                        if (!news.slmVisibility) news.slmVisibility = {};
+                        news.slmVisibility[subjectId] = visibility;
+                    } catch (e) { console.warn("Failed parsing config for", subjectId, e); }
+                }
+            });
+            // Merge assets
+            news = { ...news, ...assetMap };
         }
-        
-        const wsExtra = workbook.Sheets["Ekstrakurikuler"];
-        if (wsExtra) {
-            newExtracurriculars = XLSX.utils.sheet_to_json(wsExtra).map(e => ({
-                id: e["ID Unik (Jangan Diubah)"],
-                name: e["Nama Ekstrakurikuler"],
-                active: (e["Status Aktif"] || '').toString().trim().toLowerCase() === 'aktif'
+
+        // 3. Mata Pelajaran
+        const wsMapel = findSheet(["Mata Pelajaran"]);
+        if (wsMapel) {
+            const rawMapel = XLSX.utils.sheet_to_json(wsMapel);
+            // Merge with defaults or replace? Better to merge active status.
+            nSub = defaultSubjects.map(ds => {
+                // Try ID (Format 1: Column ".")
+                const found = rawMapel.find(r => r['.'] === ds.id || r['ID'] === ds.id);
+                if (found) {
+                    return { ...ds, active: found['Status Aktif'] === 'Aktif', curriculumKey: found['Kunci Kurikulum'] || ds.fullName };
+                }
+                return ds;
+            });
+            // Also add any custom subjects if ID not in default
+            rawMapel.forEach(r => {
+                const id = r['.'] || r['ID'];
+                if (id && !defaultSubjects.some(ds => ds.id === id)) {
+                    nSub.push({
+                        id: id,
+                        fullName: r['Nama Lengkap'] || r['Nama Mata Pelajaran'] || id, // Fallback to ID if name missing
+                        label: r['Singkatan'] || id,
+                        active: r['Status Aktif'] === 'Aktif',
+                        curriculumKey: r['Kunci Kurikulum'] || r['Nama Lengkap']
+                    });
+                }
+            });
+        }
+
+        // 4. Ekstrakurikuler
+        const wsEkstraDef = findSheet(["Ekstrakurikuler"]);
+        if (wsEkstraDef) {
+            nEx = XLSX.utils.sheet_to_json(wsEkstraDef).map(r => ({
+                id: r['ID Unik (Jangan Diubah)'],
+                name: r['Nama Ekstrakurikuler'],
+                active: r['Status Aktif'] === 'Aktif'
             }));
         }
 
-        // 4. Parse Daftar Siswa and ensure unique IDs
-        const wsStudents = workbook.Sheets["Daftar Siswa"];
-        if (wsStudents) {
-            let importCounter = 0;
-            newStudents = XLSX.utils.sheet_to_json(wsStudents).map(s => {
-                importCounter++;
+        // 5. Daftar Siswa
+        const wsS = findSheet(["Daftar Siswa", "Students", "Siswa", "Data Siswa"]);
+        if (wsS) {
+            nStud = XLSX.utils.sheet_to_json(wsS).map((s, idx) => {
+                const findVal = (key) => s[key] || '';
                 return {
-                    id: s['ID Siswa (Otomatis)'] || `imported_student_${Date.now()}_${importCounter}`,
-                    namaLengkap: s['Nama Lengkap'], namaPanggilan: s['Nama Panggilan'], nis: s['NIS'], nisn: s['NISN'], 
-                    ttl: s['Tempat, Tanggal Lahir'], jenisKelamin: s['Jenis Kelamin'], 
-                    agama: s['Agama'], asalTk: s['Asal TK'], alamatSiswa: s['Alamat Siswa'], 
-                    diterimaDiKelas: s['Diterima di Kelas'], diterimaTanggal: s['Diterima Tanggal'], 
-                    namaAyah: s['Nama Ayah'], namaIbu: s['Nama Ibu'], pekerjaanAyah: s['Pekerjaan Ayah'], 
-                    pekerjaanIbu: s['Pekerjaan Ibu'], alamatOrangTua: s['Alamat Orang Tua'], 
-                    teleponOrangTua: s['Telepon Orang Tua'], namaWali: s['Nama Wali'], pekerjaanWali: s['Pekerjaan Wali'], 
-                    alamatWali: s['Alamat Wali'], teleponWali: s['Telepon Wali'],
+                    id: String(s['ID Siswa (Otomatis)'] || `s_${Date.now()}_${idx}`),
+                    namaLengkap: findVal('Nama Lengkap'),
+                    namaPanggilan: findVal('Nama Panggilan'),
+                    nis: findVal('NIS'),
+                    nisn: findVal('NISN'),
+                    ttl: findVal('Tempat, Tanggal Lahir'),
+                    jenisKelamin: findVal('Jenis Kelamin'),
+                    agama: findVal('Agama'),
+                    asalTk: findVal('Asal TK'),
+                    alamatSiswa: findVal('Alamat Siswa'),
+                    diterimaDiKelas: findVal('Diterima di Kelas'),
+                    diterimaTanggal: findVal('Diterima Tanggal'),
+                    namaAyah: findVal('Nama Ayah'),
+                    namaIbu: findVal('Nama Ibu'),
+                    pekerjaanAyah: findVal('Pekerjaan Ayah'),
+                    pekerjaanIbu: findVal('Pekerjaan Ibu'),
+                    alamatOrangTua: findVal('Alamat Orang Tua'),
+                    teleponOrangTua: findVal('Telepon Orang Tua'),
+                    namaWali: findVal('Nama Wali'),
+                    pekerjaanWali: findVal('Pekerjaan Wali'),
+                    alamatWali: findVal('Alamat Wali'),
+                    teleponWali: findVal('Telepon Wali')
                 };
             });
         }
-        
-        // 5. Parse Tujuan Pembelajaran
-        const gradeKey = `Kelas ${getGradeNumber(newSettings.nama_kelas)}`;
-        newLearningObjectives[gradeKey] = {};
-        const wsTP = workbook.Sheets["Tujuan Pembelajaran"];
+
+        // 6. Tujuan Pembelajaran (Restoring TPs)
+        const wsTP = findSheet(["Tujuan Pembelajaran"]);
         if (wsTP) {
             const tpData = XLSX.utils.sheet_to_json(wsTP);
+            const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`;
+            nLO[gradeKey] = {};
+            
             tpData.forEach(row => {
-                const subjectId = row["ID Mata Pelajaran"], subjectFullName = row["Nama Mata Pelajaran"], slmId = row["ID SLM"], slmName = row["Nama SLM"], tpText = row["Deskripsi Tujuan Pembelajaran (TP)"];
-                if (!newLearningObjectives[gradeKey][subjectFullName]) newLearningObjectives[gradeKey][subjectFullName] = [];
-                newLearningObjectives[gradeKey][subjectFullName].push({ slmId: slmId, text: tpText });
-                
-                if (!subjectStructureMap.has(subjectId)) subjectStructureMap.set(subjectId, { slms: new Map() });
-                const slmsMap = subjectStructureMap.get(subjectId).slms;
-                if (!slmsMap.has(slmId)) slmsMap.set(slmId, { id: slmId, name: slmName, tpCount: 0 });
-                slmsMap.get(slmId).tpCount++;
+                const subjName = row['Nama Mata Pelajaran'];
+                if (subjName) { // Check existence
+                    if (!nLO[gradeKey][subjName]) nLO[gradeKey][subjName] = [];
+                    nLO[gradeKey][subjName].push({
+                        slmId: row['ID SLM'],
+                        text: row['Deskripsi Tujuan Pembelajaran (TP)'],
+                        isEdited: true 
+                    });
+                }
             });
         }
+
+        // 7. Grades
+        nGr = nStud.map(st => ({ studentId: st.id, detailedGrades: {}, finalGrades: {} }));
         
-        // 6. Initialize Grades structure
-        newGrades = newStudents.map(student => {
-            const gradeEntry = { studentId: student.id, detailedGrades: {}, finalGrades: {} };
-            newSubjects.filter(s => s.active).forEach(subject => {
-                const structure = subjectStructureMap.get(subject.id);
-                const slms = structure ? Array.from(structure.slms.values()).map(slm => ({ id: slm.id, name: slm.name, scores: Array(slm.tpCount).fill(null) })) : [];
-                gradeEntry.detailedGrades[subject.id] = { slm: slms, sts: null, sas: null };
-            });
-            return gradeEntry;
-        });
-        const gradesMap = new Map(newGrades.map(g => [g.studentId, g]));
+        workbook.SheetNames.forEach(name => {
+            if (name.startsWith("Nilai_")) {
+                const subIdRaw = name.split('_')[1];
+                let subId = subIdRaw;
+                // Correct common typos in Sheet names from legacy data
+                if (subId === 'Blng' && !nSub.some(s => s.id === 'Blng') && nSub.some(s => s.id === 'BIng')) {
+                    subId = 'BIng';
+                }
 
-        // 7. Parse Nilai sheets
-        workbook.SheetNames.forEach(sheetName => {
-            if (sheetName.startsWith("Nilai_")) {
-                const subjectId = sheetName.split('_')[1];
-                const wsNilai = workbook.Sheets[sheetName];
-                const nilaiData = XLSX.utils.sheet_to_json(wsNilai);
-
-                nilaiData.forEach(row => {
-                    const studentId = row["ID Siswa"];
-                    const studentGrade = gradesMap.get(studentId);
-                    if (!studentGrade || !studentGrade.detailedGrades[subjectId]) return;
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
+                
+                rows.forEach(row => {
+                    // Robust ID matching: Match exact, match if row ID contains missing prefix, or match suffix
+                    const sid = String(row['ID Siswa'] || row['ID'] || row['a'] || '').trim();
+                    let studentEntry = nGr.find(g => g.studentId === sid);
                     
-                    const detailedGrade = studentGrade.detailedGrades[subjectId];
-                    Object.keys(row).forEach(header => {
-                        if (header.includes("_TP")) {
-                            const [slmId, tpPart] = header.split('_TP');
-                            const tpIndex = parseInt(tpPart, 10) - 1;
-                            const slmEntry = detailedGrade.slm.find(s => s.id === slmId);
-                            if (slmEntry && tpIndex >= 0) slmEntry.scores[tpIndex] = row[header] === '' ? null : Number(row[header]);
-                        } else if (header === 'STS') {
-                            detailedGrade.sts = row[header] === '' ? null : Number(row[header]);
-                        } else if (header === 'SAS') {
-                            detailedGrade.sas = row[header] === '' ? null : Number(row[header]);
-                        }
-                    });
+                    if (!studentEntry) {
+                        // Try adding 'student' prefix (e.g. _123 -> student_123)
+                        studentEntry = nGr.find(g => g.studentId === 'student' + sid);
+                    }
+                    if (!studentEntry) {
+                        // Try matching suffix (e.g. sid is '_123', real is 'student_123')
+                        studentEntry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId));
+                    }
+
+                    if (studentEntry) {
+                        const detailed = studentEntry.detailedGrades[subId] || { slm: [], sts: row['STS'], sas: row['SAS'] };
+                        // Parse dynamic SLM columns with whitespace trimming
+                        Object.keys(row).forEach(rawHeader => {
+                            const header = rawHeader.trim(); // Trim header to remove trailing spaces like '_TP1 '
+                            // Match regex: {ANYTHING}_TP{DIGITS}
+                            const match = header.match(/^(.*)_TP(\d+)$/);
+                            if (match) {
+                                const slmId = match[1];
+                                const tpIndex = parseInt(match[2]) - 1;
+                                
+                                let slm = detailed.slm.find(s => s.id === slmId);
+                                if (!slm) {
+                                    slm = { id: slmId, name: 'Lingkup Materi', scores: [] };
+                                    detailed.slm.push(slm);
+                                }
+                                slm.scores[tpIndex] = row[rawHeader];
+                            }
+                        });
+                        studentEntry.detailedGrades[subId] = detailed;
+                    }
                 });
             }
         });
-        newGrades = Array.from(gradesMap.values());
-        
-        // 8. Re-calculate final grades after all data is parsed.
-        const { a, b, c, d } = newSettings.predikats;
-        const tempQualitativeMap = {
-            SB: Math.round((parseInt(a, 10) + 100) / 2),
-            BSH: Math.round((parseInt(b, 10) + (parseInt(a, 10) - 1)) / 2),
-            MB: Math.round((parseInt(c, 10) + (parseInt(b, 10) - 1)) / 2),
-            BB: Math.round((parseInt(d, 10) + (parseInt(c, 10) - 1)) / 2),
-        };
-        const settingsForCalc = { ...newSettings, qualitativeGradingMap: tempQualitativeMap };
 
-        newGrades = newGrades.map(studentGrade => {
-            const newFinalGrades = {};
-            for (const subjectId in studentGrade.detailedGrades) {
-                const detailed = studentGrade.detailedGrades[subjectId];
-                const config = newSettings.gradeCalculation[subjectId] || { method: 'rata-rata' };
-                const finalScore = calculateFinalGrade(detailed, config, settingsForCalc);
-                newFinalGrades[subjectId] = finalScore;
-            }
-            return { ...studentGrade, finalGrades: newFinalGrades };
+        // 8. Absensi
+        const wsAtt = findSheet(["Absensi"]);
+        if (wsAtt) {
+            nAtt = XLSX.utils.sheet_to_json(wsAtt).map(r => ({
+                studentId: String(r['ID Siswa']),
+                sakit: r['Sakit'],
+                izin: r['Izin'],
+                alpa: r['Alpa']
+            }));
+        }
+
+        // 9. Data Ekstra (Flattened to Nested)
+        const wsDE = findSheet(["Data Ekstra"]);
+        if (wsDE) {
+            const deData = XLSX.utils.sheet_to_json(wsDE);
+            const map = {};
+            deData.forEach(row => {
+                const sid = String(row['ID Siswa']);
+                if (!map[sid]) map[sid] = { studentId: sid, assignedActivities: [], descriptions: {} };
+                
+                const idx = (row['Urutan Ekstra'] || 1) - 1;
+                const actId = row['ID Ekstrakurikuler'];
+                const desc = row['Deskripsi'];
+                
+                map[sid].assignedActivities[idx] = actId;
+                if (actId) map[sid].descriptions[actId] = desc;
+            });
+            nStEx = Object.values(map);
+        }
+
+        // 10. Kokurikuler
+        const wsKo = findSheet(["Data Kokurikuler"]);
+        if (wsKo) {
+            const koData = XLSX.utils.sheet_to_json(wsKo);
+            koData.forEach(row => {
+                const sid = String(row['ID Siswa']);
+                const ratings = {};
+                COCURRICULAR_DIMENSIONS.forEach(dim => {
+                    // Try ID first (Format 1: keys like 'keimanan'), then Label (Old format fallback)
+                    ratings[dim.id] = row[dim.id] || row[dim.label];
+                });
+                nCo[sid] = { dimensionRatings: ratings };
+            });
+        }
+
+        // 11. Catatan
+        const wsCat = findSheet(["Catatan Wali Kelas"]);
+        if (wsCat) {
+            XLSX.utils.sheet_to_json(wsCat).forEach(row => {
+                const sid = String(row['ID Siswa']);
+                nNot[sid] = row['Catatan Wali Kelas'];
+            });
+        }
+
+        // 12. Jurnal Formatif
+        const wsJF = findSheet(["Jurnal Formatif"]);
+        if (wsJF) {
+            const jfData = XLSX.utils.sheet_to_json(wsJF);
+            jfData.forEach(row => {
+                const sid = String(row['ID Siswa']);
+                if (!nFJ[sid]) nFJ[sid] = [];
+                nFJ[sid].push({
+                    id: row['ID Catatan'] || Date.now(),
+                    date: row['Tanggal'],
+                    type: row['Tipe'],
+                    subjectId: row['Mapel ID'],
+                    slmId: row['SLM ID'],
+                    tpId: row['TP ID'],
+                    topic: row['Topik'],
+                    note: row['Isi Catatan']
+                });
+            });
+        }
+
+        // --- RECALCULATE FINAL GRADES ---
+        // Ensure final grades are populated based on the imported raw scores and settings
+        nGr.forEach(studentGrade => {
+            nSub.forEach(subj => {
+                const detailed = studentGrade.detailedGrades[subj.id];
+                if (detailed) {
+                    const config = news.gradeCalculation?.[subj.id] || { method: 'rata-rata' };
+                    // Recalculate using the imported logic and settings
+                    studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, config, news);
+                }
+            });
         });
 
-        // 9. Parse other sheets
-        // Modified Attendance Parsing Logic
-        const wsAttendance = workbook.Sheets["Absensi"];
-        if (wsAttendance) {
-            const rawAttendance = XLSX.utils.sheet_to_json(wsAttendance);
-            // Create map for O(1) lookup
-            const attendanceMap = new Map();
-            rawAttendance.forEach(row => {
-                // Support both export formats ("ID Siswa" is current, "studentId" is legacy/raw)
-                const id = row["ID Siswa"] || row["studentId"];
-                if (id) {
-                    attendanceMap.set(id, {
-                        sakit: row["Sakit"],
-                        izin: row["Izin"],
-                        alpa: row["Alpa"]
-                    });
-                }
-            });
-
-            // Reconstruct attendance array based on the NEW students list being imported
-            newAttendance = newStudents.map(student => {
-                const att = attendanceMap.get(student.id) || {};
-                return {
-                    studentId: student.id,
-                    sakit: typeof att.sakit === 'number' ? att.sakit : null,
-                    izin: typeof att.izin === 'number' ? att.izin : null,
-                    alpa: typeof att.alpa === 'number' ? att.alpa : null
-                };
-            });
-        } else {
-            // If sheet missing, init empty for all new students
-            newAttendance = newStudents.map(s => ({ studentId: s.id, sakit: null, izin: null, alpa: null }));
-        }
-
-        const wsNotes = workbook.Sheets["Catatan Wali Kelas"];
-        if (wsNotes) newNotes = XLSX.utils.sheet_to_json(wsNotes).reduce((acc, n) => { acc[n["ID Siswa"]] = n["Catatan Wali Kelas"]; return acc; }, {});
-        
-        const wsCocurricular = workbook.Sheets["Data Kokurikuler"];
-        if (wsCocurricular) {
-            const coDataJSON = XLSX.utils.sheet_to_json(wsCocurricular);
-            coDataJSON.forEach(row => {
-                const studentId = row["ID Siswa"];
-                if (studentId) {
-                    const dimensionRatings = {};
-                    COCURRICULAR_DIMENSIONS.forEach(dim => {
-                        if (row[dim.id]) {
-                            dimensionRatings[dim.id] = row[dim.id];
-                        }
-                    });
-                    newCocurricularData[studentId] = { dimensionRatings };
-                }
-            });
-        }
-
-        const wsStudentExtra = workbook.Sheets["Data Ekstra"];
-        if (wsStudentExtra) {
-            const tempStudentExtra = {};
-            XLSX.utils.sheet_to_json(wsStudentExtra).forEach(row => {
-                const sid = row["ID Siswa"];
-                if (!tempStudentExtra[sid]) tempStudentExtra[sid] = { studentId: sid, assignedActivities: [], descriptions: {} };
-                const activityId = row["ID Ekstrakurikuler"];
-                if (activityId) { tempStudentExtra[sid].assignedActivities.push(activityId); tempStudentExtra[sid].descriptions[activityId] = row["Deskripsi"]; }
-            });
-            newStudentExtracurriculars = Object.values(tempStudentExtra);
-        }
-
-        const wsFormativeJournal = workbook.Sheets["Jurnal Formatif"];
-        if (wsFormativeJournal) {
-            const journalData = XLSX.utils.sheet_to_json(wsFormativeJournal);
-            journalData.forEach(row => {
-                const studentId = row["ID Siswa"];
-                if (studentId) {
-                    if (!newFormativeJournal[studentId]) {
-                        newFormativeJournal[studentId] = [];
-                    }
-                    newFormativeJournal[studentId].push({
-                        id: row["ID Catatan"],
-                        date: row["Tanggal"],
-                        topic: row["Topik"],
-                        type: row["Jenis"],
-                        note: row["Catatan"],
-                    });
-                }
-            });
-        }
-
-        // 10. Parse Aset Gambar (dengan rekombinasi chunk)
-        const wsImageAssets = workbook.Sheets["Aset Gambar"];
-        if (wsImageAssets) {
-            const imageAssets = XLSX.utils.sheet_to_json(wsImageAssets, { header: 1 });
-            const reconstructedAssets = {};
-            const partRegex = /^(.*)_part_(\d+)$/;
-
-            imageAssets.slice(1).forEach(([key, data]) => {
-                if (!key || !data) return;
-                const match = key.match(partRegex);
-                if (match) {
-                    const baseKey = match[1];
-                    const partNumber = parseInt(match[2], 10);
-                    if (!reconstructedAssets[baseKey]) {
-                        reconstructedAssets[baseKey] = [];
-                    }
-                    reconstructedAssets[baseKey][partNumber - 1] = data;
-                } else {
-                    if (key in newSettings) {
-                         newSettings[key] = data;
-                    }
-                }
-            });
-
-            for (const baseKey in reconstructedAssets) {
-                if (reconstructedAssets[baseKey] && baseKey in newSettings) {
-                    newSettings[baseKey] = reconstructedAssets[baseKey].join('');
-                }
-            }
-        }
-
-        return {
-            settings: newSettings,
-            subjects: newSubjects,
-            extracurriculars: newExtracurriculars,
-            students: newStudents,
-            learningObjectives: newLearningObjectives,
-            grades: newGrades,
-            attendance: newAttendance,
-            notes: newNotes,
-            cocurricularData: newCocurricularData,
-            studentExtracurriculars: newStudentExtracurriculars,
-            formativeJournal: newFormativeJournal
+        return { 
+            settings: news, 
+            students: nStud, 
+            attendance: nAtt, 
+            notes: nNot, 
+            studentExtracurriculars: nStEx, 
+            cocurricularData: nCo, 
+            grades: nGr,
+            subjects: nSub,
+            extracurriculars: nEx,
+            learningObjectives: nLO,
+            formativeJournal: nFJ
         };
-    }, [presets]);
+    }, [currentCurriculum]);
 
     const importFromExcelBlob = useCallback(async (blob) => {
         setIsLoading(true);
         try {
-            const newData = await parseExcelBlob(blob);
+            const d = await parseExcelBlob(blob);
+            // Multi-state update with force reload effect
+            setSettings(d.settings);
+            setStudents(d.students);
+            setAttendance(d.attendance);
+            setNotes(d.notes);
+            setStudentExtracurriculars(d.studentExtracurriculars);
+            setCocurricularData(d.cocurricularData);
+            setGrades(d.grades);
+            setSubjects(d.subjects);
+            setExtracurriculars(d.extracurriculars);
+            setLearningObjectives(d.learningObjectives);
+            setFormativeJournal(d.formativeJournal);
             
-            // Apply data to state
-            setSettings(newData.settings);
-            setSubjects(newData.subjects);
-            setExtracurriculars(newData.extracurriculars);
-            setStudents(newData.students);
-            setLearningObjectives(newData.learningObjectives);
-            setGrades(newData.grades);
-            setAttendance(newData.attendance);
-            setNotes(newData.notes);
-            setCocurricularData(newData.cocurricularData);
-            setStudentExtracurriculars(newData.studentExtracurriculars);
-            setFormativeJournal(newData.formativeJournal);
-            
-            showToast('Data berhasil diimpor dari file!', 'success');
+            showToast('Data berhasil diimpor (Format Lengkap)!', 'success');
         } catch (error) {
-            console.error("Gagal mengimpor data:", error);
-            showToast(`Format file tidak valid atau rusak: ${error.message}`, 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [showToast, parseExcelBlob]);
+            console.error("Import Failure:", error);
+            showToast(`Gagal mengimpor: ${error.message}`, 'error');
+        } finally { setIsLoading(false); }
+    }, [parseExcelBlob, showToast]);
 
-    const handleExportAll = useCallback(() => {
-        const blob = exportToExcelBlob();
-        if (!blob) { showToast('Gagal membuat file ekspor.', 'error'); return; }
-        const fileName = getDynamicRKTFileName(settings);
+    const handleExportAll = useCallback(async () => {
+        const blob = await exportToExcelBlob();
+        if (!blob) return;
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
+        link.download = getDynamicRKTFileName(settings);
         link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-        showToast('File template berhasil diunduh!', 'success');
+        showToast('File berhasil diunduh (Format Lengkap)!', 'success');
     }, [exportToExcelBlob, settings, showToast]);
 
     const handleImportAll = useCallback(() => {
@@ -1221,539 +1060,132 @@ const App = () => {
         input.type = 'file';
         input.accept = '.xlsx, .xls';
         input.onchange = (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            importFromExcelBlob(file);
+            if (e.target.files?.[0]) importFromExcelBlob(e.target.files[0]);
         };
         input.click();
     }, [importFromExcelBlob]);
 
     const autoSaveToDrive = useCallback(async () => {
-        if (!isDirty || !isSignedIn || !googleToken) { setSyncStatus(isDirty ? 'unsaved' : 'idle'); return; }
-        if (!isOnline) {
-            setSyncStatus('offline_pending');
-            const blob = exportToExcelBlob();
-            const fileName = getDynamicRKTFileName(settings);
-            
-            if (blob && fileName) {
-                await db.put('pendingSyncs', { id: 'unsynced_data', blob, fileName, fileId: googleDriveFileId });
-                if ('serviceWorker' in navigator && 'SyncManager' in window) {
-                    navigator.serviceWorker.ready.then(sw => { sw.sync.register('sync-rkt-drive').catch(err => console.error("Background sync registration failed:", err)); });
-                }
-            }
-            return; 
-        }
-
+        if (!isDirty || !isSignedIn || !isOnline) return;
         setSyncStatus('saving');
-        const currentDynamicFileName = getDynamicRKTFileName(settings);
-
         try {
-            let fileToOperateId = googleDriveFileId;
-            
-            // Gunakan pemeriksaan duplikat cerdas yang baru.
-            // Sekarang memerlukan pengaturan saat ini untuk dibandingkan dengan konten file.
-            const foundFile = await findRKTFileId(currentDynamicFileName, settings);
-            
-            if (foundFile) {
-                // Duplikat sejati ditemukan. Gunakan ID-nya.
-                fileToOperateId = foundFile.id;
-                if (googleDriveFileId !== foundFile.id) {
-                    console.log(`Beralih untuk memperbarui file yang ada dengan ID: ${foundFile.id}`);
-                    setGoogleDriveFileId(foundFile.id);
-                }
-            } else {
-                // Tidak ada duplikat sejati yang ditemukan (nama tidak ada, atau nama ada tetapi konten berbeda).
-                // Ini akan memaksa pembuatan file baru.
-                fileToOperateId = null; 
-            }
+            const fileName = getDynamicRKTFileName(settings);
+            const found = await findRKTFileId(fileName, settings);
+            const blob = await exportToExcelBlob();
+            if (found) await uploadFile(found.id, fileName, blob, RKT_MIME_TYPE);
+            else await createRKTFile(fileName, blob, RKT_MIME_TYPE);
+            setIsDirty(false); setSyncStatus('saved');
+        } catch (e) { setSyncStatus('error'); }
+    }, [isDirty, isSignedIn, isOnline, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
     
-            const blob = exportToExcelBlob();
-            if (!blob) throw new Error("Gagal membuat data Excel untuk diunggah.");
-    
-            if (fileToOperateId) {
-                // Perbarui file yang ada
-                await uploadFile(fileToOperateId, currentDynamicFileName, blob, RKT_MIME_TYPE);
-            } else {
-                // Buat file baru
-                const newFile = await createRKTFile(currentDynamicFileName, blob, RKT_MIME_TYPE);
-                setGoogleDriveFileId(newFile.id);
-            }
-    
-            const newTimestamp = new Date().toISOString();
-            setLastSyncTimestamp(newTimestamp);
-            setIsDirty(false);
-            setSyncStatus('saved');
-            setTimeout(() => setSyncStatus('idle'), 3000);
-    
-        } catch (error) {
-            console.error("Gagal sinkronisasi online dengan Google Drive:", error);
-            setSyncStatus('error');
-            setTimeout(() => setSyncStatus(isDirty ? 'unsaved' : 'idle'), 5000);
-            if (error.message.includes("File not found") || (error.result?.error?.code === 404)) {
-                setGoogleDriveFileId(null);
-            }
-        }
-    }, [isDirty, isSignedIn, isOnline, googleToken, googleDriveFileId, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
-    
+    // Save to LocalStorage effects
     useEffect(() => {
         localStorage.setItem('appSettings', JSON.stringify(appData.settings));
         localStorage.setItem('appStudents', JSON.stringify(appData.students));
         localStorage.setItem('appGrades', JSON.stringify(appData.grades));
         localStorage.setItem('appNotes', JSON.stringify(appData.notes));
-        localStorage.setItem('appCocurricularData', JSON.stringify(appData.cocurricularData));
         localStorage.setItem('appAttendance', JSON.stringify(appData.attendance));
-        localStorage.setItem('appExtracurriculars', JSON.stringify(appData.extracurriculars));
+        localStorage.setItem('appCocurricularData', JSON.stringify(appData.cocurricularData));
         localStorage.setItem('appStudentExtracurriculars', JSON.stringify(appData.studentExtracurriculars));
         localStorage.setItem('appSubjects', JSON.stringify(appData.subjects));
-        if (Object.keys(appData.learningObjectives).length > 0) localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
+        localStorage.setItem('appExtracurriculars', JSON.stringify(appData.extracurriculars));
+        localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
         localStorage.setItem('appFormativeJournal', JSON.stringify(appData.formativeJournal));
+        if (!isInitialMount.current && isSignedIn) { setIsDirty(true); setSyncStatus('unsaved'); }
+        isInitialMount.current = false;
+    }, [appData, isSignedIn]);
 
-        if (isInitialMount.current) { isInitialMount.current = false; return; }
-        if (isSignedIn) {
-            setIsDirty(true);
-            setSyncStatus('unsaved');
-            // REMOVED: Auto-save debounce interval to save quota.
-            // if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-            // debounceTimeout.current = setTimeout(() => autoSaveToDrive(), 5000);
-        }
-    }, [appData, isSignedIn]); // autoSaveToDrive removed from dependency to prevent loop, though unused now.
+    useEffect(() => { if (isSignedIn && isDirty) autoSaveToDrive(); }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
 
-    // New Effect: Trigger Auto-Save on Page Navigation
-    useEffect(() => {
-        if (isSignedIn && isDirty) {
-            console.log("Navigasi halaman terdeteksi, memulai penyimpanan otomatis...");
-            autoSaveToDrive();
-        }
-    }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
-
-    // Updated Effect: Trigger Auto-Save on App Visibility Change (Switching Apps/Tabs)
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden' && isDirty && isSignedIn) {
-                console.log("Aplikasi disembunyikan, menyimpan perubahan...");
-                autoSaveToDrive();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, [isDirty, isSignedIn, autoSaveToDrive]);
-
-    // New Effect: Warn user before closing tab if unsaved data exists
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (isDirty && isSignedIn) {
-                e.preventDefault();
-                // Standard browser message will appear
-                e.returnValue = ''; 
-            }
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [isDirty, isSignedIn]);
-
-    const handleSettingsChange = useCallback((e) => {
-        const { name, value, type, files } = e.target;
-    
-        if (type === 'file') {
-            if (files && files[0]) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const newValue = reader.result;
-                    setSettings(prev => ({ ...prev, [name]: newValue }));
-                };
-                reader.readAsDataURL(files[0]);
-            }
-        } else if (type === 'file_processed') {
-            setSettings(prev => ({ ...prev, [name]: value }));
-        } else {
-            setSettings(prev => {
-                if (name.includes('.')) {
-                    const [parent, key] = name.split('.');
-                    return {
-                        ...prev,
-                        [parent]: {
-                            ...prev[parent],
-                            [key]: value
-                        }
-                    };
-                }
-                return { ...prev, [name]: value };
-            });
-        }
-    }, []);
-
-    const saveSettings = useCallback(() => console.log("Settings saved to state."), []);
-    const onUpdateSubjects = useCallback((newSubjects) => setSubjects(newSubjects), []);
-    const onUpdateExtracurriculars = useCallback((newExtracurriculars) => setExtracurriculars(newExtracurriculars), []);
-    
-    // New handler
-    const handleUpdateDisplayMode = useCallback((mode) => {
-        setSettings(prev => ({ ...prev, nilaiDisplayMode: mode }));
-    }, []);
-
-    const handleSaveStudent = useCallback((studentData) => {
-        if (studentData.id) {
-            setStudents(prev => prev.map(s => s.id === studentData.id ? studentData : s));
-            showToast('Data siswa berhasil diperbarui.', 'success');
-        } else {
-            const newStudent = { ...studentData, id: `student_${Date.now()}` };
-            setStudents(prev => [...prev, newStudent]);
-            setGrades(prev => [...prev, { studentId: newStudent.id, detailedGrades: {}, finalGrades: {} }]);
-            setAttendance(prev => [...prev, { studentId: newStudent.id, sakit: null, izin: null, alpa: null }]);
-            setFormativeJournal(prev => ({ ...prev, [newStudent.id]: [] }));
-            showToast('Siswa baru berhasil ditambahkan.', 'success');
-        }
-    }, [showToast]);
-    const handleBulkSaveStudents = useCallback((newStudents) => setStudents(newStudents), []);
-    const handleDeleteStudent = useCallback((studentId) => {
-        setStudents(prev => prev.filter(s => s.id !== studentId));
-        setGrades(prev => prev.filter(g => g.studentId !== studentId));
-        setNotes(prev => { const newNotes = {...prev}; delete newNotes[studentId]; return newNotes; });
-        setCocurricularData(prev => { const newData = {...prev}; delete newData[studentId]; return newData; });
-        setAttendance(prev => prev.filter(a => a.studentId !== studentId));
-        setStudentExtracurriculars(prev => prev.filter(se => se.studentId !== studentId));
-        setFormativeJournal(prev => { const newJournal = {...prev}; delete newJournal[studentId]; return newJournal; });
-    }, []);
-    const handleUpdateAttendance = useCallback((studentId, type, value) => {
-        setAttendance(prev => {
-            const index = prev.findIndex(a => a.studentId === studentId);
-            const numValue = value === '' ? null : parseInt(value, 10);
-            if (index > -1) {
-                const newAttendance = [...prev];
-                newAttendance[index] = { ...newAttendance[index], [type]: isNaN(numValue) ? null : numValue };
-                return newAttendance;
-            }
-            return [...prev, { studentId, sakit: null, izin: null, alpa: null, [type]: isNaN(numValue) ? null : numValue }];
-        });
-    }, []);
-    const handleBulkUpdateAttendance = useCallback((newAttendance) => setAttendance(newAttendance), []);
-    const handleUpdateNote = useCallback((studentId, note) => setNotes(prev => ({ ...prev, [studentId]: note })), []);
-    const handleUpdateCocurricularData = useCallback((studentId, dimensionId, rating) => {
-      setCocurricularData(prev => {
-        const studentData = prev[studentId] || { dimensionRatings: {} };
-        const newRatings = { ...studentData.dimensionRatings, [dimensionId]: rating };
-        return { ...prev, [studentId]: { dimensionRatings: newRatings } };
-      });
-    }, []);
-    const handleUpdateStudentExtracurriculars = useCallback((newStudentExtracurriculars) => setStudentExtracurriculars(newStudentExtracurriculars), []);
-    const handleUpdatePredikats = useCallback((newPredikats) => setSettings(prev => ({ ...prev, predikats: newPredikats })), []);
-    
-    const handleUpdateGradeCalculation = useCallback((subjectId, newConfig) => {
-        setSettings(prevSettings => {
-            const updatedSettings = {
-                ...prevSettings,
-                gradeCalculation: {
-                    ...prevSettings.gradeCalculation,
-                    [subjectId]: newConfig,
-                },
-            };
-
-            setGrades(prevGrades => {
-                return prevGrades.map(studentGrade => {
-                    const detailedGrade = studentGrade.detailedGrades[subjectId];
-                    if (detailedGrade) {
-                        const newFinalScore = calculateFinalGrade(detailedGrade, newConfig, updatedSettings);
-                        const newFinalGrades = {
-                            ...studentGrade.finalGrades,
-                            [subjectId]: newFinalScore,
-                        };
-                        return { ...studentGrade, finalGrades: newFinalGrades };
-                    }
-                    return studentGrade;
-                });
-            });
-
-            return updatedSettings;
-        });
-    }, []);
-
-    // NEW: Handler for updating SLM visibility
-    const handleUpdateSlmVisibility = useCallback((subjectId, activeIds) => {
-        setSettings(prev => ({
-            ...prev,
-            slmVisibility: {
-                ...(prev.slmVisibility || {}),
-                [subjectId]: activeIds
-            }
-        }));
-    }, []);
-
-    const handleBulkUpdateGrades = useCallback((updates) => {
-        setGrades(prevGrades => {
-            const newGrades = [...prevGrades];
-            const gradesMap = new Map(newGrades.map(g => [g.studentId, g]));
-
-            updates.forEach(update => {
-                const { studentId, subjectId, newDetailedGrade } = update;
-                let studentGrade = gradesMap.get(studentId);
-                if (!studentGrade) {
-                    studentGrade = { studentId, detailedGrades: {}, finalGrades: {} };
-                    newGrades.push(studentGrade);
-                    gradesMap.set(studentId, studentGrade);
-                }
-                
-                studentGrade.detailedGrades = { ...studentGrade.detailedGrades, [subjectId]: newDetailedGrade };
-                
-                const config = settings.gradeCalculation[subjectId] || { method: 'rata-rata' };
-                const finalScore = calculateFinalGrade(newDetailedGrade, config, settings);
-                studentGrade.finalGrades = { ...studentGrade.finalGrades, [subjectId]: finalScore };
-            });
-            
-            return newGrades;
-        });
-    }, [settings]);
-
-    const handleBulkAddSlm = useCallback((subjectId, slmTemplate) => {
-        setGrades(prevGrades => {
-            return prevGrades.map(studentGrade => {
-                const detailedGradesForSubject = studentGrade.detailedGrades[subjectId] || { slm: [], sts: null, sas: null };
-                const slmExists = detailedGradesForSubject.slm.some(s => s.id === slmTemplate.id);
-    
-                if (!slmExists) {
-                    const newSlms = [...detailedGradesForSubject.slm, slmTemplate];
-                    const newDetailedGradesForSubject = { ...detailedGradesForSubject, slm: newSlms };
-                    
-                    return {
-                        ...studentGrade,
-                        detailedGrades: {
-                            ...studentGrade.detailedGrades,
-                            [subjectId]: newDetailedGradesForSubject
-                        }
-                    };
-                }
-                
-                return studentGrade;
-            });
-        });
-        showToast('Lingkup Materi baru ditambahkan.', 'success');
-    }, [showToast]);
-
-    const handleUpdateFormativeJournal = useCallback((studentId, noteData) => {
-        setFormativeJournal(prev => {
-            const studentNotes = prev[studentId] ? [...prev[studentId]] : [];
-            const existingNoteIndex = studentNotes.findIndex(note => note.id === noteData.id);
-            if (existingNoteIndex > -1) {
-                studentNotes[existingNoteIndex] = noteData;
-            } else {
-                studentNotes.unshift({ ...noteData, id: `note_${Date.now()}` }); // Add to the top
-            }
-            return { ...prev, [studentId]: studentNotes };
-        });
-    }, []);
-    
-    const handleDeleteFormativeNote = useCallback((studentId, noteId) => {
-        setFormativeJournal(prev => {
-            const studentNotes = prev[studentId] ? prev[studentId].filter(note => note.id !== noteId) : [];
-            return { ...prev, [studentId]: studentNotes };
-        });
-    }, []);
-
-    
-    const handleUpdateLearningObjectives = useCallback((newObjectives) => setLearningObjectives(newObjectives), []);
-    const handleUpdateKopLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, kop_layout: newLayout })), []);
-    const handleUpdatePiagamLayout = useCallback((newLayout) => setSettings(prev => ({ ...prev, piagam_layout: newLayout })), []);
-    
-    const handleDriveFileSelection = async (fileId) => {
-        if (!fileId) { setIsDriveModalOpen(false); setDriveConflictData(null); return; }
-        
-        setIsLoading(true);
-        showToast("Mengunduh data untuk verifikasi...", 'info');
-        try {
-            const blob = await downloadFile(fileId);
-            const remoteData = await parseExcelBlob(blob);
-            
-            // Calculate completeness scores
-            const localScore = calculateDataCompleteness(appData);
-            const remoteScore = calculateDataCompleteness(remoteData);
-            
-            const selectedFile = driveFiles.find(f => f.id === fileId);
-            const remoteTimestamp = selectedFile?.modifiedTime || new Date().toISOString();
-            
-            // Set conflict data for modal to display
-            setDriveConflictData({
-                fileId,
-                local: {
-                    score: localScore,
-                    timestamp: lastSyncTimestamp || new Date().toISOString(), // Fallback if no sync yet
-                },
-                remote: {
-                    score: remoteScore,
-                    timestamp: remoteTimestamp,
-                    blob: blob, // Keep blob ready to load
-                    data: remoteData // Keep parsed data
-                }
-            });
-            // Don't close modal yet, it will switch views based on driveConflictData prop
-            
-        } catch (error) {
-            console.error("Gagal memproses file Drive:", error);
-            showToast(`Gagal: ${error.message}`, 'error');
-            setIsDriveModalOpen(false);
-        } finally { setIsLoading(false); }
-    };
-    
-    const handleConfirmSyncAction = async (action, payload) => {
-        setIsLoading(true);
-        try {
-            if (action === 'overwrite_local') {
-                // User chose to download Drive data
-                const blob = payload;
-                await importFromExcelBlob(blob);
-                setGoogleDriveFileId(driveConflictData.fileId);
-                setLastSyncTimestamp(driveConflictData.remote.timestamp);
-                setDriveConflictData(null);
-                setIsDriveModalOpen(false);
-                showToast("Data perangkat berhasil diperbarui dari Drive.", 'success');
-            } else if (action === 'overwrite_drive') {
-                // User chose to upload Local data
-                const fileId = payload;
-                const blob = exportToExcelBlob();
-                const fileName = getDynamicRKTFileName(settings);
-                await uploadFile(fileId, fileName, blob, RKT_MIME_TYPE);
-                
-                // Update local sync state
-                setGoogleDriveFileId(fileId);
-                const newTime = new Date().toISOString();
-                setLastSyncTimestamp(newTime);
-                setIsDirty(false);
-                setSyncStatus('saved');
-                
-                setDriveConflictData(null);
-                setIsDriveModalOpen(false);
-                showToast("Data Drive berhasil diperbarui dengan data perangkat.", 'success');
-            }
-        } catch (error) {
-            console.error("Sync Action Failed:", error);
-            showToast(`Gagal melakukan sinkronisasi: ${error.message}`, 'error');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    const handleDriveFileDelete = async (fileId, fileName) => {
-        if (!window.confirm(`Apakah Anda yakin ingin menghapus file "${fileName}" secara permanen dari Google Drive Anda? Tindakan ini tidak dapat diurungkan.`)) {
-            return;
-        }
-
-        try {
-            await deleteFile(fileId);
-            showToast(`File "${fileName}" berhasil dihapus.`, 'success');
-            // Refresh the file list
-            setDriveFiles(prevFiles => prevFiles.filter(f => f.id !== fileId));
-            // If the deleted file was the one currently synced, clear the ID
-            if (googleDriveFileId === fileId) {
-                setGoogleDriveFileId(null);
-                setLastSyncTimestamp(null);
-            }
-        } catch (error) {
-            console.error("Gagal menghapus file:", error);
-            showToast(`Gagal menghapus file: ${error.message}`, 'error');
-        }
-    };
-
-    useEffect(() => {
-        const justGotProfile = !prevUserProfile.current && userProfile;
-        prevUserProfile.current = userProfile;
-        const handleSignInAction = async () => {
-            if (!isSignedIn || !userProfile) return;
-            showToast(`Selamat datang, ${userProfile.given_name || userProfile.email}!`, 'success');
-            setIsCheckingDrive(true);
-            setIsDriveModalOpen(true);
-            try {
-                const allFiles = await findAllRKTFiles();
-                setDriveFiles(allFiles || []);
-            } catch (error) {
-                console.error("Error checking Drive on sign-in:", error);
-                showToast(`Gagal memeriksa Google Drive: ${error.message}`, 'error');
-                setDriveFiles([]);
-                setIsDriveModalOpen(false);
-            } finally { setIsCheckingDrive(false); }
-        };
-
-        if (isSignedIn && justGotProfile) handleSignInAction();
-        else if (!isSignedIn) {
-            setGoogleDriveFileId(null);
-            setLastSyncTimestamp(null);
-            setDriveFiles([]);
-            setIsDirty(false);
-            setSyncStatus('idle');
-        }
-    }, [isSignedIn, userProfile, showToast, findAllRKTFiles]);
-    useEffect(() => {
-        setGoogleDriveFileId(null);
-        setLastSyncTimestamp(null);
-    }, [settings.nama_sekolah, settings.nama_kelas, settings.tahun_ajaran, settings.semester]);
-
-  const handleNavigateToNilai = useCallback((subjectId) => {
-    setDataNilaiInitialTab(subjectId);
-    setActivePage('DATA_NILAI');
-  }, []);
-
-  const renderPage = () => {
-    if (isLoading) {
-        return React.createElement('div', { className: "flex items-center justify-center h-full w-full" }, React.createElement('div', { className: 'flex flex-col items-center gap-4' }, React.createElement('div', { className: "animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" }), React.createElement('p', { className: 'text-slate-600' }, 'Memuat data...')));
-    }
-
-    switch (activePage) {
-      case 'DASHBOARD': return React.createElement(Dashboard, { setActivePage: setActivePage, onNavigateToNilai: handleNavigateToNilai, settings, students, grades, subjects, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars });
-      case 'DATA_SISWA': return React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onSaveStudent: handleSaveStudent, onBulkSaveStudents: handleBulkSaveStudents, onDeleteStudent: handleDeleteStudent, showToast: showToast });
-      case 'JURNAL_FORMATIF': return React.createElement(JurnalFormatifPage, { students, formativeJournal, subjects, grades, learningObjectives, settings, onUpdate: handleUpdateFormativeJournal, onDelete: handleDeleteFormativeNote, showToast });
-      case 'DATA_NILAI': return React.createElement(DataNilaiPage, { students, grades, settings, onUpdateGradeCalculation: handleUpdateGradeCalculation, onBulkUpdateGrades: handleBulkUpdateGrades, onBulkAddSlm: handleBulkAddSlm, learningObjectives, onUpdateLearningObjectives: handleUpdateLearningObjectives, subjects, onUpdatePredikats: handleUpdatePredikats, showToast: showToast, initialTab: dataNilaiInitialTab, onUpdateSlmVisibility: handleUpdateSlmVisibility, onUpdateDisplayMode: handleUpdateDisplayMode });
-      case 'DATA_KOKURIKULER': return React.createElement(DataKokurikulerPage, { students, settings, onSettingsChange: handleSettingsChange, cocurricularData, onUpdateCocurricularData: handleUpdateCocurricularData, showToast: showToast });
-      case 'DATA_ABSENSI': return React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: handleUpdateAttendance, onBulkUpdateAttendance: handleBulkUpdateAttendance, showToast: showToast });
-      case 'CATATAN_WALI_KELAS': return React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: handleUpdateNote, grades, subjects, settings, showToast: showToast });
-      case 'DATA_EKSTRAKURIKULER': return React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: handleUpdateStudentExtracurriculars, showToast: showToast });
-      case 'PENGATURAN': return React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: saveSettings, onUpdateKopLayout: handleUpdateKopLayout, subjects, onUpdateSubjects: onUpdateSubjects, extracurriculars, onUpdateExtracurriculars: onUpdateExtracurriculars, showToast: showToast });
-      case 'PRINT_RAPOR': return React.createElement(PrintRaporPage, { students, settings, grades, attendance, notes, cocurricularData, subjects, learningObjectives, studentExtracurriculars, extracurriculars, showToast: showToast });
-      case 'PRINT_PIAGAM': return React.createElement(PrintPiagamPage, { students, settings, grades, subjects, onUpdatePiagamLayout: handleUpdatePiagamLayout, showToast: showToast });
-      case 'PRINT_LEGER': return React.createElement(PrintLegerPage, { students, settings, grades, subjects, showToast: showToast });
-      default:
-        const navItem = NAV_ITEMS.find(item => item.id === activePage);
-        return React.createElement(PlaceholderPage, { title: navItem ? navItem.label : 'Halaman' });
-    }
-  };
-  
-  const pagesWithOwnScroll = ['DATA_NILAI', 'DATA_KOKURIKULER', 'DATA_EKSTRAKURIKULER', 'DATA_SISWA', 'DATA_ABSENSI', 'CATATAN_WALI_KELAS'];
-  const shouldDisableMainScroll = !isMobile && pagesWithOwnScroll.includes(activePage);
-
-  const mainLayoutClass = isMobile
-    ? "bg-slate-100 font-sans" // Removed flex properties to use normal flow
-    : "flex h-screen bg-slate-100 font-sans";
-    
   return React.createElement(React.Fragment, null,
-      isUpdateAvailable && React.createElement('div', { className: "fixed top-0 left-0 right-0 bg-yellow-400 text-yellow-900 p-3 text-center z-[101] shadow-lg flex justify-center items-center gap-4 print-hidden" }, React.createElement('p', { className: 'font-semibold' }, 'Versi baru aplikasi tersedia.'), React.createElement('button', { onClick: updateAssets, className: 'px-4 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold' }, 'Perbarui Sekarang')),
-      React.createElement(DriveDataSelectionModal, { 
-          isOpen: isDriveModalOpen, 
-          onClose: () => { setIsDriveModalOpen(false); setDriveConflictData(null); }, 
-          onConfirm: handleDriveFileSelection, 
-          files: driveFiles, 
-          isLoading: isCheckingDrive, 
-          onDelete: handleDriveFileDelete,
-          conflictData: driveConflictData,
-          onConfirmAction: handleConfirmSyncAction
-      }),
-      React.createElement('div', { className: mainLayoutClass },
+      toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
+      React.createElement('div', { className: isMobile ? "bg-slate-100" : "flex h-screen bg-slate-100" },
         React.createElement(Navigation, { 
-            activePage, 
-            setActivePage, 
-            onExport: handleExportAll, 
-            onImport: handleImportAll, 
-            isSignedIn, 
-            userEmail: userProfile?.email, 
-            isOnline, 
-            lastSyncTimestamp, 
-            syncStatus, 
-            onSignInClick: signIn, 
-            onSignOutClick: signOut,
-            isMobile,
-            isMobileMenuOpen,
-            setIsMobileMenuOpen,
-            currentPageName: NAV_ITEMS.find(item => item.id === activePage)?.label || 'Dashboard'
+            activePage, setActivePage, 
+            onExport: handleExportAll, onImport: handleImportAll,
+            isSignedIn, userEmail: userProfile?.email, isOnline, 
+            syncStatus, onSignInClick: signIn, onSignOutClick: signOut, 
+            isMobile, isMobileMenuOpen, setIsMobileMenuOpen, 
+            currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
         }),
-        React.createElement('main', { className: `${isMobile ? 'flex-1' : (shouldDisableMainScroll ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto')} p-4 sm:p-6 lg:p-8` }, renderPage())
-      ),
-      toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) })
-    );
+        React.createElement('main', { className: "flex-1 overflow-auto p-4 sm:p-8" }, 
+            isLoading ? "Memuat..." : 
+            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (subjectId) => { setActiveNilaiTab(subjectId); setActivePage('DATA_NILAI'); } }) :
+            activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onBulkSaveStudents: setStudents, onDeleteStudent: id => setStudents(prev => prev.filter(s => s.id !== id)), showToast }) :
+            activePage === 'DATA_NILAI' ? React.createElement(DataNilaiPage, { 
+                students, grades, settings, 
+                onBulkUpdateGrades: (u) => setGrades(prev => {
+                    const next = [...prev];
+                    u.forEach(x => {
+                        let g = next.find(ng => ng.studentId === x.studentId);
+                        if(!g) { g = { studentId: x.studentId, detailedGrades: {}, finalGrades: {} }; next.push(g); }
+                        g.detailedGrades[x.subjectId] = x.newDetailedGrade;
+                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings);
+                    });
+                    return next;
+                }), 
+                learningObjectives, onUpdateLearningObjectives: setLearningObjectives, 
+                subjects, 
+                onUpdatePredikats: p => setSettings(s => ({...s, predikats: p})), 
+                activeTab: activeNilaiTab, onTabChange: setActiveNilaiTab, 
+                onUpdateGradeCalculation: (sid, conf) => setSettings(s => ({ ...s, gradeCalculation: { ...s.gradeCalculation, [sid]: conf } })),
+                onUpdateSlmVisibility: (sid, vis) => setSettings(s => ({ ...s, slmVisibility: { ...s.slmVisibility, [sid]: vis } })),
+                onUpdateDisplayMode: (mode) => setSettings(s => ({ ...s, nilaiDisplayMode: mode })),
+                onBulkAddSlm: (subjectId, slm) => {
+                    setGrades(prev => prev.map(g => {
+                        const d = g.detailedGrades?.[subjectId] || { slm: [], sts: null, sas: null };
+                        if (!d.slm.some(s => s.id === slm.id)) {
+                            d.slm.push({ ...slm, scores: [...slm.scores] });
+                        }
+                        return { ...g, detailedGrades: { ...g.detailedGrades, [subjectId]: d } };
+                    }));
+                },
+                showToast 
+            }) :
+            activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: (e) => setSettings(prev => ({...prev, [e.target.name]: e.target.value})), onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
+            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: (e) => setSettings(prev => ({...prev, [e.target.name]: e.target.value})), onSave: () => setIsDirty(true), onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
+            activePage === 'DATA_ABSENSI' ? React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: (sid, t, v) => setAttendance(prev => {
+                const n = [...prev]; const i = n.findIndex(a => a.studentId === sid);
+                if(i>-1) n[i][t] = v===''?null:parseInt(v); else n.push({studentId:sid, [t]: v===''?null:parseInt(v)}); return n;
+            }), onBulkUpdateAttendance: setAttendance, showToast }) :
+            activePage === 'CATATAN_WALI_KELAS' ? React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: (sid, note) => setNotes(prev => ({...prev, [sid]: note})), grades, subjects, settings, showToast }) :
+            activePage === 'DATA_EKSTRAKURIKULER' ? React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: setStudentExtracurriculars, showToast }) :
+            activePage === 'PRINT_RAPOR' ? React.createElement(PrintRaporPage, { 
+                students, settings, grades, attendance, notes, studentExtracurriculars, extracurriculars, subjects, learningObjectives, cocurricularData, 
+                onUpdateDescription: (sid, subId, type, val) => {
+                    setGrades(prev => {
+                        const n = [...prev];
+                        const g = n.find(x => x.studentId === sid);
+                        if(g && g.detailedGrades[subId]) {
+                            if(!g.detailedGrades[subId].descriptions) g.detailedGrades[subId].descriptions = {};
+                            g.detailedGrades[subId].descriptions[type] = val;
+                        }
+                        return n;
+                    });
+                },
+                onUpdateStudent: (id, key, val) => setStudents(prev => prev.map(s => s.id === id ? { ...s, [key]: val } : s)),
+                onUpdateSettings: (key, val) => setSettings(s => ({ ...s, [key]: val })),
+                onUpdateNote: (sid, val) => setNotes(n => ({ ...n, [sid]: val })),
+                onUpdateAttendance: (sid, key, val) => setAttendance(prev => {
+                    const n = [...prev]; const i = n.findIndex(a => a.studentId === sid);
+                    if(i>-1) n[i][key] = val; else n.push({studentId:sid, [key]: val}); return n;
+                }),
+                onUpdateExtraDescription: (sid, eid, val) => setStudentExtracurriculars(prev => prev.map(s => s.studentId === sid ? { ...s, descriptions: { ...s.descriptions, [eid]: val } } : s)),
+                onUpdateCocurricularManual: (sid, val) => setCocurricularData(prev => ({ ...prev, [sid]: { ...prev[sid], manualDescription: val } })),
+                showToast 
+            }) :
+            activePage === 'PRINT_PIAGAM' ? React.createElement(PrintPiagamPage, { students, settings, grades, subjects, onUpdatePiagamLayout: (l) => setSettings(s => ({...s, piagam_layout: l})), showToast }) :
+            activePage === 'PRINT_LEGER' ? React.createElement(PrintLegerPage, { students, settings, grades, subjects, showToast }) :
+            activePage === 'JURNAL_FORMATIF' ? React.createElement(JurnalFormatifPage, { students, formativeJournal, onUpdate: (sid, data) => setFormativeJournal(prev => {
+                const next = { ...prev }; if(!next[sid]) next[sid] = [];
+                const idx = next[sid].findIndex(n => n.id === data.id);
+                if(idx > -1) next[sid][idx] = data; else next[sid].push({ ...data, id: Date.now() });
+                return next;
+            }), onDelete: (sid, id) => setFormativeJournal(prev => ({...prev, [sid]: prev[sid].filter(n => n.id !== id)})), showToast, subjects, grades, settings }) :
+            React.createElement(PlaceholderPage, { title: activePage })
+        )
+      )
+  );
 };
 
 export default App;
