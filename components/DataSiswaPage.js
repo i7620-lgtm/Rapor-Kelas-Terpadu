@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
 
@@ -165,7 +167,8 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             onChange: (e) => handleInputChange(student.id, fieldDef.key, e.target.value),
             onBlur: handleInputBlur,
             onPaste: (e) => handlePaste(e, student.id, fieldDef.key),
-            className: "w-full px-2 py-1.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow"
+            className: "w-full px-2 py-1.5 text-sm text-slate-700 bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-shadow",
+            placeholder: fieldDef.placeholder || fieldDef.label // Use specific placeholder or fallback to label
         };
 
         if (fieldDef.type === 'select') {
@@ -179,7 +182,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
              return React.createElement('input', { ...commonProps, type: 'text' });
         }
 
-        return React.createElement('input', { ...commonProps, type: 'text', placeholder: "..." });
+        return React.createElement('input', { ...commonProps, type: 'text' });
     };
 
     return (
