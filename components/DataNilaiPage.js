@@ -357,34 +357,14 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
 };
 
 // ... (TPSelectionModal unchanged)
-const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) => {
-    const [availableTPs, setAvailableTPs] = useState([]);
+const TPSelectionModal = ({ isOpen, onClose, onApply, subject, availableTPs, isLoading }) => {
     const [selectedTPs, setSelectedTPs] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (isOpen && gradeNumber) {
-            setIsLoading(true);
-            const fetchTPs = async () => {
-                try {
-                    const response = await fetch(`/tp${gradeNumber}.json`);
-                    if (!response.ok) throw new Error('File not found');
-                    const data = await response.json();
-                    const curriculumKey = subject.curriculumKey || subject.fullName;
-                    setAvailableTPs(data[curriculumKey] || []);
-                } catch (error) {
-                    console.error("Error fetching TP data:", error);
-                    setAvailableTPs([]);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-            fetchTPs();
-        } else {
-            setAvailableTPs([]);
+        if (!isOpen) {
+            setSelectedTPs([]);
         }
-        setSelectedTPs([]); 
-    }, [isOpen, subject, gradeNumber]);
+    }, [isOpen]);
 
     const handleCheckboxChange = (tpText) => {
         setSelectedTPs(prev =>
@@ -405,7 +385,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
                 React.createElement('h3', { className: "text-lg font-bold text-slate-800 p-4 border-b" }, `Pilih Tujuan Pembelajaran untuk ${subject.label}`),
                 React.createElement('div', { className: "p-6 overflow-y-auto" },
                     isLoading ? React.createElement('p', null, "Memuat data TP...") :
-                    availableTPs.length > 0 ? (
+                    availableTPs && availableTPs.length > 0 ? (
                         React.createElement('div', { className: "space-y-4" },
                             availableTPs.map((slmGroup, index) => (
                                 React.createElement('div', { key: index, className: "border rounded-lg" },
@@ -421,7 +401,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
                                 )
                             ))
                         )
-                    ) : React.createElement('p', { className: "text-slate-500" }, `Tidak ada data TP yang ditemukan untuk mata pelajaran ini di Kelas ${gradeNumber}.`)
+                    ) : React.createElement('p', { className: "text-slate-500" }, `Tidak ada data TP yang ditemukan untuk mata pelajaran ini.`)
                 ),
                 React.createElement('div', { className: "flex justify-end p-4 border-t bg-slate-50" },
                     React.createElement('button', { onClick: onClose, className: "px-4 py-2 text-sm font-medium bg-white border rounded-md" }, "Batal"),
@@ -433,7 +413,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, gradeNumber }) =>
 };
 
 
-const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdateObjectives, onBulkUpdateGrades, gradeNumber, settings, onUpdateGradeCalculation, showToast }) => {
+const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject, objectives, onUpdateObjectives, onBulkUpdateGrades, gradeNumber, settings, onUpdateGradeCalculation, showToast, predefinedCurriculum }) => {
     if (!isOpen) return null;
 
     const { type, item } = modalData;
@@ -775,11 +755,17 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         setLocalObjectives(prev => [...prev, ...newTps]);
     };
     
+    const availableTPsForSelection = useMemo(() => {
+        if (!predefinedCurriculum) return [];
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return predefinedCurriculum[curriculumKey] || [];
+    }, [predefinedCurriculum, subject]);
+
     const headerRowSpan = isSLM ? (isWeighting ? 3 : 2) : (isWeighting ? 2 : 1);
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement(TPSelectionModal, { isOpen: isTpSelectionModalOpen, onClose: () => setIsTpSelectionModalOpen(false), onApply: handleApplyTpSelection, subject: subject, gradeNumber: gradeNumber }),
+            React.createElement(TPSelectionModal, { isOpen: isTpSelectionModalOpen, onClose: () => setIsTpSelectionModalOpen(false), onApply: handleApplyTpSelection, subject: subject, availableTPs: availableTPsForSelection, isLoading: !predefinedCurriculum }),
             React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4" },
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col" },
                     React.createElement('div', { className: "p-5 border-b flex-shrink-0 flex justify-between items-center" },
@@ -951,13 +937,12 @@ const SummativeCard = ({ title, subtitle, onClick, isFilled }) => (
 );
 
 const NilaiCardView = (props) => {
-    const { subject, students, grades, settings, onUpdateGradeCalculation, onBulkUpdateGrades, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats, onUpdateDisplayMode, learningObjectives, showToast } = props;
+    const { subject, students, grades, settings, onUpdateGradeCalculation, onBulkUpdateGrades, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats, onUpdateDisplayMode, learningObjectives, showToast, predefinedCurriculum } = props;
     
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
     const [modalData, setModalData] = useState(null);
     const gradeNumber = getGradeNumber(settings.nama_kelas);
-    const [predefinedSlms, setPredefinedSlms] = useState([]);
 
     const isSlmFilled = useCallback((slmId) => {
         return grades.some(g => {
@@ -974,23 +959,11 @@ const NilaiCardView = (props) => {
         return grades.some(g => g.detailedGrades?.[subject.id]?.sas !== null && g.detailedGrades?.[subject.id]?.sas !== '');
     }, [grades, subject.id]);
 
-    useEffect(() => {
-        if (gradeNumber) {
-            const fetchPredefinedSLMs = async () => {
-                try {
-                    const response = await fetch(`/tp${gradeNumber}.json`);
-                    if (!response.ok) throw new Error(`tp${gradeNumber}.json not found`);
-                    const data = await response.json();
-                    const curriculumKey = subject.curriculumKey || subject.fullName;
-                    setPredefinedSlms(data[curriculumKey] || []);
-                } catch (error) {
-                    console.warn(`Could not fetch predefined SLMs for ${subject.curriculumKey || subject.fullName}:`, error);
-                    setPredefinedSlms([]);
-                }
-            };
-            fetchPredefinedSLMs();
-        }
-    }, [gradeNumber, subject.fullName, subject.curriculumKey]);
+    const predefinedSlms = useMemo(() => {
+        if (!predefinedCurriculum || !subject) return [];
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return predefinedCurriculum[curriculumKey] || [];
+    }, [predefinedCurriculum, subject]);
 
     const existingSlms = useMemo(() => {
         if (!students || students.length === 0 || !grades || grades.length === 0) return [];
@@ -1052,7 +1025,7 @@ const NilaiCardView = (props) => {
     return (
         React.createElement(React.Fragment, null,
             React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation, onUpdateDisplayMode: onUpdateDisplayMode }),
-            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation, showToast: showToast }),
+            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation, showToast: showToast, predefinedCurriculum: predefinedCurriculum }),
             
             React.createElement('div', { className: "space-y-6" },
                 React.createElement('div', { className: "flex justify-end" },
@@ -1097,7 +1070,7 @@ const NilaiCardView = (props) => {
     );
 };
 
-const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, learningObjectives, onUpdateLearningObjectives, onBulkUpdateGrades, allSlms, initialActiveIds, showToast, gradeNumber }) => {
+const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, learningObjectives, onUpdateLearningObjectives, onBulkUpdateGrades, allSlms, initialActiveIds, showToast, gradeNumber, predefinedCurriculum }) => {
     // ... (content unchanged)
     const [localSlms, setLocalSlms] = useState([]);
     const [localActiveIds, setLocalActiveIds] = useState(new Set());
@@ -1110,6 +1083,12 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
             setLocalActiveIds(new Set(initialActiveIds));
         }
     }, [isOpen, allSlms, initialActiveIds]);
+
+    const availableTPsForSelection = useMemo(() => {
+        if (!predefinedCurriculum) return [];
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return predefinedCurriculum[curriculumKey] || [];
+    }, [predefinedCurriculum, subject]);
 
     if (!isOpen) return null;
 
@@ -1253,7 +1232,8 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
                 onClose: () => setIsTpSelectionModalOpen(false), 
                 onApply: handleApplyTpSelection,
                 subject: subject,
-                gradeNumber: gradeNumber
+                availableTPs: availableTPsForSelection,
+                isLoading: !predefinedCurriculum
             }),
             React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center p-4" },
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" },
@@ -1313,14 +1293,12 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
 };
 
 const NilaiTableView = (props) => {
-    const { subject, students, grades, settings, learningObjectives, onBulkUpdateGrades, onUpdateLearningObjectives, onUpdateGradeCalculation, mode, showToast, onUpdateSlmVisibility, onUpdateDisplayMode } = props;
+    const { subject, students, grades, settings, learningObjectives, onBulkUpdateGrades, onUpdateLearningObjectives, onUpdateGradeCalculation, mode, showToast, onUpdateSlmVisibility, onUpdateDisplayMode, predefinedCurriculum } = props;
     
     const [isManageSlmModalOpen, setIsManageSlmModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const [tooltip, setTooltip] = useState({ visible: false, content: '', x: 0, y: 0 });
     const tableContainerRef = useRef(null);
-
-    const [predefinedSlms, setPredefinedSlms] = useState([]);
 
     const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
     
@@ -1328,23 +1306,11 @@ const NilaiTableView = (props) => {
     const slmTextRefs = useRef({});
     const [truncatedSlmIds, setTruncatedSlmIds] = useState({});
 
-    useEffect(() => {
-        if (gradeNumber) {
-            const fetchPredefinedSLMs = async () => {
-                try {
-                    const response = await fetch(`/tp${gradeNumber}.json`);
-                    if (!response.ok) throw new Error(`tp${gradeNumber}.json not found`);
-                    const data = await response.json();
-                    const curriculumKey = subject.curriculumKey || subject.fullName;
-                    setPredefinedSlms(data[curriculumKey] || []);
-                } catch (error) {
-                    console.warn(`Could not fetch predefined SLMs for ${subject.curriculumKey || subject.fullName}:`, error);
-                    setPredefinedSlms([]);
-                }
-            };
-            fetchPredefinedSLMs();
-        }
-    }, [gradeNumber, subject.fullName, subject.curriculumKey]);
+    const predefinedSlms = useMemo(() => {
+        if (!predefinedCurriculum) return [];
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return predefinedCurriculum[curriculumKey] || [];
+    }, [predefinedCurriculum, subject]);
 
     // Check if weighting is enabled for this subject
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
@@ -1359,43 +1325,64 @@ const NilaiTableView = (props) => {
 
     const allSlms = useMemo(() => {
         const slmMap = new Map();
-        
-        objectivesForSubject.forEach((tp) => {
-            if (!slmMap.has(tp.slmId)) {
-                let slmName = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === tp.slmId)?.name : null;
-                
-                if ((!slmName || slmName === 'Lingkup Materi') && tp.slmId.startsWith(`slm_predefined_${subject.id}_`)) {
-                    try {
-                        const parts = tp.slmId.split('_');
-                        const indexStr = parts[parts.length - 1];
-                        const index = parseInt(indexStr, 10);
-                        if (!isNaN(index) && predefinedSlms[index]) {
-                            slmName = predefinedSlms[index].slm;
-                        }
-                    } catch(e) {}
-                }
 
-                slmMap.set(tp.slmId, { 
-                    id: tp.slmId, 
-                    name: slmName || `Lingkup Materi (ID: ...${tp.slmId.slice(-4)})`, 
-                    tps: [] 
-                });
-            }
-            slmMap.get(tp.slmId).tps.push({ text: tp.text });
-        });
-
-        const slmsFromGrades = new Map();
-        grades.forEach(g => {
-            (g.detailedGrades?.[subject.id]?.slm || []).forEach(slm => {
-                if(slm && slm.id && !slmsFromGrades.has(slm.id)) {
-                    slmsFromGrades.set(slm.id, slm);
-                }
+        // Step 1: Populate with predefined SLMs. This is the crucial fix.
+        predefinedSlms.forEach((pSlm, index) => {
+            const slmId = `slm_predefined_${subject.id}_${index}`;
+            slmMap.set(slmId, {
+                id: slmId,
+                name: pSlm.slm,
+                tps: pSlm.tp.map(tpText => ({ text: tpText, isEdited: false }))
             });
         });
-        slmsFromGrades.forEach(slm => {
-            if (!slmMap.has(slm.id)) {
-                slmMap.set(slm.id, { id: slm.id, name: slm.name, tps: [] });
+
+        // Step 2: Group user objectives by SLM ID
+        const userObjectivesBySlm = objectivesForSubject.reduce((acc, tp) => {
+            if (!acc[tp.slmId]) {
+                acc[tp.slmId] = [];
             }
+            // Ensure isEdited is preserved or defaulted
+            acc[tp.slmId].push({ text: tp.text, isEdited: tp.isEdited === true });
+            return acc;
+        }, {});
+
+        // Step 3: Merge user objectives. This adds custom SLMs and overrides TPs of predefined ones.
+        Object.entries(userObjectivesBySlm).forEach(([slmId, tps]) => {
+            if (slmMap.has(slmId)) {
+                // User has edited the TPs for a predefined SLM. Override them.
+                const existingSlm = slmMap.get(slmId);
+                slmMap.set(slmId, { ...existingSlm, tps });
+            } else {
+                // This is a completely custom SLM. Add it to the map.
+                const slmNameFromGrades = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === slmId)?.name : null;
+                slmMap.set(slmId, {
+                    id: slmId,
+                    name: slmNameFromGrades || 'Lingkup Materi Kustom',
+                    tps
+                });
+            }
+        });
+        
+        // Step 4: Ensure all SLMs from grades data exist and use their names as the source of truth.
+        grades.forEach(grade => {
+            (grade.detailedGrades?.[subject.id]?.slm || []).forEach(gradeSlm => {
+                if (gradeSlm && gradeSlm.id) {
+                    if (!slmMap.has(gradeSlm.id)) {
+                        // This SLM exists in grade data but nowhere else. Add it.
+                        slmMap.set(gradeSlm.id, {
+                            id: gradeSlm.id,
+                            name: gradeSlm.name || 'Lingkup Materi Lama',
+                            tps: (gradeSlm.scores || []).map(() => ({ text: 'TP dari data lama', isEdited: true }))
+                        });
+                    } else {
+                        // Update the name in the map with the one from grades, as it's the user-edited version.
+                        const existingSlm = slmMap.get(gradeSlm.id);
+                        if (gradeSlm.name && gradeSlm.name !== existingSlm.name) {
+                            slmMap.set(gradeSlm.id, { ...existingSlm, name: gradeSlm.name });
+                        }
+                    }
+                }
+            });
         });
 
         return Array.from(slmMap.values());
@@ -1736,7 +1723,8 @@ const NilaiTableView = (props) => {
             allSlms,
             initialActiveIds: activeSlmIds,
             showToast,
-            gradeNumber
+            gradeNumber,
+            predefinedCurriculum
         }),
         React.createElement(GradeSettingsModal, {
             isOpen: isSettingsModalOpen,
@@ -2070,7 +2058,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
 
 
 const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => {
-    const { subjects, students, settings } = props;
+    const { subjects, students, settings, predefinedCurriculum } = props;
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
     const selectedSubject = useMemo(() => activeSubjects.find((s) => s.id === activeTab), [activeTab, activeSubjects]);
 
