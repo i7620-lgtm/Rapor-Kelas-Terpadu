@@ -6,7 +6,7 @@ const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
     F4: { width: '33cm', height: '21.5cm' },
     Letter: { width: '27.94cm', height: '21.59cm' },
-    Legal: {width: '35.56cm', height: '21.59cm'}
+    Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
 const PIAGAM_WIDTH = 1115;
@@ -234,7 +234,7 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                React.createElement('svg', { ref: svgRef, width: "100%", height: "100%", viewBox: PIAGAM_VIEWBOX, preserveAspectRatio: "none", className: "cursor-default" },
                                     elements.map(el => {
                                         const isSelected = el.id === selectedElementId;
-                                        const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(e, el), style: { cursor: 'move' } };
+                                        const commonProps = { key: el.id, onClick: (e) => handleSelectElement(el.id, e), onMouseDown: (e) => handleMouseDown(el.id, e), style: { cursor: 'move' } };
                                         
                                         let elementRender;
                                         if (el.type === 'text') {
@@ -622,16 +622,6 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
                                         React.createElement('image', { key: 'sig_head', href: settings.ttd_kepala_sekolah, x: sigX, y: sigY, width: sigWidth, height: sigHeight, preserveAspectRatio: "xMidYMid meet" })
                                     );
                                 }
-                                if (printOptions.showStamp && settings.cap_sekolah) {
-                                    // Stamp placed to the left of signature
-                                    const stampWidth = 90;
-                                    const stampHeight = 90;
-                                    const stampX = xPos - 90; // Shift left
-                                    const stampY = currentEl.y - 75;
-                                    elementsToRender.push(
-                                        React.createElement('image', { key: 'stamp_head', href: settings.cap_sekolah, x: stampX, y: stampY, width: stampWidth, height: stampHeight, opacity: 0.8, preserveAspectRatio: "xMidYMid meet" })
-                                    );
-                                }
                             } else if (currentEl.id === 'teacher_name') {
                                 if (printOptions.showTeacherSignature && settings.ttd_wali_kelas) {
                                     const sigWidth = 100;
@@ -666,8 +656,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
-        showTeacherSignature: true,
-        showStamp: true
+        showTeacherSignature: true
     });
 
     const studentRankings = useMemo(() => {
@@ -813,10 +802,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         React.createElement('label', { className: "flex items-center space-x-2" },
                             React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                             React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
-                        ),
-                        React.createElement('label', { className: "flex items-center space-x-2" },
-                            React.createElement('input', { type: "checkbox", checked: printOptions.showStamp, onChange: () => handlePrintOptionChange('showStamp'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                            React.createElement('span', { className: "text-sm" }, "Cap Sekolah")
                         )
                     )
                 )
@@ -840,4 +825,3 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 };
 
 export default PrintPiagamPage;
-
