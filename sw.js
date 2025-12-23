@@ -1,8 +1,7 @@
-
 // sw.js
 
 // GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v2, v3, dst)
-const CACHE_NAME = 'rkt-cache-v4';
+const CACHE_NAME = 'rkt-cache-v8';
 
 const urlsToCache = [
   '/',
@@ -33,20 +32,12 @@ const urlsToCache = [
   '/privacy.html',
   '/presets.json',
   '/icon.svg',
-  '/config.js',
-  '/tp1.json',
-  '/tp2.json',
-  '/tp3.json',
-  '/tp4.json',
-  '/tp5.json',
-  '/tp6.json'
+  '/config.js'
 ];
 
 // Event 'install': Cache file-file penting aplikasi
 self.addEventListener('install', (event) => {
-  // Paksa SW baru untuk segera masuk fase waiting (jangan langsung aktif dulu, tunggu user klik update)
-  // self.skipWaiting() DIHAPUS di sini agar user punya kendali kapan mau refresh via tombol.
-  
+  // Paksa SW baru untuk segera masuk fase waiting
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -85,24 +76,46 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // PENTING: Hanya tangani permintaan http/https. Ini mencegah error dari fetch chrome-extension://.
+  // PENTING: Hanya tangani permintaan http/https.
   if (!requestUrl.protocol.startsWith('http')) {
-    return; // Biarkan browser menangani permintaan non-http.
+    return; 
   }
 
-  // Abaikan semua permintaan ke domain Google untuk menghindari masalah otentikasi/CORS.
+  // Abaikan semua permintaan ke domain Google
   if (requestUrl.hostname.endsWith('google.com') || requestUrl.hostname.endsWith('googleapis.com')) {
     return;
   }
 
-  // Untuk permintaan non-GET (seperti PATCH, POST), langsung ke jaringan. Jangan cache.
+  // Untuk permintaan non-GET, langsung ke jaringan.
   if (event.request.method !== 'GET') {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Strategi Network-First untuk HTML dan JS utama agar update lebih cepat terdeteksi
-  // Jika offline, baru ambil dari cache.
+  // STRATEGI KHUSUS UNTUK FILE JSON (Network-First)
+  // Ini memastikan data kurikulum (TP) selalu mengambil yang terbaru dari server jika online.
+  if (requestUrl.pathname.endsWith('.json')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          // Jika berhasil ambil dari server, update cache dan kembalikan respon
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Jika offline atau server error, baru ambil dari cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Strategi Network-First untuk HTML dan JS utama
   if (requestUrl.pathname === '/' || requestUrl.pathname === '/index.html' || requestUrl.pathname.endsWith('.js')) {
       event.respondWith(
         fetch(event.request)
@@ -120,7 +133,7 @@ self.addEventListener('fetch', (event) => {
       return;
   }
 
-  // Untuk aset lain (gambar, font, json), gunakan strategi Cache-First (lebih cepat)
+  // Untuk aset lain (gambar, font) yang jarang berubah, gunakan Cache-First
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
