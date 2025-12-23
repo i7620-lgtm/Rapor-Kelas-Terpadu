@@ -10,13 +10,24 @@ const useServiceWorker = () => {
       const handleSW = async () => {
         try {
           // Dapatkan pendaftaran SW yang sudah ada
-          const reg = await navigator.serviceWorker.getRegistration();
+          // Wrap in try-catch as getRegistration can fail in some preview environments due to origin mismatch
+          let reg;
+          try {
+             reg = await navigator.serviceWorker.getRegistration();
+          } catch (e) {
+             console.warn('Service Worker getRegistration failed, skipping update check:', e);
+             return;
+          }
           
           if (reg) {
             // PENTING: Paksa browser untuk mengecek apakah ada file sw.js baru di server.
             // Tanpa ini, browser mungkin hanya menggunakan versi cache sampai 24 jam.
             console.log('[RKT] Checking for Service Worker updates...');
-            await reg.update();
+            try {
+                await reg.update();
+            } catch (updateErr) {
+                console.warn('Service Worker update check failed:', updateErr);
+            }
 
             // 1. Cek worker yang sudah menunggu (waiting)
             if (reg.waiting) {
@@ -41,7 +52,7 @@ const useServiceWorker = () => {
             };
           }
         } catch (error) {
-          console.error('[RKT] Service Worker error:', error);
+          console.error('[RKT] Service Worker logic error:', error);
         }
       };
 
