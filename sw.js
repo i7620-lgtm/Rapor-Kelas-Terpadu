@@ -1,7 +1,7 @@
 // sw.js
 
-// GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v2, v3, dst)
-const CACHE_NAME = 'rkt-cache-v8';
+// GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v9, v10, dst)
+const CACHE_NAME = 'rkt-cache-v9';
 
 const urlsToCache = [
   '/',
@@ -32,7 +32,14 @@ const urlsToCache = [
   '/privacy.html',
   '/presets.json',
   '/icon.svg',
-  '/config.js'
+  '/config.js',
+  // Pre-cache all curriculum data files for robust offline access
+  '/tp1.json',
+  '/tp2.json',
+  '/tp3.json',
+  '/tp4.json',
+  '/tp5.json',
+  '/tp6.json'
 ];
 
 // Event 'install': Cache file-file penting aplikasi
@@ -92,30 +99,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // STRATEGI KHUSUS UNTUK FILE JSON (Network-First)
-  // Ini memastikan data kurikulum (TP) selalu mengambil yang terbaru dari server jika online.
-  if (requestUrl.pathname.endsWith('.json')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          // Jika berhasil ambil dari server, update cache dan kembalikan respon
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Jika offline atau server error, baru ambil dari cache
-          return caches.match(event.request);
-        })
-    );
-    return;
-  }
-
-  // Strategi Network-First untuk HTML dan JS utama
+  // Strategi Network-First untuk HTML dan JS utama (dokumen utama aplikasi)
   if (requestUrl.pathname === '/' || requestUrl.pathname === '/index.html' || requestUrl.pathname.endsWith('.js')) {
       event.respondWith(
         fetch(event.request)
@@ -133,7 +117,7 @@ self.addEventListener('fetch', (event) => {
       return;
   }
 
-  // Untuk aset lain (gambar, font) yang jarang berubah, gunakan Cache-First
+  // Untuk aset lain (gambar, font, JSON), gunakan Cache-First
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
