@@ -1,5 +1,4 @@
 
-
 {
   "Pendidikan Agama dan Budi Pekerti (Islam)": [
     {
@@ -1128,6 +1127,33 @@
         "memahami puisi Bali anyar",
         "menulis puisi Bali anyar",
         "membaca puisi Bali anyar"
+      ]
+    }
+  ],
+  "Koding dan Kecerdasan Artifisial": [
+    {
+      "slm": "Bab 1: Membuat Proyek Interaktif dengan Pemrograman Visual",
+      "tp": [
+        "Merancang alur logika untuk proyek interaktif sederhana.",
+        "Menerapkan konsep percabangan (if-else) dan perulangan (loops) dalam pemrograman visual.",
+        "Membuat proyek animasi atau game interaktif menggunakan Scratch atau platform serupa."
+      ]
+    },
+    {
+      "slm": "Bab 2: Etika dan Dampak AI dalam Kehidupan Sehari-hari",
+      "tp": [
+        "Menganalisis contoh penggunaan AI dalam kehidupan sehari-hari.",
+        "Mengidentifikasi potensi bias dalam data yang digunakan untuk melatih AI.",
+        "Mendiskusikan isu etika terkait penggunaan AI, seperti privasi dan pengambilan keputusan.",
+        "Mengusulkan cara penggunaan AI secara bertanggung jawab."
+      ]
+    },
+    {
+      "slm": "Bab 3: Pengenalan Konsep Jaringan Saraf Tiruan Sederhana",
+      "tp": [
+        "Menjelaskan konsep dasar jaringan saraf tiruan (neural networks) secara sederhana.",
+        "Mengidentifikasi input, proses, dan output dalam model AI sederhana.",
+        "Memahami bagaimana AI 'belajar' dari data untuk membuat prediksi atau klasifikasi."
       ]
     }
   ]
