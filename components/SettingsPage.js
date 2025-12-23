@@ -12,8 +12,6 @@ const TransliterationModal = ({ isOpen, onClose, onApply, initialText }) => {
 
     useEffect(() => {
         if (isOpen) {
-            // Attempt to keep only latin characters from initial text for a better editing experience.
-            // This is a simple heuristic.
             const latinOnly = initialText?.replace(/[^\u0000-\u007F]/g, "") || '';
             setLatinText(latinOnly);
         }
@@ -84,14 +82,10 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 ? JSON.parse(JSON.stringify(settings.kop_layout))
                 : generateInitialLayout(settings);
     
-            // Define dynamic texts based on current settings
             const pemdaText = generatePemdaText(settings.kota_kabupaten, settings.provinsi);
-            
             const dinasDetailText = (settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
             const sekolahText = expandAndCapitalizeSchoolName(settings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
-
             const alamatText = settings.alamat_sekolah || "Kebo Iwa Banjar Batuparas";
-            
             const telpText = settings.telepon_sekolah ? `Telepon: ${settings.telepon_sekolah}` : "Telepon: (0361) 9093558";
             const alamatTelpText = [alamatText, telpText].filter(Boolean).join(', ');
             const contactLine2 = [
@@ -101,7 +95,6 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 settings.faksimile ? `Faksimile: ${settings.faksimile}` : null,
             ].filter(Boolean).join(' | ');
 
-            // Create a map for easy content lookup
             const syncMap = {
                 'aksara_dinas_text': transliterate(pemdaText),
                 'latin_dinas_text': pemdaText,
@@ -114,10 +107,8 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 'latin_kontak_lainnya_text': contactLine2,
             };
 
-            // Sync the layout with current settings data
             const syncedLayout = layoutToLoad.map(el => {
                 if (el.type === 'text' && syncMap.hasOwnProperty(el.id)) {
-                    // Only update if the ID is one of the default, dynamic ones
                     return { ...el, content: syncMap[el.id] };
                 }
                 return el;
@@ -144,7 +135,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
     };
     
     const handleMouseDown = (e, el) => {
-        if (e.button !== 0) return; // Hanya drag dengan tombol kiri mouse
+        if (e.button !== 0) return;
         if (!svgRef.current) return;
         const svg = svgRef.current;
         const ctm = svg.getScreenCTM()?.inverse();
@@ -173,7 +164,6 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
             let newX = transformedPtMove.x - dragInfo.current.offset.x;
             let newY = transformedPtMove.y - dragInfo.current.offset.y;
 
-            // Snap to grid
             newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
             newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
@@ -284,7 +274,7 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                                             }, el.content)
                                         );
                                     } else if (el.type === 'image') {
-                                        const imageUrl = String(settings[el.content] || placeholderSvg);
+                                        const imageUrl = String(settings[el.content] || "data:image/svg+xml,%3Csvg%20width%3D%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E");
                                         elementRender = (
                                             React.createElement('image', {
                                                 href: imageUrl,
@@ -458,7 +448,7 @@ const KopSuratPreview = ({ settings }) => {
 };
 
 const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, className, ...props }) => (
-    React.createElement('div', { className: "col-span-1" },
+    React.createElement('div', { className: "w-full" },
         React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
             label
         ),
@@ -466,7 +456,7 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
             type: type,
             id: String(id),
             name: String(id),
-            value: value || '',
+            value: value ?? '', // MENGGUNAKAN ?? AGAR ANGKA 0 BISA DITAMPILKAN
             onChange: onChange,
             onBlur: onBlur,
             onKeyDown: onKeyDown,
@@ -477,19 +467,19 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
     )
 );
 
-const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTransparent }) => {
+const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTransparent, containerClassName }) => {
     const handleFileChange = (e) => {
         onChange(e);
         onSave();
     };
     
     return (
-     React.createElement('div', { className: "col-span-1" },
+     React.createElement('div', { className: `w-full flex flex-col ${containerClassName || ''}` },
         React.createElement('label', { className: "block text-sm font-medium text-slate-700 mb-1" },
             label
         ),
-        React.createElement('div', { className: "mt-1 flex flex-col gap-2 p-2 border-2 border-slate-300 border-dashed rounded-md" },
-            React.createElement('div', { className: "flex items-center gap-4" },
+        React.createElement('div', { className: "mt-1 flex flex-col gap-2 p-2 border-2 border-slate-300 border-dashed rounded-md flex-grow" },
+            React.createElement('div', { className: "flex items-center gap-4 flex-grow" },
                 imagePreview ? (
                     React.createElement('img', { src: imagePreview, alt: "Logo preview", className: "w-16 h-16 object-contain rounded-md bg-slate-100" })
                 ) : (
@@ -516,7 +506,8 @@ const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTrans
     );
 };
 
-const PengaturanMapel = ({ subjects, onUpdateSubjects, showToast }) => {
+// Moved outside and memoized
+const PengaturanMapel = React.memo(({ subjects, onUpdateSubjects, showToast }) => {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [newSubjectLabel, setNewSubjectLabel] = useState('');
 
@@ -610,9 +601,10 @@ const PengaturanMapel = ({ subjects, onUpdateSubjects, showToast }) => {
             )
         )
     );
-}
+});
 
-const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars, showToast }) => {
+// Moved outside and memoized
+const PengaturanEkstra = React.memo(({ extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [newExtraName, setNewExtraName] = useState('');
 
     const handleToggle = (id) => {
@@ -685,120 +677,26 @@ const PengaturanEkstra = ({ extracurriculars, onUpdateExtracurriculars, showToas
             )
         )
     );
-};
+});
 
-const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
-    const [isEditorOpen, setIsEditorOpen] = useState(false);
+// Moved outside and memoized
+const QualitativeGradingTable = React.memo(({ settings }) => {
+    const { predikats, qualitativeGradingMap } = settings;
+    if (!predikats || !qualitativeGradingMap) return null;
 
-    // State lokal untuk Nama Kelas untuk mencegah update kurikulum yang terlalu sering
-    const [localClassName, setLocalClassName] = useState(settings.nama_kelas || '');
+    const valA = parseInt(predikats.a, 10);
+    const valB = parseInt(predikats.b, 10);
+    const valC = parseInt(predikats.c, 10);
+    const valD = parseInt(predikats.d, 10);
 
-    // Sinkronisasi state lokal dengan props settings jika berubah dari luar
-    useEffect(() => {
-        setLocalClassName(settings.nama_kelas || '');
-    }, [settings.nama_kelas]);
+    const data = [
+        { code: 'SB', descriptor: QUALITATIVE_DESCRIPTORS.SB, range: `${valA} - 100`, value: qualitativeGradingMap.SB },
+        { code: 'BSH', descriptor: QUALITATIVE_DESCRIPTORS.BSH, range: `${valB} - ${valA - 1}`, value: qualitativeGradingMap.BSH },
+        { code: 'MB', descriptor: QUALITATIVE_DESCRIPTORS.MB, range: `${valC} - ${valB - 1}`, value: qualitativeGradingMap.MB },
+        { code: 'BB', descriptor: QUALITATIVE_DESCRIPTORS.BB, range: `${valD} - ${valC - 1}`, value: qualitativeGradingMap.BB },
+    ];
 
-    // Handler untuk perubahan input (hanya update state lokal)
-    const handleLocalClassNameChange = (e) => {
-        setLocalClassName(e.target.value);
-    };
-
-    // Handler untuk menyimpan perubahan ke global state (onBlur atau Enter)
-    const commitClassNameChange = () => {
-        if (localClassName !== settings.nama_kelas) {
-            onSettingsChange({
-                target: {
-                    name: 'nama_kelas',
-                    value: localClassName
-                }
-            });
-            if (onSave) onSave();
-        }
-    };
-
-    // Handler khusus untuk Enter pada input Nama Kelas
-    const handleClassNameKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.target.blur(); // Ini akan memicu onBlur -> commitClassNameChange
-            showToast('Nama kelas disimpan.', 'success');
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.target.blur();
-            showToast('Perubahan disimpan.', 'success');
-        }
-    };
-
-    const handleMakeTransparent = useCallback(async (logoKey) => {
-        const base64String = settings[logoKey];
-        if (!base64String) {
-            showToast('Tidak ada gambar untuk diproses.', 'error');
-            return;
-        }
-
-        showToast('Memproses gambar...', 'info');
-        try {
-            const transparentBase64 = await removeImageBackground(base64String);
-            // Simulate the event object expected by onSettingsChange
-            const syntheticEvent = {
-                target: {
-                    name: logoKey,
-                    value: transparentBase64,
-                    type: 'file_processed', // Custom type to indicate it's not a real file input
-                    files: null
-                }
-            };
-            onSettingsChange(syntheticEvent);
-            showToast('Latar belakang logo berhasil dihapus.', 'success');
-        } catch (error) {
-            console.error('Gagal membuat latar belakang transparan:', error);
-            showToast(`Gagal memproses gambar: ${error.message}`, 'error');
-        }
-    }, [settings, onSettingsChange, showToast]);
-
-    const handleGradeMethodChange = (subjectId, newMethod) => {
-        const currentCalc = settings.gradeCalculation || {};
-        const subjectConfig = currentCalc[subjectId] || {};
-        
-        const updatedCalc = {
-            ...currentCalc,
-            [subjectId]: {
-                ...subjectConfig,
-                method: newMethod,
-                // Preserve weights if switching back and forth, though UI might hide them
-                weights: subjectConfig.weights || {} 
-            }
-        };
-
-        onSettingsChange({
-            target: {
-                name: 'gradeCalculation',
-                value: updatedCalc
-            }
-        });
-    };
-
-    const QualitativeGradingTable = () => {
-        const { predikats, qualitativeGradingMap } = settings;
-        if (!predikats || !qualitativeGradingMap) return null;
-
-        const valA = parseInt(predikats.a, 10);
-        const valB = parseInt(predikats.b, 10);
-        const valC = parseInt(predikats.c, 10);
-        const valD = parseInt(predikats.d, 10);
-
-        const data = [
-            { code: 'SB', descriptor: QUALITATIVE_DESCRIPTORS.SB, range: `${valA} - 100`, value: qualitativeGradingMap.SB },
-            { code: 'BSH', descriptor: QUALITATIVE_DESCRIPTORS.BSH, range: `${valB} - ${valA - 1}`, value: qualitativeGradingMap.BSH },
-            { code: 'MB', descriptor: QUALITATIVE_DESCRIPTORS.MB, range: `${valC} - ${valB - 1}`, value: qualitativeGradingMap.MB },
-            { code: 'BB', descriptor: QUALITATIVE_DESCRIPTORS.BB, range: `${valD} - ${valC - 1}`, value: qualitativeGradingMap.BB },
-        ];
-
-        return (
+    return (
              React.createElement('div', { className: "mt-4" },
                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Penilaian Kualitatif Otomatis (Hanya Baca)"),
                 React.createElement('p', { className: "text-xs text-slate-500 mb-3" }, "Nilai representatif ini dihitung otomatis dari nilai KKM dan rentang di atas."),
@@ -821,8 +719,98 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                     )
                 )
             )
-        );
+    );
+});
+
+
+const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
+    const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+    const [localClassName, setLocalClassName] = useState(settings.nama_kelas || '');
+
+    useEffect(() => {
+        setLocalClassName(settings.nama_kelas || '');
+    }, [settings.nama_kelas]);
+
+    const handleLocalClassNameChange = (e) => {
+        setLocalClassName(e.target.value);
     };
+
+    const commitClassNameChange = () => {
+        if (localClassName !== settings.nama_kelas) {
+            onSettingsChange({
+                target: {
+                    name: 'nama_kelas',
+                    value: localClassName
+                }
+            });
+            if (onSave) onSave();
+        }
+    };
+
+    const handleClassNameKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+            showToast('Nama kelas disimpan.', 'success');
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+            showToast('Perubahan disimpan.', 'success');
+        }
+    };
+
+    const handleMakeTransparent = useCallback(async (logoKey) => {
+        const base64String = settings[logoKey];
+        if (!base64String) {
+            showToast('Tidak ada gambar untuk diproses.', 'error');
+            return;
+        }
+
+        showToast('Memproses gambar...', 'info');
+        try {
+            const transparentBase64 = await removeImageBackground(base64String);
+            const syntheticEvent = {
+                target: {
+                    name: logoKey,
+                    value: transparentBase64,
+                    type: 'file_processed',
+                    files: null
+                }
+            };
+            onSettingsChange(syntheticEvent);
+            showToast('Latar belakang logo berhasil dihapus.', 'success');
+        } catch (error) {
+            console.error('Gagal membuat latar belakang transparan:', error);
+            showToast(`Gagal memproses gambar: ${error.message}`, 'error');
+        }
+    }, [settings, onSettingsChange, showToast]);
+
+    const handleGradeMethodChange = (subjectId, newMethod) => {
+        const currentCalc = settings.gradeCalculation || {};
+        const subjectConfig = currentCalc[subjectId] || {};
+        
+        const updatedCalc = {
+            ...currentCalc,
+            [subjectId]: {
+                ...subjectConfig,
+                method: newMethod,
+                weights: subjectConfig.weights || {} 
+            }
+        };
+
+        onSettingsChange({
+            target: {
+                name: 'gradeCalculation',
+                value: updatedCalc
+            }
+        });
+    };
+
 
     return (
         React.createElement(React.Fragment, null,
@@ -879,18 +867,19 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                             )
                         ),
 
-                        React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-12" },
-                             React.createElement('section', null,
-                                React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Periode Akademik"),
-                                 React.createElement('div', { className: "space-y-4" },
+                        React.createElement('section', { className: "pt-8 border-t border-slate-200" },
+                            React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch" },
+                                // Kolom 1: Periode Akademik
+                                React.createElement('div', { className: "flex flex-col gap-4 h-full" },
+                                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Periode Akademik"),
                                     React.createElement(FormField, { 
                                         label: "Nama Kelas", 
                                         id: "nama_kelas", 
                                         placeholder: "e.g. 6a atau 6A atau VIA", 
-                                        value: localClassName, // Menggunakan state lokal
-                                        onChange: handleLocalClassNameChange, // Update state lokal saat mengetik
-                                        onBlur: commitClassNameChange, // Simpan ke global saat onBlur
-                                        onKeyDown: handleClassNameKeyDown // Simpan ke global saat Enter
+                                        value: localClassName,
+                                        onChange: handleLocalClassNameChange,
+                                        onBlur: commitClassNameChange,
+                                        onKeyDown: handleClassNameKeyDown 
                                     }),
                                     React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', null,
@@ -910,20 +899,45 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                         )
                                     ),
                                     React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
-                                )
-                            ),
-                            React.createElement('section', null,
-                                React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Kepala Sekolah dan Guru"),
-                                 React.createElement('div', { className: "space-y-4" },
+                                ),
+
+                                // Kolom 2: Kepala Sekolah dan Guru
+                                React.createElement('div', { className: "flex flex-col gap-4 h-full" },
+                                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
                                     React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                ),
+
+                                // Kolom 3: Tanda Tangan (Disesuaikan Tinggi)
+                                React.createElement('div', { className: "flex flex-col gap-4 h-full" },
+                                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Tanda Tangan"),
+                                    React.createElement('div', { className: "flex-1 flex flex-col gap-4" },
+                                        React.createElement(FileInputField, { 
+                                            label: "Tanda Tangan Kepala Sekolah", 
+                                            id: "ttd_kepala_sekolah", 
+                                            onChange: onSettingsChange, 
+                                            onSave: onSave, 
+                                            imagePreview: typeof settings.ttd_kepala_sekolah === 'string' ? settings.ttd_kepala_sekolah : null, 
+                                            onMakeTransparent: handleMakeTransparent,
+                                            containerClassName: "flex-1"
+                                        }),
+                                        React.createElement(FileInputField, { 
+                                            label: "Tanda Tangan Wali Kelas", 
+                                            id: "ttd_wali_kelas", 
+                                            onChange: onSettingsChange, 
+                                            onSave: onSave, 
+                                            imagePreview: typeof settings.ttd_wali_kelas === 'string' ? settings.ttd_wali_kelas : null, 
+                                            onMakeTransparent: handleMakeTransparent,
+                                            containerClassName: "flex-1"
+                                        })
+                                    )
                                 )
                             )
                         ),
                         
-                        React.createElement('section', { className: "pt-6 border-t" },
+                        React.createElement('section', { className: "pt-8 border-t" },
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-3 mb-6" }, "Mata Pelajaran"),
                             React.createElement(PengaturanMapel, { subjects: subjects, onUpdateSubjects: onUpdateSubjects, showToast: showToast })
                         ),
@@ -942,8 +956,8 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('div', { className: "space-y-2" },
                                     ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
                                         const labels = {
-                                            'kuantitatif & kualitatif': 'Tampilan Kartu (Bawaan)',
-                                            'kuantitatif saja': 'Tampilan Tabel (Nilai Angka)',
+                                            'kuantitatif & kualitatif': 'Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
+                                            'kuantitatif saja': 'Tampilan Tabel (Nilai Kuantitatif)',
                                             'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
                                         };
                                         const descriptions = {
@@ -968,16 +982,16 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                     React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
                                     React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
                                     React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                    React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", readOnly: true, className: "bg-slate-100" })
+                                    React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", value: settings.predikats.d, readOnly: true, className: "bg-slate-100" })
                                 ),
-                                React.createElement(QualitativeGradingTable, null)
+                                React.createElement(QualitativeGradingTable, { settings: settings })
                             ),
 
                             React.createElement('div', { className: "mt-8 border-t pt-6" },
                                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Cara Pengolahan Nilai Akhir Mapel"),
                                 React.createElement('div', { className: "overflow-x-auto border rounded-lg" },
                                     React.createElement('table', { className: "w-full text-sm text-left text-slate-500" },
-                                        React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-50" },
+                                        React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" },
                                             React.createElement('tr', null,
                                                 React.createElement('th', { className: "px-6 py-3 border-b" }, "Mata Pelajaran"),
                                                 React.createElement('th', { className: "px-6 py-3 border-b" }, "Metode Pengolahan")
