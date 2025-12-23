@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
 
@@ -130,11 +129,6 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
                             src: settings.ttd_kepala_sekolah,
                             alt: "TTD Kepala Sekolah",
                             className: `object-contain absolute z-10 ${isCompact ? 'h-10' : 'h-16'}`
-                        }),
-                        settings.cap_sekolah && printOptions?.showStamp && React.createElement('img', {
-                            src: settings.cap_sekolah,
-                            alt: "Cap Sekolah",
-                            className: `object-contain absolute z-0 opacity-80 ${isCompact ? 'h-10 -ml-6' : 'h-16 -ml-8'}`
                         })
                     ),
                     React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_kepala_sekolah || '____________________'),
@@ -167,8 +161,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const [nameFontSize, setNameFontSize] = useState(null);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
-        showTeacherSignature: true,
-        showStamp: true
+        showTeacherSignature: true
     });
     const nameCellRefs = useRef([]);
 
@@ -186,33 +179,41 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
     const displaySubjects = useMemo(() => {
-        const finalSubjects = [];
-        const addedGroups = new Set();
+        // This logic is now copied from DataNilaiPage.js to ensure the columns are identical.
+        const finalDisplaySubjects = [];
+        const addedGroupPrefixes = new Set();
         const groups = [
-            { prefix: 'Pendidikan Agama dan Budi Pekerti', base: { id: 'PABP', label: 'PABP', fullName: 'Pendidikan Agama dan Budi Pekerti' } },
-            { prefix: 'Seni Budaya', base: { id: 'SB', label: 'SB', fullName: 'Seni Budaya' } },
-            { prefix: 'Muatan Lokal', base: { id: 'Mulok', label: 'B. BALI', fullName: 'Muatan Lokal' } }
+            { prefix: 'Pendidikan Agama dan Budi Pekerti', base: { id: 'PABP', label: 'PABP', fullName: 'Pendidikan Agama dan Budi Pekerti', active: true } },
+            { prefix: 'Seni Budaya', base: { id: 'SB', label: 'S. Rupa', fullName: 'Seni Budaya', active: true } },
+            { prefix: 'Muatan Lokal', base: { id: 'Mulok', label: 'B. Bali', fullName: 'Muatan Lokal', active: true } }
         ];
-        const order = ['PABP', 'PP', 'BIndo', 'MTK', 'IPAS', 'SB', 'PJOK', 'BIng', 'Mulok'];
-
         for (const subject of activeSubjects) {
-            const group = groups.find(g => subject.fullName.startsWith(g.prefix));
+            let group = groups.find(g => subject.fullName.startsWith(g.prefix));
+            
+            // Map Kepercayaan to PABP group
+            if (!group && (subject.id === 'PAKTTMYME' || subject.fullName.toLowerCase().includes('kepercayaan terhadap tuhan'))) {
+                group = groups.find(g => g.base.id === 'PABP');
+            }
+    
             if (group) {
-                if (!addedGroups.has(group.prefix)) {
-                    finalSubjects.push(group.base);
-                    addedGroups.add(group.prefix);
+                if (!addedGroupPrefixes.has(group.prefix)) {
+                    finalDisplaySubjects.push(group.base);
+                    addedGroupPrefixes.add(group.prefix);
                 }
             } else {
-                finalSubjects.push(subject);
+                finalDisplaySubjects.push(subject);
             }
         }
+        const sortOrder = { 'PABP': 1, 'PP': 2, 'BIndo': 3, 'MTK': 4, 'IPAS': 5, 'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9 };
+        finalDisplaySubjects.sort((a, b) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99));
+    
+        // Apply label formatting specific to the leger's vertical headers.
+        const labelMap = { 'BIndo': 'B. INDO', 'BIng': 'B. ING', 'Mulok': 'B. BALI' };
         
-        const labelMap = { 'BIndo': 'B. INDO', 'BIng': 'B. ING' };
-        
-        return finalSubjects
-            .filter(s => order.includes(s.id))
-            .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
-            .map(s => ({...s, label: labelMap[s.id] || s.label.toUpperCase() }));
+        return finalDisplaySubjects.map(s => ({
+            ...s,
+            label: labelMap[s.id] || s.label.toUpperCase().replace(/\./g, '')
+        }));
     }, [activeSubjects]);
 
     const processedData = useMemo(() => {
@@ -227,8 +228,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 if (ds.id === 'PABP') {
                     const religion = student.agama?.trim().toLowerCase();
                     if (religion) {
-                        const relSubject = activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${religion})`));
-                        if (relSubject) grade = finalGrades[relSubject.id];
+                        if (religion === 'kepercayaan') {
+                            const beliefSubject = activeSubjects.find(s => s.id === 'PAKTTMYME');
+                            if (beliefSubject) grade = finalGrades[beliefSubject.id];
+                        } else {
+                            const relSubject = activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${religion})`));
+                            if (relSubject) grade = finalGrades[relSubject.id];
+                        }
                     }
                 } else if (['SB', 'Mulok'].includes(ds.id)) {
                     const memberSubjects = activeSubjects.filter(s => s.fullName.startsWith(ds.fullName));
@@ -548,10 +554,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     React.createElement('label', { className: "flex items-center space-x-2" },
                         React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                         React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
-                    ),
-                    React.createElement('label', { className: "flex items-center space-x-2" },
-                        React.createElement('input', { type: "checkbox", checked: printOptions.showStamp, onChange: () => handlePrintOptionChange('showStamp'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                        React.createElement('span', { className: "text-sm" }, "Cap Sekolah")
                     )
                 )
             )
