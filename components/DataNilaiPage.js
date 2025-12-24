@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
 
@@ -380,7 +379,7 @@ const TPSelectionModal = ({ isOpen, onClose, onApply, subject, availableTPs, isL
     if (!isOpen) return null;
 
     return (
-        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-70 z-[60] flex items-center justify-center p-4" },
+        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-70 z-[80] flex items-center justify-center p-4" },
             React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col" },
                 React.createElement('h3', { className: "text-lg font-bold text-slate-800 p-4 border-b" }, `Pilih Tujuan Pembelajaran untuk ${subject.label}`),
                 React.createElement('div', { className: "p-6 overflow-y-auto" },
@@ -497,14 +496,25 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             };
             onUpdateObjectives(newObjectivesObject);
         }
-
-        const updates = Object.entries(localGrades).map(([studentId, newDetailedGrade]) => ({
+    
+        const gradesToUpdate = JSON.parse(JSON.stringify(localGrades));
+    
+        if (isSLM && item) {
+            Object.values(gradesToUpdate).forEach(studentGrade => {
+                const slm = studentGrade.slm.find(s => s.id === item.id);
+                if (slm) {
+                    slm.name = slmName;
+                }
+            });
+        }
+    
+        const updates = Object.entries(gradesToUpdate).map(([studentId, newDetailedGrade]) => ({
             studentId,
             subjectId: subject.id,
             newDetailedGrade,
         }));
         onBulkUpdateGrades(updates);
-
+    
         onClose();
     };
 
@@ -924,152 +934,6 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 };
 
 
-const SummativeCard = ({ title, subtitle, onClick, isFilled }) => (
-    React.createElement('button', {
-        onClick: onClick,
-        className: `w-full p-6 border rounded-xl shadow-md text-left hover:bg-indigo-50 hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 ${
-            isFilled ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'
-        }`
-    },
-        React.createElement('h4', { className: "text-lg font-bold text-slate-800" }, title),
-        React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, subtitle)
-    )
-);
-
-const NilaiCardView = (props) => {
-    const { subject, students, grades, settings, onUpdateGradeCalculation, onBulkUpdateGrades, onBulkAddSlm, onUpdateLearningObjectives, onUpdatePredikats, onUpdateDisplayMode, learningObjectives, showToast, predefinedCurriculum } = props;
-    
-    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-    const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
-    const [modalData, setModalData] = useState(null);
-    const gradeNumber = getGradeNumber(settings.nama_kelas);
-
-    const isSlmFilled = useCallback((slmId) => {
-        return grades.some(g => {
-            const slm = g.detailedGrades?.[subject.id]?.slm?.find(s => s.id === slmId);
-            return slm?.scores?.some(score => score !== null && score !== '');
-        });
-    }, [grades, subject.id]);
-
-    const isStsFilled = useMemo(() => {
-        return grades.some(g => g.detailedGrades?.[subject.id]?.sts !== null && g.detailedGrades?.[subject.id]?.sts !== '');
-    }, [grades, subject.id]);
-
-    const isSasFilled = useMemo(() => {
-        return grades.some(g => g.detailedGrades?.[subject.id]?.sas !== null && g.detailedGrades?.[subject.id]?.sas !== '');
-    }, [grades, subject.id]);
-
-    const predefinedSlms = useMemo(() => {
-        if (!predefinedCurriculum || !subject) return [];
-        const curriculumKey = subject.curriculumKey || subject.fullName;
-        return predefinedCurriculum[curriculumKey] || [];
-    }, [predefinedCurriculum, subject]);
-
-    const existingSlms = useMemo(() => {
-        if (!students || students.length === 0 || !grades || grades.length === 0) return [];
-        const representativeGrade = grades[0];
-        return representativeGrade?.detailedGrades?.[subject.id]?.slm || [];
-    }, [grades, students, subject.id]);
-
-    const handleOpenModal = (type, item = null) => {
-        setModalData({ type, item });
-        setIsSummativeModalOpen(true);
-    };
-    
-    const handleOpenPredefinedSlm = (predefinedSlm, index) => {
-        const slmId = `slm_predefined_${subject.id}_${index}`;
-        const existingSlm = existingSlms.find(s => s.id === slmId);
-        
-        const slmTemplate = {
-            id: slmId,
-            name: existingSlm?.name || predefinedSlm.slm,
-            scores: Array(predefinedSlm.tp.length).fill(null),
-        };
-
-        if (!existingSlm) {
-            onBulkAddSlm(subject.id, slmTemplate);
-
-            const gradeKey = `Kelas ${gradeNumber}`;
-            const curriculumKey = subject.curriculumKey || subject.fullName;
-            const existingObjectives = learningObjectives[gradeKey]?.[curriculumKey] || [];
-            
-            const hasTps = existingObjectives.some(o => o.slmId === slmId);
-            
-            if (!hasTps) {
-                const newSlmObjectives = predefinedSlm.tp.map(tpText => ({ slmId: slmTemplate.id, text: tpText }));
-                const newObjectivesForSubject = [...existingObjectives, ...newSlmObjectives];
-                const newObjectivesObject = {
-                    ...learningObjectives,
-                    [gradeKey]: {
-                        ...(learningObjectives[gradeKey] || {}),
-                        [curriculumKey]: newObjectivesForSubject
-                    }
-                };
-                onUpdateLearningObjectives(newObjectivesObject);
-            }
-        }
-        
-        handleOpenModal('slm', existingSlm || slmTemplate);
-    };
-
-    const handleAddCustomSlm = () => {
-        const newSlmId = `slm_custom_${Date.now()}`;
-        const newSlmTemplate = { id: newSlmId, name: `Lingkup Materi Baru`, scores: [] };
-
-        onBulkAddSlm(subject.id, newSlmTemplate);
-        handleOpenModal('slm', newSlmTemplate);
-    };
-
-    const customSlms = (existingSlms || []).filter(s => !s.id.startsWith(`slm_predefined_${subject.id}_`));
-
-    return (
-        React.createElement(React.Fragment, null,
-            React.createElement(GradeSettingsModal, { isOpen: isSettingsModalOpen, onClose: () => setIsSettingsModalOpen(false), subject: subject, settings: settings, onUpdatePredikats: onUpdatePredikats, onUpdateGradeCalculation: onUpdateGradeCalculation, onUpdateDisplayMode: onUpdateDisplayMode }),
-            React.createElement(SummativeModal, { isOpen: isSummativeModalOpen, onClose: () => setIsSummativeModalOpen(false), modalData: modalData, subject: subject, students: students, grades: grades, onBulkUpdateGrades: onBulkUpdateGrades, objectives: learningObjectives, onUpdateObjectives: onUpdateLearningObjectives, gradeNumber: gradeNumber, settings: settings, onUpdateGradeCalculation: onUpdateGradeCalculation, showToast: showToast, predefinedCurriculum: predefinedCurriculum }),
-            
-            React.createElement('div', { className: "space-y-6" },
-                React.createElement('div', { className: "flex justify-end" },
-                    React.createElement('button', { onClick: () => setIsSettingsModalOpen(true), className: "px-4 py-2 text-sm font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-800" }, "Rentang Nilai & Cara Pengolahan Nilai Rapor")
-                ),
-
-                React.createElement('div', { className: "space-y-4" },
-                    React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2" }, "Sumatif Lingkup Materi (SLM)"),
-                    
-                    predefinedSlms.map((pSlm, index) => {
-                        const slmId = `slm_predefined_${subject.id}_${index}`;
-                        const existingSlm = existingSlms.find(s => s.id === slmId);
-                        const slmName = (existingSlm && existingSlm.name !== 'Lingkup Materi') ? existingSlm.name : pSlm.slm;
-                        const isFilled = isSlmFilled(slmId);
-                        return React.createElement(SummativeCard, { 
-                            key: slmId, 
-                            title: slmName, 
-                            subtitle: "Klik untuk mengisi nilai TP (Kurikulum)", 
-                            onClick: () => handleOpenPredefinedSlm(pSlm, index),
-                            isFilled: isFilled
-                        });
-                    }),
-                    
-                    customSlms.map(slm => 
-                        React.createElement(SummativeCard, { 
-                            key: slm.id, 
-                            title: slm.name, 
-                            subtitle: "Klik untuk mengisi nilai TP (Kustom)", 
-                            onClick: () => handleOpenModal('slm', slm),
-                            isFilled: isSlmFilled(slm.id)
-                        })
-                    ),
-                    
-                    React.createElement('button', { onClick: handleAddCustomSlm, className: "w-full p-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400" }, "+ Tambah Lingkup Materi (Di Luar Kurikulum)")
-                ),
-                React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-6" },
-                    React.createElement(SummativeCard, { title: "Sumatif Tengah Semester (STS)", subtitle: "Klik untuk mengisi nilai STS", onClick: () => handleOpenModal('sts'), isFilled: isStsFilled }),
-                    React.createElement(SummativeCard, { title: "Sumatif Akhir Semester (SAS)", subtitle: "Klik untuk mengisi nilai SAS", onClick: () => handleOpenModal('sas'), isFilled: isSasFilled })
-                )
-            )
-        )
-    );
-};
-
 const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, learningObjectives, onUpdateLearningObjectives, onBulkUpdateGrades, allSlms, initialActiveIds, showToast, gradeNumber, predefinedCurriculum }) => {
     // ... (content unchanged)
     const [localSlms, setLocalSlms] = useState([]);
@@ -1285,6 +1149,225 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
                     React.createElement('div', { className: "flex justify-end p-4 border-t bg-slate-50" },
                         React.createElement('button', { onClick: onClose, className: "px-4 py-2 text-sm font-medium bg-white border rounded-md" }, "Batal"),
                         React.createElement('button', { onClick: handleSaveChanges, className: "ml-3 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md" }, `Simpan & Terapkan`)
+                    )
+                )
+            )
+        )
+    );
+};
+
+const NilaiCardView = (props) => {
+    const { subject, students, grades, settings, learningObjectives, onBulkUpdateGrades, onUpdateLearningObjectives, onUpdateGradeCalculation, showToast, onUpdateSlmVisibility, onUpdateDisplayMode, predefinedCurriculum } = props;
+    
+    const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
+    const [modalData, setModalData] = useState(null);
+    const [isManageSlmModalOpen, setIsManageSlmModalOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+    const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
+
+    const objectivesForSubject = useMemo(() => {
+        const gradeKey = `Kelas ${gradeNumber}`;
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return (learningObjectives && learningObjectives[gradeKey] && learningObjectives[gradeKey][curriculumKey]) || [];
+    }, [learningObjectives, gradeNumber, subject.curriculumKey, subject.fullName]);
+
+    const predefinedSlms = useMemo(() => {
+        if (!predefinedCurriculum) return [];
+        const curriculumKey = subject.curriculumKey || subject.fullName;
+        return predefinedCurriculum[curriculumKey] || [];
+    }, [predefinedCurriculum, subject]);
+
+    const allSlms = useMemo(() => {
+        const slmMap = new Map();
+
+        predefinedSlms.forEach((pSlm, index) => {
+            const slmId = `slm_predefined_${subject.id}_${index}`;
+            slmMap.set(slmId, {
+                id: slmId,
+                name: pSlm.slm,
+                tps: pSlm.tp.map(tpText => ({ text: tpText, isEdited: false }))
+            });
+        });
+
+        const userObjectivesBySlm = objectivesForSubject.reduce((acc, tp) => {
+            if (!acc[tp.slmId]) acc[tp.slmId] = [];
+            acc[tp.slmId].push({ text: tp.text, isEdited: tp.isEdited === true });
+            return acc;
+        }, {});
+
+        Object.entries(userObjectivesBySlm).forEach(([slmId, tps]) => {
+            if (slmMap.has(slmId)) {
+                const existingSlm = slmMap.get(slmId);
+                slmMap.set(slmId, { ...existingSlm, tps });
+            } else {
+                const slmNameFromGrades = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === slmId)?.name : null;
+                slmMap.set(slmId, {
+                    id: slmId,
+                    name: slmNameFromGrades || 'Lingkup Materi Kustom',
+                    tps
+                });
+            }
+        });
+        
+        grades.forEach(grade => {
+            (grade.detailedGrades?.[subject.id]?.slm || []).forEach(gradeSlm => {
+                if (gradeSlm && gradeSlm.id) {
+                    if (!slmMap.has(gradeSlm.id)) {
+                        slmMap.set(gradeSlm.id, {
+                            id: gradeSlm.id,
+                            name: gradeSlm.name || 'Lingkup Materi Lama',
+                            tps: (gradeSlm.scores || []).map(() => ({ text: 'TP dari data lama', isEdited: true }))
+                        });
+                    } else {
+                        const existingSlm = slmMap.get(gradeSlm.id);
+                        if (gradeSlm.name && gradeSlm.name !== existingSlm.name) {
+                            slmMap.set(gradeSlm.id, { ...existingSlm, name: gradeSlm.name });
+                        }
+                    }
+                }
+            });
+        });
+
+        return Array.from(slmMap.values());
+    }, [objectivesForSubject, grades, subject.id, predefinedSlms]);
+
+    const handleOpenModal = (type, item) => {
+        setModalData({ type, item });
+        setIsSummativeModalOpen(true);
+    };
+    
+    const handleSaveSlmSettings = (newActiveIds) => {
+        if (onUpdateSlmVisibility) {
+            onUpdateSlmVisibility(subject.id, newActiveIds);
+        }
+    };
+    
+    const getCompletionStatus = useCallback((type, item) => {
+        const totalStudents = students.length;
+        if (totalStudents === 0) return { filled: 0, total: 0, percentage: 0 };
+
+        let filledCount = 0;
+        if (type === 'slm') {
+            grades.forEach(grade => {
+                const slm = grade.detailedGrades?.[subject.id]?.slm?.find(s => s.id === item.id);
+                if (slm && slm.scores && slm.scores.some(s => s !== null && s !== undefined && s !== '')) {
+                    filledCount++;
+                }
+            });
+        } else { // sts or sas
+            grades.forEach(grade => {
+                const score = grade.detailedGrades?.[subject.id]?.[type];
+                if (score !== null && score !== undefined && score !== '') {
+                    filledCount++;
+                }
+            });
+        }
+        
+        return {
+            filled: filledCount,
+            total: totalStudents,
+            percentage: totalStudents > 0 ? Math.round((filledCount / totalStudents) * 100) : 0
+        };
+    }, [students, grades, subject.id]);
+
+    const AssessmentCard = ({ title, type, item }) => {
+        const { filled, total, percentage } = getCompletionStatus(type, item);
+        let statusColor = 'bg-slate-200';
+        if (percentage > 0) statusColor = 'bg-yellow-400';
+        if (percentage === 100) statusColor = 'bg-green-500';
+
+        return React.createElement('div', { 
+            className: "bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer flex flex-col justify-between",
+            onClick: () => handleOpenModal(type, item)
+        },
+            React.createElement('div', { className: "p-4" },
+                React.createElement('h4', { className: "font-bold text-slate-800" }, title),
+                type === 'slm' && React.createElement('p', { className: "text-xs text-slate-500 mt-1" }, `${item.tps?.length || 0} Tujuan Pembelajaran`)
+            ),
+            React.createElement('div', { className: "p-4 bg-slate-50 rounded-b-lg border-t" },
+                 React.createElement('div', { className: "flex justify-between items-center text-xs text-slate-600 mb-1" },
+                    React.createElement('span', null, "Kelengkapan Nilai"),
+                    React.createElement('span', { className: "font-semibold" }, `${filled}/${total}`)
+                ),
+                React.createElement('div', { className: "w-full bg-slate-200 rounded-full h-2" },
+                    React.createElement('div', { className: `h-2 rounded-full ${statusColor}`, style: { width: `${percentage}%` } })
+                )
+            )
+        );
+    };
+
+    return (
+        React.createElement('div', { className: "h-full" },
+            isSettingsModalOpen && React.createElement(GradeSettingsModal, {
+                isOpen: isSettingsModalOpen,
+                onClose: () => setIsSettingsModalOpen(false),
+                subject: subject,
+                settings: settings,
+                onUpdatePredikats: props.onUpdatePredikats, 
+                onUpdateGradeCalculation: onUpdateGradeCalculation,
+                onUpdateDisplayMode: onUpdateDisplayMode
+            }),
+            isManageSlmModalOpen && React.createElement(ManageSlmModal, { 
+                isOpen: isManageSlmModalOpen, 
+                onClose: () => setIsManageSlmModalOpen(false), 
+                onSave: { onSaveSlmSettings: handleSaveSlmSettings, settings },
+                subject, students, grades, learningObjectives, onUpdateLearningObjectives, onBulkUpdateGrades,
+                allSlms,
+                initialActiveIds: settings.slmVisibility?.[subject.id] || allSlms.map(s => s.id),
+                showToast,
+                gradeNumber,
+                predefinedCurriculum
+            }),
+            isSummativeModalOpen && React.createElement(SummativeModal, {
+                isOpen: isSummativeModalOpen,
+                onClose: () => setIsSummativeModalOpen(false),
+                modalData: modalData,
+                students: students,
+                grades: grades,
+                subject: subject,
+                objectives: learningObjectives,
+                onUpdateObjectives: onUpdateLearningObjectives,
+                onBulkUpdateGrades: onBulkUpdateGrades,
+                gradeNumber: gradeNumber,
+                settings: settings,
+                onUpdateGradeCalculation: onUpdateGradeCalculation,
+                showToast: showToast,
+                predefinedCurriculum: predefinedCurriculum
+            }),
+            React.createElement('div', { className: "p-4 border-b border-slate-200 bg-white rounded-t-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4" },
+                React.createElement('div', { className: "flex items-center gap-2" },
+                    React.createElement('button', {
+                        onClick: () => setIsSettingsModalOpen(true),
+                        className: "px-3 py-1.5 text-xs font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-800"
+                    }, "Rentang Nilai & Pengolahan"),
+                    React.createElement('button', {
+                        onClick: () => setIsManageSlmModalOpen(true),
+                        className: "px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200"
+                    }, "Atur Lingkup Materi & TP")
+                ),
+                React.createElement('p', { className: "text-sm text-slate-500" }, "Klik pada kartu untuk menginput atau mengedit nilai.")
+            ),
+
+            React.createElement('div', { className: "p-4 space-y-6 bg-slate-50 rounded-b-xl" },
+                React.createElement('section', null,
+                    React.createElement('h3', { className: "text-lg font-semibold text-slate-700 mb-3 border-b pb-2" }, "Sumatif Lingkup Materi (SLM)"),
+                    allSlms.length > 0 ? (
+                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
+                            allSlms.map(slm => 
+                                React.createElement(AssessmentCard, { key: slm.id, title: slm.name, type: 'slm', item: slm })
+                            )
+                        )
+                    ) : (
+                        React.createElement('p', { className: "text-sm text-slate-500" }, "Belum ada Lingkup Materi yang diatur untuk mata pelajaran ini.")
+                    )
+                ),
+
+                React.createElement('section', null,
+                    React.createElement('h3', { className: "text-lg font-semibold text-slate-700 mb-3 border-b pb-2" }, "Sumatif Tengah & Akhir Semester"),
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
+                        React.createElement(AssessmentCard, { title: "Sumatif Tengah Semester (STS)", type: 'sts', item: {} }),
+                        React.createElement(AssessmentCard, { title: "Sumatif Akhir Semester (SAS)", type: 'sas', item: {} })
                     )
                 )
             )
