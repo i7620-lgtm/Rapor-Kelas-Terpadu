@@ -20,6 +20,7 @@ import useServiceWorker from './hooks/useServiceWorker.js';
 import useGoogleAuth from './hooks/useGoogleAuth.js';
 import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
+import ERaporProcessorModal from './components/ERaporProcessorModal.js';
 
 const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -259,6 +260,7 @@ const App = () => {
   const [driveFiles, setDriveFiles] = useState([]);
   const [isCheckingDrive, setIsCheckingDrive] = useState(false);
   const [driveConflictData, setDriveConflictData] = useState(null); 
+  const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
 
   // --- STATE INITIALIZATION WITH ROBUST LOADING ---
   const [settings, setSettings] = useState(() => {
@@ -1176,10 +1178,22 @@ const App = () => {
 
   return React.createElement(React.Fragment, null,
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
+      isERaporModalOpen && React.createElement(ERaporProcessorModal, {
+          isOpen: isERaporModalOpen,
+          onClose: () => setIsERaporModalOpen(false),
+          students: students,
+          grades: grades,
+          subjects: subjects,
+          learningObjectives: learningObjectives,
+          settings: settings,
+          showToast: showToast,
+          predefinedCurriculum: predefinedCurriculum,
+      }),
       React.createElement('div', { className: isMobile ? "bg-slate-100" : "flex h-screen bg-slate-100" },
         React.createElement(Navigation, { 
             activePage, setActivePage, 
             onExport: handleExportAll, onImport: handleImportAll,
+            onIsiERapor: () => setIsERaporModalOpen(true),
             isSignedIn, userEmail: userProfile?.email, isOnline, 
             syncStatus, onSignInClick: signIn, onSignOutClick: signOut, 
             isMobile, isMobileMenuOpen, setIsMobileMenuOpen, 
