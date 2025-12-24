@@ -914,8 +914,9 @@ const App = () => {
             });
         }
 
-        // 6. Tujuan Pembelajaran (Restoring TPs)
+        // 6. Tujuan Pembelajaran (Restoring TPs and building SLM name map)
         const wsTP = findSheet(["Tujuan Pembelajaran"]);
+        const slmNameMap = new Map();
         if (wsTP) {
             const tpData = XLSX.utils.sheet_to_json(wsTP);
             const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`;
@@ -923,10 +924,17 @@ const App = () => {
             
             tpData.forEach(row => {
                 const subjName = row['Nama Mata Pelajaran'];
+                const slmId = row['ID SLM'];
+                const slmName = row['Nama SLM'];
+
+                if (slmId && slmName && !slmNameMap.has(slmId)) {
+                    slmNameMap.set(slmId, slmName);
+                }
+
                 if (subjName) { // Check existence
                     if (!nLO[gradeKey][subjName]) nLO[gradeKey][subjName] = [];
                     nLO[gradeKey][subjName].push({
-                        slmId: row['ID SLM'],
+                        slmId: slmId,
                         text: row['Deskripsi Tujuan Pembelajaran (TP)'],
                         isEdited: true 
                     });
@@ -934,7 +942,7 @@ const App = () => {
             });
         }
 
-        // 7. Grades
+        // 7. Grades (Process after TP sheet to use slmNameMap)
         nGr = nStud.map(st => ({ studentId: st.id, detailedGrades: {}, finalGrades: {} }));
         
         workbook.SheetNames.forEach(name => {
@@ -975,7 +983,8 @@ const App = () => {
                                 
                                 let slm = detailed.slm.find(s => s.id === slmId);
                                 if (!slm) {
-                                    slm = { id: slmId, name: 'Lingkup Materi', scores: [] };
+                                    const nameFromMap = slmNameMap.get(slmId) || 'Lingkup Materi Kustom';
+                                    slm = { id: slmId, name: nameFromMap, scores: [] };
                                     detailed.slm.push(slm);
                                 }
                                 slm.scores[tpIndex] = row[rawHeader];
