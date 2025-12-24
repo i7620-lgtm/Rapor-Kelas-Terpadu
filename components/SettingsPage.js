@@ -722,11 +722,69 @@ const QualitativeGradingTable = React.memo(({ settings }) => {
     );
 });
 
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-60 z-[100] flex items-center justify-center p-4" },
+            React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-lg" },
+                React.createElement('div', { className: "p-6" },
+                    React.createElement('div', { className: "flex items-start" },
+                        React.createElement('div', { className: "flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10" },
+                            React.createElement('svg', { className: "h-6 w-6 text-red-600", xmlns: "http://www.w3.org/2000/svg", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", "aria-hidden": "true" },
+                                React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" })
+                            )
+                        ),
+                        React.createElement('div', { className: "ml-4 text-left" },
+                            React.createElement('h3', { className: "text-lg leading-6 font-bold text-slate-900", id: "modal-title" }, title),
+                            React.createElement('div', { className: "mt-2" },
+                                React.createElement('div', { className: "text-sm text-slate-600 space-y-2" }, children)
+                            )
+                        )
+                    )
+                ),
+                React.createElement('div', { className: "bg-slate-50 px-6 py-3 flex flex-row-reverse rounded-b-lg" },
+                    React.createElement('button', {
+                        type: "button",
+                        onClick: onConfirm,
+                        className: "w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm"
+                    }, "Konfirmasi & Lanjutkan"),
+                    React.createElement('button', {
+                        type: "button",
+                        onClick: onClose,
+                        className: "mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-slate-700 hover:bg-slate-50 sm:mt-0 sm:w-auto sm:text-sm"
+                    }, "Batal")
+                )
+            )
+        )
+    );
+};
+
 
 const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, subjects, onUpdateSubjects, extracurriculars, onUpdateExtracurriculars, showToast }) => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
-
+    const [confirmationModal, setConfirmationModal] = useState({ isOpen: false, title: '', children: null, onConfirm: () => {}, onClose: () => {} });
     const [localClassName, setLocalClassName] = useState(settings.nama_kelas || '');
+    
+    const getGradeNumber = (str) => {
+        if (!str) return null;
+        const trimmedStr = str.trim();
+        
+        const arabicMatch = trimmedStr.match(/\d+/);
+        if (arabicMatch) {
+            return parseInt(arabicMatch[0], 10);
+        }
+    
+        const upperStr = trimmedStr.toUpperCase();
+        if (upperStr.startsWith('VI')) return 6;
+        if (upperStr.startsWith('V')) return 5;
+        if (upperStr.startsWith('IV')) return 4;
+        if (upperStr.startsWith('III')) return 3;
+        if (upperStr.startsWith('II')) return 2;
+        if (upperStr.startsWith('I')) return 1;
+    
+        return null;
+    };
 
     useEffect(() => {
         setLocalClassName(settings.nama_kelas || '');
@@ -737,14 +795,54 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
     };
 
     const commitClassNameChange = () => {
+        const oldGradeNumber = getGradeNumber(settings.nama_kelas);
+        const newGradeNumber = getGradeNumber(localClassName);
+
         if (localClassName !== settings.nama_kelas) {
-            onSettingsChange({
-                target: {
-                    name: 'nama_kelas',
-                    value: localClassName
-                }
-            });
-            if (onSave) onSave();
+            if (oldGradeNumber !== null && newGradeNumber !== null && oldGradeNumber !== newGradeNumber) {
+                const handleConfirm = () => {
+                    onSettingsChange({
+                        target: {
+                            name: 'nama_kelas',
+                            value: localClassName,
+                            type: 'class_change_confirmed'
+                        }
+                    });
+                    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+                };
+
+                const handleClose = () => {
+                    setLocalClassName(settings.nama_kelas); // revert change
+                    showToast('Perubahan nama kelas dibatalkan.', 'info');
+                    setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+                };
+
+                setConfirmationModal({
+                    isOpen: true,
+                    title: `Konfirmasi Perubahan Tingkat Kelas`,
+                    children: React.createElement('div', { className: 'space-y-3' }, 
+                        React.createElement('p', null, `Anda akan mengubah kelas dari `, React.createElement('strong', null, `Kelas ${oldGradeNumber}`), ` ke `, React.createElement('strong', null, `Kelas ${newGradeNumber}`), `.`),
+                        React.createElement('div', { className: 'p-3 bg-red-50 border-l-4 border-red-400 text-red-800' }, 
+                            React.createElement('strong', { className: 'font-bold' }, `PERHATIAN:`), ` Tindakan ini akan:`),
+                        React.createElement('ul', { className: 'list-disc list-inside pl-4 text-slate-500 text-sm' }, 
+                            React.createElement('li', null, `Memuat set Lingkup Materi & Tujuan Pembelajaran (SLM & TP) baru untuk Kelas ${newGradeNumber}.`),
+                            React.createElement('li', null, React.createElement('strong', null, `MENGHAPUS SEMUA DATA NILAI`), ` yang sudah ada untuk disesuaikan.`)
+                        ),
+                        React.createElement('p', { className: 'font-semibold' }, `Apakah Anda yakin ingin melanjutkan?`)
+                    ),
+                    onConfirm: handleConfirm,
+                    onClose: handleClose
+                });
+            } else {
+                onSettingsChange({
+                    target: {
+                        name: 'nama_kelas',
+                        value: localClassName
+                    }
+                });
+                if (onSave) onSave();
+                showToast('Nama kelas disimpan.', 'success');
+            }
         }
     };
 
@@ -752,7 +850,6 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
         if (e.key === 'Enter') {
             e.preventDefault();
             e.target.blur();
-            showToast('Nama kelas disimpan.', 'success');
         }
     };
 
@@ -820,6 +917,12 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                 settings: settings,
                 onSaveLayout: onUpdateKopLayout
             }),
+            React.createElement(ConfirmationModal, { 
+                isOpen: confirmationModal.isOpen,
+                onClose: confirmationModal.onClose,
+                onConfirm: confirmationModal.onConfirm,
+                title: confirmationModal.title
+            }, confirmationModal.children),
             React.createElement('div', { className: "space-y-8" },
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Pengaturan"),
