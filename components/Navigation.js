@@ -53,8 +53,12 @@ const UserAuthSection = ({ isSignedIn, userEmail, onSignInClick, onSignOutClick,
 };
 
 
-const DesktopNav = ({ activePage, setActivePage, onExport, onImport, ...props }) => {
-  const handleDataAction = (id) => id === 'EKSPORT' ? onExport() : onImport();
+const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, ...props }) => {
+  const handleDataAction = (id) => {
+      if (id === 'EKSPORT') onExport();
+      else if (id === 'IMPORT') onImport();
+      else if (id === 'ISI_ERAPOR') onIsiERapor();
+  };
   const handleNavClick = (id) => setActivePage(id);
 
   const allNavItems = [...NAV_ITEMS, ...DATA_ACTIONS];
@@ -112,14 +116,14 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, ...props })
   );
 };
 
-const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName, ...props }) => {
+const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName, ...props }) => {
     const handleNavClick = (id) => {
         setActivePage(id);
         setIsMobileMenuOpen(false);
     };
     const handleDataAction = (id) => {
-        const action = id === 'EKSPORT' ? onExport : onImport;
-        action();
+        const action = id === 'EKSPORT' ? onExport : id === 'IMPORT' ? onImport : onIsiERapor;
+        if (action) action();
         setIsMobileMenuOpen(false);
     };
 
@@ -219,7 +223,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, isMobileMenu
 
 const Navigation = ({ isMobile, ...props }) => {
     if (isMobile) {
-        return React.createElement(MobileNav, props);
+        return React.createElement(MobileNav, { ...props, isMobileMenuOpen: props.isMobileMenuOpen, setIsMobileMenuOpen: props.setIsMobileMenuOpen });
     }
     return React.createElement(DesktopNav, props);
 };
