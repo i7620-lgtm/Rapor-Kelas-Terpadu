@@ -1,5 +1,4 @@
 
-
 export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'DATA_SISWA', label: 'Data Siswa' },
@@ -18,6 +17,7 @@ export const NAV_ITEMS = [
 export const DATA_ACTIONS = [
   { id: 'EKSPORT', label: 'Unduh Data dari RKT' },
   { id: 'IMPORT', label: 'Unggah Data ke RKT' },
+  { id: 'ISI_ERAPOR', label: 'Isi Format E-Rapor' },
 ];
 
 export const studentFieldDefinitions = [
