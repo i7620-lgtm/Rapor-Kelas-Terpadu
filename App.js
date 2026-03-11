@@ -16,12 +16,9 @@ import PrintLegerPage from './components/PrintLegerPage.js';
 import JurnalFormatifPage from './components/JurnalFormatifPage.js';
 import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
-import useGoogleAuth from './hooks/useGoogleAuth.js';
-import DriveDataSelectionModal from './components/DriveDataSelectionModal.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
 
-const GOOGLE_CLIENT_ID = window.RKT_CONFIG?.GOOGLE_CLIENT_ID || null;
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const dbPromise = new Promise((resolve, reject) => {
@@ -108,20 +105,6 @@ const loadDataSafe = (key, fallbackValue, validator = null) => {
         return fallbackValue;
     }
 };
-
-const getAppData = (settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal) => ({
-    settings,
-    students,
-    grades,
-    notes,
-    cocurricularData,
-    attendance,
-    extracurriculars,
-    studentExtracurriculars,
-    subjects,
-    learningObjectives,
-    formativeJournal
-});
 
 const getDynamicRKTFileName = (currentSettings) => {
     const sanitize = (str) => String(str || '').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim();
@@ -232,22 +215,11 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [presets, setPresets] = useState(null);
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [backupStatus, setBackupStatus] = useState(null); 
     
   const isInitialMount = useRef(true);
-  const [isDirty, setIsDirty] = useState(false);
-  const [syncStatus, setSyncStatus] = useState('idle');
 
-  const { isSignedIn, userProfile, googleToken, signIn, signOut,
-          uploadFile, downloadFile, findRKTFileId, createRKTFile, findAllRKTFiles, deleteFile } = useGoogleAuth(GOOGLE_CLIENT_ID);
-  
-  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
-  const [driveFiles, setDriveFiles] = useState([]);
-  const [isCheckingDrive, setIsCheckingDrive] = useState(false);
-  const [driveConflictData, setDriveConflictData] = useState(null); 
   const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
 
   const [settings, setSettings] = useState(() => {
@@ -423,10 +395,6 @@ const App = () => {
 
   const learningObjectivesRef = useRef(learningObjectives);
   useEffect(() => { learningObjectivesRef.current = learningObjectives; }, [learningObjectives]);
-
-  const appData = useMemo(() => getAppData(settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal), [
-      settings, students, grades, notes, cocurricularData, attendance, extracurriculars, studentExtracurriculars, subjects, learningObjectives, formativeJournal
-  ]);
 
     useEffect(() => {
         const initializeApp = async () => {
@@ -720,36 +688,21 @@ const App = () => {
         input.click();
     }, [importFromExcelBlob]);
 
-    const autoSaveToDrive = useCallback(async () => {
-        if (!isDirty || !isSignedIn || !isOnline) return;
-        setSyncStatus('saving');
-        try {
-            const fileName = getDynamicRKTFileName(settings);
-            const found = await findRKTFileId(fileName, settings);
-            const blob = await exportToExcelBlob();
-            if (found) await uploadFile(found.id, fileName, blob, RKT_MIME_TYPE);
-            else await createRKTFile(fileName, blob, RKT_MIME_TYPE);
-            setIsDirty(false); setSyncStatus('saved');
-        } catch (e) { setSyncStatus('error'); }
-    }, [isDirty, isSignedIn, isOnline, settings, exportToExcelBlob, findRKTFileId, uploadFile, createRKTFile]);
+    useEffect(() => { localStorage.setItem('appSettings', JSON.stringify(settings)); }, [settings]);
+    useEffect(() => { localStorage.setItem('appStudents', JSON.stringify(students)); }, [students]);
+    useEffect(() => { localStorage.setItem('appGrades', JSON.stringify(grades)); }, [grades]);
+    useEffect(() => { localStorage.setItem('appNotes', JSON.stringify(notes)); }, [notes]);
+    useEffect(() => { localStorage.setItem('appAttendance', JSON.stringify(attendance)); }, [attendance]);
+    useEffect(() => { localStorage.setItem('appCocurricularData', JSON.stringify(cocurricularData)); }, [cocurricularData]);
+    useEffect(() => { localStorage.setItem('appStudentExtracurriculars', JSON.stringify(studentExtracurriculars)); }, [studentExtracurriculars]);
+    useEffect(() => { localStorage.setItem('appSubjects', JSON.stringify(subjects)); }, [subjects]);
+    useEffect(() => { localStorage.setItem('appExtracurriculars', JSON.stringify(extracurriculars)); }, [extracurriculars]);
+    useEffect(() => { localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives)); }, [learningObjectives]);
+    useEffect(() => { localStorage.setItem('appFormativeJournal', JSON.stringify(formativeJournal)); }, [formativeJournal]);
     
     useEffect(() => {
-        localStorage.setItem('appSettings', JSON.stringify(appData.settings));
-        localStorage.setItem('appStudents', JSON.stringify(appData.students));
-        localStorage.setItem('appGrades', JSON.stringify(appData.grades));
-        localStorage.setItem('appNotes', JSON.stringify(appData.notes));
-        localStorage.setItem('appAttendance', JSON.stringify(appData.attendance));
-        localStorage.setItem('appCocurricularData', JSON.stringify(appData.cocurricularData));
-        localStorage.setItem('appStudentExtracurriculars', JSON.stringify(appData.studentExtracurriculars));
-        localStorage.setItem('appSubjects', JSON.stringify(appData.subjects));
-        localStorage.setItem('appExtracurriculars', JSON.stringify(appData.extracurriculars));
-        localStorage.setItem('appLearningObjectives', JSON.stringify(appData.learningObjectives));
-        localStorage.setItem('appFormativeJournal', JSON.stringify(appData.formativeJournal));
-        if (!isInitialMount.current && isSignedIn) { setIsDirty(true); setSyncStatus('unsaved'); }
         isInitialMount.current = false;
-    }, [appData, isSignedIn]);
-
-    useEffect(() => { if (isSignedIn && isDirty) autoSaveToDrive(); }, [activePage, isSignedIn, isDirty, autoSaveToDrive]);
+    }, []);
 
   return React.createElement(React.Fragment, null,
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
@@ -758,11 +711,10 @@ const App = () => {
           onClose: () => setIsERaporModalOpen(false),
           students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
       }),
-      React.createElement('div', { className: isMobile ? "bg-slate-100" : "flex h-screen bg-slate-100" },
+      React.createElement('div', { className: "flex flex-col lg:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
         React.createElement(Navigation, { 
             activePage, setActivePage, onExport: handleExportAll, onImport: handleImportAll,
             onIsiERapor: () => setIsERaporModalOpen(true),
-            isSignedIn, userEmail: userProfile?.email, isOnline, syncStatus, onSignInClick: signIn, onSignOutClick: signOut, 
             isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
         }),
         React.createElement('main', { className: "flex-1 overflow-auto p-4 sm:p-8" }, 
@@ -790,7 +742,7 @@ const App = () => {
                 predefinedCurriculum, showToast 
             }) :
             activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: handleSettingsChange, onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
-            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: () => setIsDirty(true), onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
+            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: () => {}, onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
             activePage === 'DATA_ABSENSI' ? React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: (sid, t, v) => setAttendance(prev => { const n = [...prev], i = n.findIndex(a => a.studentId === sid); if(i>-1) n[i][t] = v===''?null:parseInt(v); else n.push({studentId:sid, [t]: v===''?null:parseInt(v)}); return n; }), onBulkUpdateAttendance: setAttendance, showToast }) :
             activePage === 'CATATAN_WALI_KELAS' ? React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: (sid, note) => setNotes(prev => ({...prev, [sid]: note})), grades, subjects, settings, showToast }) :
             activePage === 'DATA_EKSTRAKURIKULER' ? React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: setStudentExtracurriculars, showToast }) :
