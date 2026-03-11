@@ -216,8 +216,11 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                 ))
                             ) : (
                                 React.createElement('tr', null,
-                                    React.createElement('td', { colSpan: 3, className: "text-center py-10 text-slate-500 border-b border-slate-200" },
-                                        "Belum ada data siswa. Silakan tambahkan siswa di halaman 'Data Siswa'."
+                                    React.createElement('td', { colSpan: 3, className: "text-center py-10 border-b border-slate-200" },
+                                        React.createElement('div', { className: "bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
+                                            React.createElement('h3', { className: "text-lg font-semibold mb-2" }, "Belum ada data siswa"),
+                                            React.createElement('p', null, "Silakan tambahkan siswa di halaman 'Data Siswa'.")
+                                        )
                                     )
                                 )
                             )
