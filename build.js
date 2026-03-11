@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const outDir = 'public';
+const outDir = 'dist';
 const rootDir = __dirname;
 const outDirPath = path.join(rootDir, outDir);
 
@@ -103,18 +103,7 @@ try {
 
   // 5. Generate config.js
   console.log('Generating config.js...');
-  const clientId = process.env.RKT_GOOGLE_CLIENT_ID;
-
-  let configContent;
-  if (!clientId) {
-    // Log as warning, NOT error, to prevent some strict CI form failing
-    console.warn('WARNING: RKT_GOOGLE_CLIENT_ID environment variable is not set. Google Sign-In will be disabled.');
-    configContent = `window.RKT_CONFIG = { GOOGLE_CLIENT_ID: null }; console.warn('RKT Config: No Client ID provided.');`;
-  } else {
-    configContent = `window.RKT_CONFIG = {
-  GOOGLE_CLIENT_ID: "${clientId}"
-};`;
-  }
+  const configContent = `window.RKT_CONFIG = {};`;
   
   const configPath = path.join(outDirPath, 'config.js');
   fs.writeFileSync(configPath, configContent);
