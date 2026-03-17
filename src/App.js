@@ -265,8 +265,10 @@ const App = () => {
                   try {
                       const res = await fetch(settings[key]);
                       const blob = await res.blob();
-                      await saveImageToDB(key, blob);
-                      updates[key] = URL.createObjectURL(blob);
+                      const dims = getImageDimensions(key);
+                      const compressedBlob = await processAndCompressImage(blob, dims.width, dims.height);
+                      await saveImageToDB(key, compressedBlob);
+                      updates[key] = URL.createObjectURL(compressedBlob);
                   } catch (e) {
                       console.error(`Failed to migrate image ${key}`, e);
                   }
@@ -364,8 +366,12 @@ const App = () => {
         fetch(value)
             .then(res => res.blob())
             .then(blob => {
-                 saveImageToDB(name, blob).then(() => {
-                     const objectUrl = URL.createObjectURL(blob);
+                 const dims = getImageDimensions(name);
+                 return processAndCompressImage(blob, dims.width, dims.height);
+            })
+            .then(compressedBlob => {
+                 saveImageToDB(name, compressedBlob).then(() => {
+                     const objectUrl = URL.createObjectURL(compressedBlob);
                      setSettings(prev => ({ ...prev, [name]: objectUrl }));
                  });
             })
@@ -758,10 +764,12 @@ const App = () => {
                     try {
                         const res = await fetch(settingsToApply[key]);
                         const imgBlob = await res.blob();
-                        await saveImageToDB(key, imgBlob);
-                        settingsToApply[key] = URL.createObjectURL(imgBlob);
+                        const dims = getImageDimensions(key);
+                        const compressedBlob = await processAndCompressImage(imgBlob, dims.width, dims.height);
+                        await saveImageToDB(key, compressedBlob);
+                        settingsToApply[key] = URL.createObjectURL(compressedBlob);
                     } catch (e) {
-                        console.error(`Failed to save imported image ${key} to DB`, e);
+                        console.error(`Failed to process and save imported image ${key} to DB`, e);
                     }
                 }
             }
