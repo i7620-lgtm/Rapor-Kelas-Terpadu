@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'; 
 import { NAV_ITEMS } from '../constants.js';
 
 const MockupContainer = ({ children }) => (
