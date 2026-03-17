@@ -1,4 +1,4 @@
-
+ 
 import React from 'react';
 
 const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings, showToast }) => {
