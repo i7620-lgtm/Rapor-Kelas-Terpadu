@@ -1,4 +1,4 @@
-
+ 
 import React, { useMemo } from 'react';
 
 const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
