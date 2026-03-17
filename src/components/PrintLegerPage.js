@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';  
 import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
