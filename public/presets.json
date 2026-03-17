@@ -1,0 +1,40 @@
+{
+  "extracurriculars": [
+    { "id": "CATUR", "name": "Catur", "active": true },
+    { "id": "IPA", "name": "IPA", "active": true },
+    { "id": "KARATE", "name": "Karate", "active": true },
+    { "id": "KEWIRAUSAHAAN", "name": "Kewirausahaan", "active": true },
+    { "id": "KODING", "name": "Koding", "active": true },
+    { "id": "MADING", "name": "Mading", "active": true },
+    { "id": "MATEMATIKA", "name": "Matematika", "active": true },
+    { "id": "MENGGAMBAR", "name": "Menggambar", "active": true },
+    { "id": "MENARI", "name": "Menari", "active": true },
+    { "id": "NYURAT_AKSARA_BALI", "name": "Nyurat Aksara Bali", "active": true },
+    { "id": "PRAMUKA", "name": "Pramuka", "active": true },
+    { "id": "SILAT", "name": "Silat", "active": true },
+    { "id": "VOLI", "name": "Voli", "active": true },
+    { "id": "XIANGQI", "name": "Xiangqi", "active": true }
+  ],
+  "studentNotesTemplates": [
+    {
+      "id": "template_1",
+      "title": "Perkembangan Akademik Positif",
+      "content": "Ananda [Nama Siswa] menunjukkan perkembangan yang sangat baik dalam kemampuan [Sebutkan Kemampuan, misal: literasi dan numerasi]. Ia juga sangat aktif dalam kegiatan kelompok dan menunjukkan sikap [Sebutkan Sikap Positif, misal: kepemimpinan]. Perlu terus didukung untuk meningkatkan [Sebutkan Area Peningkatan, misal: kepercayaan dirinya saat tampil di depan kelas]."
+    },
+    {
+      "id": "template_2",
+      "title": "Sikap dan Perilaku Baik",
+      "content": "Ananda [Nama Siswa] menunjukkan sikap yang sangat santun dan bertanggung jawab. Ia selalu menyelesaikan tugas tepat waktu dan aktif membantu teman-temannya yang mengalami kesulitan. Pertahankan terus sikap positif ini."
+    },
+    {
+      "id": "template_3",
+      "title": "Perlu Peningkatan Fokus",
+      "content": "Ananda [Nama Siswa] memiliki potensi yang baik dalam bidang [Sebutkan Bidang]. Namun, perlu meningkatkan fokus dan konsentrasi saat pembelajaran di kelas. Dengan bimbingan dan dukungan, kami yakin Ananda dapat mencapai hasil yang lebih optimal."
+    },
+    {
+      "id": "template_4",
+      "title": "Aktif di Kelas",
+      "content": "Ananda [Nama Siswa] sangat antusias dan aktif bertanya selama kegiatan belajar mengajar. Keberaniannya untuk berpendapat patut diapresiasi dan menjadi contoh bagi teman-temannya. Teruslah menjadi siswa yang kritis dan kreatif."
+    }
+  ]
+}
