@@ -752,7 +752,7 @@ const App = () => {
           onClose: () => setIsERaporModalOpen(false),
           students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
       }),
-      React.createElement('div', { className: "flex flex-col lg:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
+      React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
         React.createElement(Navigation, { 
             activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
             onIsiERapor: () => setIsERaporModalOpen(true),
