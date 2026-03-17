@@ -1,8 +1,8 @@
-import React from 'react'; 
+import React from 'react';
 import { NAV_ITEMS } from '../constants.js';
 
 const MockupContainer = ({ children }) => (
-    React.createElement('div', { className: "w-full h-56 sm:h-72 bg-slate-100 border-b border-zinc-200 relative overflow-hidden flex items-center justify-center p-4" },
+    React.createElement('div', { className: "w-full h-56 sm:h-72 bg-slate-100 border-t border-zinc-200 relative overflow-hidden flex items-center justify-center p-4" },
         React.createElement('div', { className: "w-full max-w-2xl h-full bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden flex flex-col" },
             React.createElement('div', { className: "h-8 bg-slate-100 border-b border-slate-200 flex items-center px-3 gap-2 flex-shrink-0" },
                 React.createElement('div', { className: "w-3 h-3 rounded-full bg-red-400" }),
@@ -15,11 +15,10 @@ const MockupContainer = ({ children }) => (
     )
 );
 
-const Pointer = ({ className, text = "Klik di sini" }) => (
-    React.createElement('div', { className: `absolute z-20 flex flex-col items-center animate-bounce ${className}` },
-        React.createElement('div', { className: "bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg mb-1 whitespace-nowrap" }, text),
-        React.createElement('svg', { className: "w-5 h-5 text-red-500 fill-current", viewBox: "0 0 24 24" },
-            React.createElement('path', { d: "M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" })
+const Pointer = ({ className }) => (
+    React.createElement('div', { className: `absolute z-20 flex items-center justify-center animate-bounce ${className}` },
+        React.createElement('svg', { className: "w-7 h-7 text-red-500 fill-current drop-shadow-md", viewBox: "0 0 24 24" },
+            React.createElement('path', { d: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" })
         )
     )
 );
@@ -404,24 +403,17 @@ const PanduanPage = ({ setActivePage }) => {
                 React.createElement('p', { className: "mt-2 text-zinc-600 text-lg" }, "Pelajari cara menggunakan aplikasi Rapor Kurikulum Merdeka ini dari awal hingga akhir.")
             ),
 
-            React.createElement('div', { className: "bg-blue-50 border border-blue-200 p-4 rounded-xl mb-2 flex gap-3 items-start" },
-                React.createElement('svg', { className: "w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" })),
-                React.createElement('div', { className: "text-sm text-blue-800" },
-                    "Sebagai AI, saya tidak memiliki kemampuan untuk mengambil ", React.createElement('strong', null, "screenshot"), " langsung dari aplikasi Anda. Namun, saya telah merancang ulang ilustrasi di bawah ini agar ", React.createElement('strong', null, "sangat mirip dengan tampilan asli aplikasi"), ", lengkap dengan petunjuk (pointer) merah yang menunjukkan tombol mana yang harus diklik."
-                )
-            ),
-
-            React.createElement('div', { className: "space-y-8" },
+            React.createElement('div', { className: "space-y-8 mt-4" },
                 sections.map((section, index) => (
-                    React.createElement('div', { key: index, className: "bg-white rounded-xl shadow-sm border border-zinc-200/60 overflow-hidden" },
-                        section.mockup && React.createElement(MockupContainer, null, section.mockup),
+                    React.createElement('div', { key: index, className: "bg-white rounded-xl shadow-sm border border-zinc-200/60 overflow-hidden flex flex-col" },
                         React.createElement('div', { className: "p-6" },
                             React.createElement('h3', { className: "text-xl font-bold text-zinc-800 mb-4 pb-2 border-b border-zinc-100 flex items-center gap-2" }, 
-                                React.createElement('span', { className: "bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center text-sm" }, index + 1),
+                                React.createElement('span', { className: "bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0" }, index + 1),
                                 section.title.replace(/^\d+\.\s/, '')
                             ),
                             React.createElement('div', { className: "text-zinc-700 leading-relaxed text-lg" }, section.content)
-                        )
+                        ),
+                        section.mockup && React.createElement(MockupContainer, null, section.mockup)
                     )
                 ))
             ),
