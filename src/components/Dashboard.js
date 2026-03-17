@@ -1,15 +1,18 @@
- 
+
 import React, { useMemo } from 'react';
 
 const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
-    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between" },
+    React.createElement('div', { 
+        className: `bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between ${onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''}`,
+        onClick: onActionClick ? onActionClick : undefined
+    },
         React.createElement('div', null,
             React.createElement('h3', { className: "text-lg font-semibold text-slate-700" }, title),
             React.createElement('p', { className: "mt-4 text-4xl font-bold text-slate-900" }, value),
             React.createElement('p', { className: "mt-2 text-sm text-slate-500" }, description)
         ),
         showAction && actionText && onActionClick && (
-             React.createElement('button', { onClick: onActionClick, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left" },
+            React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left" },
                 actionText, ' →'
             )
         )
@@ -29,7 +32,10 @@ const AnalysisItem = ({ title, description, status, actionText, onActionClick })
     };
 
     return (
-        React.createElement('div', { className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]} flex flex-col justify-between` },
+        React.createElement('div', { 
+            className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]} flex flex-col justify-between ${onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
+            onClick: onActionClick ? onActionClick : undefined
+        },
             React.createElement('div', null,
                 React.createElement('div', { className: "flex justify-between items-start" },
                     React.createElement('div', { className: "flex-1" },
@@ -41,7 +47,7 @@ const AnalysisItem = ({ title, description, status, actionText, onActionClick })
             )
             ,
             onActionClick && actionText && (
-                React.createElement('button', { onClick: onActionClick, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
+                React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
                     actionText, ' →'
                 )
             )
@@ -68,18 +74,21 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick, perc
     const percentageColorClass = percentage === 100 ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
     
     return (
-        React.createElement('div', { className: "relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4" },
+        React.createElement('div', { 
+            className: `relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4 ${status === 'bad' && onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
+            onClick: status === 'bad' && onActionClick ? onActionClick : undefined
+        },
             React.createElement('div', { className: `absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold z-10 ${percentageColorClass}`, style: { width: '40px', height: '40px', borderRadius: '50%' } },
                 `${percentage}%`
             ),
-            React.createElement('div', { className: "flex-shrink-0" },
+            React.createElement('div', { className: "flex-shrink-0 mt-1" },
                 React.createElement(StatusIcon, { status: status })
             ),
             React.createElement('div', { className: "flex-1" },
                 React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
                 React.createElement('p', { className: "text-sm text-slate-600 mt-1" }, message),
                 status === 'bad' && onActionClick && (
-                     React.createElement('button', { onClick: onActionClick, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
+                     React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
                         actionText, ' →'
                     )
                 )
@@ -110,7 +119,7 @@ const Dashboard = ({
         value: settings.nama_kelas || "-", 
         description: "Kelas yang diampu saat ini.",
         actionText: "Atur Kelas",
-        onActionClick: () => setActivePage('PENGATURAN'),
+        onActionClick: () => setActivePage('PENGATURAN', 'nama_kelas'),
         showAction: !settings.nama_kelas
     },
     { 
@@ -126,7 +135,7 @@ const Dashboard = ({
         value: settings.tahun_ajaran || "-", 
         description: "Tahun ajaran yang sedang berjalan.",
         actionText: "Atur Tahun Ajaran",
-        onActionClick: () => setActivePage('PENGATURAN'),
+        onActionClick: () => setActivePage('PENGATURAN', 'tahun_ajaran'),
         showAction: !settings.tahun_ajaran
     },
     { 
@@ -134,7 +143,7 @@ const Dashboard = ({
         value: settings.semester || "-", 
         description: "Semester yang sedang berlangsung.",
         actionText: "Atur Semester",
-        onActionClick: () => setActivePage('PENGATURAN'),
+        onActionClick: () => setActivePage('PENGATURAN', 'semester'),
         showAction: !settings.semester
     },
   ];
@@ -241,7 +250,7 @@ const Dashboard = ({
             results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'good', message: 'Informasi dasar sekolah, kelas, dan wali kelas sudah terisi.', percentage: 100 });
         } else {
             const missingSettings = settingsFields.filter(key => !settings[key] || settings[key].trim() === '');
-            results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'bad', message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`, actionText: 'Lengkapi di Pengaturan', onActionClick: () => setActivePage('PENGATURAN'), percentage: settingsPercentage });
+            results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'bad', message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`, actionText: 'Lengkapi di Pengaturan', onActionClick: () => setActivePage('PENGATURAN', missingSettings[0]), percentage: settingsPercentage });
         }
 
         if (totalStudents === 0) {
