@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
-
+ 
 export const getGradeNumber = (str) => {
     if (!str) return null;
     const trimmedStr = String(str).trim();
