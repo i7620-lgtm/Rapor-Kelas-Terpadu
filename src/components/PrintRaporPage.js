@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';  
 import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
