@@ -1,0 +1,1 @@
+window.RKT_CONFIG = {};
