@@ -2,11 +2,24 @@
   "name": "rkt-app",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "dev": "node build.js && npx -y serve -p 3000 dist",
-    "build": "node build.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "vite": "^5.2.0"
   }
 }
