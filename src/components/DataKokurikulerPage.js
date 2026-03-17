@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'; 
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
 
 const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsChange, onUpdateCocurricularData, showToast }) => {
