@@ -1,11 +1,10 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RKT - Rapor Kelas Terpadu</title>
     <meta name="google-site-verification" content="dhTj8lqPNS9MFRD_mKVyOblB_O3q5XpZLDp85RF0AOU" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icon.svg" />
@@ -15,155 +14,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Alex+Brush&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.16.0"
-  }
-}
-</script>
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  }
-  .font-aksara-bali {
-    font-family: 'Noto Sans Balinese', sans-serif;
-  }
-  @keyframes fadeInDown {
-    from {
-      opacity: 0;
-      transform: translate(-50%, -20px);
-    }
-    to {
-      opacity: 1;
-      transform: translate(-50%, 0);
-    }
-  }
-  .animate-fade-in-down {
-    animation: fadeInDown 0.5s ease-out forwards;
-  }
-  /* Tooltip styles for Learning Objectives */
-  .tp-header {
-    /* position: relative; No longer needed */
-  }
-
-  .tp-header-button {
-      background: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      font: inherit;
-      color: inherit;
-      cursor: help;
-      text-transform: uppercase;
-  }
-
-  .tp-tooltip {
-    width: 250px;
-    background-color: #1f2937; /* slate-800 */
-    color: #fff;
-    text-align: left;
-    font-weight: normal;
-    text-transform: none;
-    white-space: normal;
-    border-radius: 6px;
-    padding: 8px;
-    z-index: 50; /* Increased z-index */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    /* Positioning and visibility properties are now handled by inline styles in React */
-  }
-
-  .font-times {
-    font-family: 'Tinos', "Times New Roman", Times, serif;
-  }
-
-  .report-cover-border {
-    border: 6px double #000;
-  }
-
-  /* New style for SLM headers in table view */
-  .slm-header-text-clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2; /* Limit to 2 lines */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis; /* Add ellipsis if content overflows */
-    white-space: normal; /* Allow text to wrap */
-    line-height: 1.25em; /* Adjust based on desired line height for 2 lines */
-    max-height: 2.5em; /* 2 lines * 1.25em */
-    word-break: break-word; /* Allow long words to break */
-    min-width: 0; /* Important for flex items to shrink */
-  }
-
-  @media print {
-    /* Aturan @page akan diinjeksikan secara dinamis oleh React */
-    body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        background-color: #fff !important;
-        margin: 0 !important;
-    }
-
-    /* Sembunyikan semua elemen di body secara default */
-    body * {
-        visibility: hidden;
-    }
-
-    /* Tampilkan hanya area cetak dan isinya */
-    #print-area, #print-area * {
-        visibility: visible;
-    }
-
-    /* Posisikan area cetak di root dokumen */
-    #print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    /* Tailwind's space-y-* adds margin-top. Reset this for print. */
-    #print-area > * + * {
-        margin-top: 0 !important;
-    }
-    
-    .report-page, .leger-page {
-      box-shadow: none !important;
-      border: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      page-break-after: always;
-      overflow: hidden !important;
-      position: relative !important;
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-    }
-
-    /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
-    .report-page:last-of-type, .leger-page:last-of-type {
-      page-break-after: auto;
-    }
-
-    .print-hidden {
-        display: none !important;
-    }
-  }
-
-</style>
-</head>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
   <body class="bg-slate-50">
     <div id="root"></div>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Google Identity Services (GIS) is the modern library for both sign-in and OAuth2 tokens. -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Injected configuration from Vercel build step -->
-    <script id="rkt-config-script" src="/config.js"></script>
-    <script type="module" src="/index.js"></script>
+    <script type="module" src="/src/index.js"></script>
   </body>
 </html>

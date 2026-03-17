@@ -4,6 +4,7 @@ import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
 import SettingsPage from './components/SettingsPage.js';
+import PanduanPage from './components/PanduanPage.js';
 import DataSiswaPage from './components/DataSiswaPage.js';
 import DataNilaiPage, { getGradeNumber } from './components/DataNilaiPage.js';
 import DataKokurikulerPage from './components/DataKokurikulerPage.js';
@@ -74,6 +75,7 @@ const initialSettings = {
   kop_layout: [],
   piagam_layout: [],
   nilaiDisplayMode: 'kuantitatif saja', 
+  enableExitWarning: false,
 };
 
 const initialStudents = [];
@@ -211,6 +213,27 @@ const chunkString = (str, len) => {
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
+  const [targetSection, setTargetSection] = useState(null);
+  const mainRef = useRef(null);
+
+  const handleNavigate = useCallback((page, target = null) => {
+    setActivePage(page);
+    setTargetSection(target);
+  }, []);
+
+  useEffect(() => {
+    if (targetSection) {
+      setTimeout(() => {
+        const el = document.getElementById(targetSection);
+        if (el && mainRef.current) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Don't set targetSection to null here, otherwise it triggers the else block
+        }
+      }, 100);
+    } else if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activePage, targetSection]);
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [presets, setPresets] = useState(null);
@@ -328,6 +351,10 @@ const App = () => {
         })));
         setSettings(prev => ({ ...prev, slmVisibility: {} }));
         showToast(`Kelas diubah ke Kelas ${getGradeNumber(value)}. Semua data nilai telah direset.`, 'success');
+        return;
+    }
+    if (type === 'checkbox') {
+        setSettings(prev => ({ ...prev, [name]: value }));
         return;
     }
     if (name) { 
@@ -459,7 +486,7 @@ const App = () => {
             const rowGrades = displaySubjects.map(ds => {
                 let grade;
                 if (ds.id === 'PABP') {
-                    const rel = student.agama?.trim().toLowerCase();
+                    const rel = String(student.agama || '').trim().toLowerCase();
                     if (rel) {
                         const matched = rel === 'kepercayaan' ? activeSubjects.find(s => s.id === 'PAKTTMYME') : activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${rel})`));
                         grade = matched ? studentGrades.finalGrades[matched.id] : null;
@@ -626,7 +653,7 @@ const App = () => {
         const wsEkstraDef = findSheet(["Ekstrakurikuler"]);
         if (wsEkstraDef) nEx = XLSX.utils.sheet_to_json(wsEkstraDef).map(r => ({ id: r['ID Unik (Jangan Diubah)'], name: r['Nama Ekstrakurikuler'], active: r['Status Aktif'] === 'Aktif' }));
         const wsS = findSheet(["Daftar Siswa", "Students", "Siswa", "Data Siswa"]);
-        if (wsS) nStud = XLSX.utils.sheet_to_json(wsS).map((s, idx) => ({ id: String(s['ID Siswa (Otomatis)'] || `s_${Date.now()}_${idx}`), namaLengkap: s['Nama Lengkap'] || '', namaPanggilan: s['Nama Panggilan'] || '', nis: s['NIS'] || '', nisn: s['NISN'] || '', ttl: s['Tempat, Tanggal Lahir'] || '', jenisKelamin: s['Jenis Kelamin'] || '', agama: s['Agama'] || '', asalTk: s['Asal TK'] || '', alamatSiswa: s['Alamat Siswa'] || '', diterimaDiKelas: s['Diterima di Kelas'] || '', diterimaTanggal: s['Diterima Tanggal'] || '', namaAyah: s['Nama Ayah'] || '', namaIbu: s['Nama Ibu'] || '', pekerjaanAyah: s['Pekerjaan Ayah'] || '', pekerjaanIbu: s['Pekerjaan Ibu'] || '', alamatOrangTua: s['Alamat Orang Tua'] || '', teleponOrangTua: s['Telepon Orang Tua'] || '', namaWali: s['Nama Wali'] || '', pekerjaanWali: s['Pekerjaan Wali'] || '', alamatWali: s['Alamat Wali'] || '', teleponWali: s['Telepon Wali'] || '' }));
+        if (wsS) nStud = XLSX.utils.sheet_to_json(wsS).map((s, idx) => ({ id: String(s['ID Siswa (Otomatis)'] || s['ID Siswa'] || s['ID'] || `s_${Date.now()}_${idx}`), namaLengkap: s['Nama Lengkap'] != null ? String(s['Nama Lengkap']) : '', namaPanggilan: s['Nama Panggilan'] != null ? String(s['Nama Panggilan']) : '', nis: s['NIS'] != null ? String(s['NIS']) : '', nisn: s['NISN'] != null ? String(s['NISN']) : '', ttl: s['Tempat, Tanggal Lahir'] != null ? String(s['Tempat, Tanggal Lahir']) : '', jenisKelamin: s['Jenis Kelamin'] != null ? String(s['Jenis Kelamin']) : '', agama: s['Agama'] != null ? String(s['Agama']) : '', asalTk: s['Asal TK'] != null ? String(s['Asal TK']) : '', alamatSiswa: s['Alamat Siswa'] != null ? String(s['Alamat Siswa']) : '', diterimaDiKelas: s['Diterima di Kelas'] != null ? String(s['Diterima di Kelas']) : '', diterimaTanggal: s['Diterima Tanggal'] != null ? String(s['Diterima Tanggal']) : '', namaAyah: s['Nama Ayah'] != null ? String(s['Nama Ayah']) : '', namaIbu: s['Nama Ibu'] != null ? String(s['Nama Ibu']) : '', pekerjaanAyah: s['Pekerjaan Ayah'] != null ? String(s['Pekerjaan Ayah']) : '', pekerjaanIbu: s['Pekerjaan Ibu'] != null ? String(s['Pekerjaan Ibu']) : '', alamatOrangTua: s['Alamat Orang Tua'] != null ? String(s['Alamat Orang Tua']) : '', teleponOrangTua: s['Telepon Orang Tua'] != null ? String(s['Telepon Orang Tua']) : '', namaWali: s['Nama Wali'] != null ? String(s['Nama Wali']) : '', pekerjaanWali: s['Pekerjaan Wali'] != null ? String(s['Pekerjaan Wali']) : '', alamatWali: s['Alamat Wali'] != null ? String(s['Alamat Wali']) : '', teleponWali: s['Telepon Wali'] != null ? String(s['Telepon Wali']) : '' }));
         const wsTP = findSheet(["Tujuan Pembelajaran"]);
         const slmNameMap = new Map();
         if (wsTP) { const tpData = XLSX.utils.sheet_to_json(wsTP); const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`; nLO[gradeKey] = {}; tpData.forEach(row => { const subjName = row['Nama Mata Pelajaran'], slmId = row['ID SLM'], slmName = row['Nama SLM']; if (slmId && slmName && !slmNameMap.has(slmId)) slmNameMap.set(slmId, slmName); if (subjName) { if (!nLO[gradeKey][subjName]) nLO[gradeKey][subjName] = []; nLO[gradeKey][subjName].push({ slmId, text: row['Deskripsi Tujuan Pembelajaran (TP)'], isEdited: true }); } }); }
@@ -704,6 +731,20 @@ const App = () => {
         isInitialMount.current = false;
     }, []);
 
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (settings.enableExitWarning) {
+                e.preventDefault();
+                e.returnValue = ''; // Standard way to trigger the browser's exit warning
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [settings.enableExitWarning]);
+
   return React.createElement(React.Fragment, null,
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
       isERaporModalOpen && React.createElement(ERaporProcessorModal, {
@@ -711,15 +752,16 @@ const App = () => {
           onClose: () => setIsERaporModalOpen(false),
           students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
       }),
-      React.createElement('div', { className: "flex flex-col lg:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
+      React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
         React.createElement(Navigation, { 
-            activePage, setActivePage, onExport: handleExportAll, onImport: handleImportAll,
+            activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
             onIsiERapor: () => setIsERaporModalOpen(true),
             isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
         }),
-        React.createElement('main', { className: "flex-1 overflow-auto p-4 sm:p-8" }, 
+        React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
             isLoading ? "Memuat..." : 
-            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); setActivePage('DATA_NILAI'); } }) :
+            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
+            activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
             activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onBulkSaveStudents: setStudents, onDeleteStudent: id => setStudents(prev => prev.filter(s => s.id !== id)), showToast }) :
             activePage === 'DATA_NILAI' ? React.createElement(DataNilaiPage, { 
                 students, grades, settings, 
