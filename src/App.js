@@ -19,6 +19,7 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
+import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
 
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -254,6 +255,42 @@ const App = () => {
       };
   });
 
+  useEffect(() => {
+      const initImages = async () => {
+          const updates = {};
+          
+          // 1. Check for Base64 images in localStorage and migrate them
+          for (const key of IMAGE_KEYS) {
+              if (settings[key] && typeof settings[key] === 'string' && settings[key].startsWith('data:image')) {
+                  try {
+                      const res = await fetch(settings[key]);
+                      const blob = await res.blob();
+                      const dims = getImageDimensions(key);
+                      const compressedBlob = await processAndCompressImage(blob, dims.width, dims.height);
+                      await saveImageToDB(key, compressedBlob);
+                      updates[key] = URL.createObjectURL(compressedBlob);
+                  } catch (e) {
+                      console.error(`Failed to migrate image ${key}`, e);
+                  }
+              }
+          }
+          
+          // 2. Load remaining images from IndexedDB
+          const dbImages = await loadAllImagesFromDB();
+          for (const key of IMAGE_KEYS) {
+              if (!updates[key] && dbImages[key]) {
+                  updates[key] = dbImages[key];
+              }
+          }
+          
+          if (Object.keys(updates).length > 0) {
+              setSettings(prev => ({ ...prev, ...updates }));
+          }
+      };
+      
+      initImages();
+  }, []);
+
   const [students, setStudents] = useState(() => 
       loadDataSafe('appStudents', initialStudents, Array.isArray)
   );
@@ -310,16 +347,38 @@ const App = () => {
     if (type === 'file') {
         const file = files && files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setSettings(prev => ({ ...prev, [name]: reader.result }));
-            };
-            reader.readAsDataURL(file);
+            const dims = getImageDimensions(name);
+            processAndCompressImage(file, dims.width, dims.height)
+                .then(blob => {
+                    saveImageToDB(name, blob).then(() => {
+                        const objectUrl = URL.createObjectURL(blob);
+                        setSettings(prev => ({ ...prev, [name]: objectUrl }));
+                    });
+                })
+                .catch(err => {
+                    console.error("Failed to process image", err);
+                    showToast("Gagal memproses gambar", "error");
+                });
         }
         return;
     }
     if (type === 'file_processed') {
-         setSettings(prev => ({ ...prev, [name]: value }));
+        fetch(value)
+            .then(res => res.blob())
+            .then(blob => {
+                 const dims = getImageDimensions(name);
+                 return processAndCompressImage(blob, dims.width, dims.height);
+            })
+            .then(compressedBlob => {
+                 saveImageToDB(name, compressedBlob).then(() => {
+                     const objectUrl = URL.createObjectURL(compressedBlob);
+                     setSettings(prev => ({ ...prev, [name]: objectUrl }));
+                 });
+            })
+            .catch(err => {
+                console.error("Failed to save processed image", err);
+                showToast("Gagal menyimpan gambar", "error");
+            });
          return;
     }
     if (name && name.startsWith('predikats.')) {
@@ -619,7 +678,27 @@ const App = () => {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(jfRows), "Jurnal Formatif");
         const asetRows = [["Kunci Aset", "Data Base64"]];
         const asToSa = { 'logo_sekolah': settings.logo_sekolah, 'logo_dinas': settings.logo_dinas, 'logo_cover': settings.logo_cover, 'piagam_background': settings.piagam_background, 'ttd_kepala_sekolah': settings.ttd_kepala_sekolah, 'ttd_wali_kelas': settings.ttd_wali_kelas };
-        Object.entries(asToSa).forEach(([k, b]) => { if (b && typeof b === 'string') chunkString(b, 30000).forEach((c, i) => asetRows.push([`${k}_part_${i}`, c])); });
+        
+        for (const [k, b] of Object.entries(asToSa)) {
+            if (b && typeof b === 'string') {
+                let base64Data = b;
+                if (b.startsWith('blob:')) {
+                    try {
+                        const res = await fetch(b);
+                        const blob = await res.blob();
+                        base64Data = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (e) {
+                        console.error(`Failed to convert blob to base64 for ${k}`, e);
+                    }
+                }
+                chunkString(base64Data, 30000).forEach((c, i) => asetRows.push([`${k}_part_${i}`, c]));
+            }
+        }
+        
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asetRows), "Aset Gambar");
 
         return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
@@ -677,7 +756,25 @@ const App = () => {
         setIsLoading(true);
         try {
             const d = await parseExcelBlob(blob);
-            setSettings(d.settings);
+            
+            // Process images from imported settings
+            const settingsToApply = { ...d.settings };
+            for (const key of IMAGE_KEYS) {
+                if (settingsToApply[key] && typeof settingsToApply[key] === 'string' && settingsToApply[key].startsWith('data:image')) {
+                    try {
+                        const res = await fetch(settingsToApply[key]);
+                        const imgBlob = await res.blob();
+                        const dims = getImageDimensions(key);
+                        const compressedBlob = await processAndCompressImage(imgBlob, dims.width, dims.height);
+                        await saveImageToDB(key, compressedBlob);
+                        settingsToApply[key] = URL.createObjectURL(compressedBlob);
+                    } catch (e) {
+                        console.error(`Failed to process and save imported image ${key} to DB`, e);
+                    }
+                }
+            }
+            
+            setSettings(settingsToApply);
             setStudents(d.students);
             setAttendance(d.attendance);
             setNotes(d.notes);
@@ -715,7 +812,15 @@ const App = () => {
         input.click();
     }, [importFromExcelBlob]);
 
-    useEffect(() => { localStorage.setItem('appSettings', JSON.stringify(settings)); }, [settings]);
+    useEffect(() => { 
+        const settingsToSave = { ...settings };
+        IMAGE_KEYS.forEach(key => {
+            if (settingsToSave[key] && typeof settingsToSave[key] === 'string' && settingsToSave[key].startsWith('blob:')) {
+                delete settingsToSave[key];
+            }
+        });
+        localStorage.setItem('appSettings', JSON.stringify(settingsToSave)); 
+    }, [settings]);
     useEffect(() => { localStorage.setItem('appStudents', JSON.stringify(students)); }, [students]);
     useEffect(() => { localStorage.setItem('appGrades', JSON.stringify(grades)); }, [grades]);
     useEffect(() => { localStorage.setItem('appNotes', JSON.stringify(notes)); }, [notes]);
