@@ -3,16 +3,16 @@ import React, { useMemo } from 'react';
 
 const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
     React.createElement('div', { 
-        className: `bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between ${onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''}`,
+        className: `bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden ${onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''}`,
         onClick: onActionClick ? onActionClick : undefined
     },
-        React.createElement('div', null,
-            React.createElement('h3', { className: "text-lg font-semibold text-slate-700" }, title),
-            React.createElement('p', { className: "mt-4 text-4xl font-bold text-slate-900" }, value),
-            React.createElement('p', { className: "mt-2 text-sm text-slate-500" }, description)
+        React.createElement('div', { className: "overflow-hidden" },
+            React.createElement('h3', { className: "text-lg font-semibold text-slate-700 truncate", title: title }, title),
+            React.createElement('p', { className: "mt-4 text-3xl sm:text-4xl font-bold text-slate-900 truncate", title: value }, value),
+            React.createElement('p', { className: "mt-2 text-sm text-slate-500 line-clamp-2", title: description }, description)
         ),
         showAction && actionText && onActionClick && (
-            React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left" },
+            React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left truncate" },
                 actionText, ' →'
             )
         )
@@ -33,21 +33,21 @@ const AnalysisItem = ({ title, description, status, actionText, onActionClick })
 
     return (
         React.createElement('div', { 
-            className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]} flex flex-col justify-between ${onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
+            className: `bg-white p-4 rounded-lg shadow-sm border-l-4 ${statusClasses[status]} flex flex-col justify-between overflow-hidden ${onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
             onClick: onActionClick ? onActionClick : undefined
         },
-            React.createElement('div', null,
+            React.createElement('div', { className: "overflow-hidden" },
                 React.createElement('div', { className: "flex justify-between items-start" },
-                    React.createElement('div', { className: "flex-1" },
-                        React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
-                        React.createElement('p', { className: "text-sm text-slate-500 mt-1" }, description)
+                    React.createElement('div', { className: "flex-1 min-w-0" },
+                        React.createElement('h4', { className: "font-semibold text-slate-800 truncate", title: title }, title),
+                        React.createElement('p', { className: "text-sm text-slate-500 mt-1 line-clamp-2", title: description }, description)
                     ),
-                    React.createElement('span', { className: `ml-4 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}` }, statusText[status])
+                    React.createElement('span', { className: `ml-4 flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}` }, statusText[status])
                 )
             )
             ,
             onActionClick && actionText && (
-                React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end" },
+                React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end truncate max-w-full" },
                     actionText, ' →'
                 )
             )
@@ -75,20 +75,20 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick, perc
     
     return (
         React.createElement('div', { 
-            className: `relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4 ${status === 'bad' && onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
+            className: `relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4 overflow-hidden ${status === 'bad' && onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
             onClick: status === 'bad' && onActionClick ? onActionClick : undefined
         },
-            React.createElement('div', { className: `absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold z-10 ${percentageColorClass}`, style: { width: '40px', height: '40px', borderRadius: '50%' } },
+            React.createElement('div', { className: `absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold z-10 flex-shrink-0 ${percentageColorClass}`, style: { width: '40px', height: '40px', borderRadius: '50%' } },
                 `${percentage}%`
             ),
             React.createElement('div', { className: "flex-shrink-0 mt-1" },
                 React.createElement(StatusIcon, { status: status })
             ),
-            React.createElement('div', { className: "flex-1" },
-                React.createElement('h4', { className: "font-semibold text-slate-800" }, title),
-                React.createElement('p', { className: "text-sm text-slate-600 mt-1" }, message),
+            React.createElement('div', { className: "flex-1 min-w-0" },
+                React.createElement('h4', { className: "font-semibold text-slate-800 truncate", title: title }, title),
+                React.createElement('p', { className: "text-sm text-slate-600 mt-1 line-clamp-2", title: message }, message),
                 status === 'bad' && onActionClick && (
-                     React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800" },
+                     React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 truncate max-w-full" },
                         actionText, ' →'
                     )
                 )
