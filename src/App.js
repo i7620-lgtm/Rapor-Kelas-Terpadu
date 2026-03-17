@@ -19,7 +19,7 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
- 
+
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const dbPromise = new Promise((resolve, reject) => {
@@ -213,6 +213,27 @@ const chunkString = (str, len) => {
 const App = () => {
   const { isUpdateAvailable, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
+  const [targetSection, setTargetSection] = useState(null);
+  const mainRef = useRef(null);
+
+  const handleNavigate = useCallback((page, target = null) => {
+    setActivePage(page);
+    setTargetSection(target);
+  }, []);
+
+  useEffect(() => {
+    if (targetSection) {
+      setTimeout(() => {
+        const el = document.getElementById(targetSection);
+        if (el && mainRef.current) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Don't set targetSection to null here, otherwise it triggers the else block
+        }
+      }, 100);
+    } else if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activePage, targetSection]);
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [presets, setPresets] = useState(null);
@@ -733,14 +754,14 @@ const App = () => {
       }),
       React.createElement('div', { className: "flex flex-col lg:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
         React.createElement(Navigation, { 
-            activePage, setActivePage, onExport: handleExportAll, onImport: handleImportAll,
+            activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
             onIsiERapor: () => setIsERaporModalOpen(true),
             isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
         }),
-        React.createElement('main', { className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
+        React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
             isLoading ? "Memuat..." : 
-            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); setActivePage('DATA_NILAI'); } }) :
-            activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage }) :
+            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
+            activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
             activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onBulkSaveStudents: setStudents, onDeleteStudent: id => setStudents(prev => prev.filter(s => s.id !== id)), showToast }) :
             activePage === 'DATA_NILAI' ? React.createElement(DataNilaiPage, { 
                 students, grades, settings, 
