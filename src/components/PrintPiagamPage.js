@@ -1,4 +1,4 @@
-  
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 
@@ -791,12 +791,12 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         React.createElement(React.Fragment, null,
             React.createElement(PiagamEditorModal, { isOpen: isEditorOpen, onClose: () => setIsEditorOpen(false), settings: settings, onSaveLayout: onUpdatePiagamLayout }),
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
-                 React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
+                 React.createElement('div', { className: "flex flex-wrap items-start justify-between gap-4" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Piagam Penghargaan"),
                         React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Buat dan cetak piagam untuk siswa berprestasi.")
                     ),
-                    React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
+                    React.createElement('div', { className: "flex flex-wrap items-end gap-4" },
                         React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'filterSelector', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tampilkan Peringkat'),
                             React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-64 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
