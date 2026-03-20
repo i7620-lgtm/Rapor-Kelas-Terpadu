@@ -1,4 +1,4 @@
- 
+
 import React, { useEffect } from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
 
@@ -16,7 +16,7 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
     React.createElement('aside', { className: "w-64 bg-white border-r border-zinc-200 shadow-sm flex flex-col print-hidden" },
       React.createElement('div', { className: "flex items-center justify-center h-16 border-b border-zinc-100 px-4" },
         React.createElement('div', { className: "text-center" },
-          React.createElement('h1', { className: "text-2xl font-extrabold text-zinc-800 tracking-tight" }, "RKT"),
+          React.createElement('h1', { className: "text-2xl font-extrabold text-indigo-600 tracking-tight" }, "RKT"),
           React.createElement('p', { className: "text-xs text-zinc-500 font-medium tracking-wide" }, "Rapor Kelas Terpadu")
         )
       ),
@@ -34,7 +34,7 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
                 }
             },
             className: `block px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-              activePage === item.id ? 'bg-zinc-900 text-zinc-50 shadow-sm' : 'text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900'
+              activePage === item.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900'
             }`
           }, item.label)
         )),
@@ -80,7 +80,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                 onClick: () => setIsMobileMenuOpen(prev => !prev)
             },
                 React.createElement('div', { className: "flex items-center" },
-                    React.createElement('h1', { className: "text-lg font-bold text-zinc-800 tracking-tight" }, "RKT"),
+                    React.createElement('h1', { className: "text-lg font-bold text-indigo-600 tracking-tight" }, "RKT"),
                     React.createElement('span', { className: 'mx-2 text-zinc-300' }, '/'),
                     React.createElement('h2', { className: 'text-lg font-medium text-zinc-700' }, currentPageName)
                 ),
@@ -127,7 +127,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                                         },
                                         className: `px-4 py-2 text-sm font-medium rounded-xl shadow-sm transition-all duration-200 ${
                                             activePage === item.id 
-                                            ? 'bg-zinc-900 text-zinc-50' 
+                                            ? 'bg-indigo-600 text-white' 
                                             : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200/80'
                                         }`
                                     }, item.label)
