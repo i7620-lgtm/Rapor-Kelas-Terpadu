@@ -1,4 +1,4 @@
- 
+
 import React from 'react';
 
 const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects, settings, showToast }) => {
@@ -214,7 +214,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                             React.createElement('div', { className: "flex justify-end mt-2" },
                                                 React.createElement('button', {
                                                     onClick: () => handleGenerateNote(student),
-                                                    className: "px-3 py-1 text-xs font-semibold text-zinc-800 bg-zinc-100 rounded-full hover:bg-zinc-200 transition-colors",
+                                                    className: "px-3 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors",
                                                     title: "Buat catatan cerdas berdasarkan peringkat dan nilai siswa"
                                                 }, "Buat Catatan Otomatis")
                                             )
