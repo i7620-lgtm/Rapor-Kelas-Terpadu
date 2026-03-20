@@ -1,4 +1,4 @@
- 
+
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
@@ -46,7 +46,7 @@ const BulkAddRowModal = ({ isOpen, onClose, onAdd }) => {
                     ),
                     React.createElement('div', { className: "flex justify-end gap-2" },
                         React.createElement('button', { type: "button", onClick: onClose, className: "px-4 py-2 text-sm text-zinc-700 bg-white border border-zinc-300/60 rounded-lg hover:bg-[#fafafa]" }, "Batal"),
-                        React.createElement('button', { type: "submit", className: "px-4 py-2 text-sm text-white bg-zinc-900 rounded-lg hover:bg-zinc-800" }, "Tambahkan")
+                        React.createElement('button', { type: "submit", className: "px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Tambahkan")
                     )
                 )
             )
@@ -205,7 +205,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                 ),
                 React.createElement('button', { 
                     onClick: handleAddNew, 
-                    className: "px-4 py-2 text-sm font-medium text-white bg-zinc-900 border border-transparent rounded-xl shadow-sm hover:bg-zinc-800" 
+                    className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-xl shadow-sm hover:bg-indigo-700" 
                 }, "+ Tambah Siswa Baru")
             ),
 
