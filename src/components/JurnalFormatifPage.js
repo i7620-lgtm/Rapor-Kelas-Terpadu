@@ -1,4 +1,4 @@
-  
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { FORMATIVE_ASSESSMENT_TYPES } from '../constants.js';
 import { getGradeNumber } from './DataNilaiPage.js';
@@ -168,7 +168,7 @@ const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, sho
                 ),
                 React.createElement('div', { className: "flex justify-end p-4 border-t bg-[#fafafa] rounded-b-lg flex-shrink-0" },
                     React.createElement('button', { onClick: onClose, className: "px-4 py-2 text-sm bg-white border border-zinc-300/60 text-zinc-700 rounded-lg hover:bg-[#fafafa]" }, "Batal"),
-                    React.createElement('button', { onClick: handleSave, className: "ml-3 px-4 py-2 text-sm text-white bg-zinc-900 rounded-lg hover:bg-zinc-800" }, isEditing ? 'Simpan Perubahan' : 'Simpan Catatan')
+                    React.createElement('button', { onClick: handleSave, className: "ml-3 px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, isEditing ? 'Simpan Perubahan' : 'Simpan Catatan')
                 )
             )
         )
@@ -234,7 +234,7 @@ const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDele
                             React.createElement('h3', { className: "text-xl font-bold text-zinc-800" }, "Jurnal Formatif Siswa"),
                             React.createElement('p', { className: "text-sm text-zinc-500" }, student.namaLengkap)
                         ),
-                        React.createElement('button', { onClick: handleAddNew, className: "px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 shadow-sm" }, "+ Tambah Catatan Baru")
+                        React.createElement('button', { onClick: handleAddNew, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm" }, "+ Tambah Catatan Baru")
                     ),
                     React.createElement('div', { className: "p-6 overflow-y-auto bg-zinc-100/50" },
                         notes && notes.length > 0 ? (
@@ -354,7 +354,7 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                                             React.createElement('td', { className: "px-6 py-4 text-center border-b border-zinc-200/60" },
                                                 React.createElement('button', {
                                                     onClick: () => handleOpenModal(student),
-                                                    className: "text-zinc-900 hover:text-zinc-700 font-medium px-3 py-1 rounded hover:bg-zinc-50 transition-colors"
+                                                    className: "text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded hover:bg-indigo-50 transition-colors"
                                                 },
                                                     "Lihat & Tambah Catatan"
                                                 )
