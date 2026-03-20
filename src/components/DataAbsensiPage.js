@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'; 
+import React, { useCallback } from 'react';
 
 const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdateAttendance, showToast }) => {
 
@@ -118,9 +118,9 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
                 React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 sticky left-0 z-40 bg-zinc-100/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60" }, "No"),
+                                    React.createElement('th', { scope: "col", className: "px-6 py-3 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 border-b border-zinc-200/60 min-w-[200px]" }, "Nama Lengkap"),
                                     React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60" }, "Sakit (S)"),
                                     React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60" }, "Izin (I)"),
