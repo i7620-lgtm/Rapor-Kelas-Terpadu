@@ -1,4 +1,4 @@
-import React from 'react'; 
+import React from 'react';
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
 
 const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsChange, onUpdateCocurricularData, showToast }) => {
@@ -110,9 +110,9 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                     ),
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100/50 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
+                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 min-w-[200px] border-b border-zinc-200/60" }, "Nama Siswa"),
                                     COCURRICULAR_DIMENSIONS.map(dim => (
                                         React.createElement('th', { key: dim.id, scope: "col", className: "px-4 py-3 min-w-[100px] text-center border-b border-zinc-200/60" }, dim.label)
