@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
+import { processAndCropImage3x4 } from '../utils/imageDB.js';
 
 const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
     acc[field.key] = '';
@@ -178,6 +179,33 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             );
         }
         
+        if (fieldDef.type === 'photo') {
+            const handlePhotoUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
+                    setLocalStudents(prev => {
+                        const newStudents = prev.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
+                        onBulkSaveStudents(newStudents);
+                        return newStudents;
+                    });
+                    showToast("Foto berhasil diunggah", "success");
+                } catch (error) {
+                    console.error("Failed to process photo:", error);
+                    showToast("Gagal memproses foto", "error");
+                }
+            };
+
+            return React.createElement('div', { className: "flex flex-col items-center gap-2 min-w-[80px]" },
+                student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover rounded border border-zinc-300 shadow-sm" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 rounded border border-zinc-300 flex items-center justify-center text-zinc-400 text-xs text-center p-1" }, "3x4"),
+                React.createElement('label', { className: "cursor-pointer text-[10px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded border border-indigo-200 transition-colors" },
+                    student[fieldDef.key] ? "Ganti Foto" : "Upload Foto",
+                    React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
+                )
+            );
+        }
+
         if (fieldDef.type === 'date') {
              return React.createElement('input', { ...commonProps, type: 'text' });
         }
