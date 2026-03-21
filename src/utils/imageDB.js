@@ -81,6 +81,49 @@ export const processAndCompressImage = (file, maxWidth, maxHeight, quality = 0.8
     });
 };
 
+export const processAndCropImage3x4 = (file, targetWidth = 354, targetHeight = 472, quality = 0.9) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                let sourceWidth = img.width;
+                let sourceHeight = img.height;
+                
+                const targetRatio = targetWidth / targetHeight;
+                const sourceRatio = sourceWidth / sourceHeight;
+                
+                let cropWidth = sourceWidth;
+                let cropHeight = sourceHeight;
+                let offsetX = 0;
+                let offsetY = 0;
+                
+                if (sourceRatio > targetRatio) {
+                    cropWidth = sourceHeight * targetRatio;
+                    offsetX = (sourceWidth - cropWidth) / 2;
+                } else {
+                    cropHeight = sourceWidth / targetRatio;
+                    offsetY = (sourceHeight - cropHeight) / 2;
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.drawImage(img, offsetX, offsetY, cropWidth, cropHeight, 0, 0, targetWidth, targetHeight);
+                
+                const dataUrl = canvas.toDataURL('image/webp', quality);
+                resolve(dataUrl);
+            };
+            img.onerror = (e) => reject(e);
+        };
+        reader.onerror = (e) => reject(e);
+    });
+};
+
 export const IMAGE_KEYS = [
     'logo_sekolah', 'logo_dinas', 'logo_cover', 
     'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'
