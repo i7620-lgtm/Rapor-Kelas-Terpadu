@@ -1,4 +1,4 @@
- 
+
 export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'PANDUAN', label: 'Cara Penggunaan' },
@@ -22,6 +22,7 @@ export const DATA_ACTIONS = [
 ];
 
 export const studentFieldDefinitions = [
+    { key: 'foto', label: 'Foto 3x4', description: 'Foto siswa ukuran 3x4.', type: 'photo' },
     { key: 'namaLengkap', label: 'Nama Lengkap', description: 'Nama lengkap siswa (wajib diisi).', type: 'text', placeholder: 'e.g. I Made Hermawan Surya Putra' },
     { key: 'namaPanggilan', label: 'Nama Panggilan', description: 'Nama panggilan siswa.', type: 'text', placeholder: 'e.g. Hermawan' },
     { key: 'nis', label: 'NIS', description: 'Nomor Induk Siswa.', type: 'text', placeholder: 'e.g. 12345' },
