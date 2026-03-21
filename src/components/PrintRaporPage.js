@@ -528,7 +528,12 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
                 )
             ),
             React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
+                React.createElement('div', { 
+                    className: 'border-2 border-black flex items-center justify-center text-slate-400 relative overflow-hidden text-center text-sm',
+                    style: { width: '3cm', height: '4cm', minWidth: '3cm', minHeight: '4cm' }
+                },
+                    student.foto ? React.createElement('img', { src: student.foto, alt: "Foto Siswa", className: "w-full h-full object-cover" }) : 'Pas Foto 3x4'
+                ),
                 React.createElement('div', { className: 'text-center relative' },
                     React.createElement(EditableDescription, { value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, onSave: (val) => onUpdateSettings('tanggal_rapor', val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
                     React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
