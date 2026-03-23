@@ -347,6 +347,14 @@ const App = () => {
     if (type === 'file') {
         const file = files && files[0];
         if (file) {
+            if (!file.type.startsWith('image/')) {
+                showToast("File harus berupa gambar", "error");
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("Ukuran gambar terlalu besar. Maksimal 5MB.", "error");
+                return;
+            }
             const dims = getImageDimensions(name);
             processAndCompressImage(file, dims.width, dims.height)
                 .then(blob => {
@@ -725,17 +733,20 @@ const App = () => {
             const data = XLSX.utils.sheet_to_json(wsP, { header: 1 });
             data.forEach(r => {
                 if (r[0] && r[0] !== 'ID Mata Pelajaran') { 
-                    if (['A', 'B', 'C', 'D'].includes(String(r[0]).toUpperCase())) {
-                        news.predikats[String(r[0]).toLowerCase()] = String(r[1]); 
-                    } else if (r[0] === 'kop_layout' || r[0] === 'piagam_layout') {
+                    const key = String(r[0]);
+                    if (['__proto__', 'constructor', 'prototype'].includes(key)) return;
+                    
+                    if (['A', 'B', 'C', 'D'].includes(key.toUpperCase())) {
+                        news.predikats[key.toLowerCase()] = String(r[1]); 
+                    } else if (key === 'kop_layout' || key === 'piagam_layout') {
                         try {
-                            news[r[0]] = JSON.parse(r[1]);
+                            news[key] = JSON.parse(r[1]);
                         } catch (e) {
-                            console.warn(`Failed parsing ${r[0]}`, e);
-                            news[r[0]] = [];
+                            console.warn(`Failed parsing ${key}`, e);
+                            news[key] = [];
                         }
-                    } else if (r[0] in news) {
-                        news[r[0]] = r[1]; 
+                    } else if (key in news) {
+                        news[key] = r[1]; 
                     }
                 }
                 const subjectId = r[0]; if (defaultSubjects.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
@@ -836,10 +847,18 @@ const App = () => {
         input.type = 'file';
         input.accept = '.xlsx, .xls';
         input.onchange = (e) => {
-            if (e.target.files?.[0]) importFromExcelBlob(e.target.files[0]);
+            const file = e.target.files?.[0];
+            if (file) {
+                // 10MB limit
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('Ukuran file terlalu besar. Maksimal 10MB.', 'error');
+                    return;
+                }
+                importFromExcelBlob(file);
+            }
         };
         input.click();
-    }, [importFromExcelBlob]);
+    }, [importFromExcelBlob, showToast]);
 
     useEffect(() => { 
         const settingsToSave = { ...settings };
