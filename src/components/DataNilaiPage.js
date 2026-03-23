@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
- 
+
 export const getGradeNumber = (str) => {
     if (!str) return null;
     const trimmedStr = String(str).trim();
@@ -1135,7 +1135,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
                                     )),
                                     slm.tps.length === 0 && React.createElement('p', { className: 'text-xs text-slate-400 text-center py-2' }, 'Belum ada Tujuan Pembelajaran.'),
                                     React.createElement('div', { className: "pt-3 border-t flex gap-2 justify-end" },
-                                        React.createElement('button', { onClick: () => handleAddManualTp(slm.id), className: "px-3 py-1 text-xs font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200" }, "+ Tambah TP Manual"),
+                                        React.createElement('button', { onClick: () => handleAddManualTp(slm.id), className: "px-3 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all" }, "+ Tambah TP Manual"),
                                         React.createElement('button', { onClick: () => handleOpenTpSelection(slm.id), className: "px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Pilih TP dari Data")
                                     )
                                 )
@@ -1298,7 +1298,7 @@ const NilaiCardView = (props) => {
     };
 
     return (
-        React.createElement('div', { className: "h-full" },
+        React.createElement('div', null,
             isSettingsModalOpen && React.createElement(GradeSettingsModal, {
                 isOpen: isSettingsModalOpen,
                 onClose: () => setIsSettingsModalOpen(false),
@@ -1339,7 +1339,7 @@ const NilaiCardView = (props) => {
                 React.createElement('div', { className: "flex items-center gap-2" },
                     React.createElement('button', {
                         onClick: () => setIsSettingsModalOpen(true),
-                        className: "px-3 py-1.5 text-xs font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-800"
+                        className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
                     }, "Rentang Nilai & Pengolahan"),
                     React.createElement('button', {
                         onClick: () => setIsManageSlmModalOpen(true),
@@ -1797,7 +1797,7 @@ const NilaiTableView = (props) => {
     }, [slmHeaders, truncatedSlmIds]); // Rerun when headers change or truncation state might change
 
 
-    return React.createElement('div', { ref: tableContainerRef, className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-col h-full flex relative" },
+    return React.createElement('div', { ref: tableContainerRef, className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden relative" },
         isManageSlmModalOpen && React.createElement(ManageSlmModal, { 
             isOpen: isManageSlmModalOpen, 
             onClose: () => setIsManageSlmModalOpen(false), 
@@ -1823,7 +1823,7 @@ const NilaiTableView = (props) => {
             React.createElement('div', { className: "flex items-center gap-2" },
                 React.createElement('button', {
                     onClick: () => setIsSettingsModalOpen(true),
-                    className: "px-3 py-1.5 text-xs font-medium text-white bg-slate-700 rounded-lg hover:bg-slate-800"
+                    className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 }, "Rentang Nilai & Pengolahan"),
                 React.createElement('button', {
                     onClick: () => setIsManageSlmModalOpen(true),
@@ -1837,7 +1837,7 @@ const NilaiTableView = (props) => {
                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                     React.createElement('tr', null,
                         React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px]" }, "Nama Siswa"),
+                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px] sticky left-10 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "Nama Siswa"),
                         slmHeaders.map(h => {
                             let dynamicMinWidth = 'auto';
                             // If SLM has 1 or 2 TPs, we force a minimum width for the entire SLM header section
@@ -1918,7 +1918,7 @@ const NilaiTableView = (props) => {
                         
                         return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
                             React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top" }, index + 1),
-                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top" }, student.namaLengkap),
+                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top sticky left-10 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, student.namaLengkap),
                             tpHeaders.map(h => React.createElement('td', { key: `${student.id}-${h.slmId}-${h.tpIndex}`, className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" },
                                 renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`)
                             )),
@@ -2088,7 +2088,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
     }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
 
     return (
-        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex-col h-full flex" },
+        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
             React.createElement('div', { className: "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0" },
                 React.createElement('span', { className: "text-sm font-medium text-slate-700 mr-4" }, "Urutkan:"),
                 React.createElement('div', { className: "flex items-center gap-4" },
@@ -2145,8 +2145,8 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
     const selectedSubject = useMemo(() => activeSubjects.find((s) => s.id === activeTab), [activeTab, activeSubjects]);
 
-    const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg shadow-sm hover:bg-slate-50 transition-colors";
-    const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm";
+    const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
+    const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-md";
 
     const renderSubjectView = () => {
         if (!selectedSubject) return null;
@@ -2164,7 +2164,7 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Nilai"),
                 React.createElement('p', { className: "mt-1 text-slate-600" }, 
@@ -2175,18 +2175,18 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
             ),
             
             students.length === 0 ? (
-                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-md border border-slate-200 text-center" },
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-md border border-slate-200 text-center min-h-[400px] flex items-center justify-center" },
                     React.createElement('p', { className: "text-slate-500" }, "Belum ada data siswa. Silakan tambahkan siswa di halaman 'Data Siswa'.")
                 )
             ) : (
-                React.createElement('div', { className: "flex flex-col flex-1 min-h-0" },
+                React.createElement('div', { className: "flex flex-col" },
                     React.createElement('div', { className: "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4 flex-shrink-0" },
                         React.createElement('button', { onClick: () => onTabChange('keseluruhan'), className: activeTab === 'keseluruhan' ? activeButtonClass : inactiveButtonClass }, "Nilai Keseluruhan"),
                         activeSubjects.map((subject) => (
                             React.createElement('button', { key: subject.id, onClick: () => onTabChange(subject.id), className: activeTab === subject.id ? activeButtonClass : inactiveButtonClass }, subject.label)
                         ))
                     ),
-                    React.createElement('div', { className: "flex-1 overflow-y-auto pt-4" },
+                    React.createElement('div', { className: "pt-4" },
                         activeTab === 'keseluruhan' ? React.createElement(NilaiKeseluruhanView, props) : renderSubjectView()
                     )
                 )

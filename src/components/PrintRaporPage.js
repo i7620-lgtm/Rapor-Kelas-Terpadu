@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';  
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
@@ -528,7 +528,12 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
                 )
             ),
             React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                React.createElement('div', { className: 'w-32 h-40 border-2 flex items-center justify-center text-slate-400' }, 'Pas Foto 3x4'),
+                React.createElement('div', { 
+                    className: 'border-2 border-black flex items-center justify-center text-slate-400 relative overflow-hidden text-center text-sm',
+                    style: { width: '3cm', height: '4cm', minWidth: '3cm', minHeight: '4cm' }
+                },
+                    student.foto ? React.createElement('img', { src: student.foto, alt: "Foto Siswa", className: "w-full h-full object-cover" }) : 'Pas Foto 3x4'
+                ),
                 React.createElement('div', { className: 'text-center relative' },
                     React.createElement(EditableDescription, { value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, onSave: (val) => onUpdateSettings('tanggal_rapor', val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
                     React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
@@ -1562,12 +1567,12 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     return (
         React.createElement(React.Fragment, null,
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
-                 React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
+                 React.createElement('div', { className: "flex flex-wrap items-start justify-between gap-4" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
                         React.createElement('p', { className: "mt-1 text-sm text-slate-600" }, "Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.")
                     ),
-                    React.createElement('div', { className: "flex flex-col sm:flex-row sm:items-end gap-4 mt-4 md:mt-0" },
+                    React.createElement('div', { className: "flex flex-wrap items-end gap-4" },
                         React.createElement('div', null,
                             React.createElement('label', { htmlFor: 'rankingSelector', className: 'block text-sm font-medium text-slate-700 mb-1' }, 'Tampilkan Peringkat'),
                             React.createElement('select', { 
@@ -1619,7 +1624,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                                 ))
                             )
                         ),
-                        React.createElement('div', { className: "pl-6 border-l" },
+                        React.createElement('div', { className: "pl-0 sm:pl-6 border-l-0 sm:border-l mt-4 sm:mt-0" },
                             React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Opsi Tanda Tangan:"),
                             React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
                                 React.createElement('label', { className: "flex items-center space-x-2" },
@@ -1633,7 +1638,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                             )
                         ),
                          isFaseA && (
-                            React.createElement('div', { className: "pl-6 border-l" },
+                            React.createElement('div', { className: "pl-0 sm:pl-6 border-l-0 sm:border-l mt-4 sm:mt-0" },
                                 React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-2" }, "Opsi Fase A:"),
                                 React.createElement('div', { className: "flex flex-wrap gap-x-6 gap-y-2" },
                                     React.createElement('label', { className: "flex items-center space-x-2" },

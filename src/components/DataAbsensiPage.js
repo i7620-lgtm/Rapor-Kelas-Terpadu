@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'; 
+import React, { useCallback } from 'react';
 
 const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdateAttendance, showToast }) => {
 
@@ -98,7 +98,7 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
     };
     
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4" },
              React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Absensi"),
                  React.createElement('p', { className: "mt-1 text-zinc-600" }, 
@@ -108,19 +108,19 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
                  )
             ),
             students.length === 0 ? (
-                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex-1 flex items-center justify-center" },
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex items-center justify-center min-h-[400px]" },
                     React.createElement('div', null,
                         React.createElement('h3', { className: "text-lg font-semibold mb-2 text-zinc-800" }, "Belum ada data siswa"),
                         React.createElement('p', { className: "text-zinc-500" }, "Silakan tambahkan siswa di halaman 'Data Siswa'.")
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-6 py-3 sticky left-0 z-40 bg-zinc-100/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60" }, "No"),
+                                    React.createElement('th', { scope: "col", className: "px-6 py-3 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 border-b border-zinc-200/60 min-w-[200px]" }, "Nama Lengkap"),
                                     React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60" }, "Sakit (S)"),
                                     React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60" }, "Izin (I)"),

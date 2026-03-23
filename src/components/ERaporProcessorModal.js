@@ -1,4 +1,4 @@
-     
+
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { getGradeNumber } from './DataNilaiPage.js';
 
@@ -62,8 +62,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, confirmationData, allSu
             React.createElement('div', { className: "bg-white rounded-xl shadow-xl w-full max-w-lg" },
                 React.createElement('div', { className: "p-6" },
                     React.createElement('div', { className: "flex items-start" },
-                        React.createElement('div', { className: "flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10" },
-                             React.createElement('svg', { className: "h-6 w-6 text-blue-600", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                        React.createElement('div', { className: "flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10" },
+                             React.createElement('svg', { className: "h-6 w-6 text-indigo-600", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
                                 React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" })
                             )
                         ),
@@ -80,7 +80,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, confirmationData, allSu
                         type: "button",
                         onClick: handleConfirm,
                         disabled: !selectedSubject,
-                        className: "w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-zinc-900 text-base font-medium text-white hover:bg-zinc-800 sm:ml-3 sm:w-auto sm:text-sm disabled:bg-indigo-300 disabled:cursor-not-allowed"
+                        className: "w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm disabled:bg-indigo-300 disabled:cursor-not-allowed"
                     }, "Lanjutkan & Isi File"),
                     React.createElement('button', {
                         type: "button",
@@ -104,6 +104,11 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
+            // 10MB limit
+            if (selectedFile.size > 10 * 1024 * 1024) {
+                showToast('Ukuran file terlalu besar. Maksimal 10MB.', 'error');
+                return;
+            }
             setFile(selectedFile);
             setFileName(selectedFile.name);
             setConfirmationData(null);
@@ -351,7 +356,7 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
                         React.createElement('button', {
                             onClick: handleProcessFile,
                             disabled: !file || isLoading,
-                            className: "ml-3 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 disabled:bg-indigo-300"
+                            className: "ml-3 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
                         },
                             isLoading ? React.createElement('div', { className: "animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto" }) : "Analisis & Lanjutkan"
                         )

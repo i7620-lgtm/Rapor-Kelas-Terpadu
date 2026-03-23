@@ -1,7 +1,8 @@
- 
+
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
+import { processAndCropImage3x4 } from '../utils/imageDB.js';
 
 const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
     acc[field.key] = '';
@@ -46,7 +47,7 @@ const BulkAddRowModal = ({ isOpen, onClose, onAdd }) => {
                     ),
                     React.createElement('div', { className: "flex justify-end gap-2" },
                         React.createElement('button', { type: "button", onClick: onClose, className: "px-4 py-2 text-sm text-zinc-700 bg-white border border-zinc-300/60 rounded-lg hover:bg-[#fafafa]" }, "Batal"),
-                        React.createElement('button', { type: "submit", className: "px-4 py-2 text-sm text-white bg-zinc-900 rounded-lg hover:bg-zinc-800" }, "Tambahkan")
+                        React.createElement('button', { type: "submit", className: "px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Tambahkan")
                     )
                 )
             )
@@ -178,6 +179,43 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             );
         }
         
+        if (fieldDef.type === 'photo') {
+            const handlePhotoUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    showToast("File harus berupa gambar", "error");
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast("Ukuran foto terlalu besar. Maksimal 5MB.", "error");
+                    return;
+                }
+                
+                try {
+                    const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
+                    setLocalStudents(prev => {
+                        const newStudents = prev.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
+                        onBulkSaveStudents(newStudents);
+                        return newStudents;
+                    });
+                    showToast("Foto berhasil diunggah", "success");
+                } catch (error) {
+                    console.error("Failed to process photo:", error);
+                    showToast("Gagal memproses foto", "error");
+                }
+            };
+
+            return React.createElement('div', { className: "flex flex-col items-center gap-2 min-w-[80px]" },
+                student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover rounded border border-zinc-300 shadow-sm" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 rounded border border-zinc-300 flex items-center justify-center text-zinc-400 text-xs text-center p-1" }, "3x4"),
+                React.createElement('label', { className: "cursor-pointer text-[10px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded border border-indigo-200 transition-colors" },
+                    student[fieldDef.key] ? "Ganti Foto" : "Upload Foto",
+                    React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
+                )
+            );
+        }
+
         if (fieldDef.type === 'date') {
              return React.createElement('input', { ...commonProps, type: 'text' });
         }
@@ -186,7 +224,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4" },
             React.createElement(BulkAddRowModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
@@ -205,17 +243,17 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                 ),
                 React.createElement('button', { 
                     onClick: handleAddNew, 
-                    className: "px-4 py-2 text-sm font-medium text-white bg-zinc-900 border border-transparent rounded-xl shadow-sm hover:bg-zinc-800" 
+                    className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-xl shadow-sm hover:bg-indigo-700" 
                 }, "+ Tambah Siswa Baru")
             ),
 
             // Scrollable Table Container
-            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                 React.createElement('div', { className: "flex-1 overflow-auto" },
                     React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                        React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                        React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                             React.createElement('tr', null,
-                                React.createElement('th', { scope: "col", className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 z-40 bg-zinc-100/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
+                                React.createElement('th', { scope: "col", className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px]" }, "Nama Lengkap"),
                                 otherFields.map(field => 
                                     React.createElement('th', { key: field.key, scope: "col", className: "px-4 py-3 border-b border-zinc-200/60 min-w-[180px] whitespace-nowrap text-center" }, field.label)

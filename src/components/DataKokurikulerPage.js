@@ -1,11 +1,11 @@
-import React from 'react'; 
+import React from 'react';
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
 
 const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsChange, onUpdateCocurricularData, showToast }) => {
 
     const handleRatingChange = (studentId, dimensionId, value) => {
         // Convert empty string to null, otherwise keep value as is (text input)
-        onUpdateCocurricularData(studentId, dimensionId, value === "" ? null : value);
+        onUpdateCocurricularData(studentId, dimensionId, value === "" ? null : value.toUpperCase());
     };
 
     const handlePaste = (e, startStudentId, startDimensionId) => {
@@ -58,8 +58,17 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
         }
     };
 
+    const handleSetAllRatings = (dimensionId, rating) => {
+        students.forEach(student => {
+            onUpdateCocurricularData(student.id, dimensionId, rating);
+        });
+        if (showToast) {
+            showToast(`Nilai ${rating} diterapkan ke semua siswa untuk dimensi ini.`, 'success');
+        }
+    };
+
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Kokurikuler"),
                 React.createElement('p', { className: "mt-1 text-zinc-600" }, 
@@ -85,14 +94,14 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
             ),
 
             students.length === 0 ? (
-                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex-1 flex items-center justify-center" },
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex items-center justify-center min-h-[400px]" },
                     React.createElement('div', null,
                         React.createElement('h3', { className: "text-lg font-semibold mb-2 text-zinc-800" }, "Belum ada data siswa"),
                         React.createElement('p', { className: "text-zinc-500" }, "Silakan tambahkan siswa di halaman 'Data Siswa'.")
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "p-6 border-b border-zinc-200/60 flex-shrink-0 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4" },
                         React.createElement('div', null,
                              React.createElement('h3', { className: "text-xl font-bold text-zinc-800" }, "Penilaian Dimensi Profil"),
@@ -110,12 +119,24 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                     ),
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100/50 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
+                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 min-w-[200px] border-b border-zinc-200/60" }, "Nama Siswa"),
                                     COCURRICULAR_DIMENSIONS.map(dim => (
-                                        React.createElement('th', { key: dim.id, scope: "col", className: "px-4 py-3 min-w-[100px] text-center border-b border-zinc-200/60" }, dim.label)
+                                        React.createElement('th', { key: dim.id, scope: "col", className: "px-4 py-3 min-w-[120px] text-center border-b border-zinc-200/60 align-top" }, 
+                                            React.createElement('div', { className: "mb-1" }, dim.label),
+                                            React.createElement('div', { className: "flex justify-center flex-wrap gap-1 mt-1" },
+                                                ['BB', 'MB', 'BSH', 'SB'].map(rating => (
+                                                    React.createElement('button', {
+                                                        key: rating,
+                                                        onClick: () => handleSetAllRatings(dim.id, rating),
+                                                        className: "px-1.5 py-0.5 text-[9px] font-bold text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 hover:text-zinc-900 transition-colors",
+                                                        title: `Set semua siswa menjadi ${rating}`
+                                                    }, rating)
+                                                ))
+                                            )
+                                        )
                                     ))
                                 )
                             ),
@@ -137,7 +158,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                                                         value: rating,
                                                         onChange: e => handleRatingChange(student.id, dim.id, e.target.value),
                                                         onPaste: e => handlePaste(e, student.id, dim.id),
-                                                        className: `w-full p-2 text-center text-sm border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-colors ${
+                                                        className: `w-full p-2 text-center text-sm uppercase border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-colors ${
                                                             isInvalid 
                                                                 ? 'bg-zinc-50 border-zinc-300 text-zinc-800 focus:ring-zinc-500 focus:border-zinc-500' 
                                                                 : 'bg-white border-zinc-300/60'

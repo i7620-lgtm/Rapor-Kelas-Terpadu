@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'; 
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -19,6 +19,7 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
+import LockScreen from './components/LockScreen.js';
 import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
 
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -77,6 +78,7 @@ const initialSettings = {
   piagam_layout: [],
   nilaiDisplayMode: 'kuantitatif saja', 
   enableExitWarning: false,
+  appLock: { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' },
 };
 
 const initialStudents = [];
@@ -241,6 +243,13 @@ const App = () => {
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+      const savedSettings = loadDataSafe('appSettings', initialSettings);
+      if (!savedSettings?.appLock?.enabled || savedSettings?.appLock?.pin?.length !== 6) {
+          return true; // Already "unlocked" if lock is not fully configured
+      }
+      return false; // Always lock on initial load if configured
+  });
     
   const isInitialMount = useRef(true);
 
@@ -347,6 +356,14 @@ const App = () => {
     if (type === 'file') {
         const file = files && files[0];
         if (file) {
+            if (!file.type.startsWith('image/')) {
+                showToast("File harus berupa gambar", "error");
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("Ukuran gambar terlalu besar. Maksimal 5MB.", "error");
+                return;
+            }
             const dims = getImageDimensions(name);
             processAndCompressImage(file, dims.width, dims.height)
                 .then(blob => {
@@ -580,11 +597,13 @@ const App = () => {
         XLSX.utils.book_append_sheet(wb, wsLeger, "Leger");
 
         // --- 3. Sheet: Pengaturan ---
-        const excludeKeys = ['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
+        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout'];
         const settingsRows = [
             ["Kunci Pengaturan", "Nilai"],
             ["format_version", "2"],
             ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => [key, val || '']),
+            ["kop_layout", JSON.stringify(settings.kop_layout || [])],
+            ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
             [],
             ["Pengaturan Rentang Nilai (Predikat)"],
             ["Predikat", "Nilai Minimum"],
@@ -722,9 +741,39 @@ const App = () => {
         if (wsP) {
             const data = XLSX.utils.sheet_to_json(wsP, { header: 1 });
             data.forEach(r => {
-                if (r[0] && r[0] !== 'ID Mata Pelajaran') { if (['A', 'B', 'C', 'D'].includes(String(r[0]).toUpperCase())) news.predikats[String(r[0]).toLowerCase()] = String(r[1]); else if (r[0] in news) news[r[0]] = r[1]; }
+                if (r[0] && r[0] !== 'ID Mata Pelajaran') { 
+                    const key = String(r[0]);
+                    if (['__proto__', 'constructor', 'prototype'].includes(key)) return;
+                    
+                    if (['A', 'B', 'C', 'D'].includes(key.toUpperCase())) {
+                        news.predikats[key.toLowerCase()] = String(r[1]); 
+                    } else if (key === 'kop_layout' || key === 'piagam_layout') {
+                        try {
+                            news[key] = JSON.parse(r[1]);
+                        } catch (e) {
+                            console.warn(`Failed parsing ${key}`, e);
+                            news[key] = [];
+                        }
+                    } else if (key in news) {
+                        news[key] = r[1]; 
+                    }
+                }
                 const subjectId = r[0]; if (defaultSubjects.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
             });
+            
+            // Recalculate qualitativeGradingMap based on imported predikats
+            const valA = parseInt(news.predikats.a, 10);
+            const valB = parseInt(news.predikats.b, 10);
+            const valC = parseInt(news.predikats.c, 10);
+            if (!isNaN(valA) && !isNaN(valB) && !isNaN(valC)) {
+                news.qualitativeGradingMap = {
+                    SB: Math.round((valA + 100) / 2),
+                    BSH: Math.round((valB + valA - 1) / 2),
+                    MB: Math.round((valC + valB - 1) / 2),
+                    BB: Math.round((0 + valC - 1) / 2),
+                };
+            }
+            
             news = { ...news, ...assetMap };
         }
         const wsMapel = findSheet(["Mata Pelajaran"]);
@@ -807,10 +856,18 @@ const App = () => {
         input.type = 'file';
         input.accept = '.xlsx, .xls';
         input.onchange = (e) => {
-            if (e.target.files?.[0]) importFromExcelBlob(e.target.files[0]);
+            const file = e.target.files?.[0];
+            if (file) {
+                // 10MB limit
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('Ukuran file terlalu besar. Maksimal 10MB.', 'error');
+                    return;
+                }
+                importFromExcelBlob(file);
+            }
         };
         input.click();
-    }, [importFromExcelBlob]);
+    }, [importFromExcelBlob, showToast]);
 
     useEffect(() => { 
         const settingsToSave = { ...settings };
@@ -850,20 +907,28 @@ const App = () => {
         };
     }, [settings.enableExitWarning]);
 
+  const isLocked = settings.appLock?.enabled && settings.appLock?.pin?.length === 6 && !isUnlocked;
+
   return React.createElement(React.Fragment, null,
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
-      isERaporModalOpen && React.createElement(ERaporProcessorModal, {
-          isOpen: isERaporModalOpen,
-          onClose: () => setIsERaporModalOpen(false),
-          students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
-      }),
-      React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
-        React.createElement(Navigation, { 
-            activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
-            onIsiERapor: () => setIsERaporModalOpen(true),
-            isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
-        }),
-        React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
+      isLocked ? React.createElement(LockScreen, {
+          appLock: settings.appLock,
+          onUnlock: () => {
+              setIsUnlocked(true);
+          }
+      }) : React.createElement(React.Fragment, null,
+          isERaporModalOpen && React.createElement(ERaporProcessorModal, {
+              isOpen: isERaporModalOpen,
+              onClose: () => setIsERaporModalOpen(false),
+              students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
+          }),
+          React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
+            React.createElement(Navigation, { 
+                activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
+                onIsiERapor: () => setIsERaporModalOpen(true),
+                isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
+            }),
+            React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
             isLoading ? "Memuat..." : 
             activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
             activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
@@ -910,6 +975,7 @@ const App = () => {
             React.createElement(PlaceholderPage, { title: activePage })
         )
       )
+    )
   );
 };
 

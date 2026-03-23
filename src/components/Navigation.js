@@ -1,4 +1,4 @@
- 
+
 import React, { useEffect } from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
 
@@ -13,14 +13,17 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
   const allNavItems = [...NAV_ITEMS, ...DATA_ACTIONS];
 
   return (
-    React.createElement('aside', { className: "w-64 bg-white border-r border-zinc-200 shadow-sm flex flex-col print-hidden" },
-      React.createElement('div', { className: "flex items-center justify-center h-16 border-b border-zinc-100 px-4" },
-        React.createElement('div', { className: "text-center" },
-          React.createElement('h1', { className: "text-2xl font-extrabold text-zinc-800 tracking-tight" }, "RKT"),
+    React.createElement('aside', { className: "w-16 hover:w-64 bg-white border-r border-zinc-200 shadow-sm flex flex-col print-hidden transition-all duration-300 overflow-hidden group z-50 absolute h-full xl:relative" },
+      React.createElement('div', { className: "flex items-center justify-center h-16 border-b border-zinc-100 px-4 min-w-[16rem]" },
+        React.createElement('div', { className: "text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300" },
+          React.createElement('h1', { className: "text-2xl font-extrabold text-indigo-600 tracking-tight" }, "RKT"),
           React.createElement('p', { className: "text-xs text-zinc-500 font-medium tracking-wide" }, "Rapor Kelas Terpadu")
+        ),
+        React.createElement('div', { className: "absolute left-0 w-16 flex justify-center items-center group-hover:opacity-0 transition-opacity duration-300" },
+            React.createElement('h1', { className: "text-xl font-extrabold text-indigo-600 tracking-tight" }, "RKT")
         )
       ),
-      React.createElement('nav', { className: "flex-1 px-4 py-4 space-y-1 overflow-y-auto" },
+      React.createElement('nav', { className: "flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden min-w-[16rem]" },
         allNavItems.map((item) => (
           React.createElement('a', {
             key: item.id,
@@ -33,10 +36,12 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
                     handleNavClick(item.id);
                 }
             },
-            className: `block px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-              activePage === item.id ? 'bg-zinc-900 text-zinc-50 shadow-sm' : 'text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900'
+            className: `flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
+              activePage === item.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900'
             }`
-          }, item.label)
+          }, 
+            React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, item.label)
+          )
         )),
         
         // Divider and Legal Links styled as buttons
@@ -46,15 +51,15 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
             href: "/terms.html", 
             target: "_blank", 
             rel: "noopener noreferrer", 
-            className: "block px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
-        }, "Ketentuan Layanan"),
+            className: "flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
+        }, React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, "Ketentuan Layanan")),
         
         React.createElement('a', { 
             href: "/privacy.html", 
             target: "_blank", 
             rel: "noopener noreferrer", 
-            className: "block px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
-        }, "Kebijakan Privasi")
+            className: "flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
+        }, React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, "Kebijakan Privasi"))
       )
     )
   );
@@ -80,7 +85,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                 onClick: () => setIsMobileMenuOpen(prev => !prev)
             },
                 React.createElement('div', { className: "flex items-center" },
-                    React.createElement('h1', { className: "text-lg font-bold text-zinc-800 tracking-tight" }, "RKT"),
+                    React.createElement('h1', { className: "text-lg font-bold text-indigo-600 tracking-tight" }, "RKT"),
                     React.createElement('span', { className: 'mx-2 text-zinc-300' }, '/'),
                     React.createElement('h2', { className: 'text-lg font-medium text-zinc-700' }, currentPageName)
                 ),
@@ -127,7 +132,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                                         },
                                         className: `px-4 py-2 text-sm font-medium rounded-xl shadow-sm transition-all duration-200 ${
                                             activePage === item.id 
-                                            ? 'bg-zinc-900 text-zinc-50' 
+                                            ? 'bg-indigo-600 text-white' 
                                             : 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200/80'
                                         }`
                                     }, item.label)

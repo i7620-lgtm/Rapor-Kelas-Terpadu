@@ -1,4 +1,4 @@
-  
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { FORMATIVE_ASSESSMENT_TYPES } from '../constants.js';
 import { getGradeNumber } from './DataNilaiPage.js';
@@ -168,7 +168,7 @@ const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, sho
                 ),
                 React.createElement('div', { className: "flex justify-end p-4 border-t bg-[#fafafa] rounded-b-lg flex-shrink-0" },
                     React.createElement('button', { onClick: onClose, className: "px-4 py-2 text-sm bg-white border border-zinc-300/60 text-zinc-700 rounded-lg hover:bg-[#fafafa]" }, "Batal"),
-                    React.createElement('button', { onClick: handleSave, className: "ml-3 px-4 py-2 text-sm text-white bg-zinc-900 rounded-lg hover:bg-zinc-800" }, isEditing ? 'Simpan Perubahan' : 'Simpan Catatan')
+                    React.createElement('button', { onClick: handleSave, className: "ml-3 px-4 py-2 text-sm text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, isEditing ? 'Simpan Perubahan' : 'Simpan Catatan')
                 )
             )
         )
@@ -234,7 +234,7 @@ const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDele
                             React.createElement('h3', { className: "text-xl font-bold text-zinc-800" }, "Jurnal Formatif Siswa"),
                             React.createElement('p', { className: "text-sm text-zinc-500" }, student.namaLengkap)
                         ),
-                        React.createElement('button', { onClick: handleAddNew, className: "px-4 py-2 text-sm font-medium text-white bg-zinc-900 rounded-lg hover:bg-zinc-800 shadow-sm" }, "+ Tambah Catatan Baru")
+                        React.createElement('button', { onClick: handleAddNew, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm" }, "+ Tambah Catatan Baru")
                     ),
                     React.createElement('div', { className: "p-6 overflow-y-auto bg-zinc-100/50" },
                         notes && notes.length > 0 ? (
@@ -302,7 +302,7 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-6 space-y-0" },
+        React.createElement('div', { className: "flex flex-col gap-6 space-y-0" },
             selectedStudent && React.createElement(StudentJournalModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
@@ -321,19 +321,19 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                 React.createElement('p', { className: "mt-1 text-zinc-600" }, "Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.")
             ),
             students.length === 0 ? (
-                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex-1 flex items-center justify-center" },
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex items-center justify-center min-h-[400px]" },
                     React.createElement('div', null,
                         React.createElement('h3', { className: "text-lg font-semibold mb-2 text-zinc-800" }, "Belum ada data siswa"),
                         React.createElement('p', { className: "text-zinc-500" }, "Silakan tambahkan siswa di halaman 'Data Siswa'.")
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100/50 sticky top-0 z-30" },
+                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
                                 React.createElement('tr', null,
-                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100/50 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
+                                    React.createElement('th', { scope: "col", className: "px-3 py-3 sticky left-0 z-40 bg-zinc-100 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-zinc-200/60" }, "No"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 min-w-[250px] border-b border-zinc-200/60" }, "Nama Siswa"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 text-center border-b border-zinc-200/60" }, "Jumlah Catatan"),
                                     React.createElement('th', { scope: "col", className: "px-6 py-3 text-center border-b border-zinc-200/60" }, "Aksi")
@@ -354,7 +354,7 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                                             React.createElement('td', { className: "px-6 py-4 text-center border-b border-zinc-200/60" },
                                                 React.createElement('button', {
                                                     onClick: () => handleOpenModal(student),
-                                                    className: "text-zinc-900 hover:text-zinc-700 font-medium px-3 py-1 rounded hover:bg-zinc-50 transition-colors"
+                                                    className: "text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded hover:bg-indigo-50 transition-colors"
                                                 },
                                                     "Lihat & Tambah Catatan"
                                                 )
