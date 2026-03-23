@@ -1,4 +1,4 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
@@ -232,8 +232,8 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
                 React.createElement('div', { className: "flex flex-col md:flex-row flex-1 overflow-hidden" },
                     React.createElement('div', { className: "w-full md:w-48 bg-white p-4 border-b md:border-b-0 md:border-r flex flex-row md:flex-col gap-2 md:gap-4 overflow-x-auto flex-shrink-0 items-center md:items-stretch" },
                         React.createElement('h3', { className: "font-semibold hidden md:block" }, "Alat"),
-                        React.createElement('button', { onClick: () => addElement('text'), className: "whitespace-nowrap text-center md:text-left p-2 rounded hover:bg-slate-100 border md:border-none" }, "Tambah Teks"),
-                        React.createElement('button', { onClick: () => addElement('line'), className: "whitespace-nowrap text-center md:text-left p-2 rounded hover:bg-slate-100 border md:border-none" }, "Tambah Garis")
+                        React.createElement('button', { onClick: () => addElement('text'), className: "whitespace-nowrap text-center md:text-left p-2 rounded bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200" }, "Tambah Teks"),
+                        React.createElement('button', { onClick: () => addElement('line'), className: "whitespace-nowrap text-center md:text-left p-2 rounded bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200" }, "Tambah Garis")
                     ),
                     React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-start md:justify-center items-center min-h-[250px]" },
                         React.createElement('div', { className: "w-full min-w-[600px] max-w-[800px] bg-white shadow-lg relative", onClick: handleDeselect, style: {
@@ -447,25 +447,48 @@ const KopSuratPreview = ({ settings }) => {
     );
 };
 
-const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, className, ...props }) => (
-    React.createElement('div', { className: "w-full" },
+const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, className, ...props }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === 'password';
+    const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
+    return React.createElement('div', { className: "w-full" },
         React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
             label
         ),
-        React.createElement('input', {
-            type: type,
-            id: String(id),
-            name: String(id),
-            value: value ?? '', // MENGGUNAKAN ?? AGAR ANGKA 0 BISA DITAMPILKAN
-            onChange: onChange,
-            onBlur: onBlur,
-            onKeyDown: onKeyDown,
-            className: `w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900 placeholder:text-slate-400 ${className || 'bg-white'}`,
-            placeholder: placeholder,
-            ...props
-        })
-    )
-);
+        React.createElement('div', { 
+            className: `flex items-center w-full border border-slate-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 overflow-hidden ${className || 'bg-white'}`
+        },
+            React.createElement('input', {
+                type: inputType,
+                id: String(id),
+                name: String(id),
+                value: value ?? '', // MENGGUNAKAN ?? AGAR ANGKA 0 BISA DITAMPILKAN
+                onChange: onChange,
+                onBlur: onBlur,
+                onKeyDown: onKeyDown,
+                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400 w-full",
+                placeholder: placeholder,
+                ...props
+            }),
+            isPassword && React.createElement('button', {
+                type: "button",
+                onClick: () => setShowPassword(!showPassword),
+                className: "px-3 py-2 text-slate-400 hover:text-slate-600 focus:outline-none flex-shrink-0 bg-transparent",
+                tabIndex: -1
+            },
+                showPassword ? 
+                React.createElement('svg', { className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" })
+                ) :
+                React.createElement('svg', { className: "h-5 w-5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z" }),
+                    React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" })
+                )
+            )
+        )
+    );
+};
 
 const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTransparent, containerClassName }) => {
     const handleFileChange = (e) => {
@@ -557,10 +580,10 @@ const PengaturanMapel = React.memo(({ subjects, onUpdateSubjects, showToast }) =
                             key: subject.id,
                             onClick: () => handleToggle(subject.id),
                             title: subject.fullName,
-                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 border ${
                                 subject.active
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm hover:bg-indigo-700'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200'
                             }`
                         }, subject.label)
                     ))
@@ -645,10 +668,10 @@ const PengaturanEkstra = React.memo(({ extracurriculars, onUpdateExtracurricular
                         React.createElement('button', {
                             key: extra.id,
                             onClick: () => handleToggle(extra.id),
-                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-colors duration-200 ${
+                            className: `px-3 py-1.5 text-sm font-medium rounded-full transition-all duration-200 border ${
                                 extra.active
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm hover:bg-indigo-700'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200'
                             }`
                         }, extra.name)
                     ))
@@ -1119,7 +1142,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                         React.createElement('select', {
                                                             value: settings.gradeCalculation?.[sub.id]?.method || 'rata-rata',
                                                             onChange: (e) => handleGradeMethodChange(sub.id, e.target.value),
-                                                            className: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 min-w-[200px]"
+                                                            className: "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5 min-w-[200px]"
                                                         },
                                                             React.createElement('option', { value: "rata-rata" }, "Rata-rata (Standar)"),
                                                             React.createElement('option', { value: "pembobotan" }, "Pembobotan (Bobot TP, STS, SAS)"),
@@ -1138,9 +1161,9 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                         )
                     ),
                     
-                    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-sm border border-zinc-200/60" },
+                    React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-sm border border-indigo-200/60" },
                         React.createElement('h3', { className: "text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100" }, "Preferensi Sistem"),
-                        React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl" },
+                        React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4" },
                             React.createElement('div', null,
                                 React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Pengingat Keluar Aplikasi"),
                                 React.createElement('p', { className: "text-xs text-slate-500 mt-1 max-w-md" }, "Tampilkan peringatan saat mencoba menutup tab/browser untuk mengingatkan Anda mengunduh (backup) data.")
@@ -1153,6 +1176,77 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                     onChange: (e) => onSettingsChange({ target: { name: 'enableExitWarning', value: e.target.checked, type: 'checkbox' } })
                                 }),
                                 React.createElement('div', { className: "w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" })
+                            )
+                        ),
+                        React.createElement('div', { className: "flex flex-col p-4 bg-slate-50 border border-slate-200 rounded-xl" },
+                            React.createElement('div', { className: "flex items-center justify-between mb-4" },
+                                React.createElement('div', null,
+                                    React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Kunci Layar (PIN)"),
+                                    React.createElement('p', { className: "text-xs text-slate-500 mt-1 max-w-md" }, "Gunakan PIN 6 angka untuk mengunci aplikasi saat dibuka, mencegah orang lain melihat data Anda.")
+                                ),
+                                React.createElement('label', { className: "relative inline-flex items-center cursor-pointer" },
+                                    React.createElement('input', {
+                                        type: "checkbox",
+                                        className: "sr-only peer",
+                                        checked: settings.appLock?.enabled || false,
+                                        onChange: (e) => {
+                                            const isEnabled = e.target.checked;
+                                            onSettingsChange({ target: { name: 'appLock', value: { ...settings.appLock, enabled: isEnabled } } });
+                                            if (!isEnabled) {
+                                                sessionStorage.removeItem('appUnlocked');
+                                            }
+                                        }
+                                    }),
+                                    React.createElement('div', { className: "w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" })
+                                )
+                            ),
+                            settings.appLock?.enabled && React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 border-t border-slate-200 pt-4" },
+                                React.createElement('div', { className: "col-span-full mb-2" },
+                                    React.createElement('p', { className: "text-xs text-amber-600 font-medium bg-amber-50 p-2 rounded-lg border border-amber-200" }, "Penting: Fitur kunci layar hanya akan aktif jika PIN telah diisi tepat 6 angka.")
+                                ),
+                                React.createElement(FormField, { 
+                                    label: "PIN (6 Angka)", 
+                                    id: "appLock.pin", 
+                                    value: settings.appLock?.pin || '', 
+                                    onChange: (e) => {
+                                        const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                        onSettingsChange({ target: { name: 'appLock', value: { ...settings.appLock, pin: val } } });
+                                    }, 
+                                    onBlur: onSave, 
+                                    onKeyDown: handleKeyDown, 
+                                    type: 'password',
+                                    placeholder: "Contoh: 123456"
+                                }),
+                                React.createElement(FormField, { 
+                                    label: "Petunjuk PIN (Hint)", 
+                                    id: "appLock.hint", 
+                                    value: settings.appLock?.hint || '', 
+                                    onChange: (e) => onSettingsChange({ target: { name: 'appLock', value: { ...settings.appLock, hint: e.target.value } } }), 
+                                    onBlur: onSave, 
+                                    onKeyDown: handleKeyDown, 
+                                    type: 'text',
+                                    placeholder: "Contoh: Tanggal lahir anak pertama"
+                                }),
+                                React.createElement(FormField, { 
+                                    label: "Pertanyaan Keamanan", 
+                                    id: "appLock.securityQuestion", 
+                                    value: settings.appLock?.securityQuestion || '', 
+                                    onChange: (e) => onSettingsChange({ target: { name: 'appLock', value: { ...settings.appLock, securityQuestion: e.target.value } } }), 
+                                    onBlur: onSave, 
+                                    onKeyDown: handleKeyDown, 
+                                    type: 'text',
+                                    placeholder: "Contoh: Siapa nama gadis ibu kandung Anda?"
+                                }),
+                                React.createElement(FormField, { 
+                                    label: "Jawaban Keamanan", 
+                                    id: "appLock.securityAnswer", 
+                                    value: settings.appLock?.securityAnswer || '', 
+                                    onChange: (e) => onSettingsChange({ target: { name: 'appLock', value: { ...settings.appLock, securityAnswer: e.target.value } } }), 
+                                    onBlur: onSave, 
+                                    onKeyDown: handleKeyDown, 
+                                    type: 'text',
+                                    placeholder: "Jawaban Anda"
+                                })
                             )
                         )
                     )
