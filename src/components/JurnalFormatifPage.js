@@ -302,7 +302,7 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-6 space-y-0" },
+        React.createElement('div', { className: "flex flex-col gap-6 space-y-0" },
             selectedStudent && React.createElement(StudentJournalModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
@@ -321,14 +321,14 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                 React.createElement('p', { className: "mt-1 text-zinc-600" }, "Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.")
             ),
             students.length === 0 ? (
-                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex-1 flex items-center justify-center" },
+                React.createElement('div', { className: "bg-white p-10 rounded-xl shadow-sm border border-zinc-200/60 text-center flex items-center justify-center min-h-[400px]" },
                     React.createElement('div', null,
                         React.createElement('h3', { className: "text-lg font-semibold mb-2 text-zinc-800" }, "Belum ada data siswa"),
                         React.createElement('p', { className: "text-zinc-500" }, "Silakan tambahkan siswa di halaman 'Data Siswa'.")
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                             React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
