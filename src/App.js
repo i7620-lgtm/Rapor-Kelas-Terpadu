@@ -19,6 +19,7 @@ import Toast from './components/Toast.js';
 import useServiceWorker from './hooks/useServiceWorker.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
+import LockScreen from './components/LockScreen.js';
 import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
 
 const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -77,6 +78,7 @@ const initialSettings = {
   piagam_layout: [],
   nilaiDisplayMode: 'kuantitatif saja', 
   enableExitWarning: false,
+  appLock: { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' },
 };
 
 const initialStudents = [];
@@ -241,6 +243,13 @@ const App = () => {
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+      const savedSettings = loadDataSafe('appSettings', initialSettings);
+      if (!savedSettings?.appLock?.enabled || savedSettings?.appLock?.pin?.length !== 6) {
+          return true; // Already "unlocked" if lock is not fully configured
+      }
+      return false; // Always lock on initial load if configured
+  });
     
   const isInitialMount = useRef(true);
 
@@ -898,20 +907,28 @@ const App = () => {
         };
     }, [settings.enableExitWarning]);
 
+  const isLocked = settings.appLock?.enabled && settings.appLock?.pin?.length === 6 && !isUnlocked;
+
   return React.createElement(React.Fragment, null,
       toast && React.createElement(Toast, { message: toast.message, type: toast.type, onClose: () => setToast(null) }),
-      isERaporModalOpen && React.createElement(ERaporProcessorModal, {
-          isOpen: isERaporModalOpen,
-          onClose: () => setIsERaporModalOpen(false),
-          students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
-      }),
-      React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
-        React.createElement(Navigation, { 
-            activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
-            onIsiERapor: () => setIsERaporModalOpen(true),
-            isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
-        }),
-        React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
+      isLocked ? React.createElement(LockScreen, {
+          appLock: settings.appLock,
+          onUnlock: () => {
+              setIsUnlocked(true);
+          }
+      }) : React.createElement(React.Fragment, null,
+          isERaporModalOpen && React.createElement(ERaporProcessorModal, {
+              isOpen: isERaporModalOpen,
+              onClose: () => setIsERaporModalOpen(false),
+              students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
+          }),
+          React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
+            React.createElement(Navigation, { 
+                activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
+                onIsiERapor: () => setIsERaporModalOpen(true),
+                isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
+            }),
+            React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
             isLoading ? "Memuat..." : 
             activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
             activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
@@ -958,6 +975,7 @@ const App = () => {
             React.createElement(PlaceholderPage, { title: activePage })
         )
       )
+    )
   );
 };
 
