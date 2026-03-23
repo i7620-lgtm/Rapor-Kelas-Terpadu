@@ -580,11 +580,13 @@ const App = () => {
         XLSX.utils.book_append_sheet(wb, wsLeger, "Leger");
 
         // --- 3. Sheet: Pengaturan ---
-        const excludeKeys = ['predikats', 'gradeCalculation', 'kop_layout', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'piagam_layout', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
+        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout'];
         const settingsRows = [
             ["Kunci Pengaturan", "Nilai"],
             ["format_version", "2"],
             ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => [key, val || '']),
+            ["kop_layout", JSON.stringify(settings.kop_layout || [])],
+            ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
             [],
             ["Pengaturan Rentang Nilai (Predikat)"],
             ["Predikat", "Nilai Minimum"],
@@ -722,9 +724,36 @@ const App = () => {
         if (wsP) {
             const data = XLSX.utils.sheet_to_json(wsP, { header: 1 });
             data.forEach(r => {
-                if (r[0] && r[0] !== 'ID Mata Pelajaran') { if (['A', 'B', 'C', 'D'].includes(String(r[0]).toUpperCase())) news.predikats[String(r[0]).toLowerCase()] = String(r[1]); else if (r[0] in news) news[r[0]] = r[1]; }
+                if (r[0] && r[0] !== 'ID Mata Pelajaran') { 
+                    if (['A', 'B', 'C', 'D'].includes(String(r[0]).toUpperCase())) {
+                        news.predikats[String(r[0]).toLowerCase()] = String(r[1]); 
+                    } else if (r[0] === 'kop_layout' || r[0] === 'piagam_layout') {
+                        try {
+                            news[r[0]] = JSON.parse(r[1]);
+                        } catch (e) {
+                            console.warn(`Failed parsing ${r[0]}`, e);
+                            news[r[0]] = [];
+                        }
+                    } else if (r[0] in news) {
+                        news[r[0]] = r[1]; 
+                    }
+                }
                 const subjectId = r[0]; if (defaultSubjects.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
             });
+            
+            // Recalculate qualitativeGradingMap based on imported predikats
+            const valA = parseInt(news.predikats.a, 10);
+            const valB = parseInt(news.predikats.b, 10);
+            const valC = parseInt(news.predikats.c, 10);
+            if (!isNaN(valA) && !isNaN(valB) && !isNaN(valC)) {
+                news.qualitativeGradingMap = {
+                    SB: Math.round((valA + 100) / 2),
+                    BSH: Math.round((valB + valA - 1) / 2),
+                    MB: Math.round((valC + valB - 1) / 2),
+                    BB: Math.round((0 + valC - 1) / 2),
+                };
+            }
+            
             news = { ...news, ...assetMap };
         }
         const wsMapel = findSheet(["Mata Pelajaran"]);
