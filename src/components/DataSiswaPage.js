@@ -214,7 +214,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col flex-1 min-h-0 min-w-0 h-full gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4" },
             React.createElement(BulkAddRowModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
@@ -238,7 +238,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             ),
 
             // Scrollable Table Container
-            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col" },
+            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                 React.createElement('div', { className: "flex-1 overflow-auto" },
                     React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                         React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
