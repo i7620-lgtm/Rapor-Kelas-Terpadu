@@ -1,4 +1,4 @@
-
+ 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
