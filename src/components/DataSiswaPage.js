@@ -183,6 +183,16 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             const handlePhotoUpload = async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    showToast("File harus berupa gambar", "error");
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast("Ukuran foto terlalu besar. Maksimal 5MB.", "error");
+                    return;
+                }
+                
                 try {
                     const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
                     setLocalStudents(prev => {
