@@ -280,7 +280,7 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
     const [localPredikats, setLocalPredikats] = useState(settings.predikats);
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
     const [localMethod, setLocalMethod] = useState(calculationConfig.method);
-    const [localDisplayMode, setLocalDisplayMode] = useState(settings.nilaiDisplayMode || 'kuantitatif & kualitatif');
+    const [localDisplayMode, setLocalDisplayMode] = useState(settings.nilaiDisplayMode || 'kuantitatif saja');
 
     const handleSave = () => {
         onUpdatePredikats(localPredikats);
@@ -300,11 +300,11 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
                      React.createElement('section', null,
                         React.createElement('h4', { className: "text-sm font-bold text-slate-700 mb-2 border-b pb-1" }, "Tampilan Input Nilai"),
                         React.createElement('div', { className: "space-y-2" },
-                            ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                            ['kuantitatif saja', 'kualitatif saja', 'kuantitatif & kualitatif'].map(mode => {
                                 const labels = {
-                                    'kuantitatif & kualitatif': 'Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
-                                    'kuantitatif saja': 'Tampilan Tabel (Nilai Kuantitatif)',
-                                    'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                    'kuantitatif saja': '1. Tampilan Tabel Kuantitatif (Default)',
+                                    'kualitatif saja': '2. Tampilan Tabel Kualitatif',
+                                    'kuantitatif & kualitatif': '3. Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
                                 };
                                 return React.createElement('label', { key: mode, className: "flex items-center p-2 border rounded-md cursor-pointer hover:bg-slate-100" },
                                     React.createElement('input', { type: "radio", name: "display-mode", value: mode, checked: localDisplayMode === mode, onChange: () => setLocalDisplayMode(mode), className: "h-4 w-4 text-indigo-600" }),
@@ -2151,7 +2151,7 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     const renderSubjectView = () => {
         if (!selectedSubject) return null;
 
-        const displayMode = settings.nilaiDisplayMode || 'kuantitatif & kualitatif';
+        const displayMode = settings.nilaiDisplayMode || 'kuantitatif saja';
         
         switch (displayMode) {
             case 'kuantitatif saja':
