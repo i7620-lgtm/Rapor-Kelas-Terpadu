@@ -1,4 +1,4 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
@@ -1091,19 +1091,19 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tampilan Input Nilai"),
                                 React.createElement('p', { className: "text-sm text-slate-600 mb-3" }, "Pilih bagaimana Anda ingin melihat dan memasukkan data nilai per mata pelajaran."),
                                 React.createElement('div', { className: "space-y-2" },
-                                    ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                                    ['kuantitatif saja', 'kualitatif saja', 'kuantitatif & kualitatif'].map(mode => {
                                         const labels = {
-                                            'kuantitatif & kualitatif': 'Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
-                                            'kuantitatif saja': 'Tampilan Tabel (Nilai Kuantitatif)',
-                                            'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                            'kuantitatif saja': '1. Tampilan Tabel Kuantitatif (Default)',
+                                            'kualitatif saja': '2. Tampilan Tabel Kualitatif',
+                                            'kuantitatif & kualitatif': '3. Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
                                         };
                                         const descriptions = {
-                                            'kuantitatif & kualitatif': 'Tampilan ringkas per lingkup materi, membuka jendela terpisah untuk input nilai.',
                                             'kuantitatif saja': 'Tampilan seperti spreadsheet dengan input nilai angka (0-100).',
                                             'kualitatif saja': 'Tampilan seperti spreadsheet dengan input nilai kualitatif (BB, MB, BSH, SB).',
+                                            'kuantitatif & kualitatif': 'Tampilan ringkas per lingkup materi, membuka jendela terpisah untuk input nilai.',
                                         };
                                         return React.createElement('label', { key: mode, className: "flex items-start p-3 border rounded-lg cursor-pointer hover:bg-slate-50" },
-                                            React.createElement('input', { type: "radio", name: "nilaiDisplayMode", value: mode, checked: (settings.nilaiDisplayMode || 'kuantitatif & kualitatif') === mode, onChange: onSettingsChange, className: "h-4 w-4 text-indigo-600 mt-1" }),
+                                            React.createElement('input', { type: "radio", name: "nilaiDisplayMode", value: mode, checked: (settings.nilaiDisplayMode || 'kuantitatif saja') === mode, onChange: onSettingsChange, className: "h-4 w-4 text-indigo-600 mt-1" }),
                                             React.createElement('div', { className: "ml-3" },
                                                 React.createElement('span', { className: "block text-sm font-medium text-slate-800" }, labels[mode]),
                                                 React.createElement('span', { className: "block text-sm text-slate-500" }, descriptions[mode])
@@ -1125,7 +1125,10 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                             ),
 
                             React.createElement('div', { className: "mt-8 border-t pt-6" },
-                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Cara Pengolahan Nilai Akhir Mapel"),
+                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Cara Pengolahan Nilai Akhir Mapel"),
+                                React.createElement('p', { className: "mb-4 text-xs text-slate-500" },
+                                    React.createElement('span', { className: "text-amber-600 font-bold" }, "Catatan:"), " Jika memilih \"Pembobotan\", silakan atur persentase bobot di menu ", React.createElement('strong', null, "Data Nilai"), " pada masing-masing mata pelajaran."
+                                ),
                                 React.createElement('div', { className: "overflow-x-auto border rounded-lg" },
                                     React.createElement('table', { className: "w-full text-sm text-left text-slate-500" },
                                         React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" },
@@ -1153,9 +1156,6 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             ))
                                         )
                                     )
-                                ),
-                                React.createElement('p', { className: "mt-2 text-xs text-slate-500" },
-                                    React.createElement('span', { className: "text-amber-600 font-bold" }, "Catatan:"), " Jika memilih \"Pembobotan\", silakan atur persentase bobot di menu ", React.createElement('strong', null, "Data Nilai"), " pada masing-masing mata pelajaran."
                                 )
                             )
                         )
