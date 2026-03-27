@@ -573,12 +573,26 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         setLocalGrades(prevGrades => {
             const newGrades = { ...prevGrades };
             const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
-            if (!studentGrade.descriptions) studentGrade.descriptions = { highest: '', lowest: '' };
+            const student = students.find(s => s.id === studentId);
+            const generated = generateSubjectDescription(student, studentGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
+            
+            if (!studentGrade.descriptions) {
+                studentGrade.descriptions = { highest: generated.highest, lowest: generated.lowest };
+            } else {
+                // If descriptions exist, ensure we have both fields (merge with generated if empty)
+                if (!studentGrade.descriptions.highest || !studentGrade.descriptions.highest.trim()) {
+                    studentGrade.descriptions.highest = generated.highest;
+                }
+                if (!studentGrade.descriptions.lowest || !studentGrade.descriptions.lowest.trim()) {
+                    studentGrade.descriptions.lowest = generated.lowest;
+                }
+            }
+            
             studentGrade.descriptions[type] = value;
             newGrades[studentId] = studentGrade;
             return newGrades;
         });
-    }, []);
+    }, [students, objectivesForSubject, settings, subject.id]);
 
     const handleBulkGenerateDescriptions = () => {
         const gradeKey = `Kelas ${gradeNumber}`;
@@ -1599,8 +1613,21 @@ const NilaiTableView = (props) => {
     const handleDescriptionChange = (studentId, type, value) => {
         const studentGrade = grades.find(g => g.studentId === studentId); // FIX: was students.find(s => s.id === student.id)
         const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+        const student = students.find(s => s.id === studentId);
+        const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
         
-        if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
+        if (!detailedGrade.descriptions) {
+            detailedGrade.descriptions = { highest: generated.highest, lowest: generated.lowest };
+        } else {
+            // If descriptions exist, ensure we have both fields (merge with generated if empty)
+            if (!detailedGrade.descriptions.highest || !detailedGrade.descriptions.highest.trim()) {
+                detailedGrade.descriptions.highest = generated.highest;
+            }
+            if (!detailedGrade.descriptions.lowest || !detailedGrade.descriptions.lowest.trim()) {
+                detailedGrade.descriptions.lowest = generated.lowest;
+            }
+        }
+        
         detailedGrade.descriptions[type] = value;
 
         onBulkUpdateGrades([{ studentId: studentId, subjectId: subject.id, newDetailedGrade: detailedGrade }]);
@@ -1993,11 +2020,12 @@ const NilaiTableView = (props) => {
                     relevantStudents.map((student, index) => {
                         const studentGrade = grades.find(g => g.studentId === student.id);
                         const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-                        let descriptions = detailedGrade?.descriptions;
-                        if (!descriptions || (descriptions.highest === '' && descriptions.lowest === '')) {
-                            const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts: null, sas: null }, objectivesForSubject, settings, activeSlmIds);
-                            descriptions = { highest: generated.highest, lowest: generated.lowest };
-                        }
+                        const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts: null, sas: null }, objectivesForSubject, settings, activeSlmIds);
+                        
+                        let descriptions = { 
+                            highest: (detailedGrade?.descriptions?.highest && detailedGrade.descriptions.highest.trim()) ? detailedGrade.descriptions.highest : generated.highest,
+                            lowest: (detailedGrade?.descriptions?.lowest && detailedGrade.descriptions.lowest.trim()) ? detailedGrade.descriptions.lowest : generated.lowest
+                        };
 
                         let total = null;
                         if (detailedGrade) {
