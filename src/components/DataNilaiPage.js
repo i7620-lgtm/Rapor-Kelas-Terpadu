@@ -61,7 +61,7 @@ const lowercaseFirst = (s) => {
 };
 
 
-const generateSubjectDescription = (student, detailedGrade, objectivesForSubject, settings) => {
+const generateSubjectDescription = (student, detailedGrade, objectivesForSubject, settings, activeSlmIds) => {
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
 
@@ -92,8 +92,11 @@ const generateSubjectDescription = (student, detailedGrade, objectivesForSubject
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
+        // Filter SLMs based on visibility settings
+        const visibleSlms = activeSlmIds ? detailedGrade.slm.filter(slm => activeSlmIds.includes(slm.id)) : detailedGrade.slm;
+
         // Iterate over the student's graded SLMs.
-        detailedGrade.slm.forEach(slm => {
+        visibleSlms.forEach(slm => {
             const tpTextsForThisSlm = tpTextMap.get(slm.id);
             if (tpTextsForThisSlm && slm.scores) {
                 slm.scores.forEach((score, index) => {
@@ -456,8 +459,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             const initialLocalGrades = {};
             students.forEach(student => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
-                // Ensure deep copy including descriptions
-                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null, descriptions: { highest: '', lowest: '' } }));
+                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
             });
             setLocalGrades(initialLocalGrades);
             setActiveInput({});
@@ -603,7 +605,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 const detailedGrade = newGrades[student.id]; 
                 
                 // We need to pass the student object, detailedGrade, and objectives.
-                const generated = generateSubjectDescription(student, detailedGrade, currentObjectives, settings);
+                const generated = generateSubjectDescription(student, detailedGrade, currentObjectives, settings, settings.slmVisibility?.[subject.id]);
                 
                 if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
                 detailedGrade.descriptions.highest = generated.highest;
@@ -861,7 +863,11 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                 React.createElement('tbody', null,
                                     relevantStudents.map((student, index) => {
                                         const studentGrade = localGrades[student.id] || {};
-                                        const descriptions = studentGrade.descriptions || { highest: '', lowest: '' };
+                                        let descriptions = studentGrade.descriptions;
+                                        if (!descriptions) {
+                                            const generated = generateSubjectDescription(student, studentGrade, currentObjectives, settings, settings.slmVisibility?.[subject.id]);
+                                            descriptions = { highest: generated.highest, lowest: generated.lowest };
+                                        }
                                         
                                         let average = null;
                                         if (isSLM) {
@@ -1352,15 +1358,18 @@ const NilaiCardView = (props) => {
             React.createElement('div', { className: "p-4 space-y-6 bg-slate-50 rounded-b-xl" },
                 React.createElement('section', null,
                     React.createElement('h3', { className: "text-lg font-semibold text-slate-700 mb-3 border-b pb-2" }, "Sumatif Lingkup Materi (SLM)"),
-                    allSlms.length > 0 ? (
-                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
-                            allSlms.map(slm => 
-                                React.createElement(AssessmentCard, { key: slm.id, title: slm.name, type: 'slm', item: slm })
+                    (() => {
+                        const visibleSlms = allSlms.filter(slm => !settings.slmVisibility?.[subject.id] || settings.slmVisibility[subject.id].includes(slm.id));
+                        return visibleSlms.length > 0 ? (
+                            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
+                                visibleSlms.map(slm => 
+                                    React.createElement(AssessmentCard, { key: slm.id, title: slm.name, type: 'slm', item: slm })
+                                )
                             )
-                        )
-                    ) : (
-                        React.createElement('p', { className: "text-sm text-slate-500" }, "Belum ada Lingkup Materi yang diatur untuk mata pelajaran ini.")
-                    )
+                        ) : (
+                            React.createElement('p', { className: "text-sm text-slate-500" }, "Belum ada Lingkup Materi yang diatur (atau ditampilkan) untuk mata pelajaran ini.")
+                        );
+                    })()
                 ),
 
                 React.createElement('section', null,
@@ -1476,13 +1485,8 @@ const NilaiTableView = (props) => {
         const allIds = allSlms.map(s => s.id);
         
         if (savedVisibility && Array.isArray(savedVisibility)) {
-            // Find IDs present in data but missing from saved settings (likely imported)
-            const missingIds = allIds.filter(id => !savedVisibility.includes(id));
-            if (missingIds.length > 0) {
-                // Merge them in so they are visible by default
-                return [...savedVisibility, ...missingIds];
-            }
-            return savedVisibility;
+            // Only include IDs that actually exist in the current subject's data
+            return savedVisibility.filter(id => allIds.includes(id));
         }
         return allIds;
     });
@@ -1608,7 +1612,7 @@ const NilaiTableView = (props) => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
             
-            const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings);
+            const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
             
             if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
             detailedGrade.descriptions.highest = generated.highest;
@@ -1619,6 +1623,75 @@ const NilaiTableView = (props) => {
 
         onBulkUpdateGrades(updates);
         showToast(`Deskripsi kompetensi berhasil digenerate untuk ${updates.length} siswa.`, 'success');
+    };
+
+    const handleAutoRegression = (slmId, tpIndex) => {
+        const kkm = parseInt(settings.predikats.c, 10);
+        if (isNaN(kkm)) {
+            showToast("KKM (Predikat C) belum diatur di Pengaturan.", 'error');
+            return;
+        }
+
+        // 1. Find min_score for this TP
+        let minScore = 100;
+        let scoresFound = false;
+        
+        relevantStudents.forEach(student => {
+            const studentGrade = grades.find(g => g.studentId === student.id);
+            const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+            const slm = detailedGrade?.slm?.find(s => s.id === slmId);
+            const score = slm?.scores?.[tpIndex];
+            
+            if (score !== null && score !== undefined && score !== '') {
+                const numScore = parseInt(score, 10);
+                if (!isNaN(numScore)) {
+                    if (numScore < minScore) minScore = numScore;
+                    scoresFound = true;
+                }
+            }
+        });
+
+        if (!scoresFound) {
+            showToast("Tidak ada nilai untuk diolah pada TP ini.", 'error');
+            return;
+        }
+
+        if (minScore >= 100) {
+            showToast("Semua nilai sudah maksimal (100).", 'info');
+            return;
+        }
+        
+        if (minScore >= kkm) {
+            showToast("Nilai terendah sudah mencapai atau melampaui KKM.", 'info');
+            return;
+        }
+
+        // 2. Apply regression to all students
+        const updates = relevantStudents.map(student => {
+            const studentGrade = grades.find(g => g.studentId === student.id);
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            
+            let slmToUpdate = detailedGrade.slm.find(s => s.id === slmId);
+            if (!slmToUpdate) {
+                slmToUpdate = { id: slmId, name: allSlms.find(s=>s.id===slmId)?.name, scores: [] };
+                detailedGrade.slm.push(slmToUpdate);
+            }
+            while(slmToUpdate.scores.length <= tpIndex) {
+                slmToUpdate.scores.push(null);
+            }
+            
+            const oldScore = parseInt(slmToUpdate.scores[tpIndex], 10);
+            if (!isNaN(oldScore)) {
+                // Formula: new_score = old_score + (100 - old_score) * (kkm - min_score) / (100 - min_score)
+                const newScore = oldScore + (100 - oldScore) * (kkm - minScore) / (100 - minScore);
+                slmToUpdate.scores[tpIndex] = Math.round(newScore);
+            }
+
+            return { studentId: student.id, subjectId: subject.id, newDetailedGrade: detailedGrade };
+        });
+
+        onBulkUpdateGrades(updates);
+        showToast(`Nilai TP berhasil diolah otomatis menggunakan rumus regresi.`, 'success');
     };
 
     const handleWeightChange = (weightType, value, slmId = null, tpIndex = null) => {
@@ -1886,11 +1959,22 @@ const NilaiTableView = (props) => {
                     ),
                     React.createElement('tr', null,
                         tpHeaders.map(h => React.createElement('th', { key: `${h.slmId}-${h.tpIndex}`, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" },
-                            React.createElement('button', { 
-                                className: 'tp-header-button',
-                                onMouseEnter: (e) => showTooltip(e, h.text),
-                                onMouseLeave: hideTooltip
-                            }, `TP ${h.displayIndex}`)
+                            React.createElement('div', { className: "flex items-center justify-center gap-1" },
+                                React.createElement('button', { 
+                                    className: 'tp-header-button',
+                                    onMouseEnter: (e) => showTooltip(e, h.text),
+                                    onMouseLeave: hideTooltip
+                                }, `TP ${h.displayIndex}`),
+                                settings.enableAutoRegression && React.createElement('button', {
+                                    onClick: () => handleAutoRegression(h.slmId, h.tpIndex),
+                                    title: "Olah Nilai Otomatis (Regresi)",
+                                    className: "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors"
+                                }, 
+                                    React.createElement('svg', { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                                        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M13 10V3L4 14h7v7l9-11h-7z" })
+                                    )
+                                )
+                            )
                         ))
                     ),
                     isWeighting && React.createElement('tr', null,
@@ -1909,7 +1993,11 @@ const NilaiTableView = (props) => {
                     relevantStudents.map((student, index) => {
                         const studentGrade = grades.find(g => g.studentId === student.id);
                         const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-                        const descriptions = detailedGrade?.descriptions || { highest: '', lowest: '' };
+                        let descriptions = detailedGrade?.descriptions;
+                        if (!descriptions || (descriptions.highest === '' && descriptions.lowest === '')) {
+                            const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts: null, sas: null }, objectivesForSubject, settings, activeSlmIds);
+                            descriptions = { highest: generated.highest, lowest: generated.lowest };
+                        }
 
                         let total = null;
                         if (detailedGrade) {
