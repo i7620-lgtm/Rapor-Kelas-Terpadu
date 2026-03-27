@@ -1030,7 +1030,21 @@ const App = () => {
             activePage === 'DATA_EKSTRAKURIKULER' ? React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: setStudentExtracurriculars, showToast }) :
             activePage === 'PRINT_RAPOR' ? React.createElement(PrintRaporPage, { 
                 students, settings, grades, attendance, notes, studentExtracurriculars, extracurriculars, subjects, learningObjectives, cocurricularData, 
-                onUpdateDescription: (sid, subId, type, val) => { setGrades(prev => { const n = [...prev], g = n.find(x => x.studentId === sid); if(g && g.detailedGrades[subId]) { if(!g.detailedGrades[subId].descriptions) g.detailedGrades[subId].descriptions = {}; g.detailedGrades[subId].descriptions[type] = val; } return n; }); },
+                onUpdateDescription: (sid, subId, type, val, currentDescriptions) => { 
+                    setGrades(prev => { 
+                        const n = JSON.parse(JSON.stringify(prev)); 
+                        const g = n.find(x => x.studentId === sid); 
+                        if(g) { 
+                            if(!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts: null, sas: null };
+                            if(!g.detailedGrades[subId].descriptions) {
+                                // If descriptions don't exist in DB, use the current ones (which might be auto-generated)
+                                g.detailedGrades[subId].descriptions = currentDescriptions || { highest: '', lowest: '' };
+                            }
+                            g.detailedGrades[subId].descriptions[type] = val; 
+                        } 
+                        return n; 
+                    }); 
+                },
                 onUpdateStudent: (id, k, v) => setStudents(prev => prev.map(s => s.id === id ? { ...s, [k]: v } : s)),
                 onUpdateSettings: (k, v) => setSettings(s => ({ ...s, [k]: v })),
                 onUpdateNote: (sid, v) => setNotes(n => ({ ...n, [sid]: v })),
