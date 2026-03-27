@@ -219,14 +219,8 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    const manualDescriptions = detailedGrade?.descriptions || {};
     
-    if (detailedGrade?.descriptions) {
-        const { highest, lowest } = detailedGrade.descriptions;
-        if ((highest && highest.trim()) || (lowest && lowest.trim())) {
-            return { highest, lowest };
-        }
-    }
-
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
 
@@ -239,8 +233,15 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     };
 
     const currentGradeNumber = getGradeNumber(settings.nama_kelas);
+    
+    // Helper to merge manual with generated
+    const merge = (generated) => ({
+        highest: (manualDescriptions.highest && manualDescriptions.highest.trim()) ? manualDescriptions.highest : generated.highest,
+        lowest: (manualDescriptions.lowest && manualDescriptions.lowest.trim()) ? manualDescriptions.lowest : generated.lowest
+    });
+
     if (currentGradeNumber === null) {
-        return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" });
     }
     
     let objectivesForCurrentClass = null;
@@ -253,7 +254,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 
     const objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
     if (!objectivesForSubject || objectivesForSubject.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" });
     }
 
     const gradedTps = [];
@@ -295,21 +296,21 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
     
     if (gradedTps.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" });
     }
     
     if (gradedTps.length === 1) {
-        return { highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
+        return merge({ highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' });
     }
 
     const scores = gradedTps.map(tp => tp.score);
     const allScoresEqual = scores.every(s => s === scores[0]);
 
     if (allScoresEqual) {
-        return { 
+        return merge({ 
             highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
-        };
+        });
     } else {
         let highestTp = gradedTps[0];
         let lowestTp = gradedTps[0];
@@ -323,10 +324,10 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
             }
         }
         
-        return { 
+        return merge({ 
             highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(highestTp.text)}.`,
             lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
-        };
+        });
     }
 };
 
@@ -680,7 +681,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
                         React.createElement(EditableDescription, { 
                             value: item.description.highest, 
-                            onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val),
+                            onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val, item.description),
                             placeholder: "Klik untuk edit deskripsi capaian tertinggi...",
                             multiline: true
                         }),
@@ -688,7 +689,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                             React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
                             React.createElement(EditableDescription, { 
                                 value: item.description.lowest, 
-                                onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val),
+                                onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val, item.description),
                                 placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)...",
                                 multiline: true
                             })
