@@ -1722,5 +1722,5 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         )
     );
 };
-
+ 
 export default PrintRaporPage;
