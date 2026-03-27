@@ -467,7 +467,7 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
                 onChange: onChange,
                 onBlur: onBlur,
                 onKeyDown: onKeyDown,
-                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400 w-full",
+                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400",
                 placeholder: placeholder,
                 ...props
             }),
@@ -1163,6 +1163,21 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                     
                     React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-sm border border-indigo-200/60" },
                         React.createElement('h3', { className: "text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100" }, "Preferensi Sistem"),
+                        React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4" },
+                            React.createElement('div', null,
+                                React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Olah Nilai Otomatis"),
+                                React.createElement('p', { className: "text-xs text-slate-500 mt-1 max-w-md" }, "Aktifkan fitur pengolahan nilai otomatis dengan rumus persentase di halaman Data Nilai.")
+                            ),
+                            React.createElement('label', { className: "relative inline-flex items-center cursor-pointer" },
+                                React.createElement('input', {
+                                    type: "checkbox",
+                                    className: "sr-only peer",
+                                    checked: settings.enableAutoRegression || false,
+                                    onChange: (e) => onSettingsChange({ target: { name: 'enableAutoRegression', value: e.target.checked, type: 'checkbox' } })
+                                }),
+                                React.createElement('div', { className: "w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" })
+                            )
+                        ),
                         React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4" },
                             React.createElement('div', null,
                                 React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Pengingat Keluar Aplikasi"),
