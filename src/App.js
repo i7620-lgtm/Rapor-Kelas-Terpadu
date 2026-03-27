@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'; 
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
@@ -79,6 +79,7 @@ const initialSettings = {
   nilaiDisplayMode: 'kuantitatif saja', 
   enableExitWarning: false,
   appLock: { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' },
+  enableAutoRegression: false,
 };
 
 const initialStudents = [];
@@ -125,10 +126,10 @@ const excelRound = (num) => {
     return Math.round(num + Number.EPSILON);
 };
 
-const calculateFinalGrade = (detailed, config, settings) => {
+const calculateFinalGrade = (detailed, config, settings, subjectId) => {
     if (!detailed) return null;
     let finalScore = null;
-    const { predikats, qualitativeGradingMap } = settings;
+    const { predikats, qualitativeGradingMap, slmVisibility } = settings;
     const kkm = parseInt(predikats.c, 10);
 
     const getNumericScore = (score) => {
@@ -139,8 +140,12 @@ const calculateFinalGrade = (detailed, config, settings) => {
         return null;
     };
     
+    // Filter SLMs based on visibility settings
+    const activeSlmIds = slmVisibility?.[subjectId];
+    const visibleSlms = activeSlmIds ? (detailed.slm || []).filter(slm => activeSlmIds.includes(slm.id)) : (detailed.slm || []);
+    
     if (config.method === 'rata-rata') {
-        const slmAvgScores = (detailed.slm || []).map(slm => {
+        const slmAvgScores = visibleSlms.map(slm => {
             const validScores = (slm.scores || []).map(getNumericScore).filter(s => s !== null);
             return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
         }).filter(avg => avg !== null);
@@ -160,7 +165,7 @@ const calculateFinalGrade = (detailed, config, settings) => {
         const stsWeight = weights.STS || 0;
         const sasWeight = weights.SAS || 0;
 
-        (detailed.slm || []).forEach(slm => {
+        visibleSlms.forEach(slm => {
             const slmTpWeights = tpWeights[slm.id] || [];
             (slm.scores || []).forEach((score, index) => {
                 const numericScore = getNumericScore(score);
@@ -187,7 +192,7 @@ const calculateFinalGrade = (detailed, config, settings) => {
         finalScore = totalWeightUsed > 0 ? totalWeightedScore : null;
 
     } else if (config.method === 'persentase' && !isNaN(kkm)) {
-        const slmAvgScores = (detailed.slm || []).map(slm => {
+        const slmAvgScores = visibleSlms.map(slm => {
             const validScores = (slm.scores || []).map(getNumericScore).filter(s => s !== null);
             return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
         }).filter(avg => avg !== null);
@@ -248,7 +253,7 @@ const App = () => {
       if (!savedSettings?.appLock?.enabled || savedSettings?.appLock?.pin?.length !== 6) {
           return true; // Already "unlocked" if lock is not fully configured
       }
-      return false; // Always lock on initial load if configured
+      return sessionStorage.getItem('appUnlocked') === 'true'; // Check session storage
   });
     
   const isInitialMount = useRef(true);
@@ -479,7 +484,7 @@ const App = () => {
                   const detailed = studentGrade.detailedGrades?.[subj.id];
                   if (detailed) {
                       const config = settings.gradeCalculation?.[subj.id] || { method: 'rata-rata' };
-                      const calculated = calculateFinalGrade(detailed, config, settings);
+                      const calculated = calculateFinalGrade(detailed, config, settings, subj.id);
                       if (calculated !== newFinalGrades[subj.id]) {
                           newFinalGrades[subj.id] = calculated;
                           studentChanged = true;
@@ -494,7 +499,7 @@ const App = () => {
           });
           return anyChanged ? newGrades : currentGrades;
       });
-  }, [settings.gradeCalculation, settings.predikats, settings.qualitativeGradingMap, subjects]);
+  }, [settings.gradeCalculation, settings.predikats, settings.qualitativeGradingMap, settings.slmVisibility, subjects]);
 
   const learningObjectivesRef = useRef(learningObjectives);
   useEffect(() => { learningObjectivesRef.current = learningObjectives; }, [learningObjectives]);
@@ -601,7 +606,15 @@ const App = () => {
         const settingsRows = [
             ["Kunci Pengaturan", "Nilai"],
             ["format_version", "2"],
-            ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => [key, val || '']),
+            ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => {
+                if (typeof val === 'object' && val !== null) {
+                    return [key, JSON.stringify(val)];
+                }
+                if (typeof val === 'boolean') {
+                    return [key, val ? 'true' : 'false'];
+                }
+                return [key, val ?? ''];
+            }),
             ["kop_layout", JSON.stringify(settings.kop_layout || [])],
             ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
             [],
@@ -747,15 +760,19 @@ const App = () => {
                     
                     if (['A', 'B', 'C', 'D'].includes(key.toUpperCase())) {
                         news.predikats[key.toLowerCase()] = String(r[1]); 
-                    } else if (key === 'kop_layout' || key === 'piagam_layout') {
+                    } else if (key === 'kop_layout' || key === 'piagam_layout' || key === 'appLock') {
                         try {
-                            news[key] = JSON.parse(r[1]);
+                            news[key] = typeof r[1] === 'string' ? JSON.parse(r[1]) : r[1];
                         } catch (e) {
                             console.warn(`Failed parsing ${key}`, e);
-                            news[key] = [];
+                            news[key] = key === 'appLock' ? { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' } : [];
                         }
                     } else if (key in news) {
-                        news[key] = r[1]; 
+                        if (typeof initialSettings[key] === 'boolean') {
+                            news[key] = r[1] === 'true' || r[1] === true;
+                        } else {
+                            news[key] = r[1] !== undefined ? r[1] : ''; 
+                        }
                     }
                 }
                 const subjectId = r[0]; if (defaultSubjects.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
@@ -786,7 +803,45 @@ const App = () => {
         const slmNameMap = new Map();
         if (wsTP) { const tpData = XLSX.utils.sheet_to_json(wsTP); const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`; nLO[gradeKey] = {}; tpData.forEach(row => { const subjName = row['Nama Mata Pelajaran'], slmId = row['ID SLM'], slmName = row['Nama SLM']; if (slmId && slmName && !slmNameMap.has(slmId)) slmNameMap.set(slmId, slmName); if (subjName) { if (!nLO[gradeKey][subjName]) nLO[gradeKey][subjName] = []; nLO[gradeKey][subjName].push({ slmId, text: row['Deskripsi Tujuan Pembelajaran (TP)'], isEdited: true }); } }); }
         nGr = nStud.map(st => ({ studentId: st.id, detailedGrades: {}, finalGrades: {} }));
-        workbook.SheetNames.forEach(name => { if (name.startsWith("Nilai_")) { const subIdRaw = name.split('_')[1]; let subId = subIdRaw; if (subId === 'Blng' && !nSub.some(s => s.id === 'Blng') && nSub.some(s => s.id === 'BIng')) subId = 'BIng'; const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name]); rows.forEach(row => { const sid = String(row['ID Siswa'] || row['ID'] || row['a'] || '').trim(); let entry = nGr.find(g => g.studentId === sid); if (!entry) entry = nGr.find(g => g.studentId === 'student' + sid); if (!entry) entry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId)); if (entry) { const detailed = entry.detailedGrades[subId] || { slm: [], sts: row['STS'], sas: row['SAS'] }; Object.keys(row).forEach(rawH => { const h = rawH.trim(), match = h.match(/^(.*)_TP(\d+)$/); if (match) { const slmId = match[1], tpIdx = parseInt(match[2]) - 1; let slm = detailed.slm.find(s => s.id === slmId); if (!slm) { slm = { id: slmId, name: slmNameMap.get(slmId) || 'Lingkup Materi Kustom', scores: [] }; detailed.slm.push(slm); } slm.scores[tpIdx] = row[rawH]; } }); entry.detailedGrades[subId] = detailed; } }); } });
+        workbook.SheetNames.forEach(name => { 
+            if (name.startsWith("Nilai_")) { 
+                const subIdRaw = name.split('_')[1]; 
+                let subId = subIdRaw; 
+                if (subId === 'Blng' && !nSub.some(s => s.id === 'Blng') && nSub.some(s => s.id === 'BIng')) subId = 'BIng'; 
+                const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name]); 
+                rows.forEach(row => { 
+                    const sid = String(row['ID Siswa'] || row['ID'] || row['a'] || '').trim(); 
+                    let entry = nGr.find(g => g.studentId === sid); 
+                    if (!entry) entry = nGr.find(g => g.studentId === 'student' + sid); 
+                    if (!entry) entry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId)); 
+                    if (entry) { 
+                        if (!entry.detailedGrades[subId]) {
+                            entry.detailedGrades[subId] = { slm: [], sts: row['STS'], sas: row['SAS'], descriptions: { highest: row['Deskripsi Tinggi'] || '', lowest: row['Deskripsi Rendah'] || '' } };
+                        }
+                        const detailed = entry.detailedGrades[subId];
+                        if (row['STS'] !== undefined) detailed.sts = row['STS'];
+                        if (row['SAS'] !== undefined) detailed.sas = row['SAS'];
+                        if (row['Deskripsi Tinggi'] !== undefined) {
+                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
+                            detailed.descriptions.highest = row['Deskripsi Tinggi'];
+                        }
+                        if (row['Deskripsi Rendah'] !== undefined) {
+                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
+                            detailed.descriptions.lowest = row['Deskripsi Rendah'];
+                        }
+                        Object.keys(row).forEach(rawH => { 
+                            const h = rawH.trim(), match = h.match(/^(.*)_TP(\d+)$/); 
+                            if (match) { 
+                                const slmId = match[1], tpIdx = parseInt(match[2]) - 1; 
+                                let slm = detailed.slm.find(s => s.id === slmId); 
+                                if (!slm) { slm = { id: slmId, name: slmNameMap.get(slmId) || 'Lingkup Materi Kustom', scores: [] }; detailed.slm.push(slm); } 
+                                slm.scores[tpIdx] = row[rawH]; 
+                            } 
+                        }); 
+                    } 
+                }); 
+            } 
+        });
         const wsAtt = findSheet(["Absensi"]);
         if (wsAtt) nAtt = XLSX.utils.sheet_to_json(wsAtt).map(r => ({ studentId: String(r['ID Siswa']), sakit: r['Sakit'], izin: r['Izin'], alpa: r['Alpa'] }));
         const wsDE = findSheet(["Data Ekstra"]);
@@ -797,7 +852,7 @@ const App = () => {
         if (wsCat) XLSX.utils.sheet_to_json(wsCat).forEach(row => { const sid = String(row['ID Siswa']); nNot[sid] = row['Catatan Wali Kelas']; });
         const wsJF = findSheet(["Jurnal Formatif"]);
         if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'] }); }); }
-        nGr.forEach(studentGrade => { nSub.forEach(subj => { const detailed = studentGrade.detailedGrades[subj.id]; if (detailed) studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news); }); });
+        nGr.forEach(studentGrade => { nSub.forEach(subj => { const detailed = studentGrade.detailedGrades[subj.id]; if (detailed) studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news, subj.id); }); });
         return { settings: news, students: nStud, attendance: nAtt, notes: nNot, studentExtracurriculars: nStEx, cocurricularData: nCo, grades: nGr, subjects: nSub, extracurriculars: nEx, learningObjectives: nLO, formativeJournal: nFJ };
     }, [predefinedCurriculum]);
 
@@ -914,6 +969,7 @@ const App = () => {
       isLocked ? React.createElement(LockScreen, {
           appLock: settings.appLock,
           onUnlock: () => {
+              sessionStorage.setItem('appUnlocked', 'true');
               setIsUnlocked(true);
           }
       }) : React.createElement(React.Fragment, null,
@@ -932,7 +988,21 @@ const App = () => {
             isLoading ? "Memuat..." : 
             activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
             activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
-            activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { students, namaKelas: settings.nama_kelas, onBulkSaveStudents: setStudents, onDeleteStudent: id => setStudents(prev => prev.filter(s => s.id !== id)), showToast }) :
+            activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { 
+                students, 
+                namaKelas: settings.nama_kelas, 
+                onBulkSaveStudents: setStudents, 
+                onDeleteStudent: id => {
+                    setStudents(prev => prev.filter(s => s.id !== id));
+                    setGrades(prev => prev.filter(g => g.studentId !== id));
+                    setAttendance(prev => prev.filter(a => a.studentId !== id));
+                    setNotes(prev => { const newNotes = {...prev}; delete newNotes[id]; return newNotes; });
+                    setStudentExtracurriculars(prev => prev.filter(e => e.studentId !== id));
+                    setCocurricularData(prev => { const newData = {...prev}; delete newData[id]; return newData; });
+                    setFormativeJournal(prev => { const newJournal = {...prev}; delete newJournal[id]; return newJournal; });
+                }, 
+                showToast 
+            }) :
             activePage === 'DATA_NILAI' ? React.createElement(DataNilaiPage, { 
                 students, grades, settings, 
                 onBulkUpdateGrades: (u) => setGrades(prev => {
@@ -941,7 +1011,7 @@ const App = () => {
                         let g = next.find(ng => ng.studentId === x.studentId);
                         if(!g) { g = { studentId: x.studentId, detailedGrades: {}, finalGrades: {} }; next.push(g); }
                         g.detailedGrades[x.subjectId] = x.newDetailedGrade;
-                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings);
+                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings, x.subjectId);
                     });
                     return next;
                 }), 
@@ -964,7 +1034,7 @@ const App = () => {
                 onUpdateStudent: (id, k, v) => setStudents(prev => prev.map(s => s.id === id ? { ...s, [k]: v } : s)),
                 onUpdateSettings: (k, v) => setSettings(s => ({ ...s, [k]: v })),
                 onUpdateNote: (sid, v) => setNotes(n => ({ ...n, [sid]: v })),
-                onUpdateAttendance: (sid, k, v) => setAttendance(prev => { const n = [...prev], i = n.findIndex(a => a.studentId === sid); if(i>-1) n[i][k] = v; else n.push({studentId:sid, [k]: v}); return n; }),
+                onUpdateAttendance: (sid, k, v) => setAttendance(prev => { const n = [...prev], i = n.findIndex(a => a.studentId === sid); if(i>-1) n[i][k] = v===''?null:parseInt(v); else n.push({studentId:sid, [k]: v===''?null:parseInt(v)}); return n; }),
                 onUpdateExtraDescription: (sid, eid, v) => setStudentExtracurriculars(prev => prev.map(s => s.studentId === sid ? { ...s, descriptions: { ...s.descriptions, [eid]: v } } : s)),
                 onUpdateCocurricularManual: (sid, v) => setCocurricularData(prev => ({ ...prev, [sid]: { ...prev[sid], manualDescription: v } })),
                 showToast 
