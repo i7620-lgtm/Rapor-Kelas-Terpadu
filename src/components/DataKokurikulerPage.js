@@ -41,7 +41,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                 let cleanVal = val.trim();
                 // Auto-uppercase if it matches standard codes to help consistency
                 const upperVal = cleanVal.toUpperCase();
-                if (['BB', 'MB', 'BSH', 'SB'].includes(upperVal)) {
+                if (['BB', 'MB', 'BSH', 'SB', '-'].includes(upperVal)) {
                     cleanVal = upperVal;
                 }
                 
@@ -68,7 +68,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Kokurikuler"),
                 React.createElement('p', { className: "mt-1 text-zinc-600" }, 
@@ -101,7 +101,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "p-6 border-b border-zinc-200/60 flex-shrink-0 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4" },
                         React.createElement('div', null,
                              React.createElement('h3', { className: "text-xl font-bold text-zinc-800" }, "Penilaian Dimensi Profil"),
@@ -148,8 +148,7 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                                         COCURRICULAR_DIMENSIONS.map(dim => {
                                             const rating = cocurricularData[student.id]?.dimensionRatings?.[dim.id] || "";
                                             // Check validity for styling
-                                            const isValidRating = ['BB', 'MB', 'BSH', 'SB'].includes(rating);
-                                            const isInvalid = rating && !isValidRating;
+                                            const isValidRating = ['BB', 'MB', 'BSH', 'SB', '-'].includes(rating);
 
                                             return (
                                                 React.createElement('td', { key: dim.id, className: "px-2 py-2 border-b border-zinc-200/60" },
@@ -158,10 +157,12 @@ const DataKokurikulerPage = ({ students, settings, cocurricularData, onSettingsC
                                                         value: rating,
                                                         onChange: e => handleRatingChange(student.id, dim.id, e.target.value),
                                                         onPaste: e => handlePaste(e, student.id, dim.id),
-                                                        className: `w-full p-2 text-center text-sm uppercase border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-colors ${
-                                                            isInvalid 
-                                                                ? 'bg-zinc-50 border-zinc-300 text-zinc-800 focus:ring-zinc-500 focus:border-zinc-500' 
-                                                                : 'bg-white border-zinc-300/60'
+                                                        className: `w-full p-2 text-center text-sm uppercase border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
+                                                            isValidRating 
+                                                                ? 'border-green-500 ring-1 ring-green-500' 
+                                                                : rating && !isValidRating
+                                                                    ? 'border-red-500 ring-1 ring-red-500 bg-rose-50 text-rose-800'
+                                                                    : 'border-red-500 ring-1 ring-red-500'
                                                         }`,
                                                         placeholder: "-"
                                                     })
