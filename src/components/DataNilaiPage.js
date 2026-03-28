@@ -162,9 +162,17 @@ const generateSubjectDescription = (student, detailedGrade, objectivesForSubject
 
 
 // --- Helper Component: GradeInput ---
-const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly }) => {
+const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly, kkm }) => {
     const [localValue, setLocalValue] = useState(value ?? '');
     const isFilled = localValue !== null && localValue !== undefined && String(localValue).trim() !== '';
+
+    let isBelowKkm = false;
+    if (isFilled && kkm !== undefined && kkm !== null) {
+        const numValue = parseFloat(localValue);
+        if (!isNaN(numValue) && numValue < kkm) {
+            isBelowKkm = true;
+        }
+    }
 
     useEffect(() => {
         setLocalValue(value ?? '');
@@ -197,9 +205,11 @@ const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly })
         onPaste: onPaste,
         readOnly: readOnly,
         className: `${className} transition-all border ${
-            isFilled 
-            ? "border-green-500 ring-1 ring-green-500" 
-            : "border-red-500 ring-1 ring-red-500"
+            !isFilled 
+            ? "border-red-500 ring-1 ring-red-500" 
+            : isBelowKkm
+                ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
+                : "border-green-500 ring-1 ring-green-500"
         }`
     });
 };
@@ -914,10 +924,10 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 
                                                     return React.createElement(React.Fragment, { key: i },
                                                         React.createElement('td', { className: "px-2 py-1 text-center border-l" },
-                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-full p-2 text-center border rounded-md ${active === 'qnt' ? (numericValue !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}` })
+                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-full p-2 text-center border rounded-md ${active === 'qnt' ? (numericValue !== '' ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}` })
                                                         ),
                                                         React.createElement('td', { className: "px-2 py-1 text-center" },
-                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `w-full p-2 text-xs border rounded-md ${active === 'ql' ? (qualitativeValue !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}`},
+                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `w-full p-2 text-xs border rounded-md ${active === 'ql' ? (qualitativeValue !== '' ? (qualitativeValue === 'BB' ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}`},
                                                                 React.createElement('option', {value: ''}, '...'),
                                                                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', {key: code, value: code}, code))
                                                             )
@@ -925,7 +935,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                                     );
                                                 }) :
                                                 React.createElement('td', { className: "px-2 py-1 text-center" }, 
-                                                    React.createElement('input', { type: "number", min:0, max:100, value: getNumericValue(studentGrade[type], qualitativeGradingMap) ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
+                                                    React.createElement('input', { type: "number", min:0, max:100, value: getNumericValue(studentGrade[type], qualitativeGradingMap) ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== '' ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500'}` })
                                                 ),
                                              isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100 border-l align-top pt-3" }, average ?? '-'),
                                              React.createElement('td', { className: "px-2 py-2 border-l" },
@@ -1834,13 +1844,16 @@ const NilaiTableView = (props) => {
         if (mode === 'kualitatif') {
             const qualitativeCode = getQualitativeCode(value, settings.predikats);
             const isFilled = qualitativeCode && qualitativeCode !== '';
+            const isBelowKkm = qualitativeCode === 'BB';
             return React.createElement('select', { 
                 value: qualitativeCode, 
                 onChange: e => handleSingleGradeChange(student.id, e.target.value, 'tp', slmId, tpIndex),
                 className: `w-full p-2 text-sm border rounded-md transition-all ${
-                    isFilled 
-                    ? "text-emerald-700 bg-emerald-50/30 border-emerald-200/60" 
-                    : "text-rose-700 bg-rose-50/30 border-rose-200/60"
+                    !isFilled 
+                    ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500" 
+                    : isBelowKkm
+                        ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                        : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
                 }`
             },
                 React.createElement('option', { value: "" }, "-"),
@@ -1849,14 +1862,14 @@ const NilaiTableView = (props) => {
         }
         
         const numericValue = getNumericValue(value, settings.qualitativeGradingMap);
-        
-        return React.createElement(GradeInput, { 
+              return React.createElement(GradeInput, { 
             min: 0, 
             max: 100, 
             value: numericValue, 
             onCommit: (newValue) => handleSingleGradeChange(student.id, newValue, 'tp', slmId, tpIndex),
             onPaste: e => handlePaste(e, student.id, key),
-            className: "w-full p-2 text-center border rounded-md"
+            className: "w-full p-2 text-center border rounded-md",
+            kkm: settings.predikats?.c
         });
     };
     
@@ -1868,13 +1881,16 @@ const NilaiTableView = (props) => {
         if (mode === 'kualitatif') {
             const qualitativeCode = getQualitativeCode(value, settings.predikats);
             const isFilled = qualitativeCode && qualitativeCode !== '';
+            const isBelowKkm = qualitativeCode === 'BB';
              return React.createElement('select', { 
                 value: qualitativeCode, 
                 onChange: e => handleSingleGradeChange(student.id, e.target.value, type), 
                 className: `w-full p-2 text-sm border rounded-md transition-all ${
-                    isFilled 
-                    ? "text-emerald-700 bg-emerald-50/30 border-emerald-200/60" 
-                    : "text-rose-700 bg-rose-50/30 border-rose-200/60"
+                    !isFilled 
+                    ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500" 
+                    : isBelowKkm
+                        ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                        : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
                 }`
             },
                 React.createElement('option', { value: "" }, "-"),
@@ -1888,9 +1904,10 @@ const NilaiTableView = (props) => {
             value: numericValue, 
             onCommit: (newValue) => handleSingleGradeChange(student.id, newValue, type),
             onPaste: e => handlePaste(e, student.id, type),
-            className: "w-full p-2 text-center border rounded-md"
+            className: "w-full p-2 text-center border rounded-md",
+            kkm: settings.predikats?.c
         });
-    }
+    };
 
     const headerRowSpan = isWeighting ? 3 : 2;
 
