@@ -153,7 +153,7 @@ const DataEkstrakurikulerPage = ({
     };
     
     return (
-        React.createElement('div', { className: "flex flex-col gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Ekstrakurikuler"),
                 React.createElement('p', { className: "mt-1 text-slate-600" }, 
@@ -171,7 +171,7 @@ const DataEkstrakurikulerPage = ({
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+                React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
                             React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
@@ -208,7 +208,11 @@ const DataEkstrakurikulerPage = ({
                                                             React.createElement('select', {
                                                                 value: currentAssignedId || "---",
                                                                 onChange: (e) => handleAssignmentChange(student.id, i, e.target.value),
-                                                                className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                                className: `w-full p-2 text-sm border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                                                                    currentAssignedId 
+                                                                    ? "border-green-500 ring-1 ring-green-500" 
+                                                                    : "border-red-500 ring-1 ring-red-500"
+                                                                }`
                                                             },
                                                                 React.createElement('option', { value: "---" }, "--- Pilih ---"),
                                                                 optionsForThisDropdown.map(ex => (
@@ -223,7 +227,11 @@ const DataEkstrakurikulerPage = ({
                                                                     onChange: (e) => handleDescriptionChange(student.id, currentAssignedId, e.target.value),
                                                                     onPaste: (e) => handlePasteDescription(e, student.id, i),
                                                                     rows: 2,
-                                                                    className: "w-full p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                                    className: `w-full p-2 text-sm border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                                                                        studentExtra?.descriptions?.[currentAssignedId] && studentExtra.descriptions[currentAssignedId].trim() !== ''
+                                                                        ? "border-green-500 ring-1 ring-green-500" 
+                                                                        : "border-red-500 ring-1 ring-red-500"
+                                                                    }`
                                                                 })
                                                             )
                                                         )
