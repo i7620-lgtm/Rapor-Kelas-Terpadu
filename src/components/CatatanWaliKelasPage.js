@@ -168,7 +168,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Catatan Wali Kelas"),
                  React.createElement('p', { className: "mt-1 text-zinc-600" }, 
@@ -186,7 +186,7 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                             React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
@@ -207,7 +207,11 @@ const CatatanWaliKelasPage = ({ students, notes, onUpdateNote, grades, subjects,
                                                 onChange: (e) => handleNoteChange(student.id, e.target.value),
                                                 onPaste: (e) => handlePaste(e, student.id),
                                                 placeholder: "Tulis catatan untuk siswa di sini...",
-                                                className: "w-full p-2 text-sm bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 text-zinc-900",
+                                                className: `w-full p-2 text-sm border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
+                                                    notes[student.id] && notes[student.id].trim() !== ''
+                                                    ? "border-green-500 ring-1 ring-green-500" 
+                                                    : "border-red-500 ring-1 ring-red-500"
+                                                }`,
                                                 rows: 4,
                                                 "aria-label": `Catatan wali kelas untuk ${student.namaLengkap}`
                                             }),

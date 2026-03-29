@@ -508,7 +508,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
     };
 
     return (
-        React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', style: pageStyle },
+        React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', style: pageStyle },
             settings.piagam_background && React.createElement('img', { 
                 src: settings.piagam_background, 
                 alt: "Piagam Background", 
@@ -653,11 +653,48 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const [paperSize, setPaperSize] = useState('A4');
     const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top10'
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isPrintingState, setIsPrintingState] = useState(false);
+    useEffect(() => {
+        const beforePrint = () => setIsPrintingState(true);
+        const afterPrint = () => setIsPrintingState(false);
+        window.addEventListener('beforeprint', beforePrint);
+        window.addEventListener('afterprint', afterPrint);
+        return () => {
+            window.removeEventListener('beforeprint', beforePrint);
+            window.removeEventListener('afterprint', afterPrint);
+        };
+    }, []);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
         showTeacherSignature: true
     });
+
+    const [scale, setScale] = useState(1);
+    const printAreaRef = useRef(null);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (printAreaRef.current && !isPrintingState) {
+                const containerWidth = printAreaRef.current.clientWidth;
+                const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
+                const paperWidthPx = paperWidthCm * 37.7952755906;
+                const margin = 32; // 2rem margin
+                const availableWidth = containerWidth - margin;
+                if (availableWidth < paperWidthPx) {
+                    setScale(availableWidth / paperWidthPx);
+                } else {
+                    setScale(1);
+                }
+            } else {
+                setScale(1);
+            }
+        };
+
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+    }, [paperSize, isPrintingState]);
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -719,6 +756,14 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                 size: ${paperSize} landscape;
                 margin: 0;
             }
+            @media print {
+                .report-page {
+                    transform: none !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                    page-break-after: always;
+                }
+            }
         `;
         document.head.appendChild(style);
 
@@ -748,21 +793,17 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         return rankedStudents; // 'all'
     }, [students, selectedFilter, studentRankings]);
     
-    const [isPrintingState, setIsPrintingState] = useState(false);
-    useEffect(() => {
-        const beforePrint = () => setIsPrintingState(true);
-        const afterPrint = () => setIsPrintingState(false);
-        window.addEventListener('beforeprint', beforePrint);
-        window.addEventListener('afterprint', afterPrint);
-        return () => {
-            window.removeEventListener('beforeprint', beforePrint);
-            window.removeEventListener('afterprint', afterPrint);
-        };
-    }, []);
 
-    const pageStyle = isPrintingState ? {} : {
+
+    const pageStyle = isPrintingState ? {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
+    } : {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top center',
+        marginBottom: `calc(${PAPER_SIZES[paperSize].height} * ${scale - 1})`,
     };
 
     if (students.length === 0) {
@@ -779,7 +820,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     if (grades.length === 0) {
         return (
             React.createElement('div', { className: "p-6" },
-                React.createElement('div', { className: "bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
+                React.createElement('div', { className: "bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
                     React.createElement('h3', { className: "text-lg font-semibold mb-2" }, "Nilai belum lengkap"),
                     React.createElement('p', null, "Silahkan lengkapi nilai di halaman 'Data Nilai'.")
                 )
@@ -828,7 +869,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     )
                 )
             ),
-            React.createElement('div', { id: "print-area", className: "space-y-8" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
                 studentsToRender.length > 0 ? studentsToRender.map(student => {
                     const studentData = studentRankings.get(student.id);
                     return React.createElement(PiagamPage, { 

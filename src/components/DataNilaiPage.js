@@ -61,7 +61,7 @@ const lowercaseFirst = (s) => {
 };
 
 
-const generateSubjectDescription = (student, detailedGrade, objectivesForSubject, settings) => {
+const generateSubjectDescription = (student, detailedGrade, objectivesForSubject, settings, activeSlmIds) => {
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
 
@@ -92,8 +92,11 @@ const generateSubjectDescription = (student, detailedGrade, objectivesForSubject
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
+        // Filter SLMs based on visibility settings
+        const visibleSlms = activeSlmIds ? detailedGrade.slm.filter(slm => activeSlmIds.includes(slm.id)) : detailedGrade.slm;
+
         // Iterate over the student's graded SLMs.
-        detailedGrade.slm.forEach(slm => {
+        visibleSlms.forEach(slm => {
             const tpTextsForThisSlm = tpTextMap.get(slm.id);
             if (tpTextsForThisSlm && slm.scores) {
                 slm.scores.forEach((score, index) => {
@@ -159,8 +162,17 @@ const generateSubjectDescription = (student, detailedGrade, objectivesForSubject
 
 
 // --- Helper Component: GradeInput ---
-const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly }) => {
+const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly, kkm }) => {
     const [localValue, setLocalValue] = useState(value ?? '');
+    const isFilled = localValue !== null && localValue !== undefined && String(localValue).trim() !== '';
+
+    let isBelowKkm = false;
+    if (isFilled && kkm !== undefined && kkm !== null) {
+        const numValue = parseFloat(localValue);
+        if (!isNaN(numValue) && numValue < kkm) {
+            isBelowKkm = true;
+        }
+    }
 
     useEffect(() => {
         setLocalValue(value ?? '');
@@ -192,7 +204,13 @@ const GradeInput = ({ value, onCommit, onPaste, min, max, className, readOnly })
         onKeyDown: handleKeyDown,
         onPaste: onPaste,
         readOnly: readOnly,
-        className: className
+        className: `${className} transition-all border ${
+            !isFilled 
+            ? "border-red-500 ring-1 ring-red-500" 
+            : isBelowKkm
+                ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
+                : "border-green-500 ring-1 ring-green-500"
+        }`
     });
 };
 
@@ -280,7 +298,7 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
     const [localPredikats, setLocalPredikats] = useState(settings.predikats);
     const calculationConfig = useMemo(() => settings.gradeCalculation?.[subject.id] || { method: 'rata-rata' }, [settings.gradeCalculation, subject.id]);
     const [localMethod, setLocalMethod] = useState(calculationConfig.method);
-    const [localDisplayMode, setLocalDisplayMode] = useState(settings.nilaiDisplayMode || 'kuantitatif & kualitatif');
+    const [localDisplayMode, setLocalDisplayMode] = useState(settings.nilaiDisplayMode || 'kuantitatif saja');
 
     const handleSave = () => {
         onUpdatePredikats(localPredikats);
@@ -300,11 +318,11 @@ const GradeSettingsModal = ({ isOpen, onClose, subject, settings, onUpdatePredik
                      React.createElement('section', null,
                         React.createElement('h4', { className: "text-sm font-bold text-slate-700 mb-2 border-b pb-1" }, "Tampilan Input Nilai"),
                         React.createElement('div', { className: "space-y-2" },
-                            ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                            ['kuantitatif saja', 'kualitatif saja', 'kuantitatif & kualitatif'].map(mode => {
                                 const labels = {
-                                    'kuantitatif & kualitatif': 'Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
-                                    'kuantitatif saja': 'Tampilan Tabel (Nilai Kuantitatif)',
-                                    'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                    'kuantitatif saja': '1. Tampilan Tabel Kuantitatif (Default)',
+                                    'kualitatif saja': '2. Tampilan Tabel Kualitatif',
+                                    'kuantitatif & kualitatif': '3. Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
                                 };
                                 return React.createElement('label', { key: mode, className: "flex items-center p-2 border rounded-md cursor-pointer hover:bg-slate-100" },
                                     React.createElement('input', { type: "radio", name: "display-mode", value: mode, checked: localDisplayMode === mode, onChange: () => setLocalDisplayMode(mode), className: "h-4 w-4 text-indigo-600" }),
@@ -456,8 +474,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             const initialLocalGrades = {};
             students.forEach(student => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
-                // Ensure deep copy including descriptions
-                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null, descriptions: { highest: '', lowest: '' } }));
+                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
             });
             setLocalGrades(initialLocalGrades);
             setActiveInput({});
@@ -571,12 +588,26 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
         setLocalGrades(prevGrades => {
             const newGrades = { ...prevGrades };
             const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
-            if (!studentGrade.descriptions) studentGrade.descriptions = { highest: '', lowest: '' };
+            const student = students.find(s => s.id === studentId);
+            const generated = generateSubjectDescription(student, studentGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
+            
+            if (!studentGrade.descriptions) {
+                studentGrade.descriptions = { highest: generated.highest, lowest: generated.lowest };
+            } else {
+                // If descriptions exist, ensure we have both fields (merge with generated if empty)
+                if (!studentGrade.descriptions.highest || !studentGrade.descriptions.highest.trim()) {
+                    studentGrade.descriptions.highest = generated.highest;
+                }
+                if (!studentGrade.descriptions.lowest || !studentGrade.descriptions.lowest.trim()) {
+                    studentGrade.descriptions.lowest = generated.lowest;
+                }
+            }
+            
             studentGrade.descriptions[type] = value;
             newGrades[studentId] = studentGrade;
             return newGrades;
         });
-    }, []);
+    }, [students, objectivesForSubject, settings, subject.id]);
 
     const handleBulkGenerateDescriptions = () => {
         const gradeKey = `Kelas ${gradeNumber}`;
@@ -603,7 +634,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 const detailedGrade = newGrades[student.id]; 
                 
                 // We need to pass the student object, detailedGrade, and objectives.
-                const generated = generateSubjectDescription(student, detailedGrade, currentObjectives, settings);
+                const generated = generateSubjectDescription(student, detailedGrade, currentObjectives, settings, settings.slmVisibility?.[subject.id]);
                 
                 if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
                 detailedGrade.descriptions.highest = generated.highest;
@@ -780,7 +811,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                 React.createElement('div', { className: "bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col" },
                     React.createElement('div', { className: "p-5 border-b flex-shrink-0 flex justify-between items-center" },
                         isSLM ? 
-                            React.createElement('input', { type: 'text', value: slmName, onChange: e => setSlmName(e.target.value), placeholder: "Nama Lingkup Materi", className: "text-xl font-bold text-slate-800 border-b-2 border-transparent focus:border-indigo-500 outline-none flex-grow bg-transparent" }) :
+                            React.createElement('input', { type: 'text', value: slmName, onChange: e => setSlmName(e.target.value), placeholder: "Nama Lingkup Materi", className: `text-xl font-bold text-slate-800 border-b-2 outline-none flex-grow bg-transparent ${slmName && slmName.trim() !== '' ? 'border-green-500' : 'border-red-500'}` }) :
                             React.createElement('h3', { className: "text-xl font-bold text-slate-800" }, `Input Nilai ${type.toUpperCase()}`),
                         React.createElement('div', { className: "flex items-center gap-2" },
                             React.createElement('button', { onClick: onClose, className: "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50" }, "Batal"),
@@ -800,7 +831,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                             value: tp.text,
                                             onChange: e => handleUpdateTpText(tp.id, e.target.value),
                                             placeholder: 'Deskripsi Tujuan Pembelajaran',
-                                            className: 'flex-grow p-2 border rounded-md text-sm resize-none overflow-hidden',
+                                            className: `flex-grow p-2 border rounded-md text-sm resize-none overflow-hidden ${tp.text && tp.text.trim() !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}`,
                                             rows: "1"
                                         }),
                                         React.createElement('button', { onClick: () => handleDeleteTp(tp.id, index), className: 'text-red-500 hover:text-red-700 p-1 text-2xl leading-none flex-shrink-0 mt-1' }, '×')
@@ -836,7 +867,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                             React.createElement('th', { key: `weight-header-${i}`, colSpan: 2, className: "px-2 py-1 bg-indigo-50 align-middle text-center border-b border-l" },
                                                 React.createElement('div', { className: 'flex items-center justify-center gap-1' },
                                                     React.createElement('span', { className: 'text-indigo-900 text-[10px] font-bold' }, 'BOBOT'),
-                                                    React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[item.id]?.[i] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, item.id, i), className: "w-16 p-1 text-center border-slate-300 rounded-md shadow-sm" })
+                                                    React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[item.id]?.[i] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, item.id, i), className: `w-16 p-1 text-center border rounded-md shadow-sm ${weights.TP?.[item.id]?.[i] !== null && weights.TP?.[item.id]?.[i] !== undefined && weights.TP?.[item.id]?.[i] !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                                                 )
                                             )
                                         ))
@@ -853,7 +884,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                         React.createElement('th', { className: "px-2 py-1 bg-indigo-50 align-middle text-center border-b" },
                                             React.createElement('div', { className: 'flex items-center justify-center gap-1' },
                                                 React.createElement('span', { className: 'text-indigo-900 text-[10px] font-bold' }, 'BOBOT'),
-                                                React.createElement('input', { type: "number", min: 0, max: 100, value: weights[type.toUpperCase()] ?? '', onChange: (e) => handleWeightChange(type.toUpperCase(), e.target.value), className: "w-20 p-2 text-center border-slate-300 rounded-md shadow-sm" })
+                                                React.createElement('input', { type: "number", min: 0, max: 100, value: weights[type.toUpperCase()] ?? '', onChange: (e) => handleWeightChange(type.toUpperCase(), e.target.value), className: `w-20 p-2 text-center border rounded-md shadow-sm ${weights[type.toUpperCase()] !== null && weights[type.toUpperCase()] !== undefined && weights[type.toUpperCase()] !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                                             )
                                         )
                                     )
@@ -861,7 +892,11 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                 React.createElement('tbody', null,
                                     relevantStudents.map((student, index) => {
                                         const studentGrade = localGrades[student.id] || {};
-                                        const descriptions = studentGrade.descriptions || { highest: '', lowest: '' };
+                                        let descriptions = studentGrade.descriptions;
+                                        if (!descriptions) {
+                                            const generated = generateSubjectDescription(student, studentGrade, currentObjectives, settings, settings.slmVisibility?.[subject.id]);
+                                            descriptions = { highest: generated.highest, lowest: generated.lowest };
+                                        }
                                         
                                         let average = null;
                                         if (isSLM) {
@@ -889,10 +924,10 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
 
                                                     return React.createElement(React.Fragment, { key: i },
                                                         React.createElement('td', { className: "px-2 py-1 text-center border-l" },
-                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-full p-2 text-center border rounded-md ${active === 'qnt' ? 'border-green-500 ring-1 ring-green-500' : (active === 'ql' ? 'border-red-500 bg-red-50' : 'border-slate-300')}` })
+                                                            React.createElement('input', { type: "number", min:0, max:100, value: numericValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt', i), onPaste: (e) => handlePaste(e, student.id, i), readOnly: active === 'ql', className: `w-full p-2 text-center border rounded-md ${active === 'qnt' ? (numericValue !== '' ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}` })
                                                         ),
                                                         React.createElement('td', { className: "px-2 py-1 text-center" },
-                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `w-full p-2 text-xs border rounded-md ${active === 'ql' ? 'border-green-500 ring-1 ring-green-500' : (active === 'qnt' ? 'border-red-500 bg-red-50' : 'border-slate-300')}`},
+                                                            React.createElement('select', { value: qualitativeValue, onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'ql', i), className: `w-full p-2 text-xs border rounded-md ${active === 'ql' ? (qualitativeValue !== '' ? (qualitativeValue === 'BB' ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500') : 'border-slate-300 bg-slate-50'}`},
                                                                 React.createElement('option', {value: ''}, '...'),
                                                                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', {key: code, value: code}, code))
                                                             )
@@ -900,7 +935,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                                     );
                                                 }) :
                                                 React.createElement('td', { className: "px-2 py-1 text-center" }, 
-                                                    React.createElement('input', { type: "number", min:0, max:100, value: getNumericValue(studentGrade[type], qualitativeGradingMap) ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: "w-20 p-2 text-center border rounded-md" })
+                                                    React.createElement('input', { type: "number", min:0, max:100, value: getNumericValue(studentGrade[type], qualitativeGradingMap) ?? '', onChange: (e) => handleLocalGradeChange(student.id, e.target.value, 'qnt'), onPaste: (e) => handlePaste(e, student.id), className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== '' ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? 'border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50' : 'border-green-500 ring-1 ring-green-500') : 'border-red-500 ring-1 ring-red-500'}` })
                                                 ),
                                              isSLM && React.createElement('td', { className: "px-4 py-2 text-center font-bold bg-slate-100 border-l align-top pt-3" }, average ?? '-'),
                                              React.createElement('td', { className: "px-2 py-2 border-l" },
@@ -909,14 +944,14 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                                         value: descriptions.highest,
                                                         onChange: e => handleLocalDescriptionChange(student.id, 'highest', e.target.value),
                                                         placeholder: "Deskripsi Tinggi",
-                                                        className: "w-1/2 p-2 text-xs border border-green-200 bg-green-50 rounded resize-none focus:ring-1 focus:ring-green-500",
+                                                        className: `w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-green-500 ${descriptions.highest && descriptions.highest.trim() !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}`,
                                                         rows: 2
                                                     }),
                                                     React.createElement(AutoSizingTextarea, {
                                                         value: descriptions.lowest,
                                                         onChange: e => handleLocalDescriptionChange(student.id, 'lowest', e.target.value),
                                                         placeholder: "Deskripsi Rendah",
-                                                        className: "w-1/2 p-2 text-xs border border-yellow-200 bg-yellow-50 rounded resize-none focus:ring-1 focus:ring-yellow-500",
+                                                        className: `w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-yellow-500 ${descriptions.lowest && descriptions.lowest.trim() !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}`,
                                                         rows: 2
                                                     })
                                                 )
@@ -1352,15 +1387,18 @@ const NilaiCardView = (props) => {
             React.createElement('div', { className: "p-4 space-y-6 bg-slate-50 rounded-b-xl" },
                 React.createElement('section', null,
                     React.createElement('h3', { className: "text-lg font-semibold text-slate-700 mb-3 border-b pb-2" }, "Sumatif Lingkup Materi (SLM)"),
-                    allSlms.length > 0 ? (
-                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
-                            allSlms.map(slm => 
-                                React.createElement(AssessmentCard, { key: slm.id, title: slm.name, type: 'slm', item: slm })
+                    (() => {
+                        const visibleSlms = allSlms.filter(slm => !settings.slmVisibility?.[subject.id] || settings.slmVisibility[subject.id].includes(slm.id));
+                        return visibleSlms.length > 0 ? (
+                            React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
+                                visibleSlms.map(slm => 
+                                    React.createElement(AssessmentCard, { key: slm.id, title: slm.name, type: 'slm', item: slm })
+                                )
                             )
-                        )
-                    ) : (
-                        React.createElement('p', { className: "text-sm text-slate-500" }, "Belum ada Lingkup Materi yang diatur untuk mata pelajaran ini.")
-                    )
+                        ) : (
+                            React.createElement('p', { className: "text-sm text-slate-500" }, "Belum ada Lingkup Materi yang diatur (atau ditampilkan) untuk mata pelajaran ini.")
+                        );
+                    })()
                 ),
 
                 React.createElement('section', null,
@@ -1476,13 +1514,8 @@ const NilaiTableView = (props) => {
         const allIds = allSlms.map(s => s.id);
         
         if (savedVisibility && Array.isArray(savedVisibility)) {
-            // Find IDs present in data but missing from saved settings (likely imported)
-            const missingIds = allIds.filter(id => !savedVisibility.includes(id));
-            if (missingIds.length > 0) {
-                // Merge them in so they are visible by default
-                return [...savedVisibility, ...missingIds];
-            }
-            return savedVisibility;
+            // Only include IDs that actually exist in the current subject's data
+            return savedVisibility.filter(id => allIds.includes(id));
         }
         return allIds;
     });
@@ -1595,8 +1628,21 @@ const NilaiTableView = (props) => {
     const handleDescriptionChange = (studentId, type, value) => {
         const studentGrade = grades.find(g => g.studentId === studentId); // FIX: was students.find(s => s.id === student.id)
         const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+        const student = students.find(s => s.id === studentId);
+        const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
         
-        if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
+        if (!detailedGrade.descriptions) {
+            detailedGrade.descriptions = { highest: generated.highest, lowest: generated.lowest };
+        } else {
+            // If descriptions exist, ensure we have both fields (merge with generated if empty)
+            if (!detailedGrade.descriptions.highest || !detailedGrade.descriptions.highest.trim()) {
+                detailedGrade.descriptions.highest = generated.highest;
+            }
+            if (!detailedGrade.descriptions.lowest || !detailedGrade.descriptions.lowest.trim()) {
+                detailedGrade.descriptions.lowest = generated.lowest;
+            }
+        }
+        
         detailedGrade.descriptions[type] = value;
 
         onBulkUpdateGrades([{ studentId: studentId, subjectId: subject.id, newDetailedGrade: detailedGrade }]);
@@ -1608,7 +1654,7 @@ const NilaiTableView = (props) => {
             const studentGrade = grades.find(g => g.studentId === student.id);
             const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
             
-            const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings);
+            const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
             
             if (!detailedGrade.descriptions) detailedGrade.descriptions = { highest: '', lowest: '' };
             detailedGrade.descriptions.highest = generated.highest;
@@ -1619,6 +1665,75 @@ const NilaiTableView = (props) => {
 
         onBulkUpdateGrades(updates);
         showToast(`Deskripsi kompetensi berhasil digenerate untuk ${updates.length} siswa.`, 'success');
+    };
+
+    const handleAutoRegression = (slmId, tpIndex) => {
+        const kkm = parseInt(settings.predikats.c, 10);
+        if (isNaN(kkm)) {
+            showToast("KKM (Predikat C) belum diatur di Pengaturan.", 'error');
+            return;
+        }
+
+        // 1. Find min_score for this TP
+        let minScore = 100;
+        let scoresFound = false;
+        
+        relevantStudents.forEach(student => {
+            const studentGrade = grades.find(g => g.studentId === student.id);
+            const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+            const slm = detailedGrade?.slm?.find(s => s.id === slmId);
+            const score = slm?.scores?.[tpIndex];
+            
+            if (score !== null && score !== undefined && score !== '') {
+                const numScore = parseInt(score, 10);
+                if (!isNaN(numScore)) {
+                    if (numScore < minScore) minScore = numScore;
+                    scoresFound = true;
+                }
+            }
+        });
+
+        if (!scoresFound) {
+            showToast("Tidak ada nilai untuk diolah pada TP ini.", 'error');
+            return;
+        }
+
+        if (minScore >= 100) {
+            showToast("Semua nilai sudah maksimal (100).", 'info');
+            return;
+        }
+        
+        if (minScore >= kkm) {
+            showToast("Nilai terendah sudah mencapai atau melampaui KKM.", 'info');
+            return;
+        }
+
+        // 2. Apply regression to all students
+        const updates = relevantStudents.map(student => {
+            const studentGrade = grades.find(g => g.studentId === student.id);
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            
+            let slmToUpdate = detailedGrade.slm.find(s => s.id === slmId);
+            if (!slmToUpdate) {
+                slmToUpdate = { id: slmId, name: allSlms.find(s=>s.id===slmId)?.name, scores: [] };
+                detailedGrade.slm.push(slmToUpdate);
+            }
+            while(slmToUpdate.scores.length <= tpIndex) {
+                slmToUpdate.scores.push(null);
+            }
+            
+            const oldScore = parseInt(slmToUpdate.scores[tpIndex], 10);
+            if (!isNaN(oldScore)) {
+                // Formula: new_score = old_score + (100 - old_score) * (kkm - min_score) / (100 - min_score)
+                const newScore = oldScore + (100 - oldScore) * (kkm - minScore) / (100 - minScore);
+                slmToUpdate.scores[tpIndex] = Math.round(newScore);
+            }
+
+            return { studentId: student.id, subjectId: subject.id, newDetailedGrade: detailedGrade };
+        });
+
+        onBulkUpdateGrades(updates);
+        showToast(`Nilai TP berhasil diolah otomatis menggunakan rumus regresi.`, 'success');
     };
 
     const handleWeightChange = (weightType, value, slmId = null, tpIndex = null) => {
@@ -1728,10 +1843,18 @@ const NilaiTableView = (props) => {
 
         if (mode === 'kualitatif') {
             const qualitativeCode = getQualitativeCode(value, settings.predikats);
+            const isFilled = qualitativeCode && qualitativeCode !== '';
+            const isBelowKkm = qualitativeCode === 'BB';
             return React.createElement('select', { 
                 value: qualitativeCode, 
                 onChange: e => handleSingleGradeChange(student.id, e.target.value, 'tp', slmId, tpIndex),
-                className: "w-full p-2 text-sm border rounded-md"
+                className: `w-full p-2 text-sm border rounded-md transition-all ${
+                    !isFilled 
+                    ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500" 
+                    : isBelowKkm
+                        ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                        : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
+                }`
             },
                 React.createElement('option', { value: "" }, "-"),
                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', { key: code, value: code }, code))
@@ -1739,14 +1862,14 @@ const NilaiTableView = (props) => {
         }
         
         const numericValue = getNumericValue(value, settings.qualitativeGradingMap);
-        
-        return React.createElement(GradeInput, { 
+              return React.createElement(GradeInput, { 
             min: 0, 
             max: 100, 
             value: numericValue, 
             onCommit: (newValue) => handleSingleGradeChange(student.id, newValue, 'tp', slmId, tpIndex),
             onPaste: e => handlePaste(e, student.id, key),
-            className: "w-full p-2 text-center border rounded-md"
+            className: "w-full p-2 text-center border rounded-md",
+            kkm: settings.predikats?.c
         });
     };
     
@@ -1757,10 +1880,18 @@ const NilaiTableView = (props) => {
 
         if (mode === 'kualitatif') {
             const qualitativeCode = getQualitativeCode(value, settings.predikats);
+            const isFilled = qualitativeCode && qualitativeCode !== '';
+            const isBelowKkm = qualitativeCode === 'BB';
              return React.createElement('select', { 
                 value: qualitativeCode, 
                 onChange: e => handleSingleGradeChange(student.id, e.target.value, type), 
-                className: "w-full p-2 text-sm border rounded-md"
+                className: `w-full p-2 text-sm border rounded-md transition-all ${
+                    !isFilled 
+                    ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500" 
+                    : isBelowKkm
+                        ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                        : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
+                }`
             },
                 React.createElement('option', { value: "" }, "-"),
                 Object.keys(QUALITATIVE_DESCRIPTORS).map(code => React.createElement('option', { key: code, value: code }, code))
@@ -1773,9 +1904,10 @@ const NilaiTableView = (props) => {
             value: numericValue, 
             onCommit: (newValue) => handleSingleGradeChange(student.id, newValue, type),
             onPaste: e => handlePaste(e, student.id, type),
-            className: "w-full p-2 text-center border rounded-md"
+            className: "w-full p-2 text-center border rounded-md",
+            kkm: settings.predikats?.c
         });
-    }
+    };
 
     const headerRowSpan = isWeighting ? 3 : 2;
 
@@ -1797,7 +1929,7 @@ const NilaiTableView = (props) => {
     }, [slmHeaders, truncatedSlmIds]); // Rerun when headers change or truncation state might change
 
 
-    return React.createElement('div', { ref: tableContainerRef, className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden relative" },
+    return React.createElement('div', { ref: tableContainerRef, className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden relative" },
         isManageSlmModalOpen && React.createElement(ManageSlmModal, { 
             isOpen: isManageSlmModalOpen, 
             onClose: () => setIsManageSlmModalOpen(false), 
@@ -1886,22 +2018,33 @@ const NilaiTableView = (props) => {
                     ),
                     React.createElement('tr', null,
                         tpHeaders.map(h => React.createElement('th', { key: `${h.slmId}-${h.tpIndex}`, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" },
-                            React.createElement('button', { 
-                                className: 'tp-header-button',
-                                onMouseEnter: (e) => showTooltip(e, h.text),
-                                onMouseLeave: hideTooltip
-                            }, `TP ${h.displayIndex}`)
+                            React.createElement('div', { className: "flex items-center justify-center gap-1" },
+                                React.createElement('button', { 
+                                    className: 'tp-header-button',
+                                    onMouseEnter: (e) => showTooltip(e, h.text),
+                                    onMouseLeave: hideTooltip
+                                }, `TP ${h.displayIndex}`),
+                                settings.enableAutoRegression && React.createElement('button', {
+                                    onClick: () => handleAutoRegression(h.slmId, h.tpIndex),
+                                    title: "Olah Nilai Otomatis (Regresi)",
+                                    className: "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors"
+                                }, 
+                                    React.createElement('svg', { className: "w-3 h-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
+                                        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M13 10V3L4 14h7v7l9-11h-7z" })
+                                    )
+                                )
+                            )
                         ))
                     ),
                     isWeighting && React.createElement('tr', null,
                         tpHeaders.map(h => React.createElement('th', { key: `w-${h.slmId}-${h.tpIndex}`, className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
-                            React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[h.slmId]?.[h.tpIndex] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, h.slmId, h.tpIndex), className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" })
+                            React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[h.slmId]?.[h.tpIndex] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, h.slmId, h.tpIndex), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.TP?.[h.slmId]?.[h.tpIndex] !== null && weights.TP?.[h.slmId]?.[h.tpIndex] !== undefined && weights.TP?.[h.slmId]?.[h.tpIndex] !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         )),
                         React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
-                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.STS ?? '', onChange: (e) => handleWeightChange('STS', e.target.value), className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" })
+                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.STS ?? '', onChange: (e) => handleWeightChange('STS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.STS !== null && weights.STS !== undefined && weights.STS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         ),
                         React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
-                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.SAS ?? '', onChange: (e) => handleWeightChange('SAS', e.target.value), className: "w-full p-0.5 text-center text-[10px] border-slate-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" })
+                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.SAS ?? '', onChange: (e) => handleWeightChange('SAS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         )
                     )
                 ),
@@ -1909,7 +2052,12 @@ const NilaiTableView = (props) => {
                     relevantStudents.map((student, index) => {
                         const studentGrade = grades.find(g => g.studentId === student.id);
                         const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-                        const descriptions = detailedGrade?.descriptions || { highest: '', lowest: '' };
+                        const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts: null, sas: null }, objectivesForSubject, settings, activeSlmIds);
+                        
+                        let descriptions = { 
+                            highest: (detailedGrade?.descriptions?.highest && detailedGrade.descriptions.highest.trim()) ? detailedGrade.descriptions.highest : generated.highest,
+                            lowest: (detailedGrade?.descriptions?.lowest && detailedGrade.descriptions.lowest.trim()) ? detailedGrade.descriptions.lowest : generated.lowest
+                        };
 
                         let total = null;
                         if (detailedGrade) {
@@ -1931,14 +2079,14 @@ const NilaiTableView = (props) => {
                                         value: descriptions.highest,
                                         onChange: e => handleDescriptionChange(student.id, 'highest', e.target.value),
                                         placeholder: "Deskripsi Tinggi",
-                                        className: "w-1/2 p-2 text-xs border border-green-200 bg-green-50 rounded resize-none focus:ring-1 focus:ring-green-500",
+                                        className: `w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-green-500 ${descriptions.highest && descriptions.highest.trim() !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}`,
                                         rows: 2
                                     }),
                                     React.createElement(AutoSizingTextarea, {
                                         value: descriptions.lowest,
                                         onChange: e => handleDescriptionChange(student.id, 'lowest', e.target.value),
                                         placeholder: "Deskripsi Rendah",
-                                        className: "w-1/2 p-2 text-xs border border-yellow-200 bg-yellow-50 rounded resize-none focus:ring-1 focus:ring-yellow-500",
+                                        className: `w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-yellow-500 ${descriptions.lowest && descriptions.lowest.trim() !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}`,
                                         rows: 2
                                     })
                                 )
@@ -2088,7 +2236,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
     }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
 
     return (
-        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+        React.createElement('div', { className: "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
             React.createElement('div', { className: "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0" },
                 React.createElement('span', { className: "text-sm font-medium text-slate-700 mr-4" }, "Urutkan:"),
                 React.createElement('div', { className: "flex items-center gap-4" },
@@ -2141,7 +2289,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
 
 
 const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => {
-    const { subjects, students, settings, predefinedCurriculum } = props;
+    const { subjects, students, settings } = props;
     const activeSubjects = useMemo(() => subjects.filter((s) => s.active), [subjects]);
     const selectedSubject = useMemo(() => activeSubjects.find((s) => s.id === activeTab), [activeTab, activeSubjects]);
 
@@ -2151,7 +2299,7 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     const renderSubjectView = () => {
         if (!selectedSubject) return null;
 
-        const displayMode = settings.nilaiDisplayMode || 'kuantitatif & kualitatif';
+        const displayMode = settings.nilaiDisplayMode || 'kuantitatif saja';
         
         switch (displayMode) {
             case 'kuantitatif saja':
@@ -2164,7 +2312,7 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
             React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Data Nilai"),
                 React.createElement('p', { className: "mt-1 text-slate-600" }, 

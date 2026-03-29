@@ -179,8 +179,16 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
             
             // Map Students
             let nisnColIndex = -1;
-            const headerRow = jsonData.find(row => row.some(cell => typeof cell === 'string' && cell.toUpperCase() === 'NISN'));
-            if(headerRow) nisnColIndex = headerRow.findIndex(cell => typeof cell === 'string' && cell.toUpperCase() === 'NISN');
+            let nilaiRaporColIndex = 4; // Default to Column E
+            const headerRowIndex = jsonData.findIndex(row => row.some(cell => typeof cell === 'string' && cell.toUpperCase() === 'NISN'));
+            if(headerRowIndex !== -1) {
+                const headerRow = jsonData[headerRowIndex];
+                nisnColIndex = headerRow.findIndex(cell => typeof cell === 'string' && cell.toUpperCase() === 'NISN');
+                const nrIndex = headerRow.findIndex(cell => typeof cell === 'string' && cell.toUpperCase().includes('NILAI RAPOR'));
+                if (nrIndex !== -1) {
+                    nilaiRaporColIndex = nrIndex;
+                }
+            }
             if (nisnColIndex === -1) throw new Error("Kolom 'NISN' tidak ditemukan di file Excel.");
             
             jsonData.forEach((row, index) => {
@@ -215,6 +223,7 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
                 analysis.tpMapping.set(tpCode, { text: tpText, columnIndex: colIndex });
             });
             
+            analysis.nilaiRaporColIndex = nilaiRaporColIndex;
             setConfirmationData({ analysis, matchedSubject: bestMatch });
 
         } catch (error) {
@@ -229,7 +238,7 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
         if (!analysisResult) return;
         setIsLoading(true);
         try {
-            const { workbook, ws, subject, studentMap, tpMapping, fileName } = analysisResult;
+            const { workbook, ws, subject, studentMap, tpMapping, fileName, nilaiRaporColIndex } = analysisResult;
             
             // Loop through students found in the map
             for (const [rowIndex, studentId] of studentMap.entries()) {
@@ -240,7 +249,7 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
                 // 1. Fill NILAI RAPOR
                 const finalGrade = gradeData.finalGrades?.[subject.id];
                 if (finalGrade !== null && finalGrade !== undefined) {
-                    const cellRef = XLSX.utils.encode_cell({c: 4, r: rowIndex}); // Column E
+                    const cellRef = XLSX.utils.encode_cell({c: nilaiRaporColIndex || 4, r: rowIndex});
                     XLSX.utils.sheet_add_aoa(ws, [[finalGrade]], { origin: cellRef });
                 }
 

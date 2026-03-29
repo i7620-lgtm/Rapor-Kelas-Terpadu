@@ -1,23 +1,32 @@
 
 import React, { useMemo } from 'react';
 
-const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => (
-    React.createElement('div', { 
-        className: `bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden ${onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''}`,
-        onClick: onActionClick ? onActionClick : undefined
-    },
-        React.createElement('div', { className: "overflow-hidden" },
-            React.createElement('h3', { className: "text-lg font-semibold text-slate-700 truncate", title: title }, title),
-            React.createElement('p', { className: "mt-4 text-3xl sm:text-4xl font-bold text-slate-900 truncate", title: value }, value),
-            React.createElement('p', { className: "mt-2 text-sm text-slate-500 line-clamp-2", title: description }, description)
-        ),
-        showAction && actionText && onActionClick && (
-            React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-left truncate" },
-                actionText, ' →'
+const StatCard = ({ title, value, description, actionText, onActionClick, showAction }) => {
+    const isComplete = !showAction;
+    const buttonColorClass = isComplete ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200';
+    const displayActionText = isComplete ? 'Lihat Detail' : actionText;
+
+    return (
+        React.createElement('div', { 
+            className: `bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden ${onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''}`,
+            onClick: onActionClick ? onActionClick : undefined
+        },
+            React.createElement('div', { className: "overflow-hidden" },
+                React.createElement('h3', { className: "text-lg font-semibold text-slate-700 truncate", title: title }, title),
+                React.createElement('p', { className: "mt-4 text-3xl sm:text-4xl font-bold text-slate-900 truncate", title: value }, value),
+                React.createElement('p', { className: "mt-2 text-sm text-slate-500 line-clamp-2", title: description }, description)
+            ),
+            onActionClick && (
+                React.createElement('button', { 
+                    onClick: (e) => { e.stopPropagation(); onActionClick(); }, 
+                    className: `mt-4 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors text-left truncate w-fit ${buttonColorClass}` 
+                },
+                    displayActionText, ' →'
+                )
             )
         )
-    )
-);
+    );
+};
 
 const AnalysisItem = ({ title, description, status, actionText, onActionClick }) => {
     const statusClasses = {
@@ -72,11 +81,12 @@ const StatusIcon = ({ status }) => {
 
 const ChecklistItem = ({ title, status, message, actionText, onActionClick, percentage }) => {
     const percentageColorClass = percentage === 100 ? 'bg-green-500 text-white' : 'bg-red-500 text-white';
+    const buttonColorClass = percentage === 100 ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200';
     
     return (
         React.createElement('div', { 
-            className: `relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4 overflow-hidden ${status === 'bad' && onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
-            onClick: status === 'bad' && onActionClick ? onActionClick : undefined
+            className: `relative flex items-start py-4 pl-4 pr-16 bg-white rounded-lg shadow-sm border border-slate-200 space-x-4 overflow-hidden ${onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`,
+            onClick: onActionClick ? onActionClick : undefined
         },
             React.createElement('div', { className: `absolute top-4 right-4 flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold z-10 flex-shrink-0 ${percentageColorClass}`, style: { width: '40px', height: '40px', borderRadius: '50%' } },
                 `${percentage}%`
@@ -87,8 +97,11 @@ const ChecklistItem = ({ title, status, message, actionText, onActionClick, perc
             React.createElement('div', { className: "flex-1 min-w-0" },
                 React.createElement('h4', { className: "font-semibold text-slate-800 truncate", title: title }, title),
                 React.createElement('p', { className: "text-sm text-slate-600 mt-1 line-clamp-2", title: message }, message),
-                status === 'bad' && onActionClick && (
-                     React.createElement('button', { onClick: (e) => { e.stopPropagation(); onActionClick(); }, className: "mt-2 text-sm font-semibold text-indigo-600 hover:text-indigo-800 truncate max-w-full" },
+                onActionClick && actionText && (
+                     React.createElement('button', { 
+                         onClick: (e) => { e.stopPropagation(); onActionClick(); }, 
+                         className: `mt-3 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors truncate max-w-full w-fit ${buttonColorClass}` 
+                     },
                         actionText, ' →'
                     )
                 )
@@ -247,7 +260,7 @@ const Dashboard = ({
         const settingsPercentage = Math.round((filledSettingsFields / settingsFields.length) * 100);
 
         if (settingsPercentage === 100) {
-            results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'good', message: 'Informasi dasar sekolah, kelas, dan wali kelas sudah terisi.', percentage: 100 });
+            results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'good', message: 'Informasi dasar sekolah, kelas, dan wali kelas sudah terisi.', actionText: 'Lihat Pengaturan', onActionClick: () => setActivePage('PENGATURAN'), percentage: 100 });
         } else {
             const missingSettings = settingsFields.filter(key => !settings[key] || settings[key].trim() === '');
             results.push({ category: 'Pengaturan', title: 'Informasi Dasar', status: 'bad', message: `Data berikut belum diisi: ${missingSettings.join(', ')}.`, actionText: 'Lengkapi di Pengaturan', onActionClick: () => setActivePage('PENGATURAN', missingSettings[0]), percentage: settingsPercentage });
@@ -273,7 +286,7 @@ const Dashboard = ({
         const studentDataPercentage = totalStudentDataFields > 0 ? Math.round((filledStudentDataFields / totalStudentDataFields) * 100) : 100;
 
         if (studentDataPercentage === 100) {
-            results.push({ category: 'Data Siswa', title: 'Data Siswa', status: 'good', message: 'Data pribadi dan orang tua untuk semua siswa telah terisi lengkap.', percentage: 100 });
+            results.push({ category: 'Data Siswa', title: 'Data Siswa', status: 'good', message: 'Data pribadi dan orang tua untuk semua siswa telah terisi lengkap.', actionText: 'Lihat Data Siswa', onActionClick: () => setActivePage('DATA_SISWA'), percentage: 100 });
         } else {
             results.push({ category: 'Data Siswa', title: 'Data Siswa', status: 'bad', message: `Terdapat ${totalStudentDataFields - filledStudentDataFields} data pribadi/orang tua yang belum diisi.`, actionText: 'Lengkapi Data Siswa', onActionClick: () => setActivePage('DATA_SISWA'), percentage: studentDataPercentage });
         }
@@ -319,7 +332,7 @@ const Dashboard = ({
         const gradesPercentage = totalRequiredGrades > 0 ? Math.round((totalFilledGrades / totalRequiredGrades) * 100) : (totalStudents > 0 ? 0 : 100);
 
         if (gradesPercentage === 100) {
-            results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'good', message: 'Nilai akhir untuk semua siswa telah terisi.', percentage: 100 });
+            results.push({ category: 'Data Nilai', title: 'Data Nilai', status: 'good', message: 'Nilai akhir untuk semua siswa telah terisi.', actionText: 'Lihat Data Nilai', onActionClick: () => setActivePage('DATA_NILAI'), percentage: 100 });
         } else {
             const missingCount = totalRequiredGrades - totalFilledGrades;
             results.push({ 
@@ -327,7 +340,7 @@ const Dashboard = ({
                 title: 'Data Nilai', 
                 status: 'bad', 
                 message: `Terdapat ${missingCount} nilai mata pelajaran yang belum terisi.`, 
-                actionText: 'Periksa Data Nilai', 
+                actionText: 'Lengkapi Data Nilai', 
                 onActionClick: () => setActivePage('DATA_NILAI'), 
                 percentage: gradesPercentage 
             });
@@ -341,7 +354,7 @@ const Dashboard = ({
         }).length;
         const coPercentage = Math.round((studentsWithCo / totalStudents) * 100);
         if (coPercentage === 100) {
-            results.push({ category: 'Data Lainnya', title: 'Kokurikuler', status: 'good', message: `Semua siswa telah memiliki penilaian kokurikuler.`, percentage: 100 });
+            results.push({ category: 'Data Lainnya', title: 'Kokurikuler', status: 'good', message: `Semua siswa telah memiliki penilaian kokurikuler.`, actionText: 'Lihat Kokurikuler', onActionClick: () => setActivePage('DATA_KOKURIKULER'), percentage: 100 });
         } else {
             results.push({ category: 'Data Lainnya', title: 'Kokurikuler', status: 'bad', message: `${totalStudents - studentsWithCo} siswa belum memiliki penilaian kokurikuler.`, actionText: 'Isi Penilaian', onActionClick: () => setActivePage('DATA_KOKURIKULER'), percentage: coPercentage });
         }
@@ -350,7 +363,7 @@ const Dashboard = ({
         let studentsWithExtra = currentStudents.filter(s => currentStudentExtracurriculars.some(se => se.studentId === s.id && se.assignedActivities?.some(activity => activity !== null))).length;
         const extraPercentage = Math.round((studentsWithExtra / totalStudents) * 100);
         if (extraPercentage === 100) {
-            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'good', message: 'Semua siswa memiliki setidaknya satu ekstrakurikuler.', percentage: 100 });
+            results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'good', message: 'Semua siswa memiliki setidaknya satu ekstrakurikuler.', actionText: 'Lihat Ekstrakurikuler', onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'), percentage: 100 });
         } else {
             results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'bad', message: `${totalStudents - studentsWithExtra} siswa belum memiliki ekstrakurikuler.`, actionText: 'Atur Ekstrakurikuler', onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'), percentage: extraPercentage });
         }
@@ -359,7 +372,7 @@ const Dashboard = ({
         let studentsWithAttendance = currentStudents.filter(s => currentAttendance.some(a => a.studentId === s.id && (a.sakit !== null || a.izin !== null || a.alpa !== null))).length;
         const attendancePercentage = Math.round((studentsWithAttendance / totalStudents) * 100);
         if (attendancePercentage === 100) {
-            results.push({ category: 'Data Lainnya', title: 'Data Absensi', status: 'good', message: 'Data absensi semua siswa telah terisi.', percentage: 100 });
+            results.push({ category: 'Data Lainnya', title: 'Data Absensi', status: 'good', message: 'Data absensi semua siswa telah terisi.', actionText: 'Lihat Data Absensi', onActionClick: () => setActivePage('DATA_ABSENSI'), percentage: 100 });
         } else {
             results.push({ category: 'Data Lainnya', title: 'Data Absensi', status: 'bad', message: `${totalStudents - studentsWithAttendance} siswa belum memiliki catatan absensi.`, actionText: 'Periksa Data Absensi', onActionClick: () => setActivePage('DATA_ABSENSI'), percentage: attendancePercentage });
         }
@@ -369,7 +382,7 @@ const Dashboard = ({
             let completed = currentStudents.filter(s => data[s.id] && data[s.id].trim() !== '').length;
             const percentage = Math.round((completed / totalStudents) * 100);
             if (percentage === 100) {
-                results.push({ category: 'Data Lainnya', title, status: 'good', message: `Semua siswa telah memiliki ${title.toLowerCase()}.`, percentage: 100 });
+                results.push({ category: 'Data Lainnya', title, status: 'good', message: `Semua siswa telah memiliki ${title.toLowerCase()}.`, actionText: `Lihat ${title}`, onActionClick: () => setActivePage(page), percentage: 100 });
             } else {
                 results.push({ category: 'Data Lainnya', title, status: 'bad', message: `${totalStudents - completed} siswa belum memiliki ${title.toLowerCase()}.`, actionText: 'Isi Catatan', onActionClick: () => setActivePage(page), percentage });
             }
@@ -380,7 +393,7 @@ const Dashboard = ({
     }, [settings, students, grades, notes, cocurricularData, attendance, studentExtracurriculars, subjects, setActivePage, onNavigateToNilai]);
 
   return (
-    React.createElement('div', { className: "space-y-8" },
+    React.createElement('div', { className: "space-y-8 pt-4 sm:pt-8" },
       React.createElement('div', null,
         React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Dashboard"),
         React.createElement('p', { className: "mt-2 text-slate-600" }, "Selamat datang, ", waliKelasName)

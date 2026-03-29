@@ -98,7 +98,7 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
     };
     
     return (
-        React.createElement('div', { className: "flex flex-col gap-4" },
+        React.createElement('div', { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
              React.createElement('div', { className: "flex-shrink-0" },
                 React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Absensi"),
                  React.createElement('p', { className: "mt-1 text-zinc-600" }, 
@@ -115,7 +115,7 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                             React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
@@ -138,37 +138,49 @@ const DataAbsensiPage = ({ students, attendance, onUpdateAttendance, onBulkUpdat
                                             React.createElement('th', { scope: "row", className: "px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60" }, student.namaLengkap),
                                             React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
                                                 React.createElement('input', { 
-                                                    type: "number", 
-                                                    min: "0", 
-                                                    value: studentAtt.sakit ?? '', 
-                                                    onChange: (e) => handleAttendanceChange(student.id, 'sakit', e.target.value),
-                                                    onPaste: (e) => handlePaste(e, student.id, 'sakit'),
-                                                    className: "w-20 p-2 text-center bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900", 
-                                                    "aria-label": `Jumlah sakit untuk ${student.namaLengkap}` 
-                                                })
-                                            ),
-                                            React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
-                                                React.createElement('input', { 
-                                                    type: "number", 
-                                                    min: "0", 
-                                                    value: studentAtt.izin ?? '', 
-                                                    onChange: (e) => handleAttendanceChange(student.id, 'izin', e.target.value), 
-                                                    onPaste: (e) => handlePaste(e, student.id, 'izin'),
-                                                    className: "w-20 p-2 text-center bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900", 
-                                                    "aria-label": `Jumlah izin untuk ${student.namaLengkap}` 
-                                                })
-                                            ),
-                                            React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
-                                                React.createElement('input', { 
-                                                    type: "number", 
-                                                    min: "0", 
-                                                    value: studentAtt.alpa ?? '', 
-                                                    onChange: (e) => handleAttendanceChange(student.id, 'alpa', e.target.value), 
-                                                    onPaste: (e) => handlePaste(e, student.id, 'alpa'),
-                                                    className: "w-20 p-2 text-center bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900", 
-                                                    "aria-label": `Jumlah alpa untuk ${student.namaLengkap}` 
-                                                })
-                                            ),
+                                                     type: "number", 
+                                                     min: "0", 
+                                                     value: studentAtt.sakit ?? '', 
+                                                     onChange: (e) => handleAttendanceChange(student.id, 'sakit', e.target.value),
+                                                     onPaste: (e) => handlePaste(e, student.id, 'sakit'),
+                                                     className: `w-20 p-2 text-center border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
+                                                         studentAtt.sakit !== null && studentAtt.sakit !== undefined && studentAtt.sakit !== ''
+                                                         ? "border-green-500 ring-1 ring-green-500" 
+                                                         : "border-red-500 ring-1 ring-red-500"
+                                                     }`, 
+                                                     "aria-label": `Jumlah sakit untuk ${student.namaLengkap}` 
+                                                 })
+                                             ),
+                                             React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
+                                                 React.createElement('input', { 
+                                                     type: "number", 
+                                                     min: "0", 
+                                                     value: studentAtt.izin ?? '', 
+                                                     onChange: (e) => handleAttendanceChange(student.id, 'izin', e.target.value), 
+                                                     onPaste: (e) => handlePaste(e, student.id, 'izin'),
+                                                     className: `w-20 p-2 text-center border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
+                                                         studentAtt.izin !== null && studentAtt.izin !== undefined && studentAtt.izin !== ''
+                                                         ? "border-green-500 ring-1 ring-green-500" 
+                                                         : "border-red-500 ring-1 ring-red-500"
+                                                     }`, 
+                                                     "aria-label": `Jumlah izin untuk ${student.namaLengkap}` 
+                                                 })
+                                             ),
+                                             React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
+                                                 React.createElement('input', { 
+                                                     type: "number", 
+                                                     min: "0", 
+                                                     value: studentAtt.alpa ?? '', 
+                                                     onChange: (e) => handleAttendanceChange(student.id, 'alpa', e.target.value), 
+                                                     onPaste: (e) => handlePaste(e, student.id, 'alpa'),
+                                                     className: `w-20 p-2 text-center border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
+                                                         studentAtt.alpa !== null && studentAtt.alpa !== undefined && studentAtt.alpa !== ''
+                                                         ? "border-green-500 ring-1 ring-green-500" 
+                                                         : "border-red-500 ring-1 ring-red-500"
+                                                     }`, 
+                                                     "aria-label": `Jumlah alpa untuk ${student.namaLengkap}` 
+                                                 })
+                                             ),
                                             React.createElement('td', { className: "px-6 py-4 text-center font-semibold text-zinc-800 border-b border-zinc-200/60" }, total)
                                         )
                                     )

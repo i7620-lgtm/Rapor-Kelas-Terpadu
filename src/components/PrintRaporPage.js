@@ -72,7 +72,7 @@ const EditableDescription = ({ value, onSave, placeholder, className, style, mul
                 },
                 onBlur: handleSave,
                 onKeyDown: handleKeyDown,
-                className: `w-full bg-white border border-blue-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight ${className || ''}`,
+                className: `w-full bg-white border border-indigo-500 rounded p-1 outline-none resize-none font-inherit text-inherit leading-tight ${className || ''}`,
                 style: { minHeight: '1.5em', overflow: 'hidden', ...style }
             });
         }
@@ -82,7 +82,7 @@ const EditableDescription = ({ value, onSave, placeholder, className, style, mul
             onChange: (e) => setLocalValue(e.target.value),
             onBlur: handleSave,
             onKeyDown: handleKeyDown,
-            className: `w-full bg-white border border-blue-500 rounded p-1 outline-none font-inherit text-inherit leading-tight ${className || ''}`,
+            className: `w-full bg-white border border-indigo-500 rounded p-1 outline-none font-inherit text-inherit leading-tight ${className || ''}`,
             style: { ...style }
         });
     }
@@ -219,14 +219,8 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
+    const manualDescriptions = detailedGrade?.descriptions || {};
     
-    if (detailedGrade?.descriptions) {
-        const { highest, lowest } = detailedGrade.descriptions;
-        if ((highest && highest.trim()) || (lowest && lowest.trim())) {
-            return { highest, lowest };
-        }
-    }
-
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
 
@@ -239,8 +233,15 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     };
 
     const currentGradeNumber = getGradeNumber(settings.nama_kelas);
+    
+    // Helper to merge manual with generated
+    const merge = (generated) => ({
+        highest: (manualDescriptions.highest && manualDescriptions.highest.trim()) ? manualDescriptions.highest : generated.highest,
+        lowest: (manualDescriptions.lowest && manualDescriptions.lowest.trim()) ? manualDescriptions.lowest : generated.lowest
+    });
+
     if (currentGradeNumber === null) {
-        return { highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan perkembangan yang baik.`, lowest: "" });
     }
     
     let objectivesForCurrentClass = null;
@@ -253,7 +254,7 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 
     const objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
     if (!objectivesForSubject || objectivesForSubject.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan penguasaan pada tujuan pembelajaran yang belum diisi.`, lowest: "" });
     }
 
     const gradedTps = [];
@@ -267,7 +268,10 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
-        detailedGrade.slm.forEach(slm => {
+        const activeSlmIds = settings.slmVisibility?.[subject.id];
+        const visibleSlms = activeSlmIds ? detailedGrade.slm.filter(slm => activeSlmIds.includes(slm.id)) : detailedGrade.slm;
+
+        visibleSlms.forEach(slm => {
             const tpTextsForThisSlm = tpTextMap.get(slm.id);
             if (tpTextsForThisSlm && slm.scores) {
                 slm.scores.forEach((score, index) => {
@@ -292,21 +296,21 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     }
     
     if (gradedTps.length === 0) {
-        return { highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" };
+        return merge({ highest: `${studentName} menunjukkan penguasaan yang belum terukur.`, lowest: "" });
     }
     
     if (gradedTps.length === 1) {
-        return { highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' };
+        return merge({ highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(gradedTps[0].text)}.`, lowest: '' });
     }
 
     const scores = gradedTps.map(tp => tp.score);
     const allScoresEqual = scores.every(s => s === scores[0]);
 
     if (allScoresEqual) {
-        return { 
+        return merge({ 
             highest: `${studentName} menunjukkan penguasaan yang merata pada semua tujuan pembelajaran.`,
             lowest: `Terus pertahankan prestasi dan semangat belajar.` 
-        };
+        });
     } else {
         let highestTp = gradedTps[0];
         let lowestTp = gradedTps[0];
@@ -320,10 +324,10 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
             }
         }
         
-        return { 
+        return merge({ 
             highest: `${studentName} menunjukkan penguasaan dalam ${lowercaseFirst(highestTp.text)}.`,
             lowest: `${studentName} perlu bimbingan dalam ${lowercaseFirst(lowestTp.text)}.`
-        };
+        });
     }
 };
 
@@ -677,7 +681,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                     React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
                         React.createElement(EditableDescription, { 
                             value: item.description.highest, 
-                            onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val),
+                            onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val, item.description),
                             placeholder: "Klik untuk edit deskripsi capaian tertinggi...",
                             multiline: true
                         }),
@@ -685,7 +689,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                             React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
                             React.createElement(EditableDescription, { 
                                 value: item.description.lowest, 
-                                onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val),
+                                onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val, item.description),
                                 placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)...",
                                 multiline: true
                             })
@@ -1187,7 +1191,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
             const allItems = [];
             
-            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.getBoundingClientRect().height);
+            const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.offsetHeight);
             reportSubjects.forEach((subject, index) => {
                 allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
             });
@@ -1209,7 +1213,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             footerItems.forEach(item => {
                 const element = item.ref.current;
                 if (element) {
-                    const height = element.getBoundingClientRect().height;
+                    const height = element.offsetHeight;
                     const style = window.getComputedStyle(element);
                     const marginTop = parseFloat(style.marginTop);
                     const marginBottom = parseFloat(style.marginBottom);
@@ -1234,11 +1238,11 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             while (currentItemIndex < allItems.length) {
                 let currentChunk = [];
                 const availableHeight = isFirstPage ? firstPageAvailableHeight : subsequentPageAvailableHeight;
-                let heightUsed = isFirstPage ? studentInfoRef.current.getBoundingClientRect().height : 0;
+                let heightUsed = isFirstPage ? studentInfoRef.current.offsetHeight : 0;
                 
                 const hasAcademicItemsRemaining = allItems.slice(currentItemIndex).some(item => item.type === 'academic');
                 if (hasAcademicItemsRemaining) {
-                    heightUsed += tableHeaderRef.current.getBoundingClientRect().height;
+                    heightUsed += tableHeaderRef.current.offsetHeight;
                     heightUsed += 5; // Add buffer for table margin-top
                 }
 
@@ -1285,7 +1289,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
         return React.createElement(React.Fragment, null,
             React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             React.createElement('div', { 
-                className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 
+                className: 'report-page bg-white shadow-lg border box-border relative font-times', 
                 style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
             },
                  React.createElement('div', { className: 'absolute flex flex-col', style: {
@@ -1316,16 +1320,16 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     return (
         React.createElement(React.Fragment, null,
             React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
-            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
+            selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                 React.createElement(CoverPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
             ),
-            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
+            selectedPages.schoolIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'schoolIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
                     React.createElement(SchoolIdentityPage, { settings: settings, onUpdateSettings: restProps.onUpdateSettings })
                 )
             ),
-            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
+            selectedPages.studentIdentity && React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'studentIdentity', style: pageStyle },
                 React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', { style: { position: 'absolute', top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${PAGE_BOTTOM_MARGIN_CM}cm` } },
                     React.createElement(StudentIdentityPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
@@ -1350,7 +1354,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
 
 
-                return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg mx-auto my-8 border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
+                return React.createElement('div', { key: `academic-${student.id}-${pageIndex}`, className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'academic', style: pageStyle },
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
@@ -1410,6 +1414,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         showPrincipalSignature: true,
         showTeacherSignature: true
     });
+    const [scale, setScale] = useState(1);
+    const printAreaRef = useRef(null);
 
     const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
     const isFaseA = useMemo(() => gradeNumber === 1 || gradeNumber === 2, [gradeNumber]);
@@ -1530,9 +1536,39 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         return students.filter(s => String(s.id) === selectedStudentId);
     }, [students, selectedStudentId]);
     
-    const pageStyle = {
+    useEffect(() => {
+        const updateScale = () => {
+            if (printAreaRef.current && !isPrinting) {
+                const containerWidth = printAreaRef.current.clientWidth;
+                // PAPER_SIZES[paperSize].width is like "21cm" or "21.5cm"
+                const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
+                const paperWidthPx = paperWidthCm * 37.7952755906; // Approximate cm to px
+                const margin = 32; // 2rem margin
+                const availableWidth = containerWidth - margin;
+                if (availableWidth < paperWidthPx) {
+                    setScale(availableWidth / paperWidthPx);
+                } else {
+                    setScale(1);
+                }
+            } else {
+                setScale(1);
+            }
+        };
+
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+    }, [paperSize, isPrinting]);
+
+    const pageStyle = isPrinting ? {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
+    } : {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top center',
+        marginBottom: `calc(${PAPER_SIZES[paperSize].height} * ${scale - 1})`,
     };
 
     const pageCheckboxes = [
@@ -1556,7 +1592,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     if (grades.length === 0) {
         return (
             React.createElement('div', { className: "p-6" },
-                React.createElement('div', { className: "bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
+                React.createElement('div', { className: "bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
                     React.createElement('h3', { className: "text-lg font-semibold mb-2" }, "Nilai belum lengkap"),
                     React.createElement('p', null, "Silahkan lengkapi nilai di halaman 'Data Nilai'.")
                 )
@@ -1658,7 +1694,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 )
             ),
             
-            React.createElement('div', { id: "print-area", className: "space-y-8" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
                 studentsToRender.map(student => {
                     const rank = studentRanks.get(student.id)?.rank;
                     return React.createElement(ReportPagesForStudent, { 
@@ -1686,5 +1722,5 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         )
     );
 };
-
+ 
 export default PrintRaporPage;

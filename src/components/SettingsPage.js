@@ -1,4 +1,4 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
@@ -447,17 +447,24 @@ const KopSuratPreview = ({ settings }) => {
     );
 };
 
-const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, className, ...props }) => {
+const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange, onBlur, onKeyDown, className, status, ...props }) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
+
+    let borderClass = "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500";
+    if (status === 'bad') {
+        borderClass = "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500";
+    } else if (status === 'good') {
+        borderClass = "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500";
+    }
 
     return React.createElement('div', { className: "w-full" },
         React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
             label
         ),
         React.createElement('div', { 
-            className: `flex items-center w-full border border-slate-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 overflow-hidden ${className || 'bg-white'}`
+            className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden ${borderClass} ${className || 'bg-white'}`
         },
             React.createElement('input', {
                 type: inputType,
@@ -467,7 +474,7 @@ const FormField = ({ label, id, type = 'text', placeholder = '', value, onChange
                 onChange: onChange,
                 onBlur: onBlur,
                 onKeyDown: onKeyDown,
-                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400 w-full",
+                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400",
                 placeholder: placeholder,
                 ...props
             }),
@@ -820,6 +827,8 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
         return null;
     };
 
+    const getStatus = (value) => value && String(value).trim() !== '' ? 'good' : 'bad';
+
     useEffect(() => {
         setLocalClassName(settings.nama_kelas || '');
     }, [settings.nama_kelas]);
@@ -957,7 +966,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                 onConfirm: confirmationModal.onConfirm,
                 title: confirmationModal.title
             }, confirmationModal.children),
-            React.createElement('div', { className: "space-y-8" },
+            React.createElement('div', { className: "space-y-8 pt-4 sm:pt-8" },
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-3xl font-bold text-slate-800" }, "Pengaturan"),
                     React.createElement('p', { className: "mt-2 text-slate-600" }, "Kelola informasi sekolah, periode akademik, dan data penting lainnya. Perubahan disimpan secara otomatis.")
@@ -977,7 +986,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                             React.createElement('div', { className: "grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4" },
                                 React.createElement('div', { className: "lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4" },
                                     React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Nama Dinas Pendidikan", id: "nama_dinas_pendidikan", value: settings.nama_dinas_pendidikan, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })),
-                                    React.createElement(FormField, { label: "Nama Sekolah", id: "nama_sekolah", value: settings.nama_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Nama Sekolah", id: "nama_sekolah", value: settings.nama_sekolah, status: getStatus(settings.nama_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement(FormField, { label: "NPSN", id: "npsn", value: settings.npsn, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', { className: "md:col-span-2" }, React.createElement(FormField, { label: "Alamat Sekolah", id: "alamat_sekolah", value: settings.alamat_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })),
                                     React.createElement(FormField, { label: "Desa / Kelurahan", id: "desa_kelurahan", value: settings.desa_kelurahan, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
@@ -1014,11 +1023,12 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                         id: "nama_kelas", 
                                         placeholder: "e.g. 6a atau 6A atau VIA", 
                                         value: localClassName,
+                                        status: getStatus(localClassName),
                                         onChange: handleLocalClassNameChange,
                                         onBlur: commitClassNameChange,
                                         onKeyDown: handleClassNameKeyDown 
                                     }),
-                                    React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Tahun Ajaran", id: "tahun_ajaran", placeholder: "e.g. 2023/2024", value: settings.tahun_ajaran, status: getStatus(settings.tahun_ajaran), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', null,
                                         React.createElement('label', { htmlFor: 'semester', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Semester'),
                                         React.createElement('select', { 
@@ -1028,7 +1038,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             onChange: onSettingsChange, 
                                             onBlur: onSave, 
                                             onKeyDown: handleKeyDown,
-                                            className: "w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-slate-900"
+                                            className: `w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 ${getStatus(settings.semester) === 'bad' ? 'border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500' : 'border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500'}`
                                         },
                                             React.createElement('option', { value: '' }, 'Pilih Semester...'),
                                             React.createElement('option', { value: 'Ganjil' }, 'Ganjil'),
@@ -1041,10 +1051,10 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 // Kolom 2: Kepala Sekolah dan Guru
                                 React.createElement('div', { className: "flex flex-col gap-4 h-full" },
                                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
-                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, status: getStatus(settings.nip_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, status: getStatus(settings.nip_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
                                 ),
 
                                 // Kolom 3: Tanda Tangan (Disesuaikan Tinggi)
@@ -1091,19 +1101,19 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Tampilan Input Nilai"),
                                 React.createElement('p', { className: "text-sm text-slate-600 mb-3" }, "Pilih bagaimana Anda ingin melihat dan memasukkan data nilai per mata pelajaran."),
                                 React.createElement('div', { className: "space-y-2" },
-                                    ['kuantitatif & kualitatif', 'kuantitatif saja', 'kualitatif saja'].map(mode => {
+                                    ['kuantitatif saja', 'kualitatif saja', 'kuantitatif & kualitatif'].map(mode => {
                                         const labels = {
-                                            'kuantitatif & kualitatif': 'Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
-                                            'kuantitatif saja': 'Tampilan Tabel (Nilai Kuantitatif)',
-                                            'kualitatif saja': 'Tampilan Tabel (Nilai Kualitatif)',
+                                            'kuantitatif saja': '1. Tampilan Tabel Kuantitatif (Default)',
+                                            'kualitatif saja': '2. Tampilan Tabel Kualitatif',
+                                            'kuantitatif & kualitatif': '3. Tampilan Kartu (Nilai Kuantitatif dan Kualitatif)',
                                         };
                                         const descriptions = {
-                                            'kuantitatif & kualitatif': 'Tampilan ringkas per lingkup materi, membuka jendela terpisah untuk input nilai.',
                                             'kuantitatif saja': 'Tampilan seperti spreadsheet dengan input nilai angka (0-100).',
                                             'kualitatif saja': 'Tampilan seperti spreadsheet dengan input nilai kualitatif (BB, MB, BSH, SB).',
+                                            'kuantitatif & kualitatif': 'Tampilan ringkas per lingkup materi, membuka jendela terpisah untuk input nilai.',
                                         };
                                         return React.createElement('label', { key: mode, className: "flex items-start p-3 border rounded-lg cursor-pointer hover:bg-slate-50" },
-                                            React.createElement('input', { type: "radio", name: "nilaiDisplayMode", value: mode, checked: (settings.nilaiDisplayMode || 'kuantitatif & kualitatif') === mode, onChange: onSettingsChange, className: "h-4 w-4 text-indigo-600 mt-1" }),
+                                            React.createElement('input', { type: "radio", name: "nilaiDisplayMode", value: mode, checked: (settings.nilaiDisplayMode || 'kuantitatif saja') === mode, onChange: onSettingsChange, className: "h-4 w-4 text-indigo-600 mt-1" }),
                                             React.createElement('div', { className: "ml-3" },
                                                 React.createElement('span', { className: "block text-sm font-medium text-slate-800" }, labels[mode]),
                                                 React.createElement('span', { className: "block text-sm text-slate-500" }, descriptions[mode])
@@ -1125,7 +1135,10 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                             ),
 
                             React.createElement('div', { className: "mt-8 border-t pt-6" },
-                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Cara Pengolahan Nilai Akhir Mapel"),
+                                React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-2" }, "Cara Pengolahan Nilai Akhir Mapel"),
+                                React.createElement('p', { className: "mb-4 text-xs text-slate-500" },
+                                    React.createElement('span', { className: "text-amber-600 font-bold" }, "Catatan:"), " Jika memilih \"Pembobotan\", silakan atur persentase bobot di menu ", React.createElement('strong', null, "Data Nilai"), " pada masing-masing mata pelajaran."
+                                ),
                                 React.createElement('div', { className: "overflow-x-auto border rounded-lg" },
                                     React.createElement('table', { className: "w-full text-sm text-left text-slate-500" },
                                         React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100" },
@@ -1153,9 +1166,6 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             ))
                                         )
                                     )
-                                ),
-                                React.createElement('p', { className: "mt-2 text-xs text-slate-500" },
-                                    React.createElement('span', { className: "text-amber-600 font-bold" }, "Catatan:"), " Jika memilih \"Pembobotan\", silakan atur persentase bobot di menu ", React.createElement('strong', null, "Data Nilai"), " pada masing-masing mata pelajaran."
                                 )
                             )
                         )
@@ -1163,6 +1173,21 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                     
                     React.createElement('div', { className: "bg-white p-6 rounded-xl shadow-sm border border-indigo-200/60" },
                         React.createElement('h3', { className: "text-lg font-bold text-slate-800 mb-4 pb-2 border-b border-slate-100" }, "Preferensi Sistem"),
+                        React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4" },
+                            React.createElement('div', null,
+                                React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Olah Nilai Otomatis"),
+                                React.createElement('p', { className: "text-xs text-slate-500 mt-1 max-w-md" }, "Aktifkan fitur pengolahan nilai otomatis dengan rumus persentase di halaman Data Nilai.")
+                            ),
+                            React.createElement('label', { className: "relative inline-flex items-center cursor-pointer" },
+                                React.createElement('input', {
+                                    type: "checkbox",
+                                    className: "sr-only peer",
+                                    checked: settings.enableAutoRegression || false,
+                                    onChange: (e) => onSettingsChange({ target: { name: 'enableAutoRegression', value: e.target.checked, type: 'checkbox' } })
+                                }),
+                                React.createElement('div', { className: "w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" })
+                            )
+                        ),
                         React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4" },
                             React.createElement('div', null,
                                 React.createElement('h4', { className: "text-sm font-medium text-slate-900" }, "Pengingat Keluar Aplikasi"),

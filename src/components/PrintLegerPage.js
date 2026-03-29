@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';  
+import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
@@ -156,6 +156,17 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
 const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => {
     const [paperSize, setPaperSize] = useState('A4');
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isPrintingState, setIsPrintingState] = useState(false);
+    useEffect(() => {
+        const beforePrint = () => setIsPrintingState(true);
+        const afterPrint = () => setIsPrintingState(false);
+        window.addEventListener('beforeprint', beforePrint);
+        window.addEventListener('afterprint', afterPrint);
+        return () => {
+            window.removeEventListener('beforeprint', beforePrint);
+            window.removeEventListener('afterprint', afterPrint);
+        };
+    }, []);
     const [isCompact, setIsCompact] = useState(false);
     const [isMeasuring, setIsMeasuring] = useState(true);
     const [nameFontSize, setNameFontSize] = useState(null);
@@ -168,13 +179,38 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const pageRef = useRef(null);
     const contentRef = useRef(null);
     const cmRef = useRef(null);
+    const printAreaRef = useRef(null);
     const [cmToPx, setCmToPx] = useState(0);
+    const [scale, setScale] = useState(1);
 
     useEffect(() => {
         if (cmRef.current) {
             setCmToPx(cmRef.current.offsetHeight);
         }
     }, []);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (printAreaRef.current && !isPrintingState) {
+                const containerWidth = printAreaRef.current.clientWidth;
+                const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
+                const paperWidthPx = paperWidthCm * 37.7952755906;
+                const margin = 32; // 2rem margin
+                const availableWidth = containerWidth - margin;
+                if (availableWidth < paperWidthPx) {
+                    setScale(availableWidth / paperWidthPx);
+                } else {
+                    setScale(1);
+                }
+            } else {
+                setScale(1);
+            }
+        };
+
+        updateScale();
+        window.addEventListener('resize', updateScale);
+        return () => window.removeEventListener('resize', updateScale);
+    }, [paperSize, isPrintingState]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -396,7 +432,9 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     transform-origin: top center;
                     box-shadow: none !important;
                     border: none !important;
-                    margin: 0 !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                    page-break-after: always;
                 }
             }
         `;
@@ -409,7 +447,16 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }, 500);
     };
 
-    const pageStyle = { width: PAPER_SIZES[paperSize].width, height: PAPER_SIZES[paperSize].height };
+    const pageStyle = isPrintingState ? {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+    } : {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+        transform: `scale(${scale})`,
+        transformOrigin: 'top center',
+        marginBottom: `calc(${PAPER_SIZES[paperSize].height} * ${scale - 1})`,
+    };
     
     const tableHeader = useMemo(() => (
         React.createElement('thead', { className: isCompact ? 'text-[6pt]' : 'text-[6.5pt]' },
@@ -441,7 +488,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         if (rank === 1) return 'bg-yellow-200';
         if (rank === 2) return 'bg-slate-300';
         if (rank === 3) return 'bg-orange-200';
-        if (rank >= 4 && rank <= 10) return 'bg-blue-100';
+        if (rank >= 4 && rank <= 10) return 'bg-indigo-100';
         return null;
     };
 
@@ -540,7 +587,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     if (grades.length === 0) {
         return (
             React.createElement('div', { className: "p-6" },
-                React.createElement('div', { className: "bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
+                React.createElement('div', { className: "bg-indigo-50 border border-indigo-200 text-indigo-800 rounded-lg p-6 max-w-md mx-auto shadow-sm" },
                     React.createElement('h3', { className: "text-lg font-semibold mb-2" }, "Nilai belum lengkap"),
                     React.createElement('p', null, "Silahkan lengkapi nilai di halaman 'Data Nilai'.")
                 )
@@ -550,7 +597,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     return React.createElement(React.Fragment, null,
         React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
-        React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 print-hidden" },
+        React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
             React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Leger"),
@@ -580,10 +627,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 )
             )
         ),
-        React.createElement('div', { id: "print-area" },
+        React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
             (students.length > 0) && React.createElement('div', {
                 ref: pageRef,
-                className: "leger-page bg-white mx-auto shadow-lg my-8 border relative",
+                className: "leger-page bg-white shadow-lg border relative",
                 style: { ...pageStyle, visibility: isMeasuring ? 'hidden' : 'visible' }
             },
                 React.createElement(ReportHeader, { settings: settings }),

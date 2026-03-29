@@ -161,6 +161,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     };
 
     const renderCellInput = (student, fieldDef) => {
+        const isFilled = student[fieldDef.key] && String(student[fieldDef.key]).trim() !== '';
         const commonProps = {
             id: `${student.id}-${fieldDef.key}`,
             name: fieldDef.key,
@@ -168,7 +169,11 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             onChange: (e) => handleInputChange(student.id, fieldDef.key, e.target.value),
             onBlur: handleInputBlur,
             onPaste: (e) => handlePaste(e, student.id, fieldDef.key),
-            className: "w-full px-2 py-1.5 text-sm text-zinc-700 bg-white border border-zinc-300/60 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 focus:outline-none transition-shadow",
+            className: `w-full px-2 py-1.5 text-sm rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 focus:outline-none transition-all border ${
+                isFilled 
+                ? "border-green-500 ring-1 ring-green-500" 
+                : "border-red-500 ring-1 ring-red-500"
+            }`,
             placeholder: fieldDef.placeholder || fieldDef.label // Use specific placeholder or fallback to label
         };
 
@@ -232,7 +237,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             }),
             
             // Fixed Header Section
-            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0" },
+            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0 pt-0 pb-2 sm:pb-4" },
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Siswa"),
                     React.createElement('p', { className: "mt-1 text-zinc-600" },
@@ -248,12 +253,12 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             ),
 
             // Scrollable Table Container
-            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                 React.createElement('div', { className: "flex-1 overflow-auto" },
                     React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                        React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
+                    React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30 shadow-sm" },
                             React.createElement('tr', null,
-                                React.createElement('th', { scope: "col", className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
+                                React.createElement('th', { scope: "col", className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 top-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px]" }, "Nama Lengkap"),
                                 otherFields.map(field => 
                                     React.createElement('th', { key: field.key, scope: "col", className: "px-4 py-3 border-b border-zinc-200/60 min-w-[180px] whitespace-nowrap text-center" }, field.label)
