@@ -844,8 +844,8 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                             React.createElement('table', { className: "w-full text-sm text-left" },
                                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-[30]" },
                                     React.createElement('tr', null,
-                                        React.createElement('th', { rowSpan: headerRowSpan, className: "px-6 py-3 sticky left-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle border-b" }, "No"),
-                                        React.createElement('th', { rowSpan: headerRowSpan, className: "px-6 py-3 align-middle border-b" }, "Nama Siswa"),
+                                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle border-b border-r box-border", style: { left: 0, width: '50px', minWidth: '50px', maxWidth: '50px' } }, "No"),
+                                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 align-middle border-b border-r sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[200px] max-w-[300px] box-border", style: { left: '50px' } }, "Nama Siswa"),
                                         isSLM ?
                                             localObjectives.map((_, i) => (
                                                 React.createElement('th', { key: `tp-header-${i}`, colSpan: 2, className: "px-2 py-3 text-center border-b border-l" }, `TP ${i + 1}`)
@@ -909,8 +909,8 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
                                         }
 
                                         return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
-                                            React.createElement('td', { className: "px-6 py-2 sticky left-0 z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top" }, index + 1),
-                                            React.createElement('td', { className: "px-6 py-2 font-medium" }, student.namaLengkap),
+                                            React.createElement('td', { className: "p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border", style: { left: 0, width: '50px', minWidth: '50px', maxWidth: '50px' } }, index + 1),
+                                            React.createElement('td', { className: "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border", style: { left: '50px' } }, student.namaLengkap),
                                             isSLM ? 
                                                 localObjectives.map((_, i) => {
                                                     const key = `${student.id}_slm_${item.id}_tp_${i}`;
@@ -1968,8 +1968,8 @@ const NilaiTableView = (props) => {
              React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                     React.createElement('tr', null,
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-r border-slate-200 min-w-[50px] max-w-[50px] w-[50px] sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, "No"),
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky left-[50px] z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, "Nama Siswa"),
+                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border", style: { left: 0, width: '50px', minWidth: '50px', maxWidth: '50px' } }, "No"),
+                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border", style: { left: '50px' } }, "Nama Siswa"),
                         slmHeaders.map(h => {
                             let dynamicMinWidth = 'auto';
                             // If SLM has 1 or 2 TPs, we force a minimum width for the entire SLM header section
@@ -2065,8 +2065,8 @@ const NilaiTableView = (props) => {
                         }
                         
                         return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
-                            React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 min-w-[50px] max-w-[50px] w-[50px] sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border" }, index + 1),
-                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, student.namaLengkap),
+                            React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border", style: { left: 0, width: '50px', minWidth: '50px', maxWidth: '50px' } }, index + 1),
+                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border", style: { left: '50px' } }, student.namaLengkap),
                             tpHeaders.map(h => React.createElement('td', { key: `${student.id}-${h.slmId}-${h.tpIndex}`, className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" },
                                 renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`)
                             )),
@@ -2254,8 +2254,8 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                 React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
                     React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                         React.createElement('tr', null,
-                            React.createElement('th', { className: "px-3 py-3 w-10 text-center sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, sortBy === 'rank' ? 'Peringkat' : 'No'),
-                            React.createElement('th', { className: "px-6 py-3 min-w-[200px] border-b border-slate-200" }, "Nama Siswa"),
+                            React.createElement('th', { className: "p-2 text-center sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border", style: { left: 0, width: '60px', minWidth: '60px', maxWidth: '60px' } }, sortBy === 'rank' ? 'Peringkat' : 'No'),
+                            React.createElement('th', { className: "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border", style: { left: '60px' } }, "Nama Siswa"),
                             ...displaySubjects.map(s => React.createElement('th', { key: s.id, className: "px-2 py-3 w-20 text-center border-b border-slate-200", title: s.fullName }, s.label)),
                             React.createElement('th', { className: "px-2 py-3 w-20 text-center border-b border-slate-200" }, "Jumlah"),
                             React.createElement('th', { className: "px-2 py-3 w-20 text-center border-b border-slate-200" }, "Rata-rata")
@@ -2266,8 +2266,8 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                             const predicateCValue = parseInt(predikats?.c, 10);
                             return (
                                 React.createElement('tr', { key: data.id, className: "bg-white hover:bg-slate-50" },
-                                    React.createElement('td', { className: "px-3 py-2 text-center font-medium sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-slate-200" }, sortBy === 'rank' ? data.rank : data.no),
-                                    React.createElement('th', { className: `px-6 py-2 font-medium whitespace-nowrap border-b border-slate-200 ${data.hasFailingGrade ? 'text-red-600' : 'text-slate-900'}` }, data.namaLengkap),
+                                    React.createElement('td', { className: "p-2 text-center font-medium sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border", style: { left: 0, width: '60px', minWidth: '60px', maxWidth: '60px' } }, sortBy === 'rank' ? data.rank : data.no),
+                                    React.createElement('th', { className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? 'text-red-600' : 'text-slate-900'}`, style: { left: '60px' } }, data.namaLengkap),
                                     ...displaySubjects.map(subject => {
                                         const grade = data.grades[subject.id];
                                         const isBelowC = !isNaN(predicateCValue) && typeof grade === 'number' && grade < predicateCValue;
@@ -2340,7 +2340,7 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
                 )
             )
         )
-    );  
+    );
 };
 
 export default DataNilaiPage;
