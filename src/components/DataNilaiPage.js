@@ -1968,8 +1968,8 @@ const NilaiTableView = (props) => {
              React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
                 React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30" },
                     React.createElement('tr', null,
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-r border-slate-200 w-10 sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px] sticky left-10 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "Nama Siswa"),
+                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-r border-slate-200 min-w-[50px] max-w-[50px] w-[50px] sticky left-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, "No"),
+                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky left-[50px] z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, "Nama Siswa"),
                         slmHeaders.map(h => {
                             let dynamicMinWidth = 'auto';
                             // If SLM has 1 or 2 TPs, we force a minimum width for the entire SLM header section
@@ -2065,8 +2065,8 @@ const NilaiTableView = (props) => {
                         }
                         
                         return React.createElement('tr', { key: student.id, className: "border-b hover:bg-slate-50" },
-                            React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top" }, index + 1),
-                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top sticky left-10 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, student.namaLengkap),
+                            React.createElement('td', { className: "p-2 text-center border-b border-r border-slate-200 min-w-[50px] max-w-[50px] w-[50px] sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border" }, index + 1),
+                            React.createElement('td', { className: "p-2 border-b border-r border-slate-200 align-top sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border" }, student.namaLengkap),
                             tpHeaders.map(h => React.createElement('td', { key: `${student.id}-${h.slmId}-${h.tpIndex}`, className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" },
                                 renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`)
                             )),
