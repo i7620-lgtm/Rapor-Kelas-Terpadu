@@ -1,7 +1,7 @@
 // sw.js
 
 // GANTI VERSI INI SETIAP KALI ADA UPDATE KODE (Misal: v9, v10, dst)
-const CACHE_NAME = 'rkt-cache-v9';
+const CACHE_NAME = 'rkt-cache-v10';
 
 const urlsToCache = [
   '/',
