@@ -2343,4 +2343,4 @@ const DataNilaiPage = ({ activeTab = 'keseluruhan', onTabChange, ...props }) => 
     );
 };
 
-export default DataNilaiPage; 
+export default DataNilaiPage;
