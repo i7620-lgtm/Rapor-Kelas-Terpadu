@@ -121,7 +121,6 @@ const Dashboard = ({
     notes = {}, 
     cocurricularData = {},
     attendance = [], 
-    extracurriculars = [], 
     studentExtracurriculars = [] 
 }) => {
   const waliKelasName = settings.nama_wali_kelas || "Wali Kelas";
