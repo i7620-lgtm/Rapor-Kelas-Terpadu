@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { NAV_ITEMS, COCURRICULAR_DIMENSIONS, QUALITATIVE_DESCRIPTORS, FORMATIVE_ASSESSMENT_TYPES } from './constants.js';
+import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
 import Navigation from './components/Navigation.js';
 import Dashboard from './components/Dashboard.js';
 import PlaceholderPage from './components/PlaceholderPage.js';
@@ -21,23 +21,6 @@ import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
 import LockScreen from './components/LockScreen.js';
 import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
-
-const RKT_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-const dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open('RKT_OfflineDB', 2);
-    request.onerror = () => reject("Error opening IndexedDB.");
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = event => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('pendingSyncs')) {
-            db.createObjectStore('pendingSyncs', { keyPath: 'id' });
-        }
-        if (!db.objectStoreNames.contains('backups')) {
-            db.createObjectStore('backups', { keyPath: 'id' });
-        }
-    };
-});
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Islam)' },
@@ -219,7 +202,7 @@ const chunkString = (str, len) => {
 };
 
 const App = () => {
-  const { isUpdateAvailable, updateAssets } = useServiceWorker();
+  useServiceWorker();
   const [activePage, setActivePage] = useState('DASHBOARD');
   const [targetSection, setTargetSection] = useState(null);
   const mainRef = useRef(null);
@@ -244,7 +227,6 @@ const App = () => {
   }, [activePage, targetSection]);
   const [toast, setToast] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [presets, setPresets] = useState(null);
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -510,7 +492,6 @@ const App = () => {
                 const response = await fetch('/presets.json');
                 if (!response.ok) throw new Error('Failed to fetch presets');
                 const presetsData = await response.json();
-                setPresets(presetsData);
                 setExtracurriculars(prev => prev.length === 0 ? presetsData.extracurriculars || [] : prev);
             } catch (error) {
                 console.error("Error initialization:", error);
@@ -733,6 +714,28 @@ const App = () => {
         
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asetRows), "Aset Gambar");
 
+        const fotoSiswaRows = [["ID Siswa", "Part Index", "Data Base64"]];
+        for (const student of students) {
+            if (student.foto && typeof student.foto === 'string') {
+                let base64Data = student.foto;
+                if (base64Data.startsWith('blob:')) {
+                    try {
+                        const res = await fetch(base64Data);
+                        const blob = await res.blob();
+                        base64Data = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (e) {
+                        console.error(`Failed to convert blob to base64 for foto ${student.id}`, e);
+                    }
+                }
+                chunkString(base64Data, 30000).forEach((c, i) => fotoSiswaRows.push([student.id, i, c]));
+            }
+        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fotoSiswaRows), "Foto Siswa");
+
         return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
     } catch (e) { console.error("Export Error:", e); return null; }
   }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, predefinedCurriculum]);
@@ -797,8 +800,53 @@ const App = () => {
         if (wsMapel) { const rawMapel = XLSX.utils.sheet_to_json(wsMapel); nSub = defaultSubjects.map(ds => { const found = rawMapel.find(r => r['.'] === ds.id || r['ID'] === ds.id); if (found) return { ...ds, active: found['Status Aktif'] === 'Aktif', curriculumKey: found['Kunci Kurikulum'] || ds.fullName }; return ds; }); rawMapel.forEach(r => { const id = r['.'] || r['ID']; if (id && !defaultSubjects.some(ds => ds.id === id)) nSub.push({ id, fullName: r['Nama Lengkap'] || r['Nama Mata Pelajaran'] || id, label: r['Singkatan'] || id, active: r['Status Aktif'] === 'Aktif', curriculumKey: r['Kunci Kurikulum'] || r['Nama Lengkap'] }); }); }
         const wsEkstraDef = findSheet(["Ekstrakurikuler"]);
         if (wsEkstraDef) nEx = XLSX.utils.sheet_to_json(wsEkstraDef).map(r => ({ id: r['ID Unik (Jangan Diubah)'], name: r['Nama Ekstrakurikuler'], active: r['Status Aktif'] === 'Aktif' }));
+                const wsFoto = findSheet(["Foto Siswa"]);
+        const fotoSiswaMap = {};
+        if (wsFoto) {
+            const fotoData = XLSX.utils.sheet_to_json(wsFoto, { header: 1 });
+            const chunksById = {};
+            fotoData.forEach(row => {
+                const idSiswa = row[0] ? String(row[0]) : '';
+                const partIdx = parseInt(row[1], 10);
+                const data = row[2];
+                if (idSiswa && idSiswa !== 'ID Siswa' && data) {
+                    if (!chunksById[idSiswa]) chunksById[idSiswa] = [];
+                    chunksById[idSiswa][partIdx] = data;
+                }
+            });
+            Object.entries(chunksById).forEach(([id, chunks]) => {
+                fotoSiswaMap[id] = chunks.join('');
+            });
+        }
         const wsS = findSheet(["Daftar Siswa", "Students", "Siswa", "Data Siswa"]);
-        if (wsS) nStud = XLSX.utils.sheet_to_json(wsS).map((s, idx) => ({ id: String(s['ID Siswa (Otomatis)'] || s['ID Siswa'] || s['ID'] || `s_${Date.now()}_${idx}`), namaLengkap: s['Nama Lengkap'] != null ? String(s['Nama Lengkap']) : '', namaPanggilan: s['Nama Panggilan'] != null ? String(s['Nama Panggilan']) : '', nis: s['NIS'] != null ? String(s['NIS']) : '', nisn: s['NISN'] != null ? String(s['NISN']) : '', ttl: s['Tempat, Tanggal Lahir'] != null ? String(s['Tempat, Tanggal Lahir']) : '', jenisKelamin: s['Jenis Kelamin'] != null ? String(s['Jenis Kelamin']) : '', agama: s['Agama'] != null ? String(s['Agama']) : '', asalTk: s['Asal TK'] != null ? String(s['Asal TK']) : '', alamatSiswa: s['Alamat Siswa'] != null ? String(s['Alamat Siswa']) : '', diterimaDiKelas: s['Diterima di Kelas'] != null ? String(s['Diterima di Kelas']) : '', diterimaTanggal: s['Diterima Tanggal'] != null ? String(s['Diterima Tanggal']) : '', namaAyah: s['Nama Ayah'] != null ? String(s['Nama Ayah']) : '', namaIbu: s['Nama Ibu'] != null ? String(s['Nama Ibu']) : '', pekerjaanAyah: s['Pekerjaan Ayah'] != null ? String(s['Pekerjaan Ayah']) : '', pekerjaanIbu: s['Pekerjaan Ibu'] != null ? String(s['Pekerjaan Ibu']) : '', alamatOrangTua: s['Alamat Orang Tua'] != null ? String(s['Alamat Orang Tua']) : '', teleponOrangTua: s['Telepon Orang Tua'] != null ? String(s['Telepon Orang Tua']) : '', namaWali: s['Nama Wali'] != null ? String(s['Nama Wali']) : '', pekerjaanWali: s['Pekerjaan Wali'] != null ? String(s['Pekerjaan Wali']) : '', alamatWali: s['Alamat Wali'] != null ? String(s['Alamat Wali']) : '', teleponWali: s['Telepon Wali'] != null ? String(s['Telepon Wali']) : '' }));
+        if (wsS) nStud = XLSX.utils.sheet_to_json(wsS).map((s, idx) => {
+            const sid = String(s['ID Siswa (Otomatis)'] || s['ID Siswa'] || s['ID'] || `s_${Date.now()}_${idx}`);
+            return {
+                id: sid,
+                foto: fotoSiswaMap[sid] || '',
+                namaLengkap: s['Nama Lengkap'] != null ? String(s['Nama Lengkap']) : '',
+                namaPanggilan: s['Nama Panggilan'] != null ? String(s['Nama Panggilan']) : '',
+                nis: s['NIS'] != null ? String(s['NIS']) : '',
+                nisn: s['NISN'] != null ? String(s['NISN']) : '',
+                ttl: s['Tempat, Tanggal Lahir'] != null ? String(s['Tempat, Tanggal Lahir']) : '',
+                jenisKelamin: s['Jenis Kelamin'] != null ? String(s['Jenis Kelamin']) : '',
+                agama: s['Agama'] != null ? String(s['Agama']) : '',
+                asalTk: s['Asal TK'] != null ? String(s['Asal TK']) : '',
+                alamatSiswa: s['Alamat Siswa'] != null ? String(s['Alamat Siswa']) : '',
+                diterimaDiKelas: s['Diterima di Kelas'] != null ? String(s['Diterima di Kelas']) : '',
+                diterimaTanggal: s['Diterima Tanggal'] != null ? String(s['Diterima Tanggal']) : '',
+                namaAyah: s['Nama Ayah'] != null ? String(s['Nama Ayah']) : '',
+                namaIbu: s['Nama Ibu'] != null ? String(s['Nama Ibu']) : '',
+                pekerjaanAyah: s['Pekerjaan Ayah'] != null ? String(s['Pekerjaan Ayah']) : '',
+                pekerjaanIbu: s['Pekerjaan Ibu'] != null ? String(s['Pekerjaan Ibu']) : '',
+                alamatOrangTua: s['Alamat Orang Tua'] != null ? String(s['Alamat Orang Tua']) : '',
+                teleponOrangTua: s['Telepon Orang Tua'] != null ? String(s['Telepon Orang Tua']) : '',
+                namaWali: s['Nama Wali'] != null ? String(s['Nama Wali']) : '',
+                pekerjaanWali: s['Pekerjaan Wali'] != null ? String(s['Pekerjaan Wali']) : '',
+                alamatWali: s['Alamat Wali'] != null ? String(s['Alamat Wali']) : '',
+                teleponWali: s['Telepon Wali'] != null ? String(s['Telepon Wali']) : ''
+            };
+        });
         const wsTP = findSheet(["Tujuan Pembelajaran"]);
         const slmNameMap = new Map();
         if (wsTP) { const tpData = XLSX.utils.sheet_to_json(wsTP); const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`; nLO[gradeKey] = {}; tpData.forEach(row => { const subjName = row['Nama Mata Pelajaran'], slmId = row['ID SLM'], slmName = row['Nama SLM']; if (slmId && slmName && !slmNameMap.has(slmId)) slmNameMap.set(slmId, slmName); if (subjName) { if (!nLO[gradeKey][subjName]) nLO[gradeKey][subjName] = []; nLO[gradeKey][subjName].push({ slmId, text: row['Deskripsi Tujuan Pembelajaran (TP)'], isEdited: true }); } }); }
@@ -974,9 +1022,8 @@ const App = () => {
           }
       }) : React.createElement(React.Fragment, null,
           isERaporModalOpen && React.createElement(ERaporProcessorModal, {
-              isOpen: isERaporModalOpen,
               onClose: () => setIsERaporModalOpen(false),
-              students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum,
+              students, grades, subjects, settings, showToast, predefinedCurriculum,
           }),
           React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
             React.createElement(Navigation, { 
@@ -984,9 +1031,9 @@ const App = () => {
                 onIsiERapor: () => setIsERaporModalOpen(true),
                 isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
             }),
-            React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto p-4 sm:p-8" }, 
+            React.createElement('main', { ref: mainRef, className: "flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-4 pb-4 sm:px-8 sm:pb-8 pt-0" }, 
             isLoading ? "Memuat..." : 
-            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, extracurriculars, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
+            activePage === 'DASHBOARD' ? React.createElement(Dashboard, { setActivePage: handleNavigate, settings, students, grades, subjects, notes, attendance, studentExtracurriculars, cocurricularData, onNavigateToNilai: (id) => { setActiveNilaiTab(id); handleNavigate('DATA_NILAI'); } }) :
             activePage === 'PANDUAN' ? React.createElement(PanduanPage, { setActivePage: handleNavigate }) :
             activePage === 'DATA_SISWA' ? React.createElement(DataSiswaPage, { 
                 students, 
