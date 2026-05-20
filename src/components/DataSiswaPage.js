@@ -71,6 +71,47 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     // Note: The render order in table is Name -> Others.
     const allEditableFields = useMemo(() => [nameField, ...otherFields], [nameField, otherFields]);
 
+    const handleBulkPhotoUpload = async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+        
+        showToast(`Memproses ${files.length} foto...`, "info");
+        
+        let newStudents = [...localStudents];
+        let processedCount = 0;
+        
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            
+            // Extract number from filename (e.g., "1.jpg", "01.png", "absen 1.jpg")
+            const match = file.name.match(/\d+/);
+            if (match) {
+                const number = parseInt(match[0], 10);
+                if (number > 0 && number <= newStudents.length) {
+                    try {
+                        const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
+                        newStudents[number - 1] = { ...newStudents[number - 1], foto: base64Data };
+                        processedCount++;
+                    } catch (error) {
+                        console.error(`Failed to process photo ${file.name}`, error);
+                    }
+                }
+            }
+        }
+        
+        setLocalStudents(newStudents);
+        onBulkSaveStudents(newStudents);
+        
+        if (processedCount > 0) {
+            showToast(`Berhasil memproses ${processedCount} foto siswa.`, "success");
+        } else {
+            showToast("Tidak ada foto yang terpeta ke nomor absen. Pastikan nama file mengandung nomor absen.", "error");
+        }
+        
+        // Reset input
+        e.target.value = '';
+    };
+
     const handleAddNew = () => {
         setIsModalOpen(true);
     };
@@ -212,10 +253,9 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                 }
             };
 
-            return React.createElement('div', { className: "flex flex-col items-center gap-2 min-w-[80px]" },
-                student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover rounded border border-zinc-300 shadow-sm" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 rounded border border-zinc-300 flex items-center justify-center text-zinc-400 text-xs text-center p-1" }, "3x4"),
-                React.createElement('label', { className: "cursor-pointer text-[10px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded border border-indigo-200 transition-colors" },
-                    student[fieldDef.key] ? "Ganti Foto" : "Upload Foto",
+            return React.createElement('div', { className: "flex flex-col items-center min-w-[80px]" },
+                React.createElement('label', { className: "cursor-pointer group relative overflow-hidden rounded border border-zinc-300 shadow-sm transition-all hover:border-indigo-400" },
+                    student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 flex items-center justify-center text-zinc-400 text-xs text-center p-1 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors" }, "3x4"),
                     React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
                 )
             );
@@ -243,13 +283,22 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                     React.createElement('p', { className: "mt-1 text-zinc-600" },
                         "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis.",
                         React.createElement('br', null),
-                        React.createElement('span', { className: "text-sm text-zinc-900" }, "💡 Tips: Anda dapat menyalin data dari Excel (blok sel) dan menempelkannya (paste) langsung ke tabel di bawah.")
+                        React.createElement('span', { className: "text-sm text-zinc-900" }, "💡 Tips: Anda dapat menyalin data dari Excel (blok sel) dan menempelkannya (paste) langsung ke tabel di bawah."),
+                        React.createElement('br', null),
+                        React.createElement('span', { className: "text-sm text-zinc-900" }, "💡 Tips: Anda dapat mengupload foto seluruh siswa sekaligus dengan menamai masing-masing foto sesuai dengan nomor absen siswa (contoh: 1.jpg, 2.png, dst).")
                     )
                 ),
-                React.createElement('button', { 
-                    onClick: handleAddNew, 
-                    className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-xl shadow-sm hover:bg-indigo-700" 
-                }, "+ Tambah Siswa Baru")
+                React.createElement('div', { className: "flex gap-2" },
+                    React.createElement('label', { 
+                        className: "cursor-pointer px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm hover:bg-indigo-100 flex items-center justify-center text-center" 
+                    }, "Upload Foto",
+                        React.createElement('input', { type: "file", multiple: true, accept: "image/*", className: "hidden", onChange: handleBulkPhotoUpload })
+                    ),
+                    React.createElement('button', { 
+                        onClick: handleAddNew, 
+                        className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-xl shadow-sm hover:bg-indigo-700" 
+                    }, "+ Tambah Siswa Baru")
+                )
             ),
 
             // Scrollable Table Container
