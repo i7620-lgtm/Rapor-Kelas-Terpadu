@@ -474,7 +474,7 @@ const SummativeModal = ({ isOpen, onClose, modalData, students, grades, subject,
             const initialLocalGrades = {};
             students.forEach(student => {
                 const studentGrade = grades.find(g => g.studentId === student.id);
-                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+                initialLocalGrades[student.id] = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
             });
             setLocalGrades(initialLocalGrades);
             setActiveInput({});
@@ -1018,6 +1018,13 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
             return slm;
         }));
     };
+
+    const handleSemesterToggle = (slmId, currentSemester, targetSemester) => {
+        const newSemester = currentSemester === targetSemester ? 'Semua' : targetSemester;
+        setLocalSlms(prev => prev.map(slm => 
+            slm.id === slmId ? { ...slm, semester: newSemester } : slm
+        ));
+    };
     
     const handleAddCustomSlm = () => {
         const newSlm = { id: `slm_custom_${Date.now()}`, name: 'Lingkup Materi Baru', tps: [] };
@@ -1068,7 +1075,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
         const gradeKey = `Kelas ${gradeNumber}`;
         const curriculumKey = subject.curriculumKey || subject.fullName;
 
-        const allTpsForSubject = localSlms.flatMap(slm => slm.tps.map(tp => ({ slmId: slm.id, text: tp.text, isEdited: tp.isEdited })));
+        const allTpsForSubject = localSlms.flatMap(slm => slm.tps.map(tp => ({ slmId: slm.id, text: tp.text, isEdited: tp.isEdited, semester: slm.semester || 'Semua' })));
         const newLearningObjectives = {
             ...learningObjectives,
             [gradeKey]: { ...(learningObjectives[gradeKey] || {}), [curriculumKey]: allTpsForSubject }
@@ -1080,7 +1087,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
 
         students.forEach(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
-            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
             let hasChanged = false;
             
             localSlms.forEach(localSlm => {
@@ -1119,7 +1126,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
             onBulkUpdateGrades(updates);
         }
 
-        onSave.onSaveSlmSettings(Array.from(localActiveIds));
+        onSave.onSaveSlmSettings(localSlms.map(slm => slm.id));
         showToast('Perubahan pada SLM & TP berhasil disimpan.', 'success');
         onClose();
     };
@@ -1142,11 +1149,7 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
                     React.createElement('div', { className: "p-6 space-y-4 overflow-y-auto" },
                         localSlms.length > 0 ? localSlms.map(slm => (
                             React.createElement('div', { key: slm.id, className: "border rounded-lg" },
-                                React.createElement('div', { className: "flex items-center p-3 bg-slate-50 rounded-t-lg border-b gap-4" },
-                                    React.createElement('label', { className: "relative inline-flex items-center cursor-pointer", title: "Tampilkan/Sembunyikan di tabel" },
-                                        React.createElement('input', { type: "checkbox", checked: localActiveIds.has(slm.id), onChange: () => handleToggle(slm.id), className: "sr-only peer" }),
-                                        React.createElement('div', { className: "w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" })
-                                    ),
+                               React.createElement('div', { className: "flex items-center p-3 bg-slate-50 rounded-t-lg border-b gap-4" },
                                     React.createElement('input', {
                                         type: "text",
                                         value: slm.name,
@@ -1169,9 +1172,21 @@ const ManageSlmModal = ({ isOpen, onClose, onSave, subject, students, grades, le
                                         )
                                     )),
                                     slm.tps.length === 0 && React.createElement('p', { className: 'text-xs text-slate-400 text-center py-2' }, 'Belum ada Tujuan Pembelajaran.'),
-                                    React.createElement('div', { className: "pt-3 border-t flex gap-2 justify-end" },
-                                        React.createElement('button', { onClick: () => handleAddManualTp(slm.id), className: "px-3 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all" }, "+ Tambah TP Manual"),
-                                        React.createElement('button', { onClick: () => handleOpenTpSelection(slm.id), className: "px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Pilih TP dari Data")
+                                    React.createElement('div', { className: "pt-3 border-t flex flex-row flex-wrap gap-2 justify-between items-center" },
+                                        React.createElement('div', { className: 'flex gap-1' }, 
+                                            React.createElement('button', { 
+                                                onClick: () => handleSemesterToggle(slm.id, slm.semester || 'Semua', 'Ganjil'), 
+                                                className: `px-3 py-1 text-xs font-medium border rounded-lg transition-all ${!slm.semester || slm.semester === 'Semua' || slm.semester === 'Ganjil' ? 'bg-indigo-100 text-indigo-700 border-indigo-300 shadow-inner' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}` 
+                                            }, "Semester Ganjil"),
+                                            React.createElement('button', { 
+                                                onClick: () => handleSemesterToggle(slm.id, slm.semester || 'Semua', 'Genap'), 
+                                                className: `px-3 py-1 text-xs font-medium border rounded-lg transition-all ${!slm.semester || slm.semester === 'Semua' || slm.semester === 'Genap' ? 'bg-indigo-100 text-indigo-700 border-indigo-300 shadow-inner' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}` 
+                                            }, "Semester Genap")
+                                        ),
+                                        React.createElement('div', { className: "flex gap-2" },
+                                            React.createElement('button', { onClick: () => handleAddManualTp(slm.id), className: "px-3 py-1 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all" }, "+ Tambah TP Manual"),
+                                            React.createElement('button', { onClick: () => handleOpenTpSelection(slm.id), className: "px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Pilih TP dari Data")
+                                        )
                                     )
                                 )
                             )
@@ -1403,9 +1418,11 @@ const NilaiCardView = (props) => {
 
                 React.createElement('section', null,
                     React.createElement('h3', { className: "text-lg font-semibold text-slate-700 mb-3 border-b pb-2" }, "Sumatif Tengah & Akhir Semester"),
-                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" },
-                        React.createElement(AssessmentCard, { title: "Sumatif Tengah Semester (STS)", type: 'sts', item: {} }),
-                        React.createElement(AssessmentCard, { title: "Sumatif Akhir Semester (SAS)", type: 'sas', item: {} })
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement(AssessmentCard, { title: "Sumatif Tengah Semester I (Ganjil)", type: 'sts1', item: {} }),
+                        settings.semester === 'Genap' && React.createElement(AssessmentCard, { title: "Sumatif Tengah Semester II (Genap)", type: 'sts2', item: {} }),
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement(AssessmentCard, { title: "Sumatif Akhir Semester I (Ganjil)", type: 'sas1', item: {} }),
+                        settings.semester === 'Genap' && React.createElement(AssessmentCard, { title: gradeNumber === 6 ? "US" : "Sumatif Akhir Semester II (Genap)", type: 'sas2', item: {} })
                     )
                 )
             )
@@ -1463,23 +1480,25 @@ const NilaiTableView = (props) => {
                 acc[tp.slmId] = [];
             }
             // Ensure isEdited is preserved or defaulted
-            acc[tp.slmId].push({ text: tp.text, isEdited: tp.isEdited === true });
+            acc[tp.slmId].push({ text: tp.text, isEdited: tp.isEdited === true, semester: tp.semester || 'Semua' });
             return acc;
         }, {});
 
         // Step 3: Merge user objectives. This adds custom SLMs and overrides TPs of predefined ones.
         Object.entries(userObjectivesBySlm).forEach(([slmId, tps]) => {
+            const semester = tps[0]?.semester || 'Semua';
             if (slmMap.has(slmId)) {
                 // User has edited the TPs for a predefined SLM. Override them.
                 const existingSlm = slmMap.get(slmId);
-                slmMap.set(slmId, { ...existingSlm, tps });
+                slmMap.set(slmId, { ...existingSlm, tps, semester });
             } else {
                 // This is a completely custom SLM. Add it to the map.
                 const slmNameFromGrades = grades.length > 0 ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(s => s.id === slmId)?.name : null;
                 slmMap.set(slmId, {
                     id: slmId,
                     name: slmNameFromGrades || 'Lingkup Materi Kustom',
-                    tps
+                    tps,
+                    semester
                 });
             }
         });
@@ -1566,8 +1585,17 @@ const NilaiTableView = (props) => {
         const tpHeaders = [];
         const columnKeys = [];
         let tpCounter = 0;
+        
+        const currentAppSemester = settings.semester || 'Ganjil';
+
         allSlms.forEach(slm => {
             if (activeSlmIds.includes(slm.id)) {
+                // Determine if this SLM should be visible in current semester
+                const slmSemester = slm.semester || 'Semua';
+                if (slmSemester !== 'Semua' && slmSemester !== currentAppSemester) {
+                    return; // Skip this SLM for this semester
+                }
+
                 const colSpan = Math.max(1, slm.tps.length); // Ensure colSpan is at least 1
                 slmHeaders.push({ id: slm.id, name: slm.name, colSpan: colSpan });
                 slm.tps.forEach((tp, index) => {
@@ -1585,9 +1613,20 @@ const NilaiTableView = (props) => {
                 }
             }
         });
-        columnKeys.push('sts', 'sas');
+        if (!settings.semester || settings.semester === 'Ganjil') {
+            columnKeys.push('sts1');
+        }
+        if (settings.semester === 'Genap') {
+            columnKeys.push('sts2');
+        }
+        if (!settings.semester || settings.semester === 'Ganjil') {
+            columnKeys.push('sas1');
+        }
+        if (settings.semester === 'Genap') {
+            columnKeys.push('sas2');
+        }
         return { slmHeaders, tpHeaders, columnKeys };
-    }, [allSlms, activeSlmIds]);
+    }, [allSlms, activeSlmIds, settings.semester]);
 
     const handleSaveSlmSettings = (newActiveIds) => {
         setActiveSlmIds(newActiveIds);
@@ -1598,7 +1637,7 @@ const NilaiTableView = (props) => {
 
     const handleSingleGradeChange = (studentId, value, type, slmId = null, tpIndex = null) => {
         const studentGrade = grades.find(g => g.studentId === studentId);
-        const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+        const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
         
         let finalValue = value === '' ? null : value;
 
@@ -1617,7 +1656,7 @@ const NilaiTableView = (props) => {
                 slmToUpdate.scores.push(null);
             }
             slmToUpdate.scores[tpIndex] = finalValue;
-        } else if (type === 'sts' || type === 'sas') {
+        } else if (['sts1', 'sts2', 'sas1', 'sas2'].includes(type) || type === 'sts' || type === 'sas') {
             detailedGrade[type] = finalValue;
         }
         
@@ -1627,7 +1666,7 @@ const NilaiTableView = (props) => {
     // Handler for Description Updates
     const handleDescriptionChange = (studentId, type, value) => {
         const studentGrade = grades.find(g => g.studentId === studentId); // FIX: was students.find(s => s.id === student.id)
-        const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+        const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
         const student = students.find(s => s.id === studentId);
         const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
         
@@ -1652,7 +1691,7 @@ const NilaiTableView = (props) => {
     const handleBulkGenerateDescriptions = () => {
         const updates = relevantStudents.map(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
-            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
             
             const generated = generateSubjectDescription(student, detailedGrade, objectivesForSubject, settings, settings.slmVisibility?.[subject.id]);
             
@@ -1711,7 +1750,7 @@ const NilaiTableView = (props) => {
         // 2. Apply regression to all students
         const updates = relevantStudents.map(student => {
             const studentGrade = grades.find(g => g.studentId === student.id);
-            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
             
             let slmToUpdate = detailedGrade.slm.find(s => s.id === slmId);
             if (!slmToUpdate) {
@@ -1771,7 +1810,7 @@ const NilaiTableView = (props) => {
 
             const student = relevantStudents[currentStudentIndex];
             const studentGrade = grades.find(g => g.studentId === student.id);
-            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts: null, sas: null }));
+            const detailedGrade = JSON.parse(JSON.stringify(studentGrade?.detailedGrades?.[subject.id] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }));
             let hasChanged = false;
 
             const columns = row.split('\t');
@@ -2003,8 +2042,10 @@ const NilaiTableView = (props) => {
                                 )
                             );
                         }),
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "STS"),
-                        React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "SAS"),
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "STS I"),
+                        settings.semester === 'Genap' && React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "STS II"),
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "SAS I"),
+                        settings.semester === 'Genap' && React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, gradeNumber === 6 ? "US" : "SAS II"),
                         React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]" }, "Nilai Akhir"),
                         React.createElement('th', { rowSpan: headerRowSpan, className: "p-2 text-center border-b border-l border-slate-200 min-w-[600px]" },
                             React.createElement('div', { className: "flex flex-col items-center gap-2" },
@@ -2040,10 +2081,16 @@ const NilaiTableView = (props) => {
                         tpHeaders.map(h => React.createElement('th', { key: `w-${h.slmId}-${h.tpIndex}`, className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
                             React.createElement('input', { type: "number", min: 0, max: 100, value: weights.TP?.[h.slmId]?.[h.tpIndex] ?? '', onChange: (e) => handleWeightChange('TP', e.target.value, h.slmId, h.tpIndex), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.TP?.[h.slmId]?.[h.tpIndex] !== null && weights.TP?.[h.slmId]?.[h.tpIndex] !== undefined && weights.TP?.[h.slmId]?.[h.tpIndex] !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         )),
-                        React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
                              React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.STS ?? '', onChange: (e) => handleWeightChange('STS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.STS !== null && weights.STS !== undefined && weights.STS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         ),
-                        React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                        settings.semester === 'Genap' && React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.STS ?? '', onChange: (e) => handleWeightChange('STS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.STS !== null && weights.STS !== undefined && weights.STS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
+                        ),
+                        (!settings.semester || settings.semester === 'Ganjil') && React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
+                             React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.SAS ?? '', onChange: (e) => handleWeightChange('SAS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
+                        ),
+                        settings.semester === 'Genap' && React.createElement('th', { className: "p-1 text-center border-b border-l border-slate-200 bg-indigo-50" },
                              React.createElement('input', { type: "number", min: 0, max: 100, placeholder: "%", value: weights.SAS ?? '', onChange: (e) => handleWeightChange('SAS', e.target.value), className: `w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== '' ? 'border-green-500 ring-1 ring-green-500' : 'border-red-500 ring-1 ring-red-500'}` })
                         )
                     )
@@ -2052,7 +2099,7 @@ const NilaiTableView = (props) => {
                     relevantStudents.map((student, index) => {
                         const studentGrade = grades.find(g => g.studentId === student.id);
                         const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-                        const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts: null, sas: null }, objectivesForSubject, settings, activeSlmIds);
+                        const generated = generateSubjectDescription(student, detailedGrade || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }, objectivesForSubject, settings, activeSlmIds);
                         
                         let descriptions = { 
                             highest: (detailedGrade?.descriptions?.highest && detailedGrade.descriptions.highest.trim()) ? detailedGrade.descriptions.highest : generated.highest,
@@ -2070,8 +2117,10 @@ const NilaiTableView = (props) => {
                             tpHeaders.map(h => React.createElement('td', { key: `${student.id}-${h.slmId}-${h.tpIndex}`, className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" },
                                 renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`)
                             )),
-                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sts')),
-                            React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sas')),
+                            (!settings.semester || settings.semester === 'Ganjil') && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sts1')),
+                            settings.semester === 'Genap' && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sts2')),
+                            (!settings.semester || settings.semester === 'Ganjil') && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sas1')),
+                            settings.semester === 'Genap' && React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top" }, renderSummativeCell(student, 'sas2')),
                             React.createElement('td', { className: "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold align-top pt-3" }, total !== null && total !== undefined ? total : '-'),
                             React.createElement('td', { className: "p-2 border-b border-l border-slate-200 min-w-[600px]" },
                                 React.createElement('div', { className: "flex flex-row gap-2" },
