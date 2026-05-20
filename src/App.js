@@ -109,7 +109,7 @@ const excelRound = (num) => {
     return Math.round(num + Number.EPSILON);
 };
 
-const calculateFinalGrade = (detailed, config, settings, subjectId) => {
+const calculateFinalGrade = (detailed, config, settings, subjectId, learningObjectivesMap, gradeKey, curriculumKey) => {
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap, slmVisibility } = settings;
@@ -125,7 +125,27 @@ const calculateFinalGrade = (detailed, config, settings, subjectId) => {
     
     // Filter SLMs based on visibility settings
     const activeSlmIds = slmVisibility?.[subjectId];
-    const visibleSlms = activeSlmIds ? (detailed.slm || []).filter(slm => activeSlmIds.includes(slm.id)) : (detailed.slm || []);
+    let visibleSlms = activeSlmIds ? (detailed.slm || []).filter(slm => activeSlmIds.includes(slm.id)) : (detailed.slm || []);
+    
+    const currentSemester = settings.semester || 'Ganjil';
+    
+    // Filter SLMs by semester if learningObjectives map is provided
+    if (learningObjectivesMap && gradeKey && curriculumKey) {
+        const objectives = learningObjectivesMap[gradeKey]?.[curriculumKey] || [];
+        const slmSemesters = {};
+        objectives.forEach(obj => {
+             if (obj.slmId) slmSemesters[obj.slmId] = obj.semester || 'Semua';
+        });
+        
+        visibleSlms = visibleSlms.filter(slm => {
+             const sem = slmSemesters[slm.id] || 'Semua';
+             return sem === 'Semua' || sem === currentSemester;
+        });
+    }
+
+    const isGenap = currentSemester === 'Genap';
+    const stsField = isGenap ? 'sts2' : 'sts1';
+    const sasField = isGenap ? 'sas2' : 'sas1';
     
     if (config.method === 'rata-rata') {
         const slmAvgScores = visibleSlms.map(slm => {
@@ -133,8 +153,9 @@ const calculateFinalGrade = (detailed, config, settings, subjectId) => {
             return validScores.length > 0 ? validScores.reduce((a, b) => a + b, 0) / validScores.length : null;
         }).filter(avg => avg !== null);
         
-        const stsScore = getNumericScore(detailed.sts);
-        const sasScore = getNumericScore(detailed.sas);
+        const stsScore = getNumericScore(detailed[stsField] !== undefined ? detailed[stsField] : detailed.sts);
+        const sasScore = getNumericScore(detailed[sasField] !== undefined ? detailed[sasField] : detailed.sas);
+        
         const avgOfSlms = slmAvgScores.length > 0 ? slmAvgScores.reduce((a, b) => a + b, 0) / slmAvgScores.length : null;
         
         const components = [avgOfSlms, stsScore, sasScore].filter(s => s !== null);
@@ -160,13 +181,13 @@ const calculateFinalGrade = (detailed, config, settings, subjectId) => {
             });
         });
         
-        const stsScore = getNumericScore(detailed.sts);
+        const stsScore = getNumericScore(detailed[stsField] !== undefined ? detailed[stsField] : detailed.sts);
         if (stsScore !== null && stsWeight > 0) {
             totalWeightedScore += stsScore * (stsWeight / 100);
             totalWeightUsed += stsWeight;
         }
 
-        const sasScore = getNumericScore(detailed.sas);
+        const sasScore = getNumericScore(detailed[sasField] !== undefined ? detailed[sasField] : detailed.sas);
         if (sasScore !== null && sasWeight > 0) {
             totalWeightedScore += sasScore * (sasWeight / 100);
             totalWeightUsed += sasWeight;
@@ -181,8 +202,8 @@ const calculateFinalGrade = (detailed, config, settings, subjectId) => {
         }).filter(avg => avg !== null);
         
         const allSummatives = [...slmAvgScores];
-        const stsScore = getNumericScore(detailed.sts);
-        const sasScore = getNumericScore(detailed.sts);
+        const stsScore = getNumericScore(detailed[stsField] !== undefined ? detailed[stsField] : detailed.sts);
+        const sasScore = getNumericScore(detailed[sasField] !== undefined ? detailed[sasField] : detailed.sas);
         if(stsScore !== null) allSummatives.push(stsScore);
         if(sasScore !== null) allSummatives.push(sasScore);
         
@@ -466,7 +487,9 @@ const App = () => {
                   const detailed = studentGrade.detailedGrades?.[subj.id];
                   if (detailed) {
                       const config = settings.gradeCalculation?.[subj.id] || { method: 'rata-rata' };
-                      const calculated = calculateFinalGrade(detailed, config, settings, subj.id);
+                      const gradeKey = `Kelas ${settings.gradeNumber || '5'}`;
+                      const curriculumKey = subj.curriculumKey || subj.fullName;
+                      const calculated = calculateFinalGrade(detailed, config, settings, subj.id, learningObjectives, gradeKey, curriculumKey);
                       if (calculated !== newFinalGrades[subj.id]) {
                           newFinalGrades[subj.id] = calculated;
                           studentChanged = true;
@@ -900,7 +923,14 @@ const App = () => {
         if (wsCat) XLSX.utils.sheet_to_json(wsCat).forEach(row => { const sid = String(row['ID Siswa']); nNot[sid] = row['Catatan Wali Kelas']; });
         const wsJF = findSheet(["Jurnal Formatif"]);
         if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'] }); }); }
-        nGr.forEach(studentGrade => { nSub.forEach(subj => { const detailed = studentGrade.detailedGrades[subj.id]; if (detailed) studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news, subj.id); }); });
+        nGr.forEach(studentGrade => { nSub.forEach(subj => { 
+            const detailed = studentGrade.detailedGrades[subj.id]; 
+            if (detailed) {
+                const gradeKey = `Kelas ${news.gradeNumber || '5'}`;
+                const curriculumKey = subj.curriculumKey || subj.fullName;
+                studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news, subj.id, nLO, gradeKey, curriculumKey);
+            }
+        }); });
         return { settings: news, students: nStud, attendance: nAtt, notes: nNot, studentExtracurriculars: nStEx, cocurricularData: nCo, grades: nGr, subjects: nSub, extracurriculars: nEx, learningObjectives: nLO, formativeJournal: nFJ };
     }, [predefinedCurriculum]);
 
@@ -1058,7 +1088,10 @@ const App = () => {
                         let g = next.find(ng => ng.studentId === x.studentId);
                         if(!g) { g = { studentId: x.studentId, detailedGrades: {}, finalGrades: {} }; next.push(g); }
                         g.detailedGrades[x.subjectId] = x.newDetailedGrade;
-                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings, x.subjectId);
+                        const subject = subjects.find(s => s.id === x.subjectId);
+                        const gradeKey = `Kelas ${settings.gradeNumber || '5'}`;
+                        const curriculumKey = subject ? (subject.curriculumKey || subject.fullName) : null;
+                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings, x.subjectId, learningObjectives, gradeKey, curriculumKey);
                     });
                     return next;
                 }), 
@@ -1067,7 +1100,7 @@ const App = () => {
                 onUpdateGradeCalculation: (sid, conf) => setSettings(s => ({ ...s, gradeCalculation: { ...s.gradeCalculation, [sid]: conf } })),
                 onUpdateSlmVisibility: (sid, vis) => setSettings(s => ({ ...s, slmVisibility: { ...s.slmVisibility, [sid]: vis } })),
                 onUpdateDisplayMode: (mode) => setSettings(s => ({ ...s, nilaiDisplayMode: mode })),
-                onBulkAddSlm: (subId, slm) => { setGrades(prev => prev.map(g => { const d = g.detailedGrades?.[subId] || { slm: [], sts: null, sas: null }; if (!d.slm.some(s => s.id === slm.id)) d.slm.push({ ...slm, scores: [...slm.scores] }); return { ...g, detailedGrades: { ...g.detailedGrades, [subId]: d } }; })); },
+                onBulkAddSlm: (subId, slm) => { setGrades(prev => prev.map(g => { const d = g.detailedGrades?.[subId] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }; if (!d.slm.some(s => s.id === slm.id)) d.slm.push({ ...slm, scores: [...slm.scores] }); return { ...g, detailedGrades: { ...g.detailedGrades, [subId]: d } }; })); },
                 predefinedCurriculum, showToast 
             }) :
             activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: handleSettingsChange, onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
@@ -1082,7 +1115,7 @@ const App = () => {
                         const n = JSON.parse(JSON.stringify(prev)); 
                         const g = n.find(x => x.studentId === sid); 
                         if(g) { 
-                            if(!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts: null, sas: null };
+                            if(!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts1: null, sts2: null, sas1: null, sas2: null };
                             if(!g.detailedGrades[subId].descriptions) {
                                 // If descriptions don't exist in DB, use the current ones (which might be auto-generated)
                                 g.detailedGrades[subId].descriptions = currentDescriptions || { highest: '', lowest: '' };
