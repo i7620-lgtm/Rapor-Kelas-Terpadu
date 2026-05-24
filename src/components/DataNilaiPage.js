@@ -443,7 +443,7 @@ const GradeSettingsModal = ({
       "div",
       {
         className:
-          "bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col",
+          "bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col",
       },
       React.createElement(
         "div",
@@ -512,18 +512,17 @@ const GradeSettingsModal = ({
         ),
         React.createElement(
           "div",
-          { className: "flex flex-col items-center w-full" },
+          { className: "mt-4 w-full" },
           React.createElement(
             "h4",
             {
-              className:
-                "text-sm font-bold text-slate-700 mb-2 text-center w-full border-b pb-1",
+              className: "text-md font-semibold text-slate-700 mb-2",
             },
             "Rentang Nilai (Predikat)",
           ),
           React.createElement(
             "div",
-            { className: "space-y-1.5 w-full max-w-[240px]" },
+            { className: "space-y-1.5 w-full max-w-[340px]" },
             ["a", "b", "c", "d"].map((p) =>
               React.createElement(
                 "div",
@@ -549,8 +548,7 @@ const GradeSettingsModal = ({
             React.createElement(
               "p",
               {
-                className:
-                  "text-left text-[10px] text-slate-400 text-center pt-1",
+                className: "text-left text-[10px] text-slate-400 pt-1",
               },
               "Berlaku untuk semua mapel.",
             ),
@@ -563,7 +561,7 @@ const GradeSettingsModal = ({
           React.createElement(
             "h4",
             {
-              className: "text-sm font-bold text-slate-700 mb-2 border-b pb-1",
+              className: "text-md font-semibold text-slate-700 mb-2",
             },
             "Cara Pengolahan Nilai Akhir Mapel",
           ),
