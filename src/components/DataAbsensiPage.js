@@ -23,7 +23,6 @@ const DataAbsensiPage = ({
 
   const fields = ["sakit", "izin", "alpa"];
   const {
-    selectionStart,
     isSelecting,
     setIsSelecting,
     getSelectionBounds,
@@ -32,7 +31,7 @@ const DataAbsensiPage = ({
     handleMouseEnterCell,
   } = useGridSelection({
     rowsCount: students.length,
-    colsCount: 3, // sakit, izin, alpa -> index 0,1,2
+    colsCount: 4, // sakit, izin, alpa, total -> index 0,1,2,3
     containerClass: "absensi-table-container",
   });
 
@@ -61,6 +60,7 @@ const DataAbsensiPage = ({
             else if (c === 0) rowData.push("Sakit (S)");
             else if (c === 1) rowData.push("Izin (I)");
             else if (c === 2) rowData.push("Alpa (A)");
+            else if (c === 3) rowData.push("Total");
           } else {
             const student = students[r];
             if (student) {
@@ -68,6 +68,13 @@ const DataAbsensiPage = ({
                 rowData.push(r + 1);
               } else if (c === -1) {
                 rowData.push(student.namaLengkap);
+              } else if (c === 3) {
+                const studentAtt = getAttendanceForStudent(student.id);
+                const total =
+                  (studentAtt.sakit ?? 0) +
+                  (studentAtt.izin ?? 0) +
+                  (studentAtt.alpa ?? 0);
+                rowData.push(total);
               } else {
                 const studentAtt = getAttendanceForStudent(student.id);
                 const val = studentAtt[fields[c]];
@@ -320,7 +327,13 @@ const DataAbsensiPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-6 py-3 text-center border-b border-zinc-200/60",
+                        "px-6 py-3 text-center border-b border-zinc-200/60 relative cursor-default select-none",
+                      style: getSelectionStyle(-1, 3).selectionStyle,
+                      onMouseDown: (e) => {
+                        if (e.button !== 0) return;
+                        handleMouseDownCell(e, -1, 3);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, 3),
                     },
                     "Total",
                   ),
@@ -372,7 +385,6 @@ const DataAbsensiPage = ({
                     ),
                     ["sakit", "izin", "alpa"].map((field, cIndex) => {
                       const {
-                        isCellSelected,
                         selectionStyle,
                         showTransparentInput,
                       } = getSelectionStyle(index, cIndex);
@@ -429,7 +441,13 @@ const DataAbsensiPage = ({
                       "td",
                       {
                         className:
-                          "px-6 py-4 text-center font-semibold text-zinc-800 border-b border-zinc-200/60",
+                          "px-6 py-4 text-center font-semibold text-zinc-800 border-b border-zinc-200/60 relative cursor-default select-none",
+                        style: getSelectionStyle(index, 3).selectionStyle,
+                        onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, index, 3);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, 3),
                       },
                       total,
                     ),
