@@ -1,4 +1,5 @@
 import React from "react";
+import { useGridSelection } from '../hooks/useGridSelection';
 
 const CatatanWaliKelasPage = ({
   students,
@@ -139,6 +140,71 @@ const CatatanWaliKelasPage = ({
     onUpdateNote(student.id, note);
   };
 
+  const {
+      selectionStart,
+      isSelecting,
+      setIsSelecting,
+      getSelectionBounds,
+      getSelectionStyle,
+      handleMouseDownCell,
+      handleMouseEnterCell
+  } = useGridSelection({
+      rowsCount: students.length,
+      colsCount: 1,
+      containerClass: 'catatan-table-container'
+  });
+
+  React.useEffect(() => {
+      const handleCopyGlobal = (e) => {
+          const bounds = getSelectionBounds();
+          if (!bounds) return;
+
+          if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+              if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) {
+                  return;
+              }
+          }
+
+          let tsv = "";
+          for (let r = bounds.minR; r <= bounds.maxR; r++) {
+              let rowData = [];
+              for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                  if (r === -1) {
+                      if (c === -2) rowData.push("No");
+                      else if (c === -1) rowData.push("Nama Lengkap");
+                      else if (c === 0) rowData.push("Catatan Wali Kelas");
+                  } else {
+                      const student = students[r];
+                      if (student) {
+                          if (c === -2) {
+                              rowData.push(r + 1);
+                          } else if (c === -1) {
+                              rowData.push(student.namaLengkap);
+                          } else {
+                              // newlines might break tsv so we replace or leave, tsv requires quotes if newlines exist, let's keep it simple
+                              let noteStr = notes[student.id] || "";
+                              noteStr = noteStr.replace(/[\n\t]/g, " ");
+                              rowData.push(noteStr);
+                          }
+                      }
+                  }
+              }
+              tsv += rowData.join("\t") + "\n";
+          }
+
+          if (tsv) {
+              e.preventDefault();
+              e.clipboardData.setData("text/plain", tsv.trimEnd());
+              if (showToast) {
+                  showToast("Berhasil disalin ke clipboard", "success");
+              }
+          }
+      };
+
+      document.addEventListener("copy", handleCopyGlobal);
+      return () => document.removeEventListener("copy", handleCopyGlobal);
+  }, [getSelectionBounds, students, notes, showToast]);
+
   const handleNoteChange = (studentId, note) => {
     onUpdateNote(studentId, note);
   };
@@ -240,10 +306,13 @@ const CatatanWaliKelasPage = ({
           {
             className:
               "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
+            onMouseLeave: () => {
+              if (isSelecting) setIsSelecting(false);
+            }
           },
           React.createElement(
             "div",
-            { className: "flex-1 overflow-auto" },
+            { className: "flex-1 overflow-auto select-none catatan-table-container" },
             React.createElement(
               "table",
               {
@@ -264,7 +333,13 @@ const CatatanWaliKelasPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-6 py-3 w-16 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60",
+                        "px-6 py-3 w-16 sticky left-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60 relative cursor-default select-none",
+                      style: getSelectionStyle(-1, -2).selectionStyle,
+                      onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, -1, -2);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -2),
                     },
                     "No",
                   ),
@@ -273,7 +348,13 @@ const CatatanWaliKelasPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-6 py-3 border-b border-zinc-200/60 min-w-[250px]",
+                        "px-6 py-3 border-b border-zinc-200/60 min-w-[250px] relative cursor-default select-none",
+                      style: getSelectionStyle(-1, -1).selectionStyle,
+                      onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, -1, -1);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -1),
                     },
                     "Nama Lengkap",
                   ),
@@ -282,7 +363,13 @@ const CatatanWaliKelasPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-6 py-3 border-b border-zinc-200/60 min-w-[400px]",
+                        "px-6 py-3 border-b border-zinc-200/60 min-w-[400px] relative cursor-default select-none",
+                      style: getSelectionStyle(-1, 0).selectionStyle,
+                      onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, -1, 0);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, 0),
                     },
                     "Catatan Wali Kelas",
                   ),
@@ -291,8 +378,14 @@ const CatatanWaliKelasPage = ({
               React.createElement(
                 "tbody",
                 null,
-                students.map((student, index) =>
-                  React.createElement(
+                students.map((student, index) => {
+                  const {
+                      isCellSelected,
+                      selectionStyle,
+                      showTransparentInput,
+                  } = getSelectionStyle(index, 0);
+
+                  return React.createElement(
                     "tr",
                     {
                       key: student.id,
@@ -302,7 +395,13 @@ const CatatanWaliKelasPage = ({
                       "td",
                       {
                         className:
-                          "px-6 py-4 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60",
+                          "px-6 py-4 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60 relative cursor-default select-none",
+                        style: getSelectionStyle(index, -2).selectionStyle,
+                        onMouseDown: (e) => {
+                            if (e.button !== 0) return;
+                            handleMouseDownCell(e, index, -2);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -2),
                       },
                       index + 1,
                     ),
@@ -311,30 +410,56 @@ const CatatanWaliKelasPage = ({
                       {
                         scope: "row",
                         className:
-                          "px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60",
+                          "px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60 relative cursor-default select-none",
+                        style: getSelectionStyle(index, -1).selectionStyle,
+                        onMouseDown: (e) => {
+                            if (e.button !== 0) return;
+                            handleMouseDownCell(e, index, -1);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -1),
                       },
                       student.namaLengkap,
                     ),
                     React.createElement(
                       "td",
-                      { className: "px-6 py-4 border-b border-zinc-200/60" },
+                      { 
+                        className: "px-6 py-4 border-b border-zinc-200/60 relative cursor-default select-none",
+                        style: selectionStyle,
+                        onMouseDown: (e) => {
+                            if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') return;
+                            if (e.button !== 0) return;
+                            handleMouseDownCell(e, index, 0);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, 0),
+                      },
                       React.createElement("textarea", {
+                        id: `cell-${index}-0`,
                         value: notes[student.id] || "",
                         onChange: (e) =>
                           handleNoteChange(student.id, e.target.value),
                         onPaste: (e) => handlePaste(e, student.id),
                         placeholder: "Tulis catatan untuk siswa di sini...",
-                        className: `w-full p-2 text-sm border rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
-                          notes[student.id] && notes[student.id].trim() !== ""
-                            ? "border-green-500 ring-1 ring-green-500"
-                            : "border-red-500 ring-1 ring-red-500"
+                        className: `w-full p-2 text-sm rounded-lg transition-all relative z-10 ${
+                          showTransparentInput
+                            ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                            : `bg-white border shadow-sm focus:ring-zinc-900 focus:border-zinc-900 ${
+                                notes[student.id] && notes[student.id].trim() !== ""
+                                  ? "border-green-500 ring-1 ring-green-500"
+                                  : "border-red-500 ring-1 ring-red-500"
+                              }`
                         }`,
                         rows: 4,
                         "aria-label": `Catatan wali kelas untuk ${student.namaLengkap}`,
+                        onMouseDown: (e) => {
+                            if (e.shiftKey) {
+                                e.preventDefault();
+                                handleMouseDownCell(e, index, 0);
+                            }
+                        }
                       }),
                       React.createElement(
                         "div",
-                        { className: "flex justify-end mt-2" },
+                        { className: `flex justify-end mt-2 ${showTransparentInput ? 'opacity-0' : 'opacity-100'}` },
                         React.createElement(
                           "button",
                           {
@@ -348,8 +473,8 @@ const CatatanWaliKelasPage = ({
                         ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ),
             ),
           ),
