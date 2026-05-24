@@ -9,6 +9,73 @@ const DataKokurikulerPage = ({
   onUpdateCocurricularData,
   showToast,
 }) => {
+  const [selectionStart, setSelectionStart] = React.useState(null);
+  const [selectionEnd, setSelectionEnd] = React.useState(null);
+  const [isSelecting, setIsSelecting] = React.useState(false);
+
+  const handleMouseDownCell = (e, rowIndex, colIndex) => {
+    if (e.shiftKey && selectionStart) {
+      setSelectionEnd({ r: rowIndex, c: colIndex });
+    } else {
+      setIsSelecting(true);
+      setSelectionStart({ r: rowIndex, c: colIndex });
+      setSelectionEnd({ r: rowIndex, c: colIndex });
+    }
+  };
+
+  const handleMouseEnterCell = (rowIndex, colIndex) => {
+    if (isSelecting) {
+      setSelectionEnd({ r: rowIndex, c: colIndex });
+    }
+  };
+
+  React.useEffect(() => {
+    const handleMouseUpGlobal = () => setIsSelecting(false);
+    window.addEventListener("mouseup", handleMouseUpGlobal);
+    return () => window.removeEventListener("mouseup", handleMouseUpGlobal);
+  }, []);
+
+  const getSelectionBounds = () => {
+    if (!selectionStart || !selectionEnd) return null;
+    return {
+      minR: Math.min(selectionStart.r, selectionEnd.r),
+      maxR: Math.max(selectionStart.r, selectionEnd.r),
+      minC: Math.min(selectionStart.c, selectionEnd.c),
+      maxC: Math.max(selectionStart.c, selectionEnd.c),
+    };
+  };
+
+  const handleCopy = (e) => {
+    const bounds = getSelectionBounds();
+    if (!bounds) return;
+
+    // Do not override standard copy if only one cell is selected,
+    // to allow normal text selection within the input.
+    if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+      return;
+    }
+
+    let tsv = "";
+    for (let r = bounds.minR; r <= bounds.maxR; r++) {
+      const student = students[r];
+      let rowData = [];
+      for (let c = bounds.minC; c <= bounds.maxC; c++) {
+        const dim = COCURRICULAR_DIMENSIONS[c];
+        const val =
+          cocurricularData[student.id]?.dimensionRatings?.[dim.id] || "";
+        rowData.push(val);
+      }
+      tsv += rowData.join("\t") + "\n";
+    }
+
+    if (tsv) {
+      e.cancelBubble = true;
+      e.preventDefault();
+      e.clipboardData.setData("text/plain", tsv.trimEnd());
+      showToast("Berhasil disalin ke clipboard", "success");
+    }
+  };
+
   const handleRatingChange = (studentId, dimensionId, value) => {
     // Convert empty string to null, otherwise keep value as is (text input)
     onUpdateCocurricularData(
@@ -81,6 +148,8 @@ const DataKokurikulerPage = ({
       );
     }
   };
+
+  const bounds = getSelectionBounds();
 
   return React.createElement(
     "div",
@@ -211,7 +280,13 @@ const DataKokurikulerPage = ({
           ),
           React.createElement(
             "div",
-            { className: "flex-1 overflow-auto" },
+            {
+              className: "flex-1 overflow-auto select-none",
+              onCopy: handleCopy,
+              onMouseLeave: () => {
+                if (isSelecting) setIsSelecting(false);
+              },
+            },
             React.createElement(
               "table",
               {
@@ -314,7 +389,7 @@ const DataKokurikulerPage = ({
                       },
                       student.namaLengkap,
                     ),
-                    COCURRICULAR_DIMENSIONS.map((dim) => {
+                    COCURRICULAR_DIMENSIONS.map((dim, dimIndex) => {
                       const rating =
                         cocurricularData[student.id]?.dimensionRatings?.[
                           dim.id
@@ -328,15 +403,64 @@ const DataKokurikulerPage = ({
                         "-",
                       ].includes(rating);
 
+                      let selectionStyle = {};
+                      let isCellSelected = false;
+                      let isLeftmost = false;
+                      let isRightmost = false;
+                      let isTopmost = false;
+                      let isBottommost = false;
+                      let boxShadows = [];
+
+                      if (bounds) {
+                        isCellSelected =
+                          index >= bounds.minR &&
+                          index <= bounds.maxR &&
+                          dimIndex >= bounds.minC &&
+                          dimIndex <= bounds.maxC;
+
+                        if (isCellSelected) {
+                          selectionStyle.backgroundColor =
+                            "rgba(79, 70, 229, 0.12)"; // indigo transparent
+                          if (index === bounds.minR) {
+                            boxShadows.push("inset 0 2px 0 0 #4f46e5");
+                            isTopmost = true;
+                          }
+                          if (index === bounds.maxR) {
+                            boxShadows.push("inset 0 -2px 0 0 #4f46e5");
+                            isBottommost = true;
+                          }
+                          if (dimIndex === bounds.minC) {
+                            boxShadows.push("inset 2px 0 0 0 #4f46e5");
+                            isLeftmost = true;
+                          }
+                          if (dimIndex === bounds.maxC) {
+                            boxShadows.push("inset -2px 0 0 0 #4f46e5");
+                            isRightmost = true;
+                          }
+                        }
+                      }
+                      if (boxShadows.length > 0) {
+                        selectionStyle.boxShadow = boxShadows.join(", ");
+                      }
+
                       return React.createElement(
                         "td",
                         {
                           key: dim.id,
                           className:
-                            "px-3 py-2 border-b border-zinc-200/60 text-center align-middle",
+                            "relative px-3 py-2 border-b border-zinc-200/60 text-center align-middle transition-colors",
+                          style: selectionStyle,
+                          onMouseDown: (e) => {
+                            if (e.button !== 0) return; // Only left click
+                            if (e.shiftKey) e.preventDefault();
+                            handleMouseDownCell(e, index, dimIndex);
+                          },
+                          onMouseEnter: () =>
+                            handleMouseEnterCell(index, dimIndex),
                         },
                         React.createElement("input", {
                           type: "text",
+                          id: `cocurricular-cell-${index}-${dimIndex}`,
                           value: rating,
                           onChange: (e) =>
                             handleRatingChange(
@@ -345,15 +469,99 @@ const DataKokurikulerPage = ({
                               e.target.value,
                             ),
                           onPaste: (e) => handlePaste(e, student.id, dim.id),
-                          className: `block w-11 mx-auto px-1 py-1 text-center text-sm uppercase border rounded-md shadow-sm focus:ring-zinc-900 focus:border-zinc-900 transition-all ${
-                            isValidRating
-                              ? "border-green-500 ring-1 ring-green-500"
-                              : rating && !isValidRating
-                                ? "border-red-500 ring-1 ring-red-500 bg-rose-50 text-rose-800"
-                                : "border-red-500 ring-1 ring-red-500"
+                          onKeyDown: (e) => {
+                            if (
+                              e.shiftKey &&
+                              [
+                                "ArrowUp",
+                                "ArrowDown",
+                                "ArrowLeft",
+                                "ArrowRight",
+                              ].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                              if (!selectionStart) {
+                                setSelectionStart({ r: index, c: dimIndex });
+                              }
+                              setSelectionEnd((prev) => {
+                                let newR = prev ? prev.r : index;
+                                let newC = prev ? prev.c : dimIndex;
+                                if (e.key === "ArrowUp")
+                                  newR = Math.max(0, newR - 1);
+                                if (e.key === "ArrowDown")
+                                  newR = Math.min(
+                                    students.length - 1,
+                                    newR + 1,
+                                  );
+                                if (e.key === "ArrowLeft")
+                                  newC = Math.max(0, newC - 1);
+                                if (e.key === "ArrowRight")
+                                  newC = Math.min(
+                                    COCURRICULAR_DIMENSIONS.length - 1,
+                                    newC + 1,
+                                  );
+
+                                return { r: newR, c: newC };
+                              });
+                            } else if (
+                              !e.shiftKey &&
+                              ["ArrowUp", "ArrowDown"].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                              let newR = index;
+                              if (e.key === "ArrowUp")
+                                newR = Math.max(0, newR - 1);
+                              if (e.key === "ArrowDown")
+                                newR = Math.min(students.length - 1, newR + 1);
+                              setTimeout(() => {
+                                const nextInput = document.getElementById(
+                                  `cocurricular-cell-${newR}-${dimIndex}`,
+                                );
+                                if (nextInput) {
+                                  nextInput.focus();
+                                  nextInput.select();
+                                }
+                              }, 0);
+                            }
+                          },
+                          onFocus: () => {
+                            if (
+                              !isSelecting &&
+                              (!selectionStart ||
+                                selectionStart.r !== index ||
+                                selectionStart.c !== dimIndex ||
+                                selectionEnd.r !== index ||
+                                selectionEnd.c !== dimIndex)
+                            ) {
+                              setSelectionStart({ r: index, c: dimIndex });
+                              setSelectionEnd({ r: index, c: dimIndex });
+                            }
+                          },
+                          style: {
+                            pointerEvents: isSelecting ? "none" : "auto",
+                          },
+                          className: `block w-11 mx-auto px-1 py-1 text-center text-sm uppercase rounded-md transition-all ${
+                            isCellSelected &&
+                            bounds &&
+                            (bounds.maxR > bounds.minR ||
+                              bounds.maxC > bounds.minC)
+                              ? "bg-transparent border-transparent shadow-none border focus:outline-none"
+                              : `bg-white shadow-sm border focus:ring-zinc-900 focus:border-zinc-900 ${
+                                  isValidRating
+                                    ? "border-green-500 ring-1 ring-green-500"
+                                    : rating && !isValidRating
+                                      ? "border-red-500 ring-1 ring-red-500 bg-rose-50 text-rose-800"
+                                      : "border-red-500 ring-1 ring-red-500"
+                                }`
                           }`,
                           placeholder: "-",
                         }),
+                        isBottommost &&
+                          isRightmost &&
+                          React.createElement("div", {
+                            className:
+                              "absolute bottom-[-3px] right-[-3px] w-2 h-2 bg-indigo-600 border border-white z-10",
+                          }),
                       );
                     }),
                   ),
