@@ -10,6 +10,9 @@ const DataKokurikulerPage = ({
   onUpdateCocurricularData,
   showToast,
 }) => {
+  const currentSemester = settings?.semester || "Ganjil";
+  const dimensionField = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
+
   const [selectionStart, setSelectionStart] = React.useState(null);
   const [selectionEnd, setSelectionEnd] = React.useState(null);
   const [isSelecting, setIsSelecting] = React.useState(false);
@@ -180,7 +183,7 @@ const DataKokurikulerPage = ({
               } else {
                 const dim = COCURRICULAR_DIMENSIONS[c];
                 const val =
-                  cocurricularData[student.id]?.dimensionRatings?.[dim.id] ||
+                  cocurricularData[student.id]?.[dimensionField]?.[dim.id] ||
                   "";
                 rowData.push(val);
               }
@@ -346,8 +349,8 @@ const DataKokurikulerPage = ({
       ),
       React.createElement("input", {
         type: "text",
-        name: "cocurricular_theme",
-        value: settings.cocurricular_theme || "",
+        name: currentSemester === "Genap" ? "cocurricular_theme_Genap" : "cocurricular_theme",
+        value: currentSemester === "Genap" ? (settings.cocurricular_theme_Genap || "") : (settings.cocurricular_theme || ""),
         onChange: onSettingsChange,
         placeholder: "Contoh: Kearifan Lokal",
         className:
@@ -580,7 +583,7 @@ const DataKokurikulerPage = ({
                       ),
                       COCURRICULAR_DIMENSIONS.map((dim, dimIndex) => {
                         const rating =
-                          cocurricularData[student.id]?.dimensionRatings?.[
+                          cocurricularData[student.id]?.[dimensionField]?.[
                             dim.id
                           ] || "";
                         // Check validity for styling
