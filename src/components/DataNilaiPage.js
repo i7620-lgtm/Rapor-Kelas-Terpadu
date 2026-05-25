@@ -2733,12 +2733,15 @@ const NilaiTableView = (props) => {
     const slmMap = new Map();
 
     // Step 1: Populate with predefined SLMs. This is the crucial fix.
+    const preHalf = Math.ceil(predefinedSlms.length / 2);
     predefinedSlms.forEach((pSlm, index) => {
       const slmId = `slm_predefined_${subject.id}_${index}`;
+      const defaultSemester = index < preHalf ? "Ganjil" : "Genap";
       slmMap.set(slmId, {
         id: slmId,
         name: pSlm.slm,
         tps: pSlm.tp.map((tpText) => ({ text: tpText, isEdited: false })),
+        semester: defaultSemester,
       });
     });
 
@@ -3983,8 +3986,11 @@ const NilaiTableView = (props) => {
 };
 
 // ... (NilaiKeseluruhanView and DataNilaiPage wrapper retained as is)
-const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
+const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredikats, settings }) => {
+  const predikats = propPredikats || settings?.predikats;
   const [sortBy, setSortBy] = useState("no");
+  const [showMaxHighlight, setShowMaxHighlight] = useState(true);
+  const [showMinHighlight, setShowMinHighlight] = useState(true);
   const activeSubjects = useMemo(
     () => subjects.filter((s) => s.active),
     [subjects],
@@ -4197,7 +4203,34 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
       );
     }
     return dataWithRanks.sort((a, b) => a.no - b.no);
-  }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
+  }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats, settings]);
+
+  const subjectStats = useMemo(() => {
+    const stats = {};
+    for (const subject of displaySubjects) {
+      const validGrades = processedData
+        .map((d) => d.grades[subject.id])
+        .filter((g) => g !== undefined && g !== null && g !== "" && !isNaN(g))
+        .map((g) => (typeof g === "string" ? parseFloat(g) : g));
+
+      if (validGrades.length > 0) {
+        const maxVal = Math.max(...validGrades);
+        const minVal = Math.min(...validGrades);
+        stats[subject.id] = {
+          maxVal,
+          minVal,
+          hasMultipleValues: maxVal !== minVal,
+        };
+      } else {
+        stats[subject.id] = {
+          maxVal: null,
+          minVal: null,
+          hasMultipleValues: false,
+        };
+      }
+    }
+    return stats;
+  }, [processedData, displaySubjects]);
 
   return React.createElement(
     "div",
@@ -4209,48 +4242,96 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
       "div",
       {
         className:
-          "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0",
+          "p-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0 flex-wrap gap-2",
       },
       React.createElement(
-        "span",
-        { className: "text-sm font-medium text-slate-700 mr-4" },
-        "Urutkan:",
+        "div",
+        { className: "flex items-center gap-3 text-xs font-semibold select-none flex-wrap" },
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMaxHighlight(!showMaxHighlight);
+            },
+            className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+            style: showMaxHighlight
+              ? { backgroundColor: "#dbeafe", borderColor: "#bfdbfe", color: "#1d4ed8" }
+              : { backgroundColor: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }
+          },
+          React.createElement("span", {
+            className: "w-2.5 h-2.5 rounded-full inline-block shadow-sm",
+            style: showMaxHighlight ? { backgroundColor: "#3b82f6" } : { backgroundColor: "#cbd5e1" }
+          }),
+          React.createElement("span", null, "Nilai Tertinggi (Biru)")
+        ),
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMinHighlight(!showMinHighlight);
+            },
+            className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+            style: showMinHighlight
+              ? { backgroundColor: "#ffedd5", borderColor: "#fed7aa", color: "#c2410c" }
+              : { backgroundColor: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }
+          },
+          React.createElement("span", {
+            className: "w-2.5 h-2.5 rounded-full inline-block shadow-sm",
+            style: showMinHighlight ? { backgroundColor: "#f97316" } : { backgroundColor: "#cbd5e1" }
+          }),
+          React.createElement("span", null, "Nilai Terendah (Oranye)")
+        )
       ),
       React.createElement(
         "div",
-        { className: "flex items-center gap-4" },
+        { className: "flex items-center gap-2" },
         React.createElement(
-          "label",
-          { className: "flex items-center cursor-pointer" },
-          React.createElement("input", {
-            type: "radio",
-            name: "sort",
-            value: "no",
-            checked: sortBy === "no",
-            onChange: () => setSortBy("no"),
-            className: "h-4 w-4 text-indigo-600 border-slate-300",
-          }),
-          React.createElement(
-            "span",
-            { className: "ml-2 text-sm text-slate-600" },
-            "No. Absen",
-          ),
+          "span",
+          { className: "text-sm font-medium text-slate-700 mr-2" },
+          "Urutkan:",
         ),
         React.createElement(
-          "label",
-          { className: "flex items-center cursor-pointer" },
-          React.createElement("input", {
-            type: "radio",
-            name: "sort",
-            value: "rank",
-            checked: sortBy === "rank",
-            onChange: () => setSortBy("rank"),
-            className: "h-4 w-4 text-indigo-600 border-slate-300",
-          }),
+          "div",
+          { className: "flex items-center gap-4" },
           React.createElement(
-            "span",
-            { className: "ml-2 text-sm text-slate-600" },
-            "Peringkat",
+            "label",
+            { className: "flex items-center cursor-pointer" },
+            React.createElement("input", {
+              type: "radio",
+              name: "sort",
+              value: "no",
+              checked: sortBy === "no",
+              onChange: () => setSortBy("no"),
+              className: "h-4 w-4 text-indigo-600 border-slate-300",
+            }),
+            React.createElement(
+              "span",
+              { className: "ml-2 text-sm text-slate-600" },
+              "No. Absen",
+            ),
+          ),
+          React.createElement(
+            "label",
+            { className: "flex items-center cursor-pointer" },
+            React.createElement("input", {
+              type: "radio",
+              name: "sort",
+              value: "rank",
+              checked: sortBy === "rank",
+              onChange: () => setSortBy("rank"),
+              className: "h-4 w-4 text-indigo-600 border-slate-300",
+            }),
+            React.createElement(
+              "span",
+              { className: "ml-2 text-sm text-slate-600" },
+              "Peringkat",
+            ),
           ),
         ),
       ),
@@ -4362,18 +4443,39 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                   !isNaN(predicateCValue) &&
                   typeof grade === "number" &&
                   grade < predicateCValue;
+
+                const stats = subjectStats[subject.id];
+                let highlightClass = "bg-slate-100 border-slate-200 text-slate-700";
+                let highlightStyle = {};
+                if (stats && stats.hasMultipleValues && grade !== undefined && grade !== null && grade !== "") {
+                  const numGrade = typeof grade === "string" ? parseFloat(grade) : grade;
+                  if (!isNaN(numGrade)) {
+                    if (numGrade === stats.maxVal && showMaxHighlight) {
+                      highlightClass = "shadow-inner font-extrabold";
+                      highlightStyle = { backgroundColor: "#dbeafe", borderColor: "#60a5fa", color: "#1d4ed8" };
+                    } else if (numGrade === stats.minVal && showMinHighlight) {
+                      highlightClass = "shadow-inner font-extrabold";
+                      highlightStyle = { backgroundColor: "#ffedd5", borderColor: "#fb923c", color: "#c2410c" };
+                    }
+                  }
+                }
+
                 return React.createElement(
                   "td",
                   {
                     key: subject.id,
-                    className: "px-2 py-1 border-b border-slate-200",
+                    className: "px-2 py-1 border-b border-slate-200 text-center",
                   },
-                  React.createElement("input", {
-                    type: "text",
-                    value: grade ?? "",
-                    readOnly: true,
-                    className: `w-16 p-2 text-center bg-slate-100 border-slate-200 rounded-md cursor-not-allowed ${isBelowC ? "text-red-600 font-bold" : ""}`,
-                  }),
+                  React.createElement(
+                    "div",
+                    {
+                      className: `w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold select-none ${highlightClass} ${
+                        isBelowC ? "text-red-600 font-extrabold" : ""
+                      }`,
+                      style: highlightStyle,
+                    },
+                    grade !== null && grade !== undefined && grade !== "" ? grade : "-",
+                  ),
                 );
               }),
               React.createElement(
