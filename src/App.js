@@ -73,6 +73,24 @@ const initialAttendance = [];
 const initialStudentExtracurriculars = [];
 const initialFormativeJournal = {};
 
+const deepMerge = (target, source) => {
+    if (typeof target !== 'object' || target === null) return source !== undefined ? source : target;
+    if (typeof source !== 'object' || source === null) return source !== undefined ? source : target;
+    if (Array.isArray(target) && Array.isArray(source)) return source; // Arrays are replaced entirely by default
+    
+    let merged = { ...target };
+    for (const key of Object.keys(source)) {
+        if (source[key] instanceof Object && !Array.isArray(source[key]) && target[key] instanceof Object && !Array.isArray(target[key])) {
+            merged[key] = deepMerge(target[key], source[key]);
+        } else {
+            if (source[key] !== undefined) {
+                merged[key] = source[key];
+            }
+        }
+    }
+    return merged;
+};
+
 const loadDataSafe = (key, fallbackValue, validator = null) => {
     try {
         const saved = localStorage.getItem(key);
@@ -86,7 +104,7 @@ const loadDataSafe = (key, fallbackValue, validator = null) => {
             return fallbackValue;
         }
         if (typeof fallbackValue === 'object' && !Array.isArray(fallbackValue) && fallbackValue !== null) {
-             return { ...fallbackValue, ...parsed };
+             return deepMerge(fallbackValue, parsed);
         }
         return parsed;
     } catch (e) {
@@ -278,12 +296,7 @@ const App = () => {
   const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
 
   const [settings, setSettings] = useState(() => {
-      const loaded = loadDataSafe('appSettings', initialSettings);
-      return {
-          ...initialSettings,
-          ...loaded,
-          predikats: { ...initialSettings.predikats, ...(loaded.predikats || {}) },
-      };
+      return loadDataSafe('appSettings', initialSettings);
   });
 
   useEffect(() => {
@@ -356,9 +369,33 @@ const App = () => {
       loadDataSafe('appStudentExtracurriculars', initialStudentExtracurriculars, Array.isArray)
   );
 
-  const [subjects, setSubjects] = useState(() => 
-      loadDataSafe('appSubjects', defaultSubjects, Array.isArray)
-  );
+  const [subjects, setSubjects] = useState(() => {
+      const loaded = loadDataSafe('appSubjects', defaultSubjects, Array.isArray);
+      const newSubjects = [...loaded];
+      let hasUpdates = false;
+
+      // Add missing default subjects
+      defaultSubjects.forEach(ds => {
+          if (!newSubjects.find(s => s.id === ds.id)) {
+              newSubjects.push({...ds, active: false}); // default newly added subjects to inactive so it doesn't pollute their view
+              hasUpdates = true;
+          }
+      });
+
+      // Ensure curriculumKey exists on existing default items
+      newSubjects.forEach(s => {
+          const ds = defaultSubjects.find(d => d.id === s.id);
+          if (ds && (!s.curriculumKey || s.curriculumKey !== ds.curriculumKey)) {
+              s.curriculumKey = ds.curriculumKey;
+              hasUpdates = true;
+          }
+      });
+
+      if (hasUpdates) {
+          localStorage.setItem('appSubjects', JSON.stringify(newSubjects));
+      }
+      return newSubjects;
+  });
 
   const [learningObjectives, setLearningObjectives] = useState(() => 
       loadDataSafe('appLearningObjectives', {})
