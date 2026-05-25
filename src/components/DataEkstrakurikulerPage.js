@@ -34,13 +34,15 @@ const DataEkstrakurikulerPage = ({
   studentExtracurriculars,
   onUpdateStudentExtracurriculars,
   showToast,
+  settings,
 }) => {
+  const currentSemester = settings?.semester || 'Ganjil';
   const activeExtracurriculars = extracurriculars.filter((e) => e.active);
 
   const handleAssignmentChange = (studentId, index, activityId) => {
     const studentExtra = studentExtracurriculars.find(
-      (se) => se.studentId === studentId,
-    ) || { studentId, assignedActivities: [], descriptions: {} };
+      (se) => se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester,
+    ) || { studentId, assignedActivities: [], descriptions: {}, semester: currentSemester };
 
     const newAssigned = [...(studentExtra.assignedActivities || [])];
     while (newAssigned.length < MAX_EXTRA_FIELDS) {
@@ -68,10 +70,11 @@ const DataEkstrakurikulerPage = ({
       ...studentExtra,
       assignedActivities: newAssigned,
       descriptions: newDescriptions,
+      semester: currentSemester
     };
 
     const newStudentExtracurriculars = studentExtracurriculars
-      .filter((se) => se.studentId !== studentId)
+      .filter((se) => !(se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester))
       .concat(updatedStudentExtra);
 
     onUpdateStudentExtracurriculars(newStudentExtracurriculars);
@@ -79,8 +82,8 @@ const DataEkstrakurikulerPage = ({
 
   const handleDescriptionChange = (studentId, activityId, description) => {
     const studentExtra = studentExtracurriculars.find(
-      (se) => se.studentId === studentId,
-    ) || { studentId, assignedActivities: [], descriptions: {} };
+      (se) => se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester,
+    ) || { studentId, assignedActivities: [], descriptions: {}, semester: currentSemester };
     const newDescriptions = {
       ...studentExtra.descriptions,
       [activityId]: description,
@@ -89,10 +92,11 @@ const DataEkstrakurikulerPage = ({
     const updatedStudentExtra = {
       ...studentExtra,
       descriptions: newDescriptions,
+      semester: currentSemester
     };
 
     const newStudentExtracurriculars = studentExtracurriculars.filter(
-      (se) => se.studentId !== studentId,
+      (se) => !(se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester),
     );
     newStudentExtracurriculars.push(updatedStudentExtra);
     onUpdateStudentExtracurriculars(newStudentExtracurriculars);
@@ -143,7 +147,7 @@ const DataEkstrakurikulerPage = ({
                           } else if (c === -1) {
                               rowData.push(student.namaLengkap);
                           } else {
-                              const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
+                              const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
                               const extraIdx = Math.floor(c / 2);
                               const isDesc = c % 2 !== 0;
                               const currentAssignedId = studentExtra?.assignedActivities?.[extraIdx] || null;
@@ -202,9 +206,11 @@ const DataEkstrakurikulerPage = ({
     const currentStudentExtracurriculars = [...studentExtracurriculars];
 
     const studentExtraMap = new Map();
-    currentStudentExtracurriculars.forEach((se) =>
-      studentExtraMap.set(se.studentId, se),
-    );
+    currentStudentExtracurriculars.forEach((se) => {
+      if ((se.semester || 'Ganjil') === currentSemester) {
+        studentExtraMap.set(se.studentId, se);
+      }
+    });
 
     rows.forEach((row, rIndex) => {
       const currentStudentIndex = studentIndex + rIndex;
@@ -219,6 +225,7 @@ const DataEkstrakurikulerPage = ({
           studentId: student.id,
           assignedActivities: [],
           descriptions: {},
+          semester: currentSemester
         };
       } else {
         record = {
@@ -255,7 +262,7 @@ const DataEkstrakurikulerPage = ({
     });
 
     if (updatedCount > 0) {
-      const newExtracurricularsList = Array.from(studentExtraMap.values());
+      const newExtracurricularsList = studentExtracurriculars.filter(se => (se.semester || 'Ganjil') !== currentSemester).concat(Array.from(studentExtraMap.values()));
       onUpdateStudentExtracurriculars(newExtracurricularsList);
       showToast &&
         showToast(
@@ -286,9 +293,11 @@ const DataEkstrakurikulerPage = ({
 
     // Create lookup for easier update
     const studentExtraMap = new Map();
-    currentStudentExtracurriculars.forEach((se) =>
-      studentExtraMap.set(se.studentId, se),
-    );
+    currentStudentExtracurriculars.forEach((se) => {
+      if ((se.semester || 'Ganjil') === currentSemester) {
+        studentExtraMap.set(se.studentId, se);
+      }
+    });
 
     rows.forEach((row, rIndex) => {
       const currentStudentIndex = studentIndex + rIndex;
@@ -304,6 +313,7 @@ const DataEkstrakurikulerPage = ({
           studentId: student.id,
           assignedActivities: [],
           descriptions: {},
+          semester: currentSemester
         };
       } else {
         // Clone simple object for immutability in loop
@@ -335,7 +345,7 @@ const DataEkstrakurikulerPage = ({
     });
 
     if (updatedCount > 0) {
-      const newExtracurricularsList = Array.from(studentExtraMap.values());
+      const newExtracurricularsList = studentExtracurriculars.filter(se => (se.semester || 'Ganjil') !== currentSemester).concat(Array.from(studentExtraMap.values()));
       onUpdateStudentExtracurriculars(newExtracurricularsList);
       showToast &&
         showToast(`${updatedCount} deskripsi berhasil ditempel.`, "success");
@@ -488,7 +498,7 @@ const DataEkstrakurikulerPage = ({
                 null,
                 students.map((student, index) => {
                   const studentExtra = studentExtracurriculars.find(
-                    (se) => se.studentId === student.id,
+                    (se) => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester,
                   );
                   const allAssignedIdsForStudent = (
                     studentExtra?.assignedActivities || []
