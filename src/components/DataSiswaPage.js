@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
 import { processAndCropImage3x4 } from '../utils/imageDB.js';
+import { getClipboardText } from '../utils/clipboard.js';
 import { useGridSelection } from '../hooks/useGridSelection.js';
 
 const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
@@ -218,9 +219,11 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         onBulkSaveStudents(localStudents);
     };
 
-    const handlePaste = (e, startStudentId, startFieldKey) => {
+    const handlePaste = async (e, startStudentId, startFieldKey) => {
         e.preventDefault();
-        const pasteData = e.clipboardData.getData('text');
+        const pasteData = await getClipboardText(e);
+        
+        if (!pasteData) return;
         
         // Split rows by newline, preserving empty rows to maintain index alignment
         let rows = pasteData.split(/\r\n|\n|\r/);
