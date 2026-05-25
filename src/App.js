@@ -578,7 +578,7 @@ const App = () => {
         const sortOrder = { 'PABP': 1, 'PP': 2, 'BIndo': 3, 'MTK': 4, 'IPAS': 5, 'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9 };
         displaySubjects.sort((a, b) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99));
 
-        const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Peringkat"];
+        const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Rank"];
         const legerDataWithTotals = students.map((student, index) => {
             const studentGrades = grades.find(g => g.studentId === student.id) || { finalGrades: {} };
             let total = 0, count = 0;
@@ -1118,15 +1118,48 @@ const App = () => {
             activePage === 'DATA_NILAI' ? React.createElement(DataNilaiPage, { 
                 students, grades, settings, 
                 onBulkUpdateGrades: (u) => setGrades(prev => {
-                    const next = [...prev];
+                    // Create a map of updates by studentId for faster lookup
+                    const updateMap = {};
                     u.forEach(x => {
-                        let g = next.find(ng => ng.studentId === x.studentId);
-                        if(!g) { g = { studentId: x.studentId, detailedGrades: {}, finalGrades: {} }; next.push(g); }
-                        g.detailedGrades[x.subjectId] = x.newDetailedGrade;
-                        const subject = subjects.find(s => s.id === x.subjectId);
-                        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || '5'}`;
-                        const curriculumKey = subject ? (subject.curriculumKey || subject.fullName) : null;
-                        g.finalGrades[x.subjectId] = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings, x.subjectId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum);
+                        updateMap[x.studentId] = x;
+                    });
+                    
+                    const next = prev.map(item => {
+                        const update = updateMap[item.studentId];
+                        if (update) {
+                            const newDetailedGrades = {
+                                ...item.detailedGrades,
+                                [update.subjectId]: update.newDetailedGrade
+                            };
+                            const subject = subjects.find(s => s.id === update.subjectId);
+                            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || '5'}`;
+                            const curriculumKey = subject ? (subject.curriculumKey || subject.fullName) : null;
+                            const newFinalGrades = {
+                                ...item.finalGrades,
+                                [update.subjectId]: calculateFinalGrade(update.newDetailedGrade, settings.gradeCalculation[update.subjectId] || {method: 'rata-rata'}, settings, update.subjectId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum)
+                            };
+                            return {
+                                ...item,
+                                detailedGrades: newDetailedGrades,
+                                finalGrades: newFinalGrades
+                            };
+                        }
+                        return item;
+                    });
+                    
+                    // Handle students in updates that were not present in previous grades list
+                    u.forEach(x => {
+                        if (!next.some(ng => ng.studentId === x.studentId)) {
+                            const subject = subjects.find(s => s.id === x.subjectId);
+                            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || '5'}`;
+                            const curriculumKey = subject ? (subject.curriculumKey || subject.fullName) : null;
+                            const finalGradeVal = calculateFinalGrade(x.newDetailedGrade, settings.gradeCalculation[x.subjectId] || {method: 'rata-rata'}, settings, x.subjectId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum);
+                            next.push({
+                                studentId: x.studentId,
+                                detailedGrades: { [x.subjectId]: x.newDetailedGrade },
+                                finalGrades: { [x.subjectId]: finalGradeVal }
+                            });
+                        }
                     });
                     return next;
                 }), 
