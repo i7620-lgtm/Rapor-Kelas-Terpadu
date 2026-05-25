@@ -672,7 +672,10 @@ const App = () => {
         if (predefinedCurriculum) {
             subjects.filter(s => s.active).forEach(sub => {
                 const preData = predefinedCurriculum[sub.curriculumKey || sub.fullName];
-                if (preData) masterCurriculum.set(sub.id, preData.map((slm, i) => ({ id: `slm_predefined_${sub.id}_${i}`, name: slm.slm, tps: slm.tp.map(t => ({ text: t })) })));
+                if (preData) {
+                    const preHalf = Math.ceil(preData.length / 2);
+                    masterCurriculum.set(sub.id, preData.map((slm, i) => ({ id: `slm_predefined_${sub.id}_${i}`, name: slm.slm, tps: slm.tp.map(t => ({ text: t })), semester: i < preHalf ? "Ganjil" : "Genap" })));
+                }
             });
         }
         if (learningObjectives[gradeKey]) {
@@ -680,19 +683,19 @@ const App = () => {
                 const userTps = learningObjectives[gradeKey][sub.curriculumKey || sub.fullName];
                 if (!userTps) return;
                 let subSlms = masterCurriculum.get(sub.id) || [];
-                const userTpsBySlm = userTps.reduce((acc, tp) => { if (!acc[tp.slmId]) acc[tp.slmId] = []; acc[tp.slmId].push({ text: tp.text }); return acc; }, {});
-                Object.entries(userTpsBySlm).forEach(([slmId, tps]) => {
+                const userTpsBySlm = userTps.reduce((acc, tp) => { if (!acc[tp.slmId]) acc[tp.slmId] = { items: [], semester: tp.semester || "Semua" }; acc[tp.slmId].items.push({ text: tp.text }); return acc; }, {});
+                Object.entries(userTpsBySlm).forEach(([slmId, tpData]) => {
                     const idx = subSlms.findIndex(s => s.id === slmId);
-                    if (idx > -1) { subSlms[idx].tps = tps; const name = grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name; if (name) subSlms[idx].name = name; }
-                    else subSlms.push({ id: slmId, name: grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name || 'Lingkup Materi Kustom', tps });
+                    if (idx > -1) { subSlms[idx].tps = tpData.items; subSlms[idx].semester = tpData.semester; const name = grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name; if (name) subSlms[idx].name = name; }
+                    else subSlms.push({ id: slmId, name: grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name || 'Lingkup Materi Kustom', tps: tpData.items, semester: tpData.semester });
                 });
                 masterCurriculum.set(sub.id, subSlms);
             });
         }
-        const tpRows = [["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"]];
+        const tpRows = [["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Semester", "Deskripsi Tujuan Pembelajaran (TP)"]];
         masterCurriculum.forEach((slms, subId) => {
             const sub = subjects.find(s => s.id === subId);
-            if (sub) slms.forEach(slm => slm.tps.forEach(tp => tpRows.push([subId, sub.curriculumKey || sub.fullName, slm.id, slm.name, tp.text])));
+            if (sub) slms.forEach(slm => slm.tps.forEach(tp => tpRows.push([subId, sub.curriculumKey || sub.fullName, slm.id, slm.name, slm.semester || "Semua", tp.text])));
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tpRows), "Tujuan Pembelajaran");
 
