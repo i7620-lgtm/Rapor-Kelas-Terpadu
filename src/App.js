@@ -707,16 +707,25 @@ const App = () => {
             const headers = ["ID Siswa", "Nama Siswa"];
             const colMap = [];
             if (subSlms) subSlms.forEach(slm => slm.tps.forEach((tp, i) => { headers.push(`${slm.id}_TP${i + 1}`); colMap.push({ type: 'tp', slmId: slm.id, index: i }); }));
-            headers.push("STS", "SAS");
+            headers.push("STS 1 (Ganjil)", "SAS 1 (Ganjil)", "STS 2 (Genap)", "SAS 2 (Genap)", "Deskripsi Tinggi (Ganjil)", "Deskripsi Rendah (Ganjil)", "Deskripsi Tinggi (Genap)", "Deskripsi Rendah (Genap)");
             const sheetRows = [headers];
             students.forEach(st => {
                 const sGr = grades.find(g => g.studentId === st.id)?.detailedGrades?.[sub.id];
                 const row = [st.id, st.namaLengkap];
                 colMap.forEach(m => { const slm = sGr?.slm?.find(s => s.id === m.slmId); row.push(slm?.scores?.[m.index] ?? ''); });
-                const isGenap = settings.semester === 'Genap';
-                const expSts = isGenap ? (sGr?.sts2 !== undefined && sGr?.sts2 !== null ? sGr.sts2 : sGr?.sts) : (sGr?.sts1 !== undefined && sGr?.sts1 !== null ? sGr.sts1 : sGr?.sts);
-                const expSas = isGenap ? (sGr?.sas2 !== undefined && sGr?.sas2 !== null ? sGr.sas2 : sGr?.sas) : (sGr?.sas1 !== undefined && sGr?.sas1 !== null ? sGr.sas1 : sGr?.sas);
-                row.push(expSts ?? '', expSas ?? '');
+                
+                const expSts1 = sGr?.sts1 !== undefined && sGr?.sts1 !== null ? sGr.sts1 : (sGr?.sts !== undefined ? sGr.sts : '');
+                const expSas1 = sGr?.sas1 !== undefined && sGr?.sas1 !== null ? sGr.sas1 : (sGr?.sas !== undefined ? sGr.sas : '');
+                
+                row.push(expSts1, expSas1, sGr?.sts2 ?? '', sGr?.sas2 ?? '');
+                
+                const descGanjilHeight = sGr?.descriptions?.highest || '';
+                const descGanjilLow = sGr?.descriptions?.lowest || '';
+                
+                const descGenapHeight = sGr?.descriptions_Genap?.highest || '';
+                const descGenapLow = sGr?.descriptions_Genap?.lowest || '';
+                
+                row.push(descGanjilHeight, descGanjilLow, descGenapHeight, descGenapLow);
                 sheetRows.push(row);
             });
             XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows), `Nilai_${sub.id}`);
@@ -742,15 +751,22 @@ const App = () => {
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(exRows), "Data Ekstra");
 
-        const koRows = [["ID Siswa", "Nama Siswa", "Semester", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
+        const koRows = [["ID Siswa", "Nama Siswa", "Semester", "Deskripsi Manual", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
         students.forEach(s => { 
             const co = cocurricularData[s.id] || {}; 
             ['Ganjil', 'Genap'].forEach(sem => {
                 const fieldName = sem === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
                 const ratings = co[fieldName];
-                if (ratings && Object.keys(ratings).length > 0) {
+                
+                // Allow export if there are ratings or a manual description
+                if ((ratings && Object.keys(ratings).length > 0) || (ratings && ratings.manualDescription) || co.manualDescription) {
                     const row = [s.id, s.namaLengkap, sem]; 
-                    COCURRICULAR_DIMENSIONS.forEach(d => row.push(ratings[d.id] || '')); 
+                    
+                    // Prioritize semester-specific manualDescription, then fallback to global manualDescription for Ganjil
+                    const manualDesc = ratings?.manualDescription || (sem === 'Ganjil' ? co.manualDescription : '');
+                    row.push(manualDesc || '');
+                    
+                    COCURRICULAR_DIMENSIONS.forEach(d => row.push(ratings?.[d.id] || '')); 
                     koRows.push(row);
                 }
             });
@@ -764,8 +780,8 @@ const App = () => {
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catatanRows), "Catatan Wali Kelas");
 
-        const jfRows = [["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan"]];
-        Object.entries(formativeJournal).forEach(([sid, ns]) => ns.forEach(n => jfRows.push([sid, n.id, n.date, n.type, n.subjectId || '', n.slmId || '', n.tpId || '', n.topic || '', n.note || ''])));
+        const jfRows = [["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan", "Semester"]];
+        Object.entries(formativeJournal).forEach(([sid, ns]) => ns.forEach(n => jfRows.push([sid, n.id, n.date, n.type, n.subjectId || '', n.slmId || '', n.tpId || '', n.topic || '', n.note || '', n.semester || 'Ganjil'])));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(jfRows), "Jurnal Formatif");
         const asetRows = [["Kunci Aset", "Data Base64"]];
         const asToSa = { 'logo_sekolah': settings.logo_sekolah, 'logo_dinas': settings.logo_dinas, 'logo_cover': settings.logo_cover, 'piagam_background': settings.piagam_background, 'ttd_kepala_sekolah': settings.ttd_kepala_sekolah, 'ttd_wali_kelas': settings.ttd_wali_kelas };
@@ -941,30 +957,30 @@ const App = () => {
                     if (!entry) entry = nGr.find(g => g.studentId === 'student' + sid); 
                     if (!entry) entry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId)); 
                     if (entry) { 
-                        const isImportGenap = (news.semester || 'Ganjil') === 'Genap';
-                        const importStsField = isImportGenap ? 'sts2' : 'sts1';
-                        const importSasField = isImportGenap ? 'sas2' : 'sas1';
                         if (!entry.detailedGrades[subId]) {
                             entry.detailedGrades[subId] = { 
                                 slm: [], 
-                                sts: row['STS'], 
-                                sas: row['SAS'],
                                 sts1: null,
                                 sts2: null,
                                 sas1: null,
                                 sas2: null,
-                                descriptions: { highest: row['Deskripsi Tinggi'] || '', lowest: row['Deskripsi Rendah'] || '' } 
+                                descriptions: { highest: '', lowest: '' },
+                                descriptions_Genap: { highest: '', lowest: '' } 
                             };
                         }
                         const detailed = entry.detailedGrades[subId];
-                        if (row['STS'] !== undefined) {
-                            detailed[importStsField] = row['STS'];
-                            detailed.sts = row['STS'];
-                        }
-                        if (row['SAS'] !== undefined) {
-                            detailed[importSasField] = row['SAS'];
-                            detailed.sas = row['SAS'];
-                        }
+                        
+                        // Handle legacy "STS" / "SAS"
+                        if (row['STS'] !== undefined) detailed.sts1 = row['STS'];
+                        if (row['SAS'] !== undefined) detailed.sas1 = row['SAS'];
+                        
+                        // Handle explicit columns
+                        if (row['STS 1 (Ganjil)'] !== undefined) detailed.sts1 = row['STS 1 (Ganjil)'];
+                        if (row['SAS 1 (Ganjil)'] !== undefined) detailed.sas1 = row['SAS 1 (Ganjil)'];
+                        if (row['STS 2 (Genap)'] !== undefined) detailed.sts2 = row['STS 2 (Genap)'];
+                        if (row['SAS 2 (Genap)'] !== undefined) detailed.sas2 = row['SAS 2 (Genap)'];
+
+                        // Handle legacy descriptions
                         if (row['Deskripsi Tinggi'] !== undefined) {
                             if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
                             detailed.descriptions.highest = row['Deskripsi Tinggi'];
@@ -972,6 +988,25 @@ const App = () => {
                         if (row['Deskripsi Rendah'] !== undefined) {
                             if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
                             detailed.descriptions.lowest = row['Deskripsi Rendah'];
+                        }
+
+                        // Handle explicit descriptions
+                        if (row['Deskripsi Tinggi (Ganjil)'] !== undefined) {
+                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
+                            detailed.descriptions.highest = row['Deskripsi Tinggi (Ganjil)'];
+                        }
+                        if (row['Deskripsi Rendah (Ganjil)'] !== undefined) {
+                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
+                            detailed.descriptions.lowest = row['Deskripsi Rendah (Ganjil)'];
+                        }
+                        
+                        if (row['Deskripsi Tinggi (Genap)'] !== undefined) {
+                            if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
+                            detailed.descriptions_Genap.highest = row['Deskripsi Tinggi (Genap)'];
+                        }
+                        if (row['Deskripsi Rendah (Genap)'] !== undefined) {
+                            if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
+                            detailed.descriptions_Genap.lowest = row['Deskripsi Rendah (Genap)'];
                         }
                         Object.keys(row).forEach(rawH => { 
                             const h = rawH.trim(), match = h.match(/^(.*)_TP(\d+)$/); 
@@ -1016,6 +1051,9 @@ const App = () => {
                 COCURRICULAR_DIMENSIONS.forEach(dim => { 
                     if (row[dim.id] || row[dim.label]) ratings[dim.id] = row[dim.id] || row[dim.label]; 
                 }); 
+                if (row['Deskripsi Manual'] !== undefined) {
+                    ratings.manualDescription = row['Deskripsi Manual'];
+                }
                 nCo[sid][fieldName] = ratings;
             }); 
         }
@@ -1027,7 +1065,7 @@ const App = () => {
             nNot[key] = row['Catatan Wali Kelas']; 
         });
         const wsJF = findSheet(["Jurnal Formatif"]);
-        if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'] }); }); }
+        if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'], semester: row['Semester'] || 'Ganjil' }); }); }
         nGr.forEach(studentGrade => { nSub.forEach(subj => { 
             const detailed = studentGrade.detailedGrades[subj.id]; 
             if (detailed) {
