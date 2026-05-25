@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -36,8 +36,10 @@ const getTextWidth = (text, font) => {
 
 const generateInitialPiagamLayout = (settings) => {
     // Generate the base layout first, which now has dynamically correct Y positions.
-    const kopLayout = settings.kop_layout && settings.kop_layout.length > 0 
-        ? JSON.parse(JSON.stringify(settings.kop_layout)) 
+    const currentSemester = settings?.semester || 'Ganjil';
+    const kopLayoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+    const kopLayout = settings[kopLayoutField] && settings[kopLayoutField].length > 0 
+        ? JSON.parse(JSON.stringify(settings[kopLayoutField])) 
         : generateInitialLayout(settings);
     
     const yOffset = 50;
@@ -136,8 +138,10 @@ const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 
     useEffect(() => {
         if (isOpen) {
-            const layoutToLoad = settings.piagam_layout && settings.piagam_layout.length > 0
-                ? JSON.parse(JSON.stringify(settings.piagam_layout))
+            const currentSemester = settings?.semester || 'Ganjil';
+            const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
+            const layoutToLoad = settings[layoutField] && settings[layoutField].length > 0
+                ? JSON.parse(JSON.stringify(settings[layoutField]))
                 : generateInitialPiagamLayout(settings);
             setElements(layoutToLoad);
             setSelectedElementId(null);
@@ -453,8 +457,11 @@ const DefaultPiagamBackground = () => {
 
 
 const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions }) => {
-    const layout = settings.piagam_layout && settings.piagam_layout.length > 0
-        ? settings.piagam_layout
+    const currentSemester = settings?.semester || 'Ganjil';
+    const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
+    
+    const layout = settings[layoutField] && settings[layoutField].length > 0
+        ? settings[layoutField]
         : generateInitialPiagamLayout(settings);
 
     // Calculate rank string and dynamic dimensions
@@ -541,7 +548,6 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
                             currentEl.y = el.y + 3;
                         }
 
-                        let elementRender;
                         // Use array for multiple elements (signature images injection)
                         const elementsToRender = [];
 

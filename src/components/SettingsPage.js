@@ -78,8 +78,11 @@ const KopSuratEditorModal = ({ isOpen, onClose, settings, onSaveLayout }) => {
 
     useEffect(() => {
         if (isOpen) {
-            const layoutToLoad = settings.kop_layout && settings.kop_layout.length > 0 
-                ? JSON.parse(JSON.stringify(settings.kop_layout))
+            const currentSemester = settings?.semester || 'Ganjil';
+            const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+
+            const layoutToLoad = settings[layoutField] && settings[layoutField].length > 0 
+                ? JSON.parse(JSON.stringify(settings[layoutField]))
                 : generateInitialLayout(settings);
     
             const pemdaText = generatePemdaText(settings.kota_kabupaten, settings.provinsi);
@@ -1126,10 +1129,10 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                             React.createElement('div', { className: "border-t pt-6" },
                                 React.createElement('h4', { className: "text-md font-semibold text-slate-700 mb-4" }, "Rentang Nilai (Predikat)"),
                                 React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-4 gap-4" },
-                                    React.createElement(FormField, { label: "Predikat A (Mulai dari)", id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                    React.createElement(FormField, { label: "Predikat B (Mulai dari)", id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                    React.createElement(FormField, { label: "Predikat C (KKM, Mulai dari)", id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
-                                    React.createElement(FormField, { label: "Predikat D (Mulai dari)", id: "predikats.d", value: settings.predikats.d, readOnly: true, className: "bg-slate-100" })
+                                    React.createElement(FormField, { label: React.createElement('span', null, "Predikat A", React.createElement('br'), React.createElement('span', { className: "text-xs text-slate-500 font-normal" }, "(Mulai dari)")), id: "predikats.a", value: settings.predikats.a, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: React.createElement('span', null, "Predikat B", React.createElement('br'), React.createElement('span', { className: "text-xs text-slate-500 font-normal" }, "(Mulai dari)")), id: "predikats.b", value: settings.predikats.b, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: React.createElement('span', null, "Predikat C", React.createElement('br'), React.createElement('span', { className: "text-xs text-slate-500 font-normal" }, "(KKM, Mulai dari)")), id: "predikats.c", value: settings.predikats.c, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown, type: 'number' }),
+                                    React.createElement(FormField, { label: React.createElement('span', null, "Predikat D", React.createElement('br'), React.createElement('span', { className: "text-xs text-slate-500 font-normal" }, "(Mulai dari)")), id: "predikats.d", value: settings.predikats.d, readOnly: true, className: "bg-slate-100" })
                                 ),
                                 React.createElement(QualitativeGradingTable, { settings: settings })
                             ),

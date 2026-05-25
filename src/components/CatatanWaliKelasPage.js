@@ -11,6 +11,8 @@ const CatatanWaliKelasPage = ({
   settings,
   showToast,
 }) => {
+  const currentSemester = settings?.semester || 'Ganjil';
+  const getNoteKey = (studentId) => currentSemester === 'Genap' ? studentId + '_Genap' : studentId;
   const handleGenerateNote = (student) => {
     const nickname =
       student.namaPanggilan || (student.namaLengkap || "").split(" ")[0];
@@ -183,7 +185,7 @@ const CatatanWaliKelasPage = ({
                               rowData.push(student.namaLengkap);
                           } else {
                               // newlines might break tsv so we replace or leave, tsv requires quotes if newlines exist, let's keep it simple
-                              let noteStr = notes[student.id] || "";
+                              let noteStr = notes[getNoteKey(student.id)] || "";
                               noteStr = noteStr.replace(/[\n\t]/g, " ");
                               rowData.push(noteStr);
                           }
@@ -435,7 +437,7 @@ const CatatanWaliKelasPage = ({
                       },
                       React.createElement("textarea", {
                         id: `cell-${index}-0`,
-                        value: notes[student.id] || "",
+                        value: notes[getNoteKey(student.id)] || "",
                         onChange: (e) =>
                           handleNoteChange(student.id, e.target.value),
                         onPaste: (e) => handlePaste(e, student.id),
@@ -444,7 +446,7 @@ const CatatanWaliKelasPage = ({
                           showTransparentInput
                             ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                             : `bg-white border shadow-sm focus:ring-zinc-900 focus:border-zinc-900 ${
-                                notes[student.id] && notes[student.id].trim() !== ""
+                                notes[getNoteKey(student.id)] && notes[getNoteKey(student.id)].trim() !== ""
                                   ? "border-green-500 ring-1 ring-green-500"
                                   : "border-red-500 ring-1 ring-red-500"
                               }`
