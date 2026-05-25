@@ -1,4 +1,6 @@
 import React from "react";
+import { useGridSelection } from '../hooks/useGridSelection.js';
+import { getClipboardText } from "../utils/clipboard.js";
 
 const MAX_EXTRA_FIELDS = 5;
 
@@ -96,9 +98,95 @@ const DataEkstrakurikulerPage = ({
     onUpdateStudentExtracurriculars(newStudentExtracurriculars);
   };
 
-  const handlePasteActivity = (e, startStudentId, extraIndex) => {
+  const {
+      selectionStart,
+      isSelecting,
+      setIsSelecting,
+      getSelectionBounds,
+      getSelectionStyle,
+      handleMouseDownCell,
+      handleMouseEnterCell
+  } = useGridSelection({
+      rowsCount: students.length,
+      colsCount: MAX_EXTRA_FIELDS * 2,
+      containerClass: 'ekstra-table-container'
+  });
+
+  React.useEffect(() => {
+      const handleCopyGlobal = (e) => {
+          const bounds = getSelectionBounds();
+          if (!bounds) return;
+
+          if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+              if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "SELECT")) {
+                  return;
+              }
+          }
+
+          let tsv = "";
+          for (let r = bounds.minR; r <= bounds.maxR; r++) {
+              let rowData = [];
+              for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                  if (r === -1) {
+                      if (c === -2) rowData.push("No");
+                      else if (c === -1) rowData.push("Nama Siswa");
+                      else {
+                          const isDesc = c % 2 !== 0;
+                          const extraIdx = Math.floor(c / 2);
+                          rowData.push(isDesc ? `Deskripsi ${extraIdx + 1}` : `Ekstrakurikuler ${extraIdx + 1}`);
+                      }
+                  } else {
+                      const student = students[r];
+                      if (student) {
+                          if (c === -2) {
+                              rowData.push(r + 1);
+                          } else if (c === -1) {
+                              rowData.push(student.namaLengkap);
+                          } else {
+                              const studentExtra = studentExtracurriculars.find(se => se.studentId === student.id);
+                              const extraIdx = Math.floor(c / 2);
+                              const isDesc = c % 2 !== 0;
+                              const currentAssignedId = studentExtra?.assignedActivities?.[extraIdx] || null;
+
+                              if (isDesc) {
+                                  if (currentAssignedId) {
+                                      let desc = studentExtra?.descriptions?.[currentAssignedId] || "";
+                                      desc = desc.replace(/[\n\t]/g, " ");
+                                      rowData.push(desc);
+                                  } else {
+                                      rowData.push("");
+                                  }
+                              } else {
+                                  if (currentAssignedId) {
+                                      const exObj = activeExtracurriculars.find(e => e.id === currentAssignedId);
+                                      rowData.push(exObj ? exObj.name : currentAssignedId); // output name instead of ID
+                                  } else {
+                                      rowData.push("---");
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+              tsv += rowData.join("\t") + "\n";
+          }
+
+          if (tsv) {
+              e.preventDefault();
+              e.clipboardData.setData("text/plain", tsv.trimEnd());
+              if (showToast) {
+                  showToast("Berhasil disalin ke clipboard", "success");
+              }
+          }
+      };
+
+      document.addEventListener("copy", handleCopyGlobal);
+      return () => document.removeEventListener("copy", handleCopyGlobal);
+  }, [getSelectionBounds, students, studentExtracurriculars, activeExtracurriculars, showToast]);
+
+  const handlePasteActivity = async (e, startStudentId, extraIndex) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
     let rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
@@ -123,7 +211,7 @@ const DataEkstrakurikulerPage = ({
       if (currentStudentIndex >= students.length) return;
 
       const student = students[currentStudentIndex];
-      const columns = row.split("\t");
+      const columns = row.includes("\t") ? row.split("\t") : (row.includes(";") ? row.split(";") : [row]);
 
       let record = studentExtraMap.get(student.id);
       if (!record) {
@@ -177,9 +265,9 @@ const DataEkstrakurikulerPage = ({
     }
   };
 
-  const handlePasteDescription = (e, startStudentId, extraIndex) => {
+  const handlePasteDescription = async (e, startStudentId, extraIndex) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
     // Split rows by newline, PRESERVING empty rows to maintain alignment.
     // Only remove the very last empty element if it exists (common in Excel copy)
@@ -207,7 +295,7 @@ const DataEkstrakurikulerPage = ({
       if (currentStudentIndex >= students.length) return;
 
       const student = students[currentStudentIndex];
-      const columns = row.split("\t");
+      const columns = row.includes("\t") ? row.split("\t") : (row.includes(";") ? row.split(";") : [row]);
 
       // Get current record or create new
       let record = studentExtraMap.get(student.id);
@@ -305,10 +393,13 @@ const DataEkstrakurikulerPage = ({
           {
             className:
               "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
+            onMouseLeave: () => {
+              if (isSelecting) setIsSelecting(false);
+            }
           },
           React.createElement(
             "div",
-            { className: "flex-1 overflow-auto" },
+            { className: "flex-1 overflow-auto select-none ekstra-table-container" },
             React.createElement(
               "table",
               {
@@ -329,7 +420,13 @@ const DataEkstrakurikulerPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-3 py-3 sticky left-0 bg-slate-100 z-40 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-slate-200",
+                        "px-3 py-3 sticky left-0 bg-slate-100 z-40 text-center shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-12 border-b border-slate-200 relative cursor-default select-none",
+                      style: getSelectionStyle(-1, -2).selectionStyle,
+                      onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, -1, -2);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -2),
                     },
                     "No",
                   ),
@@ -338,7 +435,13 @@ const DataEkstrakurikulerPage = ({
                     {
                       scope: "col",
                       className:
-                        "px-6 py-3 min-w-[200px] border-b border-slate-200",
+                        "px-6 py-3 min-w-[200px] border-b border-slate-200 relative cursor-default select-none",
+                      style: getSelectionStyle(-1, -1).selectionStyle,
+                      onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          handleMouseDownCell(e, -1, -1);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -1),
                     },
                     "Nama Siswa",
                   ),
@@ -351,7 +454,13 @@ const DataEkstrakurikulerPage = ({
                         {
                           scope: "col",
                           className:
-                            "px-4 py-3 min-w-[200px] border-b border-slate-200",
+                            "px-4 py-3 min-w-[200px] border-b border-slate-200 relative cursor-default select-none",
+                          style: getSelectionStyle(-1, i * 2).selectionStyle,
+                          onMouseDown: (e) => {
+                              if (e.button !== 0) return;
+                              handleMouseDownCell(e, -1, i * 2);
+                          },
+                          onMouseEnter: () => handleMouseEnterCell(-1, i * 2),
                         },
                         `Ekstrakurikuler ${i + 1}`,
                       ),
@@ -360,7 +469,13 @@ const DataEkstrakurikulerPage = ({
                         {
                           scope: "col",
                           className:
-                            "px-4 py-3 min-w-[300px] border-b border-slate-200",
+                            "px-4 py-3 min-w-[300px] border-b border-slate-200 relative cursor-default select-none",
+                          style: getSelectionStyle(-1, i * 2 + 1).selectionStyle,
+                          onMouseDown: (e) => {
+                              if (e.button !== 0) return;
+                              handleMouseDownCell(e, -1, i * 2 + 1);
+                          },
+                          onMouseEnter: () => handleMouseEnterCell(-1, i * 2 + 1),
                         },
                         `Deskripsi ${i + 1}`,
                       ),
@@ -389,7 +504,13 @@ const DataEkstrakurikulerPage = ({
                       "td",
                       {
                         className:
-                          "px-3 py-2 text-center border-b border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                          "px-3 py-2 text-center border-b border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
+                        style: getSelectionStyle(index, -2).selectionStyle,
+                        onMouseDown: (e) => {
+                            if (e.button !== 0) return;
+                            handleMouseDownCell(e, index, -2);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -2),
                       },
                       index + 1,
                     ),
@@ -398,7 +519,13 @@ const DataEkstrakurikulerPage = ({
                       {
                         scope: "row",
                         className:
-                          "px-6 py-4 font-medium text-slate-900 whitespace-nowrap text-left border-b border-slate-200",
+                          "px-6 py-4 font-medium text-slate-900 whitespace-nowrap text-left border-b border-slate-200 relative cursor-default select-none",
+                        style: getSelectionStyle(index, -1).selectionStyle,
+                        onMouseDown: (e) => {
+                            if (e.button !== 0) return;
+                            handleMouseDownCell(e, index, -1);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -1),
                       },
                       student.namaLengkap,
                     ),
@@ -413,15 +540,30 @@ const DataEkstrakurikulerPage = ({
                             !allAssignedIdsForStudent.includes(ex.id),
                         );
 
+                      const colSelectIdx = i * 2;
+                      const colDescIdx = i * 2 + 1;
+                      const { isCellSelected: isSelSelect, selectionStyle: styleSelect, showTransparentInput: showTransSelect } = getSelectionStyle(index, colSelectIdx);
+                      const { isCellSelected: isSelDesc, selectionStyle: styleDesc, showTransparentInput: showTransDesc } = getSelectionStyle(index, colDescIdx);
+
                       return React.createElement(
                         React.Fragment,
                         { key: i },
                         React.createElement(
                           "td",
-                          { className: "px-4 py-2 border-b border-slate-200" },
+                          { 
+                            className: "px-4 py-2 border-b border-slate-200 relative cursor-default select-none",
+                            style: styleSelect,
+                            onMouseDown: (e) => {
+                                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                                if (e.button !== 0) return;
+                                handleMouseDownCell(e, index, colSelectIdx);
+                            },
+                            onMouseEnter: () => handleMouseEnterCell(index, colSelectIdx),
+                          },
                           React.createElement(
                             "select",
                             {
+                              id: `cell-${index}-${colSelectIdx}`,
                               value: currentAssignedId || "---",
                               onChange: (e) =>
                                 handleAssignmentChange(
@@ -431,11 +573,21 @@ const DataEkstrakurikulerPage = ({
                                 ),
                               onPaste: (e) =>
                                 handlePasteActivity(e, student.id, i),
-                              className: `w-full p-2 text-sm border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
-                                currentAssignedId
-                                  ? "border-green-500 ring-1 ring-green-500"
-                                  : "border-red-500 ring-1 ring-red-500"
+                              className: `w-full p-2 text-sm rounded-md transition-all relative z-10 ${
+                                showTransSelect
+                                  ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                                  : `bg-white border shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                      currentAssignedId
+                                        ? "border-green-500 ring-1 ring-green-500"
+                                        : "border-red-500 ring-1 ring-red-500"
+                                    }`
                               }`,
+                              onMouseDown: (e) => {
+                                  if (e.shiftKey) {
+                                      e.preventDefault();
+                                      handleMouseDownCell(e, index, colSelectIdx);
+                                  }
+                              }
                             },
                             React.createElement(
                               "option",
@@ -453,9 +605,19 @@ const DataEkstrakurikulerPage = ({
                         ),
                         React.createElement(
                           "td",
-                          { className: "px-4 py-2 border-b border-slate-200" },
+                          { 
+                            className: "px-4 py-2 border-b border-slate-200 relative cursor-default select-none",
+                            style: styleDesc,
+                            onMouseDown: (e) => {
+                                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                                if (e.button !== 0) return;
+                                handleMouseDownCell(e, index, colDescIdx);
+                            },
+                            onMouseEnter: () => handleMouseEnterCell(index, colDescIdx),
+                          },
                           currentAssignedId &&
                             React.createElement("textarea", {
+                              id: `cell-${index}-${colDescIdx}`,
                               value:
                                 studentExtra?.descriptions?.[
                                   currentAssignedId
@@ -469,16 +631,26 @@ const DataEkstrakurikulerPage = ({
                               onPaste: (e) =>
                                 handlePasteDescription(e, student.id, i),
                               rows: 2,
-                              className: `w-full p-2 text-sm border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
-                                studentExtra?.descriptions?.[
-                                  currentAssignedId
-                                ] &&
-                                studentExtra.descriptions[
-                                  currentAssignedId
-                                ].trim() !== ""
-                                  ? "border-green-500 ring-1 ring-green-500"
-                                  : "border-red-500 ring-1 ring-red-500"
+                              className: `w-full p-2 text-sm rounded-md transition-all relative z-10 ${
+                                showTransDesc
+                                  ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                                  : `bg-white border shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+                                      studentExtra?.descriptions?.[
+                                        currentAssignedId
+                                      ] &&
+                                      studentExtra.descriptions[
+                                        currentAssignedId
+                                      ].trim() !== ""
+                                        ? "border-green-500 ring-1 ring-green-500"
+                                        : "border-red-500 ring-1 ring-red-500"
+                                    }`
                               }`,
+                              onMouseDown: (e) => {
+                                  if (e.shiftKey) {
+                                      e.preventDefault();
+                                      handleMouseDownCell(e, index, colDescIdx);
+                                  }
+                              }
                             }),
                         ),
                       );

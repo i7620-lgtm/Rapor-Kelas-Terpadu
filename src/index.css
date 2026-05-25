@@ -1,4 +1,4 @@
-@tailwind base; 
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -74,6 +74,19 @@ body {
   max-height: 2.5em; /* 2 lines * 1.25em */
   word-break: break-word; /* Allow long words to break */
   min-width: 0; /* Important for flex items to shrink */
+}
+
+/* Custom high-contrast bulletproof highlight colors that bypass color replacements and Tailwind purging */
+.highlight-highest {
+  background-color: #dbeafe !important;
+  border-color: #60a5fa !important;
+  color: #1d4ed8 !important;
+}
+
+.highlight-lowest {
+  background-color: #ffedd5 !important;
+  border-color: #fb923c !important;
+  color: #c2410c !important;
 }
 
 @media print {

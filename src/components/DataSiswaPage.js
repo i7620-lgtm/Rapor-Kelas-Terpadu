@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { studentFieldDefinitions } from '../constants.js';
 import { processAndCropImage3x4 } from '../utils/imageDB.js';
+import { getClipboardText } from '../utils/clipboard.js';
+import { useGridSelection } from '../hooks/useGridSelection.js';
 
 const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
     acc[field.key] = '';
@@ -70,6 +72,73 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     // Create a flat array of fields representing the table column order for paste logic
     // Note: The render order in table is Name -> Others.
     const allEditableFields = useMemo(() => [nameField, ...otherFields], [nameField, otherFields]);
+
+    const {
+        selectionStart,
+        isSelecting,
+        setIsSelecting,
+        getSelectionBounds,
+        getSelectionStyle,
+        handleMouseDownCell,
+        handleMouseEnterCell
+    } = useGridSelection({
+        rowsCount: localStudents.length,
+        colsCount: allEditableFields.length,
+        containerClass: 'siswa-table-container'
+    });
+
+    React.useEffect(() => {
+        const handleCopyGlobal = (e) => {
+            const bounds = getSelectionBounds();
+            if (!bounds) return;
+
+            if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+                if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "SELECT")) {
+                    return;
+                }
+            }
+
+            let tsv = "";
+            for (let r = bounds.minR; r <= bounds.maxR; r++) {
+                let rowData = [];
+                for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                    if (r === -1) {
+                        if (c === -1) rowData.push("No");
+                        else {
+                            const field = allEditableFields[c];
+                            rowData.push(field ? field.label : "");
+                        }
+                    } else {
+                        const student = localStudents[r];
+                        if (student) {
+                            if (c === -1) {
+                                rowData.push(r + 1);
+                            } else {
+                                const field = allEditableFields[c];
+                                if (field && field.type !== 'photo') {
+                                    rowData.push(student[field.key] || "");
+                                } else {
+                                    rowData.push(""); // no text copy for photo
+                                }
+                            }
+                        }
+                    }
+                }
+                tsv += rowData.join("\t") + "\n";
+            }
+
+            if (tsv) {
+                e.preventDefault();
+                e.clipboardData.setData("text/plain", tsv.trimEnd());
+                if (showToast) {
+                    showToast("Berhasil disalin ke clipboard", "success");
+                }
+            }
+        };
+
+        document.addEventListener("copy", handleCopyGlobal);
+        return () => document.removeEventListener("copy", handleCopyGlobal);
+    }, [getSelectionBounds, localStudents, allEditableFields, showToast]);
 
     const handleBulkPhotoUpload = async (e) => {
         const files = Array.from(e.target.files);
@@ -150,9 +219,11 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         onBulkSaveStudents(localStudents);
     };
 
-    const handlePaste = (e, startStudentId, startFieldKey) => {
+    const handlePaste = async (e, startStudentId, startFieldKey) => {
         e.preventDefault();
-        const pasteData = e.clipboardData.getData('text');
+        const pasteData = await getClipboardText(e);
+        
+        if (!pasteData) return;
         
         // Split rows by newline, preserving empty rows to maintain index alignment
         let rows = pasteData.split(/\r\n|\n|\r/);
@@ -201,27 +272,53 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         showToast(`${updatedCount} data berhasil ditempel (paste).`, 'success');
     };
 
-    const renderCellInput = (student, fieldDef) => {
+    const renderCellInput = (student, fieldDef, rowIndex, colIndex) => {
         const isFilled = student[fieldDef.key] && String(student[fieldDef.key]).trim() !== '';
+        
+        const { isCellSelected, selectionStyle, showTransparentInput } = getSelectionStyle(rowIndex, colIndex);
+        
         const commonProps = {
-            id: `${student.id}-${fieldDef.key}`,
+            id: `cell-${rowIndex}-${colIndex}`,
             name: fieldDef.key,
             value: student[fieldDef.key] || '',
             onChange: (e) => handleInputChange(student.id, fieldDef.key, e.target.value),
             onBlur: handleInputBlur,
             onPaste: (e) => handlePaste(e, student.id, fieldDef.key),
-            className: `w-full px-2 py-1.5 text-sm rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 focus:outline-none transition-all border ${
-                isFilled 
-                ? "border-green-500 ring-1 ring-green-500" 
-                : "border-red-500 ring-1 ring-red-500"
+            className: `w-full px-2 py-1.5 text-sm rounded-lg transition-all relative z-10 ${
+                showTransparentInput
+                  ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                  : `bg-white border focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 ${
+                      isFilled 
+                      ? "border-green-500 ring-1 ring-green-500" 
+                      : "border-red-500 ring-1 ring-red-500"
+                    }`
             }`,
-            placeholder: fieldDef.placeholder || fieldDef.label // Use specific placeholder or fallback to label
+            placeholder: fieldDef.placeholder || fieldDef.label,
+            onMouseDown: (e) => {
+                if (e.shiftKey) {
+                    e.preventDefault();
+                    handleMouseDownCell(e, rowIndex, colIndex);
+                }
+            }
+        };
+
+        const wrapperProps = {
+            className: "px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none",
+            style: selectionStyle,
+            onMouseDown: (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL' || e.target.tagName === 'IMG') return;
+                if (e.button !== 0) return;
+                handleMouseDownCell(e, rowIndex, colIndex);
+            },
+            onMouseEnter: () => handleMouseEnterCell(rowIndex, colIndex),
         };
 
         if (fieldDef.type === 'select') {
-            return React.createElement('select', { ...commonProps, className: `${commonProps.className} appearance-none cursor-pointer` },
-                React.createElement('option', { value: '' }, "-"),
-                fieldDef.options.map(option => React.createElement('option', { key: option, value: option }, option))
+            return React.createElement('td', wrapperProps, 
+                React.createElement('select', { ...commonProps, className: `${commonProps.className} appearance-none cursor-pointer` },
+                    React.createElement('option', { value: '' }, "-"),
+                    fieldDef.options.map(option => React.createElement('option', { key: option, value: option }, option))
+                )
             );
         }
         
@@ -253,19 +350,21 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                 }
             };
 
-            return React.createElement('div', { className: "flex flex-col items-center min-w-[80px]" },
-                React.createElement('label', { className: "cursor-pointer group relative overflow-hidden rounded border border-zinc-300 shadow-sm transition-all hover:border-indigo-400" },
-                    student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 flex items-center justify-center text-zinc-400 text-xs text-center p-1 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors" }, "3x4"),
-                    React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
+            return React.createElement('td', wrapperProps, 
+                React.createElement('div', { className: `flex flex-col items-center min-w-[80px] ${showTransparentInput ? 'opacity-50' : 'opacity-100'}` },
+                    React.createElement('label', { className: "cursor-pointer group relative overflow-hidden rounded border border-zinc-300 shadow-sm transition-all hover:border-indigo-400" },
+                        student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 flex items-center justify-center text-zinc-400 text-xs text-center p-1 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors" }, "3x4"),
+                        React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
+                    )
                 )
             );
         }
 
         if (fieldDef.type === 'date') {
-             return React.createElement('input', { ...commonProps, type: 'text' });
+             return React.createElement('td', wrapperProps, React.createElement('input', { ...commonProps, type: 'text' }));
         }
 
-        return React.createElement('input', { ...commonProps, type: 'text' });
+        return React.createElement('td', wrapperProps, React.createElement('input', { ...commonProps, type: 'text' }));
     };
 
     return (
@@ -302,32 +401,74 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             ),
 
             // Scrollable Table Container
-            React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
-                React.createElement('div', { className: "flex-1 overflow-auto" },
+            React.createElement('div', { 
+                className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
+                onMouseLeave: () => {
+                    if (isSelecting) setIsSelecting(false);
+                }
+            },
+                React.createElement('div', { className: "flex-1 overflow-auto select-none siswa-table-container" },
                     React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                     React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30 shadow-sm" },
                             React.createElement('tr', null,
-                                React.createElement('th', { scope: "col", className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 top-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, "No"),
-                                React.createElement('th', { scope: "col", className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px]" }, "Nama Lengkap"),
-                                otherFields.map(field => 
-                                    React.createElement('th', { key: field.key, scope: "col", className: "px-4 py-3 border-b border-zinc-200/60 min-w-[180px] whitespace-nowrap text-center" }, field.label)
-                                ),
+                                React.createElement('th', { 
+                                    scope: "col", 
+                                    className: "px-3 py-3 text-center border-b border-zinc-200/60 w-12 sticky left-0 top-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
+                                    style: getSelectionStyle(-1, -1).selectionStyle,
+                                    onMouseDown: (e) => {
+                                        if (e.button !== 0) return;
+                                        handleMouseDownCell(e, -1, -1);
+                                    },
+                                    onMouseEnter: () => handleMouseEnterCell(-1, -1),
+                                }, "No"),
+                                React.createElement('th', { 
+                                    scope: "col", 
+                                    className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px] relative cursor-default select-none",
+                                    style: getSelectionStyle(-1, 0).selectionStyle,
+                                    onMouseDown: (e) => {
+                                        if (e.button !== 0) return;
+                                        handleMouseDownCell(e, -1, 0);
+                                    },
+                                    onMouseEnter: () => handleMouseEnterCell(-1, 0),
+                                }, "Nama Lengkap"),
+                                otherFields.map((field, index) => {
+                                    const colIndex = index + 1;
+                                    return React.createElement('th', { 
+                                        key: field.key, 
+                                        scope: "col", 
+                                        className: "px-4 py-3 border-b border-zinc-200/60 min-w-[180px] whitespace-nowrap text-center relative cursor-default select-none",
+                                        style: getSelectionStyle(-1, colIndex).selectionStyle,
+                                        onMouseDown: (e) => {
+                                            if (e.button !== 0) return;
+                                            handleMouseDownCell(e, -1, colIndex);
+                                        },
+                                        onMouseEnter: () => handleMouseEnterCell(-1, colIndex),
+                                    }, field.label);
+                                }),
                                 React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60 w-24" }, "Aksi")
                             )
                         ),
                         React.createElement('tbody', null,
                             localStudents.length > 0 ? (
-                                localStudents.map((student, index) => (
+                                localStudents.map((student, rowIndex) => (
                                     React.createElement('tr', { key: student.id, className: "bg-white hover:bg-[#fafafa]" },
-                                        React.createElement('td', { className: "px-3 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, index + 1),
-                                        React.createElement('td', { className: "px-4 py-2 border-b border-zinc-200/60" }, 
-                                            renderCellInput(student, nameField)
+                                        // No Column -> colIndex: -1
+                                        React.createElement('td', { 
+                                            className: "px-3 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
+                                            style: getSelectionStyle(rowIndex, -1).selectionStyle,
+                                            onMouseDown: (e) => {
+                                                if (e.button !== 0) return;
+                                                handleMouseDownCell(e, rowIndex, -1);
+                                            },
+                                            onMouseEnter: () => handleMouseEnterCell(rowIndex, -1),
+                                        }, rowIndex + 1),
+                                        // Name Column -> colIndex: 0
+                                        renderCellInput(student, nameField, rowIndex, 0),
+                                        // Other Fields Columns -> colIndex: 1 to N
+                                        otherFields.map((field, colIndexOffset) => 
+                                            React.cloneElement(renderCellInput(student, field, rowIndex, colIndexOffset + 1), { key: field.key })
                                         ),
-                                        otherFields.map(field => 
-                                            React.createElement('td', { key: field.key, className: "px-2 py-2 border-b border-zinc-200/60" }, 
-                                                renderCellInput(student, field)
-                                            )
-                                        ),
+                                        // Action Column -> Skipped grid selection as it's not a data field
                                         React.createElement('td', { className: "px-4 py-2 text-center border-b border-zinc-200/60" },
                                             React.createElement('button', {
                                                 onClick: () => handleDelete(student.id),

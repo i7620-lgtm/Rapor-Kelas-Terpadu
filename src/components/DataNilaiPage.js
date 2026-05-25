@@ -7,6 +7,7 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { QUALITATIVE_DESCRIPTORS } from "../constants.js";
+import { getClipboardText } from "../utils/clipboard.js";
 
 export const getGradeNumber = (str) => {
   if (!str) return null;
@@ -56,6 +57,34 @@ const getQualitativeCode = (score, predikats) => {
   if (score >= valC) return "MB";
   if (score < valC) return "BB";
   return "";
+};
+
+// --- Helper: split row into columns supporting tabs, semicolons, and spaces (especially for Android/mobile compatibility) ---
+const splitRowIntoColumns = (row) => {
+  if (typeof row !== "string") return [row];
+  const trimmed = row.trim();
+  if (trimmed.includes("\t")) {
+    return trimmed.split("\t");
+  }
+  if (trimmed.includes(";")) {
+    return trimmed.split(";");
+  }
+  const spaceParts = trimmed.split(/\s+/);
+  if (spaceParts.length > 1) {
+    const isProbablySpaceSeparated = spaceParts.every((part) => {
+      const clean = part.toUpperCase().trim();
+      return (
+        clean === "" ||
+        clean === "-" ||
+        !isNaN(parseFloat(clean.replace(",", "."))) ||
+        QUALITATIVE_DESCRIPTORS[clean]
+      );
+    });
+    if (isProbablySpaceSeparated) {
+      return spaceParts;
+    }
+  }
+  return [row];
 };
 
 // --- Helper: Generate Description Logic (Moved from Print Rapor) ---
@@ -196,8 +225,6 @@ const GradeInput = ({
   value,
   onCommit,
   onPaste,
-  min,
-  max,
   className,
   readOnly,
   kkm,
@@ -221,7 +248,27 @@ const GradeInput = ({
   }, [value]);
 
   const handleChange = (e) => {
-    setLocalValue(e.target.value);
+    const val = e.target.value;
+    const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+    
+    if (hasSeparators) {
+      if (onPaste) {
+        onPaste({
+          preventDefault: () => {},
+          clipboardData: {
+            getData: () => val
+          }
+        });
+      }
+      return;
+    }
+
+    if (val === "" || /^\d*$/.test(val)) {
+      const num = parseInt(val, 10);
+      if (val === "" || (!isNaN(num) && num >= 0 && num <= 100)) {
+        setLocalValue(val);
+      }
+    }
   };
 
   const handleBlur = () => {
@@ -237,9 +284,9 @@ const GradeInput = ({
   };
 
   return React.createElement("input", {
-    type: "number",
-    min,
-    max,
+    type: "text",
+    inputMode: "numeric",
+    pattern: "[0-9]*",
     value: localValue,
     onChange: handleChange,
     onBlur: handleBlur,
@@ -833,7 +880,7 @@ const SummativeModal = ({
       const initialLocalGrades = {};
       students.forEach((student) => {
         const studentGrade = grades.find((g) => g.studentId === student.id);
-        initialLocalGrades[student.id] = JSON.parse(
+        const gradeObj = JSON.parse(
           JSON.stringify(
             studentGrade?.detailedGrades?.[subject.id] || {
               slm: [],
@@ -844,6 +891,8 @@ const SummativeModal = ({
             },
           ),
         );
+        if (!gradeObj.slm) gradeObj.slm = [];
+        initialLocalGrades[student.id] = gradeObj;
       });
       setLocalGrades(initialLocalGrades);
       setActiveInput({});
@@ -1064,9 +1113,9 @@ const SummativeModal = ({
   };
 
   const handlePaste = useCallback(
-    (e, startStudentId, tpIndex = null) => {
+    async (e, startStudentId, tpIndex = null) => {
       e.preventDefault();
-      const pasteData = e.clipboardData.getData("text");
+      const pasteData = await getClipboardText(e);
 
       let pastedRows = pasteData.split(/\r\n|\n|\r/);
       if (pastedRows.length > 0 && pastedRows[pastedRows.length - 1] === "") {
@@ -1091,8 +1140,11 @@ const SummativeModal = ({
           const studentIdToUpdate = studentIds[currentStudentIndex];
           const studentGradeToUpdate = newLocalGrades[studentIdToUpdate];
           if (!studentGradeToUpdate) return;
+          if (!studentGradeToUpdate.slm) {
+            studentGradeToUpdate.slm = [];
+          }
 
-          const valuesInRow = pastedValue.split("\t");
+          const valuesInRow = splitRowIntoColumns(pastedValue);
 
           // Iterate over columns to support horizontal pasting
           valuesInRow.forEach((val, colIndex) => {
@@ -1138,13 +1190,14 @@ const SummativeModal = ({
             if (QUALITATIVE_DESCRIPTORS.hasOwnProperty(qualitativeCode)) {
               finalValue = qualitativeCode;
             } else {
-              const numericValue = parseInt(gradeValueStr, 10);
+              let numericValue = parseFloat(gradeValueStr.replace(",", "."));
               if (
-                !isNaN(numericValue) &&
-                numericValue >= 0 &&
-                numericValue <= 100
+                !isNaN(numericValue)
               ) {
-                finalValue = numericValue;
+                numericValue = Math.round(numericValue);
+                if (numericValue >= 0 && numericValue <= 100) {
+                  finalValue = numericValue;
+                }
               }
             }
 
@@ -1696,17 +1749,31 @@ const SummativeModal = ({
                               "td",
                               { className: "px-2 py-1 text-center border-l" },
                               React.createElement("input", {
-                                type: "number",
-                                min: 0,
-                                max: 100,
+                                type: "text",
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
                                 value: numericValue,
-                                onChange: (e) =>
-                                  handleLocalGradeChange(
-                                    student.id,
-                                    e.target.value,
-                                    "qnt",
-                                    i,
-                                  ),
+                                onChange: (e) => {
+                                  const val = e.target.value;
+                                  const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+                                  if (hasSeparators) {
+                                    handlePaste({
+                                      preventDefault: () => {},
+                                      clipboardData: {
+                                        getData: () => val
+                                      }
+                                    }, student.id, i);
+                                    return;
+                                  }
+                                  if (val === "" || /^\d*$/.test(val)) {
+                                    handleLocalGradeChange(
+                                      student.id,
+                                      val,
+                                      "qnt",
+                                      i,
+                                    );
+                                  }
+                                },
                                 onPaste: (e) => handlePaste(e, student.id, i),
                                 readOnly: active === "ql",
                                 className: `w-full p-2 text-center border rounded-md ${active === "qnt" ? (numericValue !== "" ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"}`,
@@ -1749,20 +1816,34 @@ const SummativeModal = ({
                           "td",
                           { className: "px-2 py-1 text-center" },
                           React.createElement("input", {
-                            type: "number",
-                            min: 0,
-                            max: 100,
+                            type: "text",
+                            inputMode: "numeric",
+                            pattern: "[0-9]*",
                             value:
                               getNumericValue(
                                 studentGrade[type],
                                 qualitativeGradingMap,
                               ) ?? "",
-                            onChange: (e) =>
-                              handleLocalGradeChange(
-                                student.id,
-                                e.target.value,
-                                "qnt",
-                              ),
+                            onChange: (e) => {
+                              const val = e.target.value;
+                              const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+                              if (hasSeparators) {
+                                handlePaste({
+                                  preventDefault: () => {},
+                                  clipboardData: {
+                                    getData: () => val
+                                  }
+                                }, student.id);
+                                return;
+                              }
+                              if (val === "" || /^\d*$/.test(val)) {
+                                handleLocalGradeChange(
+                                  student.id,
+                                  val,
+                                  "qnt",
+                                );
+                              }
+                            },
                             onPaste: (e) => handlePaste(e, student.id),
                             className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== "" ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500"}`,
                           }),
@@ -2003,6 +2084,7 @@ const ManageSlmModal = ({
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
       let hasChanged = false;
 
       localSlms.forEach((localSlm) => {
@@ -2733,12 +2815,15 @@ const NilaiTableView = (props) => {
     const slmMap = new Map();
 
     // Step 1: Populate with predefined SLMs. This is the crucial fix.
+    const preHalf = Math.ceil(predefinedSlms.length / 2);
     predefinedSlms.forEach((pSlm, index) => {
       const slmId = `slm_predefined_${subject.id}_${index}`;
+      const defaultSemester = index < preHalf ? "Ganjil" : "Genap";
       slmMap.set(slmId, {
         id: slmId,
         name: pSlm.slm,
         tps: pSlm.tp.map((tpText) => ({ text: tpText, isEdited: false })),
+        semester: defaultSemester,
       });
     });
 
@@ -2954,6 +3039,7 @@ const NilaiTableView = (props) => {
         },
       ),
     );
+    if (!detailedGrade.slm) detailedGrade.slm = [];
 
     let finalValue = value === "" ? null : value;
 
@@ -3003,6 +3089,7 @@ const NilaiTableView = (props) => {
         },
       ),
     );
+    if (!detailedGrade.slm) detailedGrade.slm = [];
     const student = students.find((s) => s.id === studentId);
     const generated = generateSubjectDescription(
       student,
@@ -3059,6 +3146,7 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
 
       const generated = generateSubjectDescription(
         student,
@@ -3142,6 +3230,7 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
 
       let slmToUpdate = detailedGrade.slm.find((s) => s.id === slmId);
       if (!slmToUpdate) {
@@ -3204,9 +3293,9 @@ const NilaiTableView = (props) => {
   };
 
   // Paste handler implementation remains same...
-  const handlePaste = (e, startStudentId, startKey) => {
+  const handlePaste = async (e, startStudentId, startKey) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
     let rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
       rows.pop();
@@ -3237,9 +3326,12 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) {
+        detailedGrade.slm = [];
+      }
       let hasChanged = false;
 
-      const columns = row.split("\t");
+      const columns = splitRowIntoColumns(row);
       columns.forEach((val, cIndex) => {
         const currentColumnIndex = startColumnIndex + cIndex;
         if (currentColumnIndex >= columnKeys.length) return;
@@ -3253,9 +3345,12 @@ const NilaiTableView = (props) => {
           if (QUALITATIVE_DESCRIPTORS[upperVal]) {
             finalVal = upperVal;
           } else {
-            const numVal = parseInt(cleanVal, 10);
-            if (!isNaN(numVal) && numVal >= 0 && numVal <= 100) {
-              finalVal = numVal;
+            let numVal = parseFloat(cleanVal.replace(",", "."));
+            if (!isNaN(numVal)) {
+              numVal = Math.round(numVal);
+              if (numVal >= 0 && numVal <= 100) {
+                finalVal = numVal;
+              }
             }
           }
         }
@@ -3983,8 +4078,11 @@ const NilaiTableView = (props) => {
 };
 
 // ... (NilaiKeseluruhanView and DataNilaiPage wrapper retained as is)
-const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
+const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredikats, settings }) => {
+  const predikats = propPredikats || settings?.predikats;
   const [sortBy, setSortBy] = useState("no");
+  const [showMaxHighlight, setShowMaxHighlight] = useState(true);
+  const [showMinHighlight, setShowMinHighlight] = useState(true);
   const activeSubjects = useMemo(
     () => subjects.filter((s) => s.active),
     [subjects],
@@ -4197,7 +4295,34 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
       );
     }
     return dataWithRanks.sort((a, b) => a.no - b.no);
-  }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats]);
+  }, [students, grades, sortBy, activeSubjects, displaySubjects, predikats, settings]);
+
+  const subjectStats = useMemo(() => {
+    const stats = {};
+    for (const subject of displaySubjects) {
+      const validGrades = processedData
+        .map((d) => d.grades[subject.id])
+        .filter((g) => g !== undefined && g !== null && g !== "" && !isNaN(g))
+        .map((g) => (typeof g === "string" ? parseFloat(g) : g));
+
+      if (validGrades.length > 0) {
+        const maxVal = Math.max(...validGrades);
+        const minVal = Math.min(...validGrades);
+        stats[subject.id] = {
+          maxVal,
+          minVal,
+          hasMultipleValues: maxVal !== minVal,
+        };
+      } else {
+        stats[subject.id] = {
+          maxVal: null,
+          minVal: null,
+          hasMultipleValues: false,
+        };
+      }
+    }
+    return stats;
+  }, [processedData, displaySubjects]);
 
   return React.createElement(
     "div",
@@ -4209,48 +4334,96 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
       "div",
       {
         className:
-          "p-4 border-b border-slate-200 flex justify-end items-center flex-shrink-0",
+          "p-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0 flex-wrap gap-2",
       },
       React.createElement(
-        "span",
-        { className: "text-sm font-medium text-slate-700 mr-4" },
-        "Urutkan:",
+        "div",
+        { className: "flex items-center gap-3 text-xs font-semibold select-none flex-wrap" },
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMaxHighlight(!showMaxHighlight);
+            },
+            className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+            style: showMaxHighlight
+              ? { backgroundColor: "#dbeafe", borderColor: "#bfdbfe", color: "#1d4ed8" }
+              : { backgroundColor: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }
+          },
+          React.createElement("span", {
+            className: "w-2.5 h-2.5 rounded-full inline-block shadow-sm",
+            style: showMaxHighlight ? { backgroundColor: "#3b82f6" } : { backgroundColor: "#cbd5e1" }
+          }),
+          React.createElement("span", null, "Nilai Tertinggi (Biru)")
+        ),
+        React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMinHighlight(!showMinHighlight);
+            },
+            className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+            style: showMinHighlight
+              ? { backgroundColor: "#ffedd5", borderColor: "#fed7aa", color: "#c2410c" }
+              : { backgroundColor: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }
+          },
+          React.createElement("span", {
+            className: "w-2.5 h-2.5 rounded-full inline-block shadow-sm",
+            style: showMinHighlight ? { backgroundColor: "#f97316" } : { backgroundColor: "#cbd5e1" }
+          }),
+          React.createElement("span", null, "Nilai Terendah (Oranye)")
+        )
       ),
       React.createElement(
         "div",
-        { className: "flex items-center gap-4" },
+        { className: "flex items-center gap-2" },
         React.createElement(
-          "label",
-          { className: "flex items-center cursor-pointer" },
-          React.createElement("input", {
-            type: "radio",
-            name: "sort",
-            value: "no",
-            checked: sortBy === "no",
-            onChange: () => setSortBy("no"),
-            className: "h-4 w-4 text-indigo-600 border-slate-300",
-          }),
-          React.createElement(
-            "span",
-            { className: "ml-2 text-sm text-slate-600" },
-            "No. Absen",
-          ),
+          "span",
+          { className: "text-sm font-medium text-slate-700 mr-2" },
+          "Urutkan:",
         ),
         React.createElement(
-          "label",
-          { className: "flex items-center cursor-pointer" },
-          React.createElement("input", {
-            type: "radio",
-            name: "sort",
-            value: "rank",
-            checked: sortBy === "rank",
-            onChange: () => setSortBy("rank"),
-            className: "h-4 w-4 text-indigo-600 border-slate-300",
-          }),
+          "div",
+          { className: "flex items-center gap-4" },
           React.createElement(
-            "span",
-            { className: "ml-2 text-sm text-slate-600" },
-            "Peringkat",
+            "label",
+            { className: "flex items-center cursor-pointer" },
+            React.createElement("input", {
+              type: "radio",
+              name: "sort",
+              value: "no",
+              checked: sortBy === "no",
+              onChange: () => setSortBy("no"),
+              className: "h-4 w-4 text-indigo-600 border-slate-300",
+            }),
+            React.createElement(
+              "span",
+              { className: "ml-2 text-sm text-slate-600" },
+              "No. Absen",
+            ),
+          ),
+          React.createElement(
+            "label",
+            { className: "flex items-center cursor-pointer" },
+            React.createElement("input", {
+              type: "radio",
+              name: "sort",
+              value: "rank",
+              checked: sortBy === "rank",
+              onChange: () => setSortBy("rank"),
+              className: "h-4 w-4 text-indigo-600 border-slate-300",
+            }),
+            React.createElement(
+              "span",
+              { className: "ml-2 text-sm text-slate-600" },
+              "Peringkat",
+            ),
           ),
         ),
       ),
@@ -4362,18 +4535,39 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats }) => {
                   !isNaN(predicateCValue) &&
                   typeof grade === "number" &&
                   grade < predicateCValue;
+
+                const stats = subjectStats[subject.id];
+                let highlightClass = "bg-slate-100 border-slate-200 text-slate-700";
+                let highlightStyle = {};
+                if (stats && stats.hasMultipleValues && grade !== undefined && grade !== null && grade !== "") {
+                  const numGrade = typeof grade === "string" ? parseFloat(grade) : grade;
+                  if (!isNaN(numGrade)) {
+                    if (numGrade === stats.maxVal && showMaxHighlight) {
+                      highlightClass = "shadow-inner font-extrabold";
+                      highlightStyle = { backgroundColor: "#dbeafe", borderColor: "#60a5fa", color: "#1d4ed8" };
+                    } else if (numGrade === stats.minVal && showMinHighlight) {
+                      highlightClass = "shadow-inner font-extrabold";
+                      highlightStyle = { backgroundColor: "#ffedd5", borderColor: "#fb923c", color: "#c2410c" };
+                    }
+                  }
+                }
+
                 return React.createElement(
                   "td",
                   {
                     key: subject.id,
-                    className: "px-2 py-1 border-b border-slate-200",
+                    className: "px-2 py-1 border-b border-slate-200 text-center",
                   },
-                  React.createElement("input", {
-                    type: "text",
-                    value: grade ?? "",
-                    readOnly: true,
-                    className: `w-16 p-2 text-center bg-slate-100 border-slate-200 rounded-md cursor-not-allowed ${isBelowC ? "text-red-600 font-bold" : ""}`,
-                  }),
+                  React.createElement(
+                    "div",
+                    {
+                      className: `w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold select-none ${highlightClass} ${
+                        isBelowC ? "text-red-600 font-extrabold" : ""
+                      }`,
+                      style: highlightStyle,
+                    },
+                    grade !== null && grade !== undefined && grade !== "" ? grade : "-",
+                  ),
                 );
               }),
               React.createElement(
