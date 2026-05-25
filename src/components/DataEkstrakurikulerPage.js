@@ -1,5 +1,6 @@
 import React from "react";
 import { useGridSelection } from '../hooks/useGridSelection.js';
+import { getClipboardText } from "../utils/clipboard.js";
 
 const MAX_EXTRA_FIELDS = 5;
 
@@ -183,9 +184,9 @@ const DataEkstrakurikulerPage = ({
       return () => document.removeEventListener("copy", handleCopyGlobal);
   }, [getSelectionBounds, students, studentExtracurriculars, activeExtracurriculars, showToast]);
 
-  const handlePasteActivity = (e, startStudentId, extraIndex) => {
+  const handlePasteActivity = async (e, startStudentId, extraIndex) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
     let rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
@@ -210,7 +211,7 @@ const DataEkstrakurikulerPage = ({
       if (currentStudentIndex >= students.length) return;
 
       const student = students[currentStudentIndex];
-      const columns = row.split("\t");
+      const columns = row.includes("\t") ? row.split("\t") : (row.includes(";") ? row.split(";") : [row]);
 
       let record = studentExtraMap.get(student.id);
       if (!record) {
@@ -264,9 +265,9 @@ const DataEkstrakurikulerPage = ({
     }
   };
 
-  const handlePasteDescription = (e, startStudentId, extraIndex) => {
+  const handlePasteDescription = async (e, startStudentId, extraIndex) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
     // Split rows by newline, PRESERVING empty rows to maintain alignment.
     // Only remove the very last empty element if it exists (common in Excel copy)
@@ -294,7 +295,7 @@ const DataEkstrakurikulerPage = ({
       if (currentStudentIndex >= students.length) return;
 
       const student = students[currentStudentIndex];
-      const columns = row.split("\t");
+      const columns = row.includes("\t") ? row.split("\t") : (row.includes(";") ? row.split(";") : [row]);
 
       // Get current record or create new
       let record = studentExtraMap.get(student.id);
