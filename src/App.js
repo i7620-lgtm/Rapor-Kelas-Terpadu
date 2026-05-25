@@ -620,7 +620,7 @@ const App = () => {
         XLSX.utils.book_append_sheet(wb, wsLeger, "Leger");
 
         // --- 3. Sheet: Pengaturan ---
-        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout'];
+        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout', 'piagam_layout_Genap', 'kop_layout_Genap'];
         const settingsRows = [
             ["Kunci Pengaturan", "Nilai"],
             ["format_version", "2"],
@@ -635,6 +635,8 @@ const App = () => {
             }),
             ["kop_layout", JSON.stringify(settings.kop_layout || [])],
             ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
+            ["kop_layout_Genap", JSON.stringify(settings.kop_layout_Genap || [])],
+            ["piagam_layout_Genap", JSON.stringify(settings.piagam_layout_Genap || [])],
             [],
             ["Pengaturan Rentang Nilai (Predikat)"],
             ["Predikat", "Nilai Minimum"],
@@ -721,14 +723,47 @@ const App = () => {
         });
 
         // --- 9. Data Lainnya (Absensi, Ekstra, Kokur, Catatan, Jurnal, Aset) ---
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID Siswa", "Sakit", "Izin", "Alpa"], ...students.map(s => { const a = attendance.find(x => x.studentId === s.id); return [s.id, a?.sakit ?? '', a?.izin ?? '', a?.alpa ?? '']; })]), "Absensi");
-        const exRows = [["ID Siswa", "Nama Siswa", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"]];
-        studentExtracurriculars.forEach(se => { const st = students.find(s => s.id === se.studentId); if (st) se.assignedActivities.forEach((actId, i) => { if (actId) exRows.push([se.studentId, st.namaLengkap, i + 1, actId, se.descriptions?.[actId] || '']); }); });
+        const absensiRows = [["ID Siswa", "Semester", "Sakit", "Izin", "Alpa"]];
+        students.forEach(s => {
+            ['Ganjil', 'Genap'].forEach(sem => {
+                const a = attendance.find(x => x.studentId === s.id && (x.semester || 'Ganjil') === sem);
+                if (a && (a.sakit || a.izin || a.alpa)) absensiRows.push([s.id, sem, a.sakit ?? '', a.izin ?? '', a.alpa ?? '']);
+            });
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(absensiRows), "Absensi");
+
+        const exRows = [["ID Siswa", "Nama Siswa", "Semester", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"]];
+        studentExtracurriculars.forEach(se => { 
+            const st = students.find(s => s.id === se.studentId); 
+            const sem = se.semester || 'Ganjil';
+            if (st) se.assignedActivities.forEach((actId, i) => { 
+                if (actId) exRows.push([se.studentId, st.namaLengkap, sem, i + 1, actId, se.descriptions?.[actId] || '']); 
+            }); 
+        });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(exRows), "Data Ekstra");
-        const koRows = [["ID Siswa", "Nama Siswa", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
-        students.forEach(s => { const co = cocurricularData[s.id]?.dimensionRatings || {}; const row = [s.id, s.namaLengkap]; COCURRICULAR_DIMENSIONS.forEach(d => row.push(co[d.id] || '')); koRows.push(row); });
+
+        const koRows = [["ID Siswa", "Nama Siswa", "Semester", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
+        students.forEach(s => { 
+            const co = cocurricularData[s.id] || {}; 
+            ['Ganjil', 'Genap'].forEach(sem => {
+                const fieldName = sem === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
+                const ratings = co[fieldName];
+                if (ratings && Object.keys(ratings).length > 0) {
+                    const row = [s.id, s.namaLengkap, sem]; 
+                    COCURRICULAR_DIMENSIONS.forEach(d => row.push(ratings[d.id] || '')); 
+                    koRows.push(row);
+                }
+            });
+        });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(koRows), "Data Kokurikuler");
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([["ID Siswa", "Catatan Wali Kelas"], ...students.map(s => [s.id, notes[s.id] || ''])]), "Catatan Wali Kelas");
+
+        const catatanRows = [["ID Siswa", "Semester", "Catatan Wali Kelas"]];
+        students.forEach(s => {
+            if (notes[s.id]) catatanRows.push([s.id, 'Ganjil', notes[s.id]]);
+            if (notes[s.id + '_Genap']) catatanRows.push([s.id, 'Genap', notes[s.id + '_Genap']]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catatanRows), "Catatan Wali Kelas");
+
         const jfRows = [["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan"]];
         Object.entries(formativeJournal).forEach(([sid, ns]) => ns.forEach(n => jfRows.push([sid, n.id, n.date, n.type, n.subjectId || '', n.slmId || '', n.tpId || '', n.topic || '', n.note || ''])));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(jfRows), "Jurnal Formatif");
@@ -806,7 +841,7 @@ const App = () => {
                     
                     if (['A', 'B', 'C', 'D'].includes(key.toUpperCase())) {
                         news.predikats[key.toLowerCase()] = String(r[1]); 
-                    } else if (key === 'kop_layout' || key === 'piagam_layout' || key === 'appLock') {
+                    } else if (key === 'kop_layout' || key === 'piagam_layout' || key === 'kop_layout_Genap' || key === 'piagam_layout_Genap' || key === 'appLock') {
                         try {
                             news[key] = typeof r[1] === 'string' ? JSON.parse(r[1]) : r[1];
                         } catch (e) {
@@ -952,13 +987,45 @@ const App = () => {
             } 
         });
         const wsAtt = findSheet(["Absensi"]);
-        if (wsAtt) nAtt = XLSX.utils.sheet_to_json(wsAtt).map(r => ({ studentId: String(r['ID Siswa']), sakit: r['Sakit'], izin: r['Izin'], alpa: r['Alpa'] }));
+        if (wsAtt) nAtt = XLSX.utils.sheet_to_json(wsAtt).map(r => ({ studentId: String(r['ID Siswa']), semester: r['Semester'] || 'Ganjil', sakit: r['Sakit'], izin: r['Izin'], alpa: r['Alpa'] }));
         const wsDE = findSheet(["Data Ekstra"]);
-        if (wsDE) { const deData = XLSX.utils.sheet_to_json(wsDE), map = {}; deData.forEach(row => { const sid = String(row['ID Siswa']); if (!map[sid]) map[sid] = { studentId: sid, assignedActivities: [], descriptions: {} }; const idx = (row['Urutan Ekstra'] || 1) - 1, actId = row['ID Ekstrakurikuler'], desc = row['Deskripsi']; map[sid].assignedActivities[idx] = actId; if (actId) map[sid].descriptions[actId] = desc; }); nStEx = Object.values(map); }
+        if (wsDE) { 
+            const deData = XLSX.utils.sheet_to_json(wsDE), map = {}; 
+            deData.forEach(row => { 
+                const sid = String(row['ID Siswa']);
+                const sem = row['Semester'] || 'Ganjil';
+                const key = `${sid}_${sem}`;
+                if (!map[key]) map[key] = { studentId: sid, semester: sem, assignedActivities: [], descriptions: {} }; 
+                const idx = (row['Urutan Ekstra'] || 1) - 1;
+                const actId = row['ID Ekstrakurikuler'];
+                const desc = row['Deskripsi'];
+                map[key].assignedActivities[idx] = actId; 
+                if (actId) map[key].descriptions[actId] = desc; 
+            }); 
+            nStEx = Object.values(map); 
+        }
         const wsKo = findSheet(["Data Kokurikuler"]);
-        if (wsKo) { const koData = XLSX.utils.sheet_to_json(wsKo); koData.forEach(row => { const sid = String(row['ID Siswa']), ratings = {}; COCURRICULAR_DIMENSIONS.forEach(dim => { ratings[dim.id] = row[dim.id] || row[dim.label]; }); nCo[sid] = { dimensionRatings: ratings }; }); }
+        if (wsKo) { 
+            const koData = XLSX.utils.sheet_to_json(wsKo); 
+            koData.forEach(row => { 
+                const sid = String(row['ID Siswa']);
+                const sem = row['Semester'] || 'Ganjil';
+                const fieldName = sem === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
+                if (!nCo[sid]) nCo[sid] = {};
+                const ratings = nCo[sid][fieldName] || {};
+                COCURRICULAR_DIMENSIONS.forEach(dim => { 
+                    if (row[dim.id] || row[dim.label]) ratings[dim.id] = row[dim.id] || row[dim.label]; 
+                }); 
+                nCo[sid][fieldName] = ratings;
+            }); 
+        }
         const wsCat = findSheet(["Catatan Wali Kelas"]);
-        if (wsCat) XLSX.utils.sheet_to_json(wsCat).forEach(row => { const sid = String(row['ID Siswa']); nNot[sid] = row['Catatan Wali Kelas']; });
+        if (wsCat) XLSX.utils.sheet_to_json(wsCat).forEach(row => { 
+            const sid = String(row['ID Siswa']); 
+            const sem = row['Semester'] || 'Ganjil';
+            const key = sem === 'Genap' ? `${sid}_Genap` : sid;
+            nNot[key] = row['Catatan Wali Kelas']; 
+        });
         const wsJF = findSheet(["Jurnal Formatif"]);
         if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'] }); }); }
         nGr.forEach(studentGrade => { nSub.forEach(subj => { 
@@ -1174,37 +1241,70 @@ const App = () => {
                 onBulkAddSlm: (subId, slm) => { setGrades(prev => prev.map(g => { const d = g.detailedGrades?.[subId] || { slm: [], sts1: null, sts2: null, sas1: null, sas2: null }; if (!d.slm.some(s => s.id === slm.id)) d.slm.push({ ...slm, scores: [...slm.scores] }); return { ...g, detailedGrades: { ...g.detailedGrades, [subId]: d } }; })); },
                 predefinedCurriculum, showToast 
             }) :
-            activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: handleSettingsChange, onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => ({...prev, [sid]: { ...prev[sid], dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), [did]: val } } })), showToast }) :
-            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: () => {}, onUpdateKopLayout: (l) => setSettings(s => ({...s, kop_layout: l})), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
-            activePage === 'DATA_ABSENSI' ? React.createElement(DataAbsensiPage, { students, attendance, onUpdateAttendance: (sid, t, v) => setAttendance(prev => { const n = [...prev], i = n.findIndex(a => a.studentId === sid); if(i>-1) n[i][t] = v===''?null:parseInt(v); else n.push({studentId:sid, [t]: v===''?null:parseInt(v)}); return n; }), onBulkUpdateAttendance: setAttendance, showToast }) :
-            activePage === 'CATATAN_WALI_KELAS' ? React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: (sid, note) => setNotes(prev => ({...prev, [sid]: note})), grades, subjects, settings, showToast }) :
-            activePage === 'DATA_EKSTRAKURIKULER' ? React.createElement(DataEkstrakurikulerPage, { students, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: setStudentExtracurriculars, showToast }) :
+            activePage === 'DATA_KOKURIKULER' ? React.createElement(DataKokurikulerPage, { students, settings, cocurricularData, onSettingsChange: handleSettingsChange, onUpdateCocurricularData: (sid, did, val) => setCocurricularData(prev => { const fieldName = settings.semester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings'; return {...prev, [sid]: { ...prev[sid], [fieldName]: { ...(prev[sid]?.[fieldName] || {}), [did]: val } } }; }), showToast }) :
+            activePage === 'PENGATURAN' ? React.createElement(SettingsPage, { settings, onSettingsChange: handleSettingsChange, onSave: () => {}, onUpdateKopLayout: (l) => setSettings(s => { const currentSemester = s.semester || 'Ganjil'; const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout'; return {...s, [layoutField]: l}; }), subjects, onUpdateSubjects: setSubjects, extracurriculars, onUpdateExtracurriculars: setExtracurriculars, showToast }) :
+            activePage === 'DATA_ABSENSI' ? React.createElement(DataAbsensiPage, { students, settings, attendance, onUpdateAttendance: (sid, t, v) => setAttendance(prev => { const n = [...prev]; const sem = settings.semester || 'Ganjil'; const i = n.findIndex(a => a.studentId === sid && (a.semester || 'Ganjil') === sem); if(i>-1) n[i][t] = v===''?null:parseInt(v); else n.push({studentId:sid, semester: sem, [t]: v===''?null:parseInt(v)}); return n; }), onBulkUpdateAttendance: setAttendance, showToast }) :
+            activePage === 'CATATAN_WALI_KELAS' ? React.createElement(CatatanWaliKelasPage, { students, notes, onUpdateNote: (sid, note) => setNotes(prev => { const key = settings.semester === 'Genap' ? sid + '_Genap' : sid; return {...prev, [key]: note}; }), grades, subjects, settings, showToast }) :
+            activePage === 'DATA_EKSTRAKURIKULER' ? React.createElement(DataEkstrakurikulerPage, { students, settings, extracurriculars, studentExtracurriculars, onUpdateStudentExtracurriculars: setStudentExtracurriculars, showToast }) :
             activePage === 'PRINT_RAPOR' ? React.createElement(PrintRaporPage, { 
                 students, settings, grades, attendance, notes, studentExtracurriculars, extracurriculars, subjects, learningObjectives, cocurricularData, 
                 onUpdateDescription: (sid, subId, type, val, currentDescriptions) => { 
                     setGrades(prev => { 
+                        const currentSemester = settings?.semester || 'Ganjil';
+                        const descField = currentSemester === 'Genap' ? 'descriptions_Genap' : 'descriptions';
+
                         const n = JSON.parse(JSON.stringify(prev)); 
                         const g = n.find(x => x.studentId === sid); 
                         if(g) { 
                             if(!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts1: null, sts2: null, sas1: null, sas2: null };
-                            if(!g.detailedGrades[subId].descriptions) {
+                            if(!g.detailedGrades[subId][descField]) {
                                 // If descriptions don't exist in DB, use the current ones (which might be auto-generated)
-                                g.detailedGrades[subId].descriptions = currentDescriptions || { highest: '', lowest: '' };
+                                g.detailedGrades[subId][descField] = currentDescriptions || { highest: '', lowest: '' };
                             }
-                            g.detailedGrades[subId].descriptions[type] = val; 
+                            g.detailedGrades[subId][descField][type] = val; 
                         } 
                         return n; 
                     }); 
                 },
                 onUpdateStudent: (id, k, v) => setStudents(prev => prev.map(s => s.id === id ? { ...s, [k]: v } : s)),
                 onUpdateSettings: (k, v) => setSettings(s => ({ ...s, [k]: v })),
-                onUpdateNote: (sid, v) => setNotes(n => ({ ...n, [sid]: v })),
-                onUpdateAttendance: (sid, k, v) => setAttendance(prev => { const n = [...prev], i = n.findIndex(a => a.studentId === sid); if(i>-1) n[i][k] = v===''?null:parseInt(v); else n.push({studentId:sid, [k]: v===''?null:parseInt(v)}); return n; }),
-                onUpdateExtraDescription: (sid, eid, v) => setStudentExtracurriculars(prev => prev.map(s => s.studentId === sid ? { ...s, descriptions: { ...s.descriptions, [eid]: v } } : s)),
-                onUpdateCocurricularManual: (sid, v) => setCocurricularData(prev => ({ ...prev, [sid]: { ...prev[sid], manualDescription: v } })),
+                onUpdateNote: (sid, v) => setNotes(n => { const key = settings?.semester === 'Genap' ? sid + '_Genap' : sid; return { ...n, [key]: v }; }),
+                onUpdateAttendance: (sid, k, v) => setAttendance(prev => { 
+                    const n = [...prev]; 
+                    const sem = settings?.semester || 'Ganjil';
+                    const i = n.findIndex(a => a.studentId === sid && (a.semester || 'Ganjil') === sem); 
+                    if(i > -1) n[i][k] = v === '' ? null : parseInt(v); 
+                    else n.push({ studentId: sid, semester: sem, [k]: v === '' ? null : parseInt(v) }); 
+                    return n; 
+                }),
+                onUpdateExtraDescription: (sid, eid, v) => setStudentExtracurriculars(prev => prev.map(s => {
+                    const sem = settings?.semester || 'Ganjil';
+                    if (s.studentId === sid && (s.semester || 'Ganjil') === sem) {
+                        return { ...s, descriptions: { ...s.descriptions, [eid]: v } };
+                    }
+                    return s;
+                })),
+                onUpdateCocurricularManual: (sid, v) => setCocurricularData(prev => {
+                    const currentSemester = settings?.semester || 'Ganjil';
+                    const fieldName = currentSemester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
+                    return { 
+                        ...prev, [sid]: { 
+                            ...prev[sid], 
+                            [fieldName]: { ...(prev[sid]?.[fieldName] || {}), manualDescription: v }
+                        } 
+                    };
+                }),
                 showToast 
             }) :
-            activePage === 'PRINT_PIAGAM' ? React.createElement(PrintPiagamPage, { students, settings, grades, subjects, onUpdatePiagamLayout: (l) => setSettings(s => ({...s, piagam_layout: l})), showToast }) :
+            activePage === 'PRINT_PIAGAM' ? React.createElement(PrintPiagamPage, { 
+                students, settings, grades, subjects, 
+                onUpdatePiagamLayout: (l) => setSettings(s => {
+                    const currentSemester = s.semester || 'Ganjil';
+                    const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
+                    return { ...s, [layoutField]: l };
+                }), 
+                showToast 
+            }) :
             activePage === 'PRINT_LEGER' ? React.createElement(PrintLegerPage, { students, settings, grades, subjects, showToast }) :
             activePage === 'JURNAL_FORMATIF' ? React.createElement(JurnalFormatifPage, { students, formativeJournal, onUpdate: (sid, data) => setFormativeJournal(prev => { const next = { ...prev }; if(!next[sid]) next[sid] = []; const idx = next[sid].findIndex(n => n.id === data.id); if(idx > -1) next[sid][idx] = data; else next[sid].push({ ...data, id: Date.now() }); return next; }), onDelete: (sid, id) => setFormativeJournal(prev => ({...prev, [sid]: prev[sid].filter(n => n.id !== id)})), showToast, subjects, grades, settings, predefinedCurriculum }) :
             React.createElement(PlaceholderPage, { title: activePage })
