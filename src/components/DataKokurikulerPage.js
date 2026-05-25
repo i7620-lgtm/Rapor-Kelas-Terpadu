@@ -1,5 +1,6 @@
 import React from "react";
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from "../constants.js";
+import { getClipboardText } from "../utils/clipboard.js";
 
 const DataKokurikulerPage = ({
   students,
@@ -211,9 +212,10 @@ const DataKokurikulerPage = ({
     );
   };
 
-  const handlePaste = (e, startStudentId, startDimensionId) => {
+  const handlePaste = async (e, startStudentId, startDimensionId) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
+    if (!pasteData) return;
 
     // Split rows by newline, PRESERVING empty rows to maintain index alignment
     let rows = pasteData.split(/\r\n|\n|\r/);
@@ -238,6 +240,24 @@ const DataKokurikulerPage = ({
       const student = students[currentStudentIndex];
 
       let columns = row.split("\t");
+      if (!row.includes("\t") && row.includes(";")) {
+        columns = row.split(";");
+      } else if (!row.includes("\t") && !row.includes(";")) {
+        const spaceParts = row.trim().split(/\s+/);
+        if (spaceParts.length > 1) {
+          const isProbablySpaceSeparated = spaceParts.every((part) => {
+            const clean = part.toUpperCase().trim();
+            return (
+              clean === "" ||
+              clean === "-" ||
+              ["SB", "BSH", "MB", "BB"].includes(clean)
+            );
+          });
+          if (isProbablySpaceSeparated) {
+            columns = spaceParts;
+          }
+        }
+      }
       if (
         columns.length > 0 &&
         columns[0].trim().toLowerCase() === student.namaLengkap.toLowerCase()
