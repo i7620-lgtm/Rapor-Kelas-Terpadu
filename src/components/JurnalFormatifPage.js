@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FORMATIVE_ASSESSMENT_TYPES } from '../constants.js';
-import { getGradeNumber } from './DataNilaiPage.js';
 
-const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, showToast, subjects = [], grades = [], settings = {}, predefinedCurriculum }) => {
+const NoteEditorModal = ({ isOpen, onClose, onSave, studentName, noteToEdit, showToast, subjects = [], predefinedCurriculum }) => {
     const isEditing = !!noteToEdit;
     const [noteData, setNoteData] = useState({});
     
@@ -197,8 +196,12 @@ const StudentJournalModal = ({ isOpen, onClose, student, notes, onUpdate, onDele
     };
 
     const handleSaveNote = (noteData) => {
-        onUpdate(student.id, noteData);
-        showToast(noteData.id ? 'Catatan berhasil diperbarui.' : 'Catatan baru berhasil disimpan.', 'success');
+        const enrichedNote = {
+            ...noteData,
+            semester: noteData.semester || settings?.semester || 'Ganjil'
+        };
+        onUpdate(student.id, enrichedNote);
+        showToast(enrichedNote.id ? 'Catatan berhasil diperbarui.' : 'Catatan baru berhasil disimpan.', 'success');
     };
     
     const getSlmName = (note) => {
@@ -302,12 +305,12 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
     };
 
     return (
-        React.createElement('div', { className: "flex flex-col gap-6 space-y-0" },
+        React.createElement('div', { className: "flex flex-col gap-6 space-y-0 pt-4 sm:pt-8" },
             selectedStudent && React.createElement(StudentJournalModal, { 
                 isOpen: isModalOpen, 
                 onClose: () => setIsModalOpen(false), 
                 student: selectedStudent, 
-                notes: formativeJournal[selectedStudent.id] || [],
+                notes: (formativeJournal[selectedStudent.id] || []).filter(n => (n.semester || 'Ganjil') === (settings?.semester || 'Ganjil')),
                 onUpdate: onUpdate,
                 onDelete: onDelete,
                 showToast: showToast,
@@ -328,7 +331,7 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                     )
                 )
             ) : (
-                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-4 sm:top-8 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
+                React.createElement('div', { className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden" },
                     React.createElement('div', { className: "flex-1 overflow-auto" },
                         React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
                             React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30" },
@@ -341,7 +344,9 @@ const JurnalFormatifPage = ({ students, formativeJournal, onUpdate, onDelete, sh
                             ),
                             React.createElement('tbody', null,
                                 students.map((student, index) => {
-                                    const noteCount = formativeJournal[student.id]?.length || 0;
+                                    const currentSemester = settings?.semester || 'Ganjil';
+                                    const studentNotes = (formativeJournal[student.id] || []).filter(n => (n.semester || 'Ganjil') === currentSemester);
+                                    const noteCount = studentNotes.length;
                                     return (
                                         React.createElement('tr', { key: student.id, className: "bg-white hover:bg-[#fafafa]" },
                                             React.createElement('td', { className: "px-3 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" }, index + 1),
