@@ -94,18 +94,21 @@ const DataAbsensiPage = ({
   onUpdateAttendance,
   onBulkUpdateAttendance,
   showToast,
+  settings,
 }) => {
   const getAttendanceForStudent = useCallback(
     (studentId) => {
-      const studentAtt = attendance.find((a) => a.studentId === studentId);
+      const sem = settings?.semester || 'Ganjil';
+      const studentAtt = attendance.find((a) => a.studentId === studentId && (a.semester || 'Ganjil') === sem);
       return {
         studentId,
+        semester: sem,
         sakit: studentAtt?.sakit ?? null,
         izin: studentAtt?.izin ?? null,
         alpa: studentAtt?.alpa ?? null,
       };
     },
-    [attendance],
+    [attendance, settings?.semester],
   );
 
   const fields = ["sakit", "izin", "alpa"];
@@ -206,8 +209,14 @@ const DataAbsensiPage = ({
 
     if (startFieldIndex === -1) return;
 
+    const sem = settings?.semester || 'Ganjil';
     // Create a map of existing attendance to avoid O(N^2) lookups
-    const attendanceMap = new Map(attendance.map((a) => [a.studentId, a]));
+    const attendanceMap = new Map();
+    attendance.forEach((a) => {
+      if ((a.semester || 'Ganjil') === sem) {
+        attendanceMap.set(a.studentId, a);
+      }
+    });
     const newAttendanceList = [];
     let updatedCount = 0;
 
@@ -219,6 +228,7 @@ const DataAbsensiPage = ({
       // Use existing record or create new empty one
       let record = attendanceMap.get(student.id) || {
         studentId: student.id,
+        semester: sem,
         sakit: null,
         izin: null,
         alpa: null,
@@ -259,14 +269,14 @@ const DataAbsensiPage = ({
       // Merge new records with existing ones that weren't touched
       const finalAttendance = attendance.map((a) => {
         const updated = newAttendanceList.find(
-          (u) => u.studentId === a.studentId,
+          (u) => u.studentId === a.studentId && (u.semester || 'Ganjil') === (a.semester || 'Ganjil'),
         );
         return updated || a;
       });
 
       // Add records for students who didn't have attendance yet but were in the paste list
       newAttendanceList.forEach((newItem) => {
-        if (!finalAttendance.some((a) => a.studentId === newItem.studentId)) {
+        if (!finalAttendance.some((a) => a.studentId === newItem.studentId && (a.semester || 'Ganjil') === (newItem.semester || 'Ganjil'))) {
           finalAttendance.push(newItem);
         }
       });
