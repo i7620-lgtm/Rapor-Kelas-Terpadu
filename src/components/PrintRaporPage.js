@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { transliterate, generateInitialLayout } from './TransliterationUtil.js';
+import { generateInitialLayout } from './TransliterationUtil.js';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
-import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from '../constants.js';
+import { COCURRICULAR_DIMENSIONS } from '../constants.js';
 
 const getPhase = (gradeNumber) => {
     if (gradeNumber >= 5) return 'C'; // Kelas 5 & 6
@@ -102,8 +102,11 @@ const EditableDescription = ({ value, onSave, placeholder, className, style, mul
 };
 
 const ReportHeader = ({ settings }) => {
-    const layout = settings.kop_layout && settings.kop_layout.length > 0
-        ? settings.kop_layout
+    const currentSemester = settings?.semester || 'Ganjil';
+    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+
+    const layout = settings[layoutField] && settings[layoutField].length > 0
+        ? settings[layoutField]
         : generateInitialLayout(settings);
 
     return (
@@ -182,28 +185,6 @@ const ReportHeader = ({ settings }) => {
 };
 
 
-const formatDate = (dateString) => {
-    if (!dateString || dateString instanceof Date && isNaN(dateString)) return '-';
-    try {
-        const date = new Date(dateString);
-        // add timezone offset to prevent off-by-one day errors
-        const userTimezoneOffset = date.getTimezoneOffset() * 60000;
-        const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
-        
-        if (isNaN(adjustedDate.getTime())) {
-            return String(dateString); // Return original string if date is invalid
-        }
-
-        return adjustedDate.toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-        });
-    } catch (e) {
-        return String(dateString); // Return original string on error
-    }
-};
-
 const capitalize = (s) => {
     if (typeof s !== 'string' || !s) return '';
     const trimmed = s.trim().replace(/[.,;]$/, '');
@@ -219,7 +200,9 @@ const lowercaseFirst = (s) => {
 
 const generateDescription = (student, subject, gradeData, learningObjectives, settings) => {
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
-    const manualDescriptions = detailedGrade?.descriptions || {};
+    const currentSemester = settings?.semester || 'Ganjil';
+    const descField = currentSemester === 'Genap' ? 'descriptions_Genap' : 'descriptions';
+    const manualDescriptions = detailedGrade?.[descField] || {};
     
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
@@ -261,15 +244,23 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
     
     if (detailedGrade && detailedGrade.slm) {
         const tpTextMap = new Map();
+        const slmSemesterMap = new Map();
+
         objectivesForSubject.forEach(obj => {
             if (!tpTextMap.has(obj.slmId)) {
                 tpTextMap.set(obj.slmId, []);
+                slmSemesterMap.set(obj.slmId, obj.semester || 'Semua');
             }
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
         const activeSlmIds = settings.slmVisibility?.[subject.id];
-        const visibleSlms = activeSlmIds ? detailedGrade.slm.filter(slm => activeSlmIds.includes(slm.id)) : detailedGrade.slm;
+        const visibleSlms = detailedGrade.slm.filter(slm => {
+            const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
+            const slmSemester = slmSemesterMap.get(slm.id) || 'Semua';
+            const isCorrectSemester = slmSemester === 'Semua' || slmSemester === currentSemester;
+            return isVisible && isCorrectSemester;
+        });
 
         visibleSlms.forEach(slm => {
             const tpTextsForThisSlm = tpTextMap.get(slm.id);
@@ -349,7 +340,7 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
                         return `${reportYear}/${reportYear + 1}`;
                     }
                 }
-            } catch (e) { /* Fallback below */ }
+            } catch { /* Fallback below */ }
         }
         if (settings.tahun_ajaran) {
             return settings.tahun_ajaran;
@@ -718,8 +709,10 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     );
     
     const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+    const currentSemester = settings.semester || 'Ganjil';
 
-    const originalNote = notes[student.id] || '';
+    const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
+    const originalNote = notes[originalNoteKey] || '';
     let studentNoteContent;
     
     if (shouldDisplayRank) {
@@ -747,12 +740,12 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         });
     }
 
-    const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
+    const attendanceData = attendance.find(a => a.studentId === student.id && (a.semester || 'Ganjil') === currentSemester) || { sakit: null, izin: null, alpa: null };
     const sakitCount = attendanceData.sakit ?? 0;
     const izinCount = attendanceData.izin ?? 0;
     const alpaCount = attendanceData.alpa ?? 0;
 
-    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
     
     const extraActivities = (studentExtraData?.assignedActivities || [])
         .map(activityId => {
@@ -765,14 +758,20 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const cocurricularDescription = useMemo(() => {
         // Priority: Manual > Auto
         const studentCoData = cocurricularData?.[student.id];
+        const fieldName = currentSemester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
         
-        if (studentCoData?.manualDescription) {
-            return studentCoData.manualDescription;
+        let manualContent = studentCoData?.[fieldName]?.manualDescription;
+        if (!manualContent && currentSemester === 'Ganjil' && studentCoData?.manualDescription) {
+             manualContent = studentCoData.manualDescription; // legacy fallback for Ganjil
         }
 
-        const theme = settings.cocurricular_theme;
-        const ratings = (studentCoData && typeof studentCoData.dimensionRatings === 'object' && studentCoData.dimensionRatings !== null)
-            ? studentCoData.dimensionRatings
+        if (manualContent) {
+            return manualContent;
+        }
+
+        const theme = currentSemester === 'Genap' ? settings.cocurricular_theme_Genap : settings.cocurricular_theme;
+        const ratings = (studentCoData && typeof studentCoData[fieldName] === 'object' && studentCoData[fieldName] !== null)
+            ? studentCoData[fieldName]
             : {};
         
         const hasRatings = Object.values(ratings).some(r => r && r !== "---");
@@ -1056,17 +1055,19 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     ), [rank, rankingOption]);
 
     const notesForMeasurement = useMemo(() => {
+        const currentSemester = settings?.semester || 'Ganjil';
+        const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
         if (shouldDisplayRank) {
             const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
             const rankMessage = `Selamat! ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
-            const originalNote = notes[student.id] || '';
+            const originalNote = notes[originalNoteKey] || '';
             return {
                 ...notes,
-                [student.id]: rankMessage + originalNote
+                [originalNoteKey]: rankMessage + originalNote
             };
         }
         return notes;
-    }, [shouldDisplayRank, student, rank, notes]);
+    }, [shouldDisplayRank, student, rank, notes, settings?.semester]);
 
     useEffect(() => {
         if (cmRef.current) {
@@ -1197,7 +1198,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             });
 
             // Calculate if there are active extras for this student
-            const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
+            const currentSemester = settings?.semester || 'Ganjil';
+            const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
             const hasExtras = (studentExtraData?.assignedActivities || []).some(id => id && extracurriculars.some(e => e.id === id));
 
             const footerItems = [
@@ -1602,7 +1604,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
+            React.createElement('div', { className: "pt-4 sm:pt-8" },
+                React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden space-y-4" },
                  React.createElement('div', { className: "flex flex-wrap items-start justify-between gap-4" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Rapor"),
@@ -1720,7 +1723,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 })
             )
         )
-    );
+    )
+);
 };
- 
+
 export default PrintRaporPage;
