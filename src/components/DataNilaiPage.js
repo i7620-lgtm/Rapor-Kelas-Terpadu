@@ -7,6 +7,7 @@ import React, {
   useLayoutEffect,
 } from "react";
 import { QUALITATIVE_DESCRIPTORS } from "../constants.js";
+import { getClipboardText } from "../utils/clipboard.js";
 
 export const getGradeNumber = (str) => {
   if (!str) return null;
@@ -56,6 +57,34 @@ const getQualitativeCode = (score, predikats) => {
   if (score >= valC) return "MB";
   if (score < valC) return "BB";
   return "";
+};
+
+// --- Helper: split row into columns supporting tabs, semicolons, and spaces (especially for Android/mobile compatibility) ---
+const splitRowIntoColumns = (row) => {
+  if (typeof row !== "string") return [row];
+  const trimmed = row.trim();
+  if (trimmed.includes("\t")) {
+    return trimmed.split("\t");
+  }
+  if (trimmed.includes(";")) {
+    return trimmed.split(";");
+  }
+  const spaceParts = trimmed.split(/\s+/);
+  if (spaceParts.length > 1) {
+    const isProbablySpaceSeparated = spaceParts.every((part) => {
+      const clean = part.toUpperCase().trim();
+      return (
+        clean === "" ||
+        clean === "-" ||
+        !isNaN(parseFloat(clean.replace(",", "."))) ||
+        QUALITATIVE_DESCRIPTORS[clean]
+      );
+    });
+    if (isProbablySpaceSeparated) {
+      return spaceParts;
+    }
+  }
+  return [row];
 };
 
 // --- Helper: Generate Description Logic (Moved from Print Rapor) ---
@@ -196,8 +225,6 @@ const GradeInput = ({
   value,
   onCommit,
   onPaste,
-  min,
-  max,
   className,
   readOnly,
   kkm,
@@ -221,7 +248,27 @@ const GradeInput = ({
   }, [value]);
 
   const handleChange = (e) => {
-    setLocalValue(e.target.value);
+    const val = e.target.value;
+    const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+    
+    if (hasSeparators) {
+      if (onPaste) {
+        onPaste({
+          preventDefault: () => {},
+          clipboardData: {
+            getData: () => val
+          }
+        });
+      }
+      return;
+    }
+
+    if (val === "" || /^\d*$/.test(val)) {
+      const num = parseInt(val, 10);
+      if (val === "" || (!isNaN(num) && num >= 0 && num <= 100)) {
+        setLocalValue(val);
+      }
+    }
   };
 
   const handleBlur = () => {
@@ -237,9 +284,9 @@ const GradeInput = ({
   };
 
   return React.createElement("input", {
-    type: "number",
-    min,
-    max,
+    type: "text",
+    inputMode: "numeric",
+    pattern: "[0-9]*",
     value: localValue,
     onChange: handleChange,
     onBlur: handleBlur,
@@ -833,7 +880,7 @@ const SummativeModal = ({
       const initialLocalGrades = {};
       students.forEach((student) => {
         const studentGrade = grades.find((g) => g.studentId === student.id);
-        initialLocalGrades[student.id] = JSON.parse(
+        const gradeObj = JSON.parse(
           JSON.stringify(
             studentGrade?.detailedGrades?.[subject.id] || {
               slm: [],
@@ -844,6 +891,8 @@ const SummativeModal = ({
             },
           ),
         );
+        if (!gradeObj.slm) gradeObj.slm = [];
+        initialLocalGrades[student.id] = gradeObj;
       });
       setLocalGrades(initialLocalGrades);
       setActiveInput({});
@@ -1064,9 +1113,9 @@ const SummativeModal = ({
   };
 
   const handlePaste = useCallback(
-    (e, startStudentId, tpIndex = null) => {
+    async (e, startStudentId, tpIndex = null) => {
       e.preventDefault();
-      const pasteData = e.clipboardData.getData("text");
+      const pasteData = await getClipboardText(e);
 
       let pastedRows = pasteData.split(/\r\n|\n|\r/);
       if (pastedRows.length > 0 && pastedRows[pastedRows.length - 1] === "") {
@@ -1091,8 +1140,11 @@ const SummativeModal = ({
           const studentIdToUpdate = studentIds[currentStudentIndex];
           const studentGradeToUpdate = newLocalGrades[studentIdToUpdate];
           if (!studentGradeToUpdate) return;
+          if (!studentGradeToUpdate.slm) {
+            studentGradeToUpdate.slm = [];
+          }
 
-          const valuesInRow = pastedValue.split("\t");
+          const valuesInRow = splitRowIntoColumns(pastedValue);
 
           // Iterate over columns to support horizontal pasting
           valuesInRow.forEach((val, colIndex) => {
@@ -1138,13 +1190,14 @@ const SummativeModal = ({
             if (QUALITATIVE_DESCRIPTORS.hasOwnProperty(qualitativeCode)) {
               finalValue = qualitativeCode;
             } else {
-              const numericValue = parseInt(gradeValueStr, 10);
+              let numericValue = parseFloat(gradeValueStr.replace(",", "."));
               if (
-                !isNaN(numericValue) &&
-                numericValue >= 0 &&
-                numericValue <= 100
+                !isNaN(numericValue)
               ) {
-                finalValue = numericValue;
+                numericValue = Math.round(numericValue);
+                if (numericValue >= 0 && numericValue <= 100) {
+                  finalValue = numericValue;
+                }
               }
             }
 
@@ -1696,17 +1749,31 @@ const SummativeModal = ({
                               "td",
                               { className: "px-2 py-1 text-center border-l" },
                               React.createElement("input", {
-                                type: "number",
-                                min: 0,
-                                max: 100,
+                                type: "text",
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
                                 value: numericValue,
-                                onChange: (e) =>
-                                  handleLocalGradeChange(
-                                    student.id,
-                                    e.target.value,
-                                    "qnt",
-                                    i,
-                                  ),
+                                onChange: (e) => {
+                                  const val = e.target.value;
+                                  const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+                                  if (hasSeparators) {
+                                    handlePaste({
+                                      preventDefault: () => {},
+                                      clipboardData: {
+                                        getData: () => val
+                                      }
+                                    }, student.id, i);
+                                    return;
+                                  }
+                                  if (val === "" || /^\d*$/.test(val)) {
+                                    handleLocalGradeChange(
+                                      student.id,
+                                      val,
+                                      "qnt",
+                                      i,
+                                    );
+                                  }
+                                },
                                 onPaste: (e) => handlePaste(e, student.id, i),
                                 readOnly: active === "ql",
                                 className: `w-full p-2 text-center border rounded-md ${active === "qnt" ? (numericValue !== "" ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"}`,
@@ -1749,20 +1816,34 @@ const SummativeModal = ({
                           "td",
                           { className: "px-2 py-1 text-center" },
                           React.createElement("input", {
-                            type: "number",
-                            min: 0,
-                            max: 100,
+                            type: "text",
+                            inputMode: "numeric",
+                            pattern: "[0-9]*",
                             value:
                               getNumericValue(
                                 studentGrade[type],
                                 qualitativeGradingMap,
                               ) ?? "",
-                            onChange: (e) =>
-                              handleLocalGradeChange(
-                                student.id,
-                                e.target.value,
-                                "qnt",
-                              ),
+                            onChange: (e) => {
+                              const val = e.target.value;
+                              const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+                              if (hasSeparators) {
+                                handlePaste({
+                                  preventDefault: () => {},
+                                  clipboardData: {
+                                    getData: () => val
+                                  }
+                                }, student.id);
+                                return;
+                              }
+                              if (val === "" || /^\d*$/.test(val)) {
+                                handleLocalGradeChange(
+                                  student.id,
+                                  val,
+                                  "qnt",
+                                );
+                              }
+                            },
                             onPaste: (e) => handlePaste(e, student.id),
                             className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== "" ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500"}`,
                           }),
@@ -2003,6 +2084,7 @@ const ManageSlmModal = ({
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
       let hasChanged = false;
 
       localSlms.forEach((localSlm) => {
@@ -2957,6 +3039,7 @@ const NilaiTableView = (props) => {
         },
       ),
     );
+    if (!detailedGrade.slm) detailedGrade.slm = [];
 
     let finalValue = value === "" ? null : value;
 
@@ -3006,6 +3089,7 @@ const NilaiTableView = (props) => {
         },
       ),
     );
+    if (!detailedGrade.slm) detailedGrade.slm = [];
     const student = students.find((s) => s.id === studentId);
     const generated = generateSubjectDescription(
       student,
@@ -3062,6 +3146,7 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
 
       const generated = generateSubjectDescription(
         student,
@@ -3145,6 +3230,7 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
 
       let slmToUpdate = detailedGrade.slm.find((s) => s.id === slmId);
       if (!slmToUpdate) {
@@ -3207,9 +3293,9 @@ const NilaiTableView = (props) => {
   };
 
   // Paste handler implementation remains same...
-  const handlePaste = (e, startStudentId, startKey) => {
+  const handlePaste = async (e, startStudentId, startKey) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
     let rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
       rows.pop();
@@ -3240,9 +3326,12 @@ const NilaiTableView = (props) => {
           },
         ),
       );
+      if (!detailedGrade.slm) {
+        detailedGrade.slm = [];
+      }
       let hasChanged = false;
 
-      const columns = row.split("\t");
+      const columns = splitRowIntoColumns(row);
       columns.forEach((val, cIndex) => {
         const currentColumnIndex = startColumnIndex + cIndex;
         if (currentColumnIndex >= columnKeys.length) return;
@@ -3256,9 +3345,12 @@ const NilaiTableView = (props) => {
           if (QUALITATIVE_DESCRIPTORS[upperVal]) {
             finalVal = upperVal;
           } else {
-            const numVal = parseInt(cleanVal, 10);
-            if (!isNaN(numVal) && numVal >= 0 && numVal <= 100) {
-              finalVal = numVal;
+            let numVal = parseFloat(cleanVal.replace(",", "."));
+            if (!isNaN(numVal)) {
+              numVal = Math.round(numVal);
+              if (numVal >= 0 && numVal <= 100) {
+                finalVal = numVal;
+              }
             }
           }
         }
