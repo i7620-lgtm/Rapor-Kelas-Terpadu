@@ -132,19 +132,29 @@ const generateSubjectDescription = (
   const gradedTps = [];
 
   if (detailedGrade && detailedGrade.slm) {
+    // Determine current semester
+    const currentAppSemester = settings?.semester || "Ganjil";
+    
     // Create a lookup map for faster access to TP texts, grouped by slmId.
+    // Also build a map of SLM semesters.
     const tpTextMap = new Map();
+    const slmSemesterMap = new Map();
+    
     objectivesForSubject.forEach((obj) => {
       if (!tpTextMap.has(obj.slmId)) {
         tpTextMap.set(obj.slmId, []);
+        slmSemesterMap.set(obj.slmId, obj.semester || "Semua");
       }
       tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
     });
 
-    // Filter SLMs based on visibility settings
-    const visibleSlms = activeSlmIds
-      ? detailedGrade.slm.filter((slm) => activeSlmIds.includes(slm.id))
-      : detailedGrade.slm;
+    // Filter SLMs based on visibility settings and semester
+    const visibleSlms = detailedGrade.slm.filter((slm) => {
+      const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
+      const slmSemester = slmSemesterMap.get(slm.id) || "Semua";
+      const isCorrectSemester = slmSemester === "Semua" || slmSemester === currentAppSemester;
+      return isVisible && isCorrectSemester;
+    });
 
     // Iterate over the student's graded SLMs.
     visibleSlms.forEach((slm) => {
@@ -4422,7 +4432,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
             React.createElement(
               "span",
               { className: "ml-2 text-sm text-slate-600" },
-              "Peringkat",
+              "Peringkat (Rank)",
             ),
           ),
         ),
@@ -4458,7 +4468,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
                   maxWidth: "60px",
                 },
               },
-              sortBy === "rank" ? "Peringkat" : "No",
+              sortBy === "rank" ? "Rank" : "No",
             ),
             React.createElement(
               "th",
