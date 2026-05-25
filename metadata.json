@@ -1,0 +1,11 @@
+{
+  "name": "Remix: Rapor Kelas Terpadu",
+  "description": "A progressive web application for managing integrated class reports, including student data, grades, attendance, and more, designed for homeroom teachers.",
+  "requestFramePermissions": [
+    "clipboard-read",
+    "clipboard-write"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
