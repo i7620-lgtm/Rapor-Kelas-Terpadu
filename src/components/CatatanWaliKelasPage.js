@@ -1,5 +1,6 @@
 import React from "react";
 import { useGridSelection } from '../hooks/useGridSelection';
+import { getClipboardText } from "../utils/clipboard";
 
 const CatatanWaliKelasPage = ({
   students,
@@ -209,9 +210,9 @@ const CatatanWaliKelasPage = ({
     onUpdateNote(studentId, note);
   };
 
-  const handlePaste = (e, startStudentId) => {
+  const handlePaste = async (e, startStudentId) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
     let rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
@@ -230,7 +231,7 @@ const CatatanWaliKelasPage = ({
       if (currentStudentIndex >= students.length) return;
 
       const student = students[currentStudentIndex];
-      const columns = row.split("\t");
+      const columns = row.includes("\t") ? row.split("\t") : (row.includes(";") ? row.split(";") : [row]);
 
       // Transpose horizontal data if pasting a single row with multiple columns
       if (rows.length === 1 && columns.length > 1) {
