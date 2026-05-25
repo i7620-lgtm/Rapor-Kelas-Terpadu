@@ -1,5 +1,92 @@
 import React, { useCallback } from "react";
 import { useGridSelection } from "../hooks/useGridSelection";
+import { getClipboardText } from "../utils/clipboard.js";
+
+const splitRowIntoColumns = (row) => {
+  if (typeof row !== "string") return [row];
+  const trimmed = row.trim();
+  if (trimmed.includes("\t")) {
+    return trimmed.split("\t");
+  }
+  if (trimmed.includes(";")) {
+    return trimmed.split(";");
+  }
+  const spaceParts = trimmed.split(/\s+/);
+  if (spaceParts.length > 1) {
+    const isProbablySpaceSeparated = spaceParts.every((part) => {
+      const clean = part.toUpperCase().trim();
+      return (
+        clean === "" ||
+        clean === "-" ||
+        !isNaN(parseFloat(clean.replace(",", ".")))
+      );
+    });
+    if (isProbablySpaceSeparated) {
+      return spaceParts;
+    }
+  }
+  return [row];
+};
+
+const parsePastedData = (pasteData) => {
+  if (!pasteData || typeof pasteData !== "string") {
+    return { isHorizontal: false, grid: [] };
+  }
+  const trimmed = pasteData.trim();
+  if (!trimmed) {
+    return { isHorizontal: false, grid: [] };
+  }
+
+  // Case 1: Has newlines -> standard vertical rows
+  if (/[\r\n]/.test(trimmed)) {
+    const lines = trimmed.split(/\r\n|\n|\r/);
+    if (lines.length > 1 && lines[lines.length - 1].trim() === "") {
+      lines.pop();
+    }
+    const grid = lines.map((line) => {
+      if (line.includes("\t")) return line.split("\t");
+      if (line.includes(";")) return line.split(";");
+      return [line];
+    });
+    return { isHorizontal: false, grid };
+  }
+
+  // Case 2: No newlines, but contains tabs -> horizontal spreadsheet columns
+  if (trimmed.includes("\t")) {
+    return { isHorizontal: true, grid: [trimmed.split("\t")] };
+  }
+
+  // Case 3: No newlines, contains semicolons -> vertical list
+  if (trimmed.includes(";")) {
+    const parts = trimmed.split(";").map((p) => p.trim());
+    return { isHorizontal: false, grid: parts.map((p) => [p]) };
+  }
+
+  // Case 4: No newlines, contains commas -> check if list or decimal
+  if (trimmed.includes(",")) {
+    const parts = trimmed.split(",").map((p) => p.trim());
+    let isDecimal = false;
+    if (parts.length === 2) {
+      const firstPart = parts[0];
+      const secondPart = parts[1];
+      if (/^\d$/.test(secondPart) && /^\d+$/.test(firstPart)) {
+        isDecimal = true;
+      }
+    }
+    if (!isDecimal) {
+      return { isHorizontal: false, grid: parts.map((p) => [p]) };
+    }
+  }
+
+  // Case 5: No newlines, contains spaces -> vertical list
+  const spaceParts = trimmed.split(/\s+/);
+  if (spaceParts.length > 1) {
+    return { isHorizontal: false, grid: spaceParts.map((p) => [p]) };
+  }
+
+  // Case 6: Single value
+  return { isHorizontal: false, grid: [[trimmed]] };
+};
 
 const DataAbsensiPage = ({
   students,
@@ -103,18 +190,12 @@ const DataAbsensiPage = ({
     onUpdateAttendance(studentId, type, value);
   };
 
-  const handlePaste = (e, startStudentId, startFieldType) => {
+  const handlePaste = async (e, startStudentId, startFieldType) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
+    const pasteData = await getClipboardText(e);
 
-    // Split rows by newline, PRESERVING empty rows to maintain index alignment
-    let rows = pasteData.split(/\r\n|\n|\r/);
-    // Remove the last element if it's empty (trailing newline from Excel copy)
-    if (rows.length > 0 && rows[rows.length - 1] === "") {
-      rows.pop();
-    }
-
-    if (rows.length === 0) return;
+    const { grid } = parsePastedData(pasteData);
+    if (grid.length === 0) return;
 
     const studentIndex = students.findIndex((s) => s.id === startStudentId);
     if (studentIndex === -1) return;
@@ -130,7 +211,7 @@ const DataAbsensiPage = ({
     const newAttendanceList = [];
     let updatedCount = 0;
 
-    rows.forEach((row, rIndex) => {
+    grid.forEach((columns, rIndex) => {
       const currentStudentIndex = studentIndex + rIndex;
       if (currentStudentIndex >= students.length) return;
 
@@ -142,9 +223,6 @@ const DataAbsensiPage = ({
         izin: null,
         alpa: null,
       };
-
-      // Split columns by tab, preserving empty strings for empty cells
-      const columns = row.split("\t");
 
       let rowUpdated = false;
       columns.forEach((value, cIndex) => {
@@ -406,15 +484,30 @@ const DataAbsensiPage = ({
                         },
                         React.createElement("input", {
                           id: `cell-${index}-${cIndex}`,
-                          type: "number",
-                          min: "0",
+                          type: "text",
+                          inputMode: "numeric",
+                          pattern: "[0-9]*",
                           value: studentAtt[field] ?? "",
-                          onChange: (e) =>
-                            handleAttendanceChange(
-                              student.id,
-                              field,
-                              e.target.value,
-                            ),
+                          onChange: (e) => {
+                            const val = e.target.value;
+                            const hasSeparators = /[\n\r\t;]/.test(val) || (/\s+/.test(val.trim()) && val.trim().split(/\s+/).length > 1);
+                            if (hasSeparators) {
+                              handlePaste({
+                                preventDefault: () => {},
+                                clipboardData: {
+                                  getData: () => val
+                                }
+                              }, student.id, field);
+                              return;
+                            }
+                            if (val === "" || /^\d*$/.test(val)) {
+                              handleAttendanceChange(
+                                student.id,
+                                field,
+                                val,
+                              );
+                            }
+                          },
                           onPaste: (e) => handlePaste(e, student.id, field),
                           className: `w-20 p-2 text-center rounded-lg transition-all relative z-10 ${
                             showTransparentInput
