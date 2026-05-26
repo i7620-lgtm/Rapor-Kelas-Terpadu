@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
-export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-table-container" }) {
+export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-table-container", onDeleteSelection }) {
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -34,6 +34,70 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
             c: colsCount - 1,
           });
         }
+      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        const isGridActive =
+          document.activeElement?.tagName === "BODY" ||
+          document.querySelector(`.${containerClass}`)?.contains(document.activeElement);
+          
+        if (isGridActive) {
+          // If we have an active input, only allow up/down to navigate native cells to avoid breaking text caret left/right,
+          // UNLESS they are holding shift (which means they want to select).
+          const isInputActive = document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA";
+          if (!e.shiftKey && isInputActive && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+              return; // Let native text navigation happen
+          }
+
+          e.preventDefault();
+          
+          setSelectionEnd((prevEnd) => {
+             if (!prevEnd) return prevEnd;
+             let newR = prevEnd.r;
+             let newC = prevEnd.c;
+             if (e.key === "ArrowUp") newR = Math.max(0, newR - 1);
+             if (e.key === "ArrowDown") newR = Math.min(rowsCount - 1, newR + 1);
+             if (e.key === "ArrowLeft") newC = Math.max(0, newC - 1);
+             if (e.key === "ArrowRight") newC = Math.min(colsCount - 1, newC + 1);
+             
+             if (!e.shiftKey) {
+                 // Without shift, we move the whole selection to the new cell
+                 setSelectionStart({ r: newR, c: newC });
+                 setTimeout(() => {
+                     const input = document.getElementById(`cell-${newR}-${newC}`) || document.querySelector(`.${containerClass} [id$="-${newR}-${newC}"]`);
+                     if (input) {
+                         isProgrammaticFocus.current = true;
+                         input.focus();
+                         if (typeof input.select === 'function') {
+                             input.select();
+                         }
+                         setTimeout(() => (isProgrammaticFocus.current = false), 10);
+                     }
+                 }, 0);
+             } else {
+                 setTimeout(() => {
+                     const el = document.querySelector(`.${containerClass} [id$="-${newR}-${newC}"]`);
+                     if (el) {
+                         el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+                     }
+                 }, 10);
+             }
+             return { r: newR, c: newC };
+          });
+        }
+      } else if (e.key === "Backspace" || e.key === "Delete") {
+        if (!onDeleteSelection) return;
+        
+        const isGridActive =
+          document.activeElement?.tagName === "BODY" ||
+          document.querySelector(`.${containerClass}`)?.contains(document.activeElement);
+          
+        const bounds = getSelectionBounds();
+        if (isGridActive && bounds) {
+            let isMultiSelect = bounds && (bounds.maxR > bounds.minR || bounds.maxC > bounds.minC);
+            if (isMultiSelect) {
+                e.preventDefault();
+                onDeleteSelection(bounds);
+            }
+        }
       }
     };
     window.addEventListener("mouseup", handleMouseUpGlobal);
@@ -42,7 +106,7 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
       window.removeEventListener("mouseup", handleMouseUpGlobal);
       window.removeEventListener("keydown", handleKeyDownGlobal);
     };
-  }, [rowsCount, colsCount, containerClass]);
+  }, [rowsCount, colsCount, containerClass, getSelectionBounds, onDeleteSelection]);
 
   const getSelectionStyle = useCallback(
     (r, c) => {
@@ -135,6 +199,19 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
     }
   };
 
+  const handleFocusCell = useCallback((rowIndex, colIndex) => {
+    if (isProgrammaticFocus.current) return;
+    if (isSelecting) return;
+    setSelectionStart((prevStart) => {
+      if (prevStart?.r === rowIndex && prevStart?.c === colIndex) return prevStart;
+      return { r: rowIndex, c: colIndex };
+    });
+    setSelectionEnd((prevEnd) => {
+      if (prevEnd?.r === rowIndex && prevEnd?.c === colIndex) return prevEnd;
+      return { r: rowIndex, c: colIndex };
+    });
+  }, [isSelecting]);
+
   return {
     selectionStart,
     setSelectionStart,
@@ -147,5 +224,6 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
     getSelectionStyle,
     handleMouseDownCell,
     handleMouseEnterCell,
+    handleFocusCell
   };
 }
