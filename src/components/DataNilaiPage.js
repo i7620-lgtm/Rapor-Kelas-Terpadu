@@ -4638,7 +4638,7 @@ const NilaiTableView = (props) => {
 };
 
 // ... (NilaiKeseluruhanView and DataNilaiPage wrapper retained as is)
-const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredikats, settings }) => {
+const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredikats, settings, showToast }) => {
   const predikats = propPredikats || settings?.predikats;
   const [sortBy, setSortBy] = useState("no");
   const [showMaxHighlight, setShowMaxHighlight] = useState(true);
@@ -4884,6 +4884,80 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
     return stats;
   }, [processedData, displaySubjects]);
 
+  const colsCount = 2 + displaySubjects.length + 2;
+
+  const {
+    getSelectionBounds,
+    getSelectionStyle,
+    handleMouseDownCell,
+    handleMouseEnterCell,
+    handleFocusCell
+  } = useGridSelection({
+    rowsCount: processedData.length,
+    colsCount: colsCount,
+    containerClass: "keseluruhan-table-container",
+  });
+
+  useEffect(() => {
+    const handleCopyGlobal = (e) => {
+      const bounds = getSelectionBounds();
+      if (!bounds) return;
+
+      if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+        if (
+          document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA" ||
+            document.activeElement.tagName === "SELECT")
+        ) {
+          return;
+        }
+      }
+
+      const isGridActive =
+        document.activeElement?.tagName === "BODY" ||
+        document.querySelector(".keseluruhan-table-container")?.contains(document.activeElement);
+      if (!isGridActive) return;
+
+      let tsv = "";
+      for (let r = bounds.minR; r <= bounds.maxR; r++) {
+        if (r < 0 || r >= processedData.length) continue;
+        const row = processedData[r];
+        let rowData = [];
+
+        for (let c = bounds.minC; c <= bounds.maxC; c++) {
+          if (c < 0 || c >= colsCount) continue;
+
+          if (c === 0) {
+            rowData.push(sortBy === "rank" ? row.rank : row.no);
+          } else if (c === 1) {
+            rowData.push(row.namaLengkap);
+          } else if (c >= 2 && c < 2 + displaySubjects.length) {
+            const subjectId = displaySubjects[c - 2].id;
+            const grade = row.grades[subjectId];
+            rowData.push(grade !== null && grade !== undefined && grade !== "" ? grade : "-");
+          } else if (c === 2 + displaySubjects.length) {
+            rowData.push(row.total);
+          } else if (c === 2 + displaySubjects.length + 1) {
+            rowData.push(row.average);
+          }
+        }
+        tsv += rowData.join("\t") + "\n";
+      }
+
+      if (tsv) {
+        e.preventDefault();
+        e.clipboardData.setData("text/plain", tsv.trimEnd());
+        if (showToast) {
+          showToast("Berhasil disalin ke clipboard", "success");
+        }
+      }
+    };
+
+    document.addEventListener("copy", handleCopyGlobal);
+    return () => document.removeEventListener("copy", handleCopyGlobal);
+  }, [getSelectionBounds, processedData, displaySubjects, sortBy, colsCount, showToast]);
+
   return React.createElement(
     "div",
     {
@@ -4990,7 +5064,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
     ),
     React.createElement(
       "div",
-      { className: "flex-1 overflow-auto" },
+      { className: "flex-1 overflow-auto keseluruhan-table-container outline-none focus:outline-none", tabIndex: 0 },
       React.createElement(
         "table",
         {
@@ -5010,7 +5084,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               "th",
               {
                 className:
-                  "p-2 text-center sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border",
+                  "p-2 text-center sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border select-none",
                 style: {
                   left: 0,
                   width: "60px",
@@ -5024,7 +5098,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               "th",
               {
                 className:
-                  "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border",
+                  "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none",
                 style: { left: "60px" },
               },
               "Nama Siswa",
@@ -5035,7 +5109,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
                 {
                   key: s.id,
                   className:
-                    "px-2 py-3 w-20 text-center border-b border-slate-200",
+                    "px-2 py-3 w-20 text-center border-b border-slate-200 select-none",
                   title: s.fullName,
                 },
                 s.label,
@@ -5045,7 +5119,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               "th",
               {
                 className:
-                  "px-2 py-3 w-20 text-center border-b border-slate-200",
+                  "px-2 py-3 w-20 text-center border-b border-slate-200 select-none",
               },
               "Jumlah",
             ),
@@ -5053,7 +5127,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               "th",
               {
                 className:
-                  "px-2 py-3 w-20 text-center border-b border-slate-200",
+                  "px-2 py-3 w-20 text-center border-b border-slate-200 select-none",
               },
               "Rata-rata",
             ),
@@ -5062,7 +5136,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
         React.createElement(
           "tbody",
           null,
-          processedData.map((data) => {
+          processedData.map((data, rowIndex) => {
             const predicateCValue = parseInt(predikats?.c, 10);
             return React.createElement(
               "tr",
@@ -5070,26 +5144,48 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               React.createElement(
                 "td",
                 {
+                  id: `keseluruhan-cell-${rowIndex}-0`,
+                  tabIndex: -1,
                   className:
-                    "p-2 text-center font-medium sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border",
+                    "p-2 text-center font-medium sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border cursor-default select-none",
                   style: {
                     left: 0,
                     width: "60px",
                     minWidth: "60px",
                     maxWidth: "60px",
+                    ...getSelectionStyle(rowIndex, 0).selectionStyle,
                   },
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, rowIndex, 0, "keseluruhan-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(rowIndex, 0),
+                  onFocus: () => handleFocusCell(rowIndex, 0),
                 },
                 sortBy === "rank" ? data.rank : data.no,
               ),
               React.createElement(
                 "th",
                 {
-                  className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? "text-red-600" : "text-slate-900"}`,
-                  style: { left: "60px" },
+                  id: `keseluruhan-cell-${rowIndex}-1`,
+                  tabIndex: -1,
+                  className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? "text-red-600" : "text-slate-900"} cursor-default select-none`,
+                  style: {
+                    left: "60px",
+                    ...getSelectionStyle(rowIndex, 1).selectionStyle,
+                  },
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, rowIndex, 1, "keseluruhan-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(rowIndex, 1),
+                  onFocus: () => handleFocusCell(rowIndex, 1),
                 },
                 data.namaLengkap,
               ),
-              ...displaySubjects.map((subject) => {
+              ...displaySubjects.map((subject, colSubjIdx) => {
+                const colIndex = 2 + colSubjIdx;
+                const { selectionStyle } = getSelectionStyle(rowIndex, colIndex);
                 const grade = data.grades[subject.id];
                 const isBelowC =
                   !isNaN(predicateCValue) &&
@@ -5116,7 +5212,16 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
                   "td",
                   {
                     key: subject.id,
-                    className: "px-2 py-1 border-b border-slate-200 text-center",
+                    id: `keseluruhan-cell-${rowIndex}-${colIndex}`,
+                    tabIndex: -1,
+                    className: "px-2 py-1 border-b border-slate-200 text-center cursor-default select-none",
+                    style: selectionStyle,
+                    onMouseDown: (e) => {
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, rowIndex, colIndex, "keseluruhan-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(rowIndex, colIndex),
+                    onFocus: () => handleFocusCell(rowIndex, colIndex),
                   },
                   React.createElement(
                     "div",
@@ -5133,16 +5238,34 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
               React.createElement(
                 "td",
                 {
+                  id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length}`,
+                  tabIndex: -1,
                   className:
-                    "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200",
+                    "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none",
+                  style: getSelectionStyle(rowIndex, 2 + displaySubjects.length).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, rowIndex, 2 + displaySubjects.length, "keseluruhan-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(rowIndex, 2 + displaySubjects.length),
+                  onFocus: () => handleFocusCell(rowIndex, 2 + displaySubjects.length),
                 },
                 data.total,
               ),
               React.createElement(
                 "td",
                 {
+                  id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length + 1}`,
+                  tabIndex: -1,
                   className:
-                    "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200",
+                    "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none",
+                  style: getSelectionStyle(rowIndex, 2 + displaySubjects.length + 1).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, rowIndex, 2 + displaySubjects.length + 1, "keseluruhan-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(rowIndex, 2 + displaySubjects.length + 1),
+                  onFocus: () => handleFocusCell(rowIndex, 2 + displaySubjects.length + 1),
                 },
                 data.average,
               ),
@@ -5222,7 +5345,7 @@ const DataNilaiPage = ({
         React.createElement(
           "span",
           { className: "text-sm text-indigo-600" },
-          "💡 Tips: Anda dapat menyalin satu kolom nilai dari Excel/Word dan menempelkannya (paste) ke kolom nilai di bawah.",
+          "💡 Tips: Anda dapat copy-paste nilai dari Excel ke kolom-kolom nilai mata pelajaran, serta menyeleksi/memblok grid pada 'Nilai Keseluruhan' untuk disalin (copy) kembali ke Excel.",
         ),
       ),
     ),
