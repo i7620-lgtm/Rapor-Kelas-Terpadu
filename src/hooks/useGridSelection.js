@@ -173,7 +173,12 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
   );
 
   const handleMouseDownCell = useCallback((e, rowIndex, colIndex, inputIdPrefix = "cell") => {
-    e.preventDefault();
+    const isAlreadyActive = document.activeElement?.id === `${inputIdPrefix}-${rowIndex}-${colIndex}`;
+    
+    if (!isAlreadyActive) {
+      e.preventDefault();
+    }
+    
     if (e.shiftKey && selectionStart) {
       setSelectionEnd({ r: rowIndex, c: colIndex });
     } else {
@@ -182,15 +187,17 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
       setSelectionEnd({ r: rowIndex, c: colIndex });
     }
 
-    setTimeout(() => {
-      const input = document.getElementById(`${inputIdPrefix}-${rowIndex}-${colIndex}`);
-      if (input) {
-        isProgrammaticFocus.current = true;
-        input.focus();
-        input.select();
-        setTimeout(() => (isProgrammaticFocus.current = false), 10);
-      }
-    }, 0);
+    if (!isAlreadyActive) {
+      setTimeout(() => {
+        const input = document.getElementById(`${inputIdPrefix}-${rowIndex}-${colIndex}`);
+        if (input) {
+          isProgrammaticFocus.current = true;
+          input.focus();
+          input.select();
+          setTimeout(() => (isProgrammaticFocus.current = false), 10);
+        }
+      }, 0);
+    }
   }, [selectionStart]);
 
   const handleMouseEnterCell = (rowIndex, colIndex) => {
