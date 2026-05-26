@@ -1999,10 +1999,8 @@ const SummativeModal = ({
                                 onPaste: (e) => handlePaste(e, student.id, i),
                                 onFocus: () => handleFocusCell(index, colSelectIdxQnt),
                                 onMouseDown: (e) => {
-                                  if (e.shiftKey) {
-                                    e.preventDefault();
-                                    handleMouseDownCell(e, index, colSelectIdxQnt);
-                                  }
+                                  if (e.button !== 0) return;
+                                  handleMouseDownCell(e, index, colSelectIdxQnt);
                                 },
                                 readOnly: active === "ql",
                                 className: `w-full p-2 text-center border rounded-md relative z-10 transition-all ${
@@ -2111,10 +2109,8 @@ const SummativeModal = ({
                             onPaste: (e) => handlePaste(e, student.id),
                             onFocus: () => handleFocusCell(index, 0),
                             onMouseDown: (e) => {
-                              if (e.shiftKey) {
-                                e.preventDefault();
-                                handleMouseDownCell(e, index, 0);
-                              }
+                              if (e.button !== 0) return;
+                              handleMouseDownCell(e, index, 0);
                             },
                             className: `w-20 p-2 text-center border rounded-md relative z-10 transition-all ${
                               getSelectionStyle(index, 0).showTransparentInput
@@ -3889,10 +3885,8 @@ const NilaiTableView = (props) => {
       onPaste: (e) => handlePaste(e, student.id, key),
       onFocus: () => handleFocusCell(rowIndex, colIndex),
       onMouseDown: (e) => {
-        if (e.shiftKey) {
-          e.preventDefault();
-          handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
-        }
+        if (e.button !== 0) return;
+        handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
       },
       showTransparentInput,
       className: "w-full p-2 text-center",
@@ -3950,10 +3944,8 @@ const NilaiTableView = (props) => {
       onPaste: (e) => handlePaste(e, student.id, type),
       onFocus: () => handleFocusCell(rowIndex, colIndex),
       onMouseDown: (e) => {
-        if (e.shiftKey) {
-          e.preventDefault();
-          handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
-        }
+        if (e.button !== 0) return;
+        handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
       },
       showTransparentInput,
       className: "w-full p-2 text-center border rounded-md",
