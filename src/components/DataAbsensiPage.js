@@ -119,10 +119,36 @@ const DataAbsensiPage = ({
     getSelectionStyle,
     handleMouseDownCell,
     handleMouseEnterCell,
+    handleFocusCell
   } = useGridSelection({
     rowsCount: students.length,
     colsCount: 4, // sakit, izin, alpa, total -> index 0,1,2,3
     containerClass: "absensi-table-container",
+    onDeleteSelection: (bounds) => {
+      let updatedCount = 0;
+      const sem = settings?.semester || 'Ganjil';
+      const newAttendance = [...attendance];
+      
+      for (let r = bounds.minR; r <= bounds.maxR; r++) {
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+              if (r >= 0 && c >= 0 && c < fields.length) {
+                  const student = students[r];
+                  const field = fields[c];
+                  if (student) {
+                      const idx = newAttendance.findIndex(a => a.studentId === student.id && (a.semester || 'Ganjil') === sem);
+                      if (idx > -1 && newAttendance[idx][field] !== null && newAttendance[idx][field] !== undefined) {
+                          newAttendance[idx] = { ...newAttendance[idx], [field]: null };
+                          updatedCount++;
+                      }
+                  }
+              }
+          }
+      }
+      if (updatedCount > 0) {
+          onBulkUpdateAttendance(newAttendance);
+          if (showToast) showToast(`${updatedCount} data berhasil dihapus.`, "success");
+      }
+    }
   });
 
   React.useEffect(() => {
@@ -518,6 +544,7 @@ const DataAbsensiPage = ({
                               );
                             }
                           },
+                          onFocus: () => handleFocusCell(index, cIndex),
                           onPaste: (e) => handlePaste(e, student.id, field),
                           className: `w-20 p-2 text-center rounded-lg transition-all relative z-10 ${
                             showTransparentInput
