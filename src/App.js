@@ -176,8 +176,8 @@ const calculateFinalGrade = (detailed, config, settings, subjectId, learningObje
     const stsField = isGenap ? 'sts2' : 'sts1';
     const sasField = isGenap ? 'sas2' : 'sas1';
     
-    const stsVal = (detailed[stsField] !== undefined && detailed[stsField] !== null) ? detailed[stsField] : (isGenap ? null : detailed.sts);
-    const sasVal = (detailed[sasField] !== undefined && detailed[sasField] !== null) ? detailed[sasField] : (isGenap ? null : detailed.sas);
+    const stsVal = (detailed[stsField] !== undefined) ? detailed[stsField] : (isGenap ? null : detailed.sts);
+    const sasVal = (detailed[sasField] !== undefined) ? detailed[sasField] : (isGenap ? null : detailed.sas);
     
     if (config.method === 'rata-rata') {
         const slmAvgScores = visibleSlms.map(slm => {
