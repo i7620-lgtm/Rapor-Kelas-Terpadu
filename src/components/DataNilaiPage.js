@@ -5121,7 +5121,7 @@ const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredi
                   React.createElement(
                     "div",
                     {
-                      className: `w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold select-none ${highlightClass} ${
+                      className: `w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold ${highlightClass} ${
                         isBelowC ? "text-red-600 font-extrabold" : ""
                       }`,
                       style: highlightStyle,
