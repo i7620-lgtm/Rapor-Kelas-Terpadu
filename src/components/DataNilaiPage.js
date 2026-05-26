@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { QUALITATIVE_DESCRIPTORS } from "../constants.js";
 import { getClipboardText } from "../utils/clipboard.js";
+import { useGridSelection } from "../hooks/useGridSelection.js";
 
 export const getGradeNumber = (str) => {
   if (!str) return null;
@@ -232,12 +233,16 @@ const generateSubjectDescription = (
 
 // --- Helper Component: GradeInput ---
 const GradeInput = ({
+  id,
   value,
   onCommit,
   onPaste,
   className,
   readOnly,
   kkm,
+  onFocus,
+  onMouseDown,
+  showTransparentInput,
 }) => {
   const [localValue, setLocalValue] = useState(value ?? "");
   const isFilled =
@@ -294,6 +299,7 @@ const GradeInput = ({
   };
 
   return React.createElement("input", {
+    id: id,
     type: "text",
     inputMode: "numeric",
     pattern: "[0-9]*",
@@ -302,13 +308,17 @@ const GradeInput = ({
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
     onPaste: onPaste,
+    onFocus: onFocus,
+    onMouseDown: onMouseDown,
     readOnly: readOnly,
     className: `${className} transition-all border ${
-      !isFilled
-        ? "border-red-500 ring-1 ring-red-500"
-        : isBelowKkm
-          ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-          : "border-green-500 ring-1 ring-green-500"
+      showTransparentInput
+        ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent relative z-10 font-bold"
+        : !isFilled
+          ? "border-red-500 ring-1 ring-red-500"
+          : isBelowKkm
+            ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
+            : "border-green-500 ring-1 ring-green-500"
     }`,
   });
 };
@@ -884,6 +894,146 @@ const SummativeModal = ({
     // Case 3: General subjects
     return students;
   }, [students, subject]);
+
+  const {
+    selectionStart,
+    setSelectionStart,
+    selectionEnd,
+    setSelectionEnd,
+    isSelecting,
+    setIsSelecting,
+    getSelectionBounds,
+    getSelectionStyle,
+    handleMouseDownCell,
+    handleMouseEnterCell,
+    handleFocusCell
+  } = useGridSelection({
+    rowsCount: relevantStudents.length,
+    colsCount: isSLM ? localObjectives.length * 2 : 1,
+    containerClass: "nilai-table-container",
+    onDeleteSelection: (bounds) => {
+      let updatedCount = 0;
+      setLocalGrades((prevGrades) => {
+        const newGrades = JSON.parse(JSON.stringify(prevGrades));
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+            if (r >= 0 && c >= 0) {
+              const student = relevantStudents[r];
+              if (student) {
+                const studentGrade = newGrades[student.id];
+                if (studentGrade) {
+                  if (isSLM) {
+                    let slm = studentGrade.slm?.find((s) => s.id === item.id);
+                    const tpIndex = Math.floor(c / 2);
+                    if (slm && slm.scores && tpIndex < slm.scores.length) {
+                      if (slm.scores[tpIndex] !== null) {
+                        slm.scores[tpIndex] = null;
+                        updatedCount++;
+                      }
+                    }
+                  } else {
+                    if (studentGrade[type] !== null) {
+                      studentGrade[type] = null;
+                      updatedCount++;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        return newGrades;
+      });
+
+      setActiveInput((prev) => {
+        const newState = { ...prev };
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+            if (r >= 0 && c >= 0) {
+              const student = relevantStudents[r];
+              if (student) {
+                if (isSLM) {
+                  const tpIndex = Math.floor(c / 2);
+                  const key = `${student.id}_slm_${item.id}_tp_${tpIndex}`;
+                  delete newState[key];
+                } else {
+                  const key = `${student.id}_${type}`;
+                  delete newState[key];
+                }
+              }
+            }
+          }
+        }
+        return newState;
+      });
+
+      if (updatedCount > 0 && showToast) {
+        showToast(`${updatedCount} nilai berhasil dihapus.`, "success");
+      }
+    }
+  });
+
+  useEffect(() => {
+    const handleCopyGlobal = (e) => {
+      const bounds = getSelectionBounds();
+      if (!bounds) return;
+
+      if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+        if (
+          document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA" ||
+            document.activeElement.tagName === "SELECT")
+        ) {
+          return;
+        }
+      }
+
+      const isGridActive =
+        document.activeElement?.tagName === "BODY" ||
+        document.querySelector(".nilai-table-container")?.contains(document.activeElement);
+      if (!isGridActive) return;
+
+      let tsv = "";
+      for (let r = bounds.minR; r <= bounds.maxR; r++) {
+        let rowData = [];
+        const student = relevantStudents[r];
+        if (student) {
+          const studentGrade = localGrades[student.id] || {};
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+            if (isSLM) {
+              const tpIndex = Math.floor(c / 2);
+              const isKualitatif = (c % 2 !== 0);
+              const slmData = studentGrade?.slm?.find((s) => s.id === item.id);
+              const scoreVal = slmData?.scores?.[tpIndex] ?? null;
+              if (isKualitatif) {
+                const qualCode = getQualitativeCode(scoreVal, settings.predikats);
+                rowData.push(qualCode ?? "");
+              } else {
+                const numericVal = getNumericValue(scoreVal, qualitativeGradingMap) ?? "";
+                rowData.push(numericVal);
+              }
+            } else {
+              const numericVal = getNumericValue(studentGrade[type], qualitativeGradingMap) ?? "";
+              rowData.push(numericVal);
+            }
+          }
+        }
+        tsv += rowData.join("\t") + "\n";
+      }
+
+      if (tsv) {
+        e.preventDefault();
+        e.clipboardData.setData("text/plain", tsv.trimEnd());
+        if (showToast) {
+          showToast("Berhasil disalin ke clipboard", "success");
+        }
+      }
+    };
+
+    document.addEventListener("copy", handleCopyGlobal);
+    return () => document.removeEventListener("copy", handleCopyGlobal);
+  }, [getSelectionBounds, relevantStudents, localGrades, isSLM, item?.id, settings.predikats, settings.qualitativeGradingMap, type, showToast]);
 
   useEffect(() => {
     if (isOpen) {
@@ -1462,7 +1612,7 @@ const SummativeModal = ({
 
           React.createElement(
             "div",
-            { className: "overflow-x-auto" },
+            { className: "overflow-x-auto nilai-table-container focus:outline-none" },
             React.createElement(
               "table",
               { className: "w-full text-sm text-left" },
@@ -1480,13 +1630,20 @@ const SummativeModal = ({
                     {
                       rowSpan: headerRowSpan,
                       className:
-                        "p-2 text-center sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle border-b border-r box-border",
+                        "p-2 text-center sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-middle border-b border-r box-border select-none cursor-default",
                       style: {
                         left: 0,
                         width: "50px",
                         minWidth: "50px",
                         maxWidth: "50px",
+                        ...getSelectionStyle(-1, -2).selectionStyle,
                       },
+                      onMouseDown: (e) => {
+                        if (e.button !== 0) return;
+                        if (e.shiftKey) e.preventDefault();
+                        handleMouseDownCell(e, -1, -2);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -2),
                     },
                     "No",
                   ),
@@ -1495,8 +1652,17 @@ const SummativeModal = ({
                     {
                       rowSpan: headerRowSpan,
                       className:
-                        "p-2 align-middle border-b border-r sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[200px] max-w-[300px] box-border",
-                      style: { left: "50px" },
+                        "p-2 align-middle border-b border-r sticky z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[200px] max-w-[300px] box-border select-none cursor-default",
+                      style: {
+                        left: "50px",
+                        ...getSelectionStyle(-1, -1).selectionStyle,
+                      },
+                      onMouseDown: (e) => {
+                        if (e.button !== 0) return;
+                        if (e.shiftKey) e.preventDefault();
+                        handleMouseDownCell(e, -1, -1);
+                      },
+                      onMouseEnter: () => handleMouseEnterCell(-1, -1),
                     },
                     "Nama Siswa",
                   ),
@@ -1508,7 +1674,14 @@ const SummativeModal = ({
                             key: `tp-header-${i}`,
                             colSpan: 2,
                             className:
-                              "px-2 py-3 text-center border-b border-l",
+                              "px-2 py-3 text-center border-b border-l select-none cursor-default",
+                            style: getSelectionStyle(-1, i * 2).selectionStyle,
+                            onMouseDown: (e) => {
+                              if (e.button !== 0) return;
+                              if (e.shiftKey) e.preventDefault();
+                              handleMouseDownCell(e, -1, i * 2);
+                            },
+                            onMouseEnter: () => handleMouseEnterCell(-1, i * 2),
                           },
                           `TP ${i + 1}`,
                         ),
@@ -1518,7 +1691,14 @@ const SummativeModal = ({
                         {
                           rowSpan: headerRowSpan,
                           className:
-                            "px-2 py-3 text-center align-middle border-b",
+                            "px-2 py-3 text-center align-middle border-b select-none cursor-default",
+                          style: getSelectionStyle(-1, 0).selectionStyle,
+                          onMouseDown: (e) => {
+                            if (e.button !== 0) return;
+                            if (e.shiftKey) e.preventDefault();
+                            handleMouseDownCell(e, -1, 0);
+                          },
+                          onMouseEnter: () => handleMouseEnterCell(-1, 0),
                         },
                         `Nilai ${type.toUpperCase()}`,
                       ),
@@ -1711,13 +1891,20 @@ const SummativeModal = ({
                       "td",
                       {
                         className:
-                          "p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border",
+                          "p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
                         style: {
                           left: 0,
                           width: "50px",
                           minWidth: "50px",
                           maxWidth: "50px",
+                          ...getSelectionStyle(index, -2).selectionStyle,
                         },
+                        onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          if (e.shiftKey) e.preventDefault();
+                          handleMouseDownCell(e, index, -2);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -2),
                       },
                       index + 1,
                     ),
@@ -1725,8 +1912,17 @@ const SummativeModal = ({
                       "td",
                       {
                         className:
-                          "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border",
-                        style: { left: "50px" },
+                          "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
+                        style: {
+                          left: "50px",
+                          ...getSelectionStyle(index, -1).selectionStyle,
+                        },
+                        onMouseDown: (e) => {
+                          if (e.button !== 0) return;
+                          if (e.shiftKey) e.preventDefault();
+                          handleMouseDownCell(e, index, -1);
+                        },
+                        onMouseEnter: () => handleMouseEnterCell(index, -1),
                       },
                       student.namaLengkap,
                     ),
@@ -1752,13 +1948,29 @@ const SummativeModal = ({
                             settings.predikats,
                           );
 
+                          const colSelectIdxQnt = i * 2;
+                          const colSelectIdxQl = i * 2 + 1;
+
+                          const { isCellSelected: isSelQnt, selectionStyle: styleQnt, showTransparentInput: showTransQnt } = getSelectionStyle(index, colSelectIdxQnt);
+                          const { isCellSelected: isSelQl, selectionStyle: styleQl, showTransparentInput: showTransQl } = getSelectionStyle(index, colSelectIdxQl);
+
                           return React.createElement(
                             React.Fragment,
                             { key: i },
                             React.createElement(
                               "td",
-                              { className: "px-2 py-1 text-center border-l" },
+                              {
+                                className: "px-2 py-1 text-center border-l relative cursor-default select-none",
+                                style: styleQnt,
+                                onMouseDown: (e) => {
+                                  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                                  if (e.button !== 0) return;
+                                  handleMouseDownCell(e, index, colSelectIdxQnt);
+                                },
+                                onMouseEnter: () => handleMouseEnterCell(index, colSelectIdxQnt),
+                              },
                               React.createElement("input", {
+                                id: `cell-${index}-${colSelectIdxQnt}`,
                                 type: "text",
                                 inputMode: "numeric",
                                 pattern: "[0-9]*",
@@ -1785,16 +1997,37 @@ const SummativeModal = ({
                                   }
                                 },
                                 onPaste: (e) => handlePaste(e, student.id, i),
+                                onFocus: () => handleFocusCell(index, colSelectIdxQnt),
+                                onMouseDown: (e) => {
+                                  if (e.shiftKey) {
+                                    e.preventDefault();
+                                    handleMouseDownCell(e, index, colSelectIdxQnt);
+                                  }
+                                },
                                 readOnly: active === "ql",
-                                className: `w-full p-2 text-center border rounded-md ${active === "qnt" ? (numericValue !== "" ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"}`,
+                                className: `w-full p-2 text-center border rounded-md relative z-10 transition-all ${
+                                  showTransQnt
+                                    ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                    : active === "qnt" ? (numericValue !== "" ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"
+                                }`,
                               }),
                             ),
                             React.createElement(
                               "td",
-                              { className: "px-2 py-1 text-center" },
+                              {
+                                className: "px-2 py-1 text-center relative cursor-default select-none",
+                                style: styleQl,
+                                onMouseDown: (e) => {
+                                  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                                  if (e.button !== 0) return;
+                                  handleMouseDownCell(e, index, colSelectIdxQl);
+                                },
+                                onMouseEnter: () => handleMouseEnterCell(index, colSelectIdxQl),
+                              },
                               React.createElement(
                                 "select",
                                 {
+                                  id: `cell-${index}-${colSelectIdxQl}`,
                                   value: qualitativeValue,
                                   onChange: (e) =>
                                     handleLocalGradeChange(
@@ -1803,7 +2036,18 @@ const SummativeModal = ({
                                       "ql",
                                       i,
                                     ),
-                                  className: `w-full p-2 text-xs border rounded-md ${active === "ql" ? (qualitativeValue !== "" ? (qualitativeValue === "BB" ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"}`,
+                                  onFocus: () => handleFocusCell(index, colSelectIdxQl),
+                                  onMouseDown: (e) => {
+                                    if (e.shiftKey) {
+                                      e.preventDefault();
+                                      handleMouseDownCell(e, index, colSelectIdxQl);
+                                    }
+                                  },
+                                  className: `w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
+                                    showTransQl
+                                      ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                      : active === "ql" ? (qualitativeValue !== "" ? (qualitativeValue === "BB" ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"
+                                  }`,
                                 },
                                 React.createElement(
                                   "option",
@@ -1824,8 +2068,18 @@ const SummativeModal = ({
                         })
                       : React.createElement(
                           "td",
-                          { className: "px-2 py-1 text-center" },
+                          {
+                            className: "px-2 py-1 text-center relative cursor-default select-none",
+                            style: getSelectionStyle(index, 0).selectionStyle,
+                            onMouseDown: (e) => {
+                              if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                              if (e.button !== 0) return;
+                              handleMouseDownCell(e, index, 0);
+                            },
+                            onMouseEnter: () => handleMouseEnterCell(index, 0),
+                          },
                           React.createElement("input", {
+                            id: `cell-${index}-0`,
                             type: "text",
                             inputMode: "numeric",
                             pattern: "[0-9]*",
@@ -1855,7 +2109,18 @@ const SummativeModal = ({
                               }
                             },
                             onPaste: (e) => handlePaste(e, student.id),
-                            className: `w-20 p-2 text-center border rounded-md ${getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== "" ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500"}`,
+                            onFocus: () => handleFocusCell(index, 0),
+                            onMouseDown: (e) => {
+                              if (e.shiftKey) {
+                                e.preventDefault();
+                                handleMouseDownCell(e, index, 0);
+                              }
+                            },
+                            className: `w-20 p-2 text-center border rounded-md relative z-10 transition-all ${
+                              getSelectionStyle(index, 0).showTransparentInput
+                                ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                : getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== "" ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500"
+                            }`,
                           }),
                         ),
                     isSLM &&
@@ -3023,6 +3288,148 @@ const NilaiTableView = (props) => {
     return { slmHeaders, tpHeaders, columnKeys };
   }, [allSlms, activeSlmIds, settings.semester]);
 
+  const {
+    getSelectionBounds,
+    getSelectionStyle,
+    handleMouseDownCell,
+    handleMouseEnterCell,
+    handleFocusCell
+  } = useGridSelection({
+    rowsCount: relevantStudents.length,
+    colsCount: columnKeys.length,
+    containerClass: "mapel-table-container",
+    onDeleteSelection: (bounds) => {
+      let updatedCount = 0;
+      const updates = [];
+      for (let r = bounds.minR; r <= bounds.maxR; r++) {
+        if (r < 0 || r >= relevantStudents.length) continue;
+        const student = relevantStudents[r];
+        const studentGrade = grades.find((g) => g.studentId === student.id);
+        const detailedGrade = JSON.parse(
+          JSON.stringify(
+            studentGrade?.detailedGrades?.[subject.id] || {
+              slm: [],
+              sts1: null,
+              sts2: null,
+              sas1: null,
+              sas2: null,
+            },
+          ),
+        );
+        if (!detailedGrade.slm) detailedGrade.slm = [];
+        
+        let hasChanged = false;
+        for (let c = bounds.minC; c <= bounds.maxC; c++) {
+          if (c < 0 || c >= columnKeys.length) continue;
+          const key = columnKeys[c];
+          if (key.startsWith("tp|")) {
+            const [, slmId, tpIndexStr] = key.split("|");
+            const tpIndex = parseInt(tpIndexStr, 10);
+            let slm = detailedGrade.slm.find((s) => s.id === slmId);
+            if (slm && slm.scores && tpIndex < slm.scores.length) {
+              if (slm.scores[tpIndex] !== null) {
+                slm.scores[tpIndex] = null;
+                updatedCount++;
+                hasChanged = true;
+              }
+            }
+          } else if (["sts1", "sts2", "sas1", "sas2", "sts", "sas"].includes(key)) {
+            if (detailedGrade[key] !== null) {
+              detailedGrade[key] = null;
+              updatedCount++;
+              hasChanged = true;
+            }
+          }
+        }
+        if (hasChanged) {
+          updates.push({
+            studentId: student.id,
+            subjectId: subject.id,
+            newDetailedGrade: detailedGrade,
+          });
+        }
+      }
+      if (updates.length > 0) {
+        onBulkUpdateGrades(updates);
+        if (showToast) {
+          showToast(`${updatedCount} nilai berhasil dihapus.`, "success");
+        }
+      }
+    }
+  });
+
+  useEffect(() => {
+    const handleCopyGlobal = (e) => {
+      const bounds = getSelectionBounds();
+      if (!bounds) return;
+
+      if (bounds.minR === bounds.maxR && bounds.minC === bounds.maxC) {
+        if (
+          document.activeElement &&
+          (document.activeElement.tagName === "INPUT" ||
+            document.activeElement.tagName === "TEXTAREA" ||
+            document.activeElement.tagName === "SELECT")
+        ) {
+          return;
+        }
+      }
+
+      const isGridActive =
+        document.activeElement?.tagName === "BODY" ||
+        document.querySelector(".mapel-table-container")?.contains(document.activeElement);
+      if (!isGridActive) return;
+
+      let tsv = "";
+      for (let r = bounds.minR; r <= bounds.maxR; r++) {
+        let rowData = [];
+        const student = relevantStudents[r];
+        if (student) {
+          const studentGrade = grades.find((g) => g.studentId === student.id);
+          const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || {};
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+            if (c < 0 || c >= columnKeys.length) continue;
+            const key = columnKeys[c];
+            if (key.startsWith("tp|")) {
+              const [, slmId, tpIndexStr] = key.split("|");
+              const tpIndex = parseInt(tpIndexStr, 10);
+              const slm = detailedGrade.slm?.find((s) => s.id === slmId);
+              const value = slm?.scores?.[tpIndex] ?? null;
+              
+              if (mode === "kualitatif") {
+                const qualitativeCode = getQualitativeCode(value, settings.predikats);
+                rowData.push(qualitativeCode ?? "");
+              } else {
+                const numericVal = getNumericValue(value, settings.qualitativeGradingMap) ?? "";
+                rowData.push(numericVal);
+              }
+            } else if (["sts1", "sts2", "sas1", "sas2", "sts", "sas"].includes(key)) {
+              const value = detailedGrade[key] ?? null;
+              if (mode === "kualitatif") {
+                const qualitativeCode = getQualitativeCode(value, settings.predikats);
+                rowData.push(qualitativeCode ?? "");
+              } else {
+                const numericVal = getNumericValue(value, settings.qualitativeGradingMap) ?? "";
+                rowData.push(numericVal);
+              }
+            }
+          }
+        }
+        tsv += rowData.join("\t") + "\n";
+      }
+
+      if (tsv) {
+        e.preventDefault();
+        e.clipboardData.setData("text/plain", tsv.trimEnd());
+        if (showToast) {
+          showToast("Berhasil disalin ke clipboard", "success");
+        }
+      }
+    };
+
+    document.addEventListener("copy", handleCopyGlobal);
+    return () => document.removeEventListener("copy", handleCopyGlobal);
+  }, [getSelectionBounds, relevantStudents, grades, columnKeys, mode, settings.predikats, settings.qualitativeGradingMap, subject.id, showToast]);
+
   const handleSaveSlmSettings = (newActiveIds) => {
     setActiveSlmIds(newActiveIds);
     if (onUpdateSlmVisibility) {
@@ -3423,7 +3830,7 @@ const NilaiTableView = (props) => {
 
   const hideTooltip = () => setTooltip((prev) => ({ ...prev, visible: false }));
 
-  const renderCell = (student, { slmId, tpIndex }, key) => {
+  const renderCell = (student, { slmId, tpIndex }, key, rowIndex, colIndex, showTransparentInput) => {
     const studentGrade = grades.find((g) => g.studentId === student.id);
     const value =
       studentGrade?.detailedGrades?.[subject.id]?.slm?.find(
@@ -3437,6 +3844,7 @@ const NilaiTableView = (props) => {
       return React.createElement(
         "select",
         {
+          id: `nilai-cell-${rowIndex}-${colIndex}`,
           value: qualitativeCode,
           onChange: (e) =>
             handleSingleGradeChange(
@@ -3446,12 +3854,21 @@ const NilaiTableView = (props) => {
               slmId,
               tpIndex,
             ),
-          className: `w-full p-2 text-sm border rounded-md transition-all ${
-            !isFilled
-              ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
-              : isBelowKkm
-                ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
-                : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
+          onFocus: () => handleFocusCell(rowIndex, colIndex),
+          onMouseDown: (e) => {
+            if (e.shiftKey) {
+              e.preventDefault();
+              handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
+            }
+          },
+          className: `w-full p-2 text-sm border rounded-md transition-all relative z-10 ${
+            showTransparentInput
+              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 text-transparent"
+              : !isFilled
+                ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
+                : isBelowKkm
+                  ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                  : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
           }`,
         },
         React.createElement("option", { value: "" }, "-"),
@@ -3463,18 +3880,27 @@ const NilaiTableView = (props) => {
 
     const numericValue = getNumericValue(value, settings.qualitativeGradingMap);
     return React.createElement(GradeInput, {
+      id: `nilai-cell-${rowIndex}-${colIndex}`,
       min: 0,
       max: 100,
       value: numericValue,
       onCommit: (newValue) =>
         handleSingleGradeChange(student.id, newValue, "tp", slmId, tpIndex),
       onPaste: (e) => handlePaste(e, student.id, key),
-      className: "w-full p-2 text-center border rounded-md",
+      onFocus: () => handleFocusCell(rowIndex, colIndex),
+      onMouseDown: (e) => {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
+        }
+      },
+      showTransparentInput,
+      className: "w-full p-2 text-center",
       kkm: settings.predikats?.c,
     });
   };
 
-  const renderSummativeCell = (student, type) => {
+  const renderSummativeCell = (student, type, rowIndex, colIndex, showTransparentInput) => {
     const studentGrade = grades.find((g) => g.studentId === student.id);
     const value = studentGrade?.detailedGrades?.[subject.id]?.[type] ?? null;
     const numericValue = getNumericValue(value, settings.qualitativeGradingMap);
@@ -3486,15 +3912,25 @@ const NilaiTableView = (props) => {
       return React.createElement(
         "select",
         {
+          id: `nilai-cell-${rowIndex}-${colIndex}`,
           value: qualitativeCode,
           onChange: (e) =>
             handleSingleGradeChange(student.id, e.target.value, type),
-          className: `w-full p-2 text-sm border rounded-md transition-all ${
-            !isFilled
-              ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
-              : isBelowKkm
-                ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
-                : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
+          onFocus: () => handleFocusCell(rowIndex, colIndex),
+          onMouseDown: (e) => {
+            if (e.shiftKey) {
+              e.preventDefault();
+              handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
+            }
+          },
+          className: `w-full p-2 text-sm border rounded-md transition-all relative z-10 ${
+            showTransparentInput
+              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 text-transparent"
+              : !isFilled
+                ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
+                : isBelowKkm
+                  ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
+                  : "text-emerald-700 bg-emerald-50/30 border-green-500 ring-1 ring-green-500"
           }`,
         },
         React.createElement("option", { value: "" }, "-"),
@@ -3505,12 +3941,21 @@ const NilaiTableView = (props) => {
     }
 
     return React.createElement(GradeInput, {
+      id: `nilai-cell-${rowIndex}-${colIndex}`,
       min: 0,
       max: 100,
       value: numericValue,
       onCommit: (newValue) =>
         handleSingleGradeChange(student.id, newValue, type),
       onPaste: (e) => handlePaste(e, student.id, type),
+      onFocus: () => handleFocusCell(rowIndex, colIndex),
+      onMouseDown: (e) => {
+        if (e.shiftKey) {
+          e.preventDefault();
+          handleMouseDownCell(e, rowIndex, colIndex, "nilai-cell");
+        }
+      },
+      showTransparentInput,
       className: "w-full p-2 text-center border rounded-md",
       kkm: settings.predikats?.c,
     });
@@ -3618,7 +4063,7 @@ const NilaiTableView = (props) => {
     ),
     React.createElement(
       "div",
-      { className: "flex-1 overflow-auto" },
+      { className: "flex-1 overflow-auto mapel-table-container focus:outline-none" },
       React.createElement(
         "table",
         {
@@ -3639,13 +4084,20 @@ const NilaiTableView = (props) => {
               {
                 rowSpan: headerRowSpan,
                 className:
-                  "p-2 text-center border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border",
+                  "p-2 text-center border-b border-r border-slate-200 sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default",
                 style: {
                   left: 0,
                   width: "50px",
                   minWidth: "50px",
                   maxWidth: "50px",
+                  ...getSelectionStyle(-1, -2).selectionStyle,
                 },
+                onMouseDown: (e) => {
+                  if (e.button !== 0) return;
+                  if (e.shiftKey) e.preventDefault();
+                  handleMouseDownCell(e, -1, -2, "nilai-cell");
+                },
+                onMouseEnter: () => handleMouseEnterCell(-1, -2),
               },
               "No",
             ),
@@ -3654,8 +4106,17 @@ const NilaiTableView = (props) => {
               {
                 rowSpan: headerRowSpan,
                 className:
-                  "p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border",
-                style: { left: "50px" },
+                  "p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default",
+                style: {
+                  left: "50px",
+                  ...getSelectionStyle(-1, -1).selectionStyle,
+                },
+                onMouseDown: (e) => {
+                  if (e.button !== 0) return;
+                  if (e.shiftKey) e.preventDefault();
+                  handleMouseDownCell(e, -1, -1, "nilai-cell");
+                },
+                onMouseEnter: () => handleMouseEnterCell(-1, -1),
               },
               "Nama Siswa",
             ),
@@ -3709,7 +4170,14 @@ const NilaiTableView = (props) => {
                 {
                   rowSpan: headerRowSpan,
                   className:
-                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]",
+                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default",
+                  style: getSelectionStyle(-1, tpHeaders.length).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    if (e.shiftKey) e.preventDefault();
+                    handleMouseDownCell(e, -1, tpHeaders.length, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length),
                 },
                 "STS I",
               ),
@@ -3719,7 +4187,14 @@ const NilaiTableView = (props) => {
                 {
                   rowSpan: headerRowSpan,
                   className:
-                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]",
+                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default",
+                  style: getSelectionStyle(-1, tpHeaders.length).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    if (e.shiftKey) e.preventDefault();
+                    handleMouseDownCell(e, -1, tpHeaders.length, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length),
                 },
                 "STS II",
               ),
@@ -3729,7 +4204,14 @@ const NilaiTableView = (props) => {
                 {
                   rowSpan: headerRowSpan,
                   className:
-                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]",
+                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default",
+                  style: getSelectionStyle(-1, tpHeaders.length + 1).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    if (e.shiftKey) e.preventDefault();
+                    handleMouseDownCell(e, -1, tpHeaders.length + 1, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length + 1),
                 },
                 "SAS I",
               ),
@@ -3739,7 +4221,14 @@ const NilaiTableView = (props) => {
                 {
                   rowSpan: headerRowSpan,
                   className:
-                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]",
+                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default",
+                  style: getSelectionStyle(-1, tpHeaders.length + 1).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    if (e.shiftKey) e.preventDefault();
+                    handleMouseDownCell(e, -1, tpHeaders.length + 1, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length + 1),
                 },
                 gradeNumber === 6 ? "US" : "SAS II",
               ),
@@ -3778,13 +4267,20 @@ const NilaiTableView = (props) => {
           React.createElement(
             "tr",
             null,
-            tpHeaders.map((h) =>
+            tpHeaders.map((h, colIdx) =>
               React.createElement(
                 "th",
                 {
                   key: `${h.slmId}-${h.tpIndex}`,
                   className:
-                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem]",
+                    "p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default",
+                  style: getSelectionStyle(-1, colIdx).selectionStyle,
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    if (e.shiftKey) e.preventDefault();
+                    handleMouseDownCell(e, -1, colIdx, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(-1, colIdx),
                 },
                 React.createElement(
                   "div",
@@ -3970,13 +4466,19 @@ const NilaiTableView = (props) => {
                 "td",
                 {
                   className:
-                    "p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border",
+                    "p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border select-none cursor-default",
                   style: {
                     left: 0,
                     width: "50px",
                     minWidth: "50px",
                     maxWidth: "50px",
+                    ...getSelectionStyle(index, -2).selectionStyle,
                   },
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, index, -2, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(index, -2),
                 },
                 index + 1,
               ),
@@ -3984,58 +4486,114 @@ const NilaiTableView = (props) => {
                 "td",
                 {
                   className:
-                    "p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border",
-                  style: { left: "50px" },
+                    "p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default",
+                  style: {
+                    left: "50px",
+                    ...getSelectionStyle(index, -1).selectionStyle,
+                  },
+                  onMouseDown: (e) => {
+                    if (e.button !== 0) return;
+                    handleMouseDownCell(e, index, -1, "nilai-cell");
+                  },
+                  onMouseEnter: () => handleMouseEnterCell(index, -1),
                 },
                 student.namaLengkap,
               ),
-              tpHeaders.map((h) =>
-                React.createElement(
+              tpHeaders.map((h, colIdx) => {
+                const { isCellSelected: isSel, selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
+                return React.createElement(
                   "td",
                   {
                     key: `${student.id}-${h.slmId}-${h.tpIndex}`,
                     className:
-                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top",
+                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none",
+                    style: style,
+                    onMouseDown: (e) => {
+                      if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, index, colIdx, "nilai-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(index, colIdx),
                   },
-                  renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`),
-                ),
-              ),
-              (!settings.semester || settings.semester === "Ganjil") &&
-                React.createElement(
+                  renderCell(student, h, `tp|${h.slmId}|${h.tpIndex}`, index, colIdx, showTrans),
+                );
+              }),
+              (!settings.semester || settings.semester === "Ganjil") && (() => {
+                const colIdx = tpHeaders.length;
+                const { isCellSelected: isSel, selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
+                return React.createElement(
                   "td",
                   {
                     className:
-                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top",
+                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none",
+                    style: style,
+                    onMouseDown: (e) => {
+                      if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, index, colIdx, "nilai-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(index, colIdx),
                   },
-                  renderSummativeCell(student, "sts1"),
-                ),
-              settings.semester === "Genap" &&
-                React.createElement(
+                  renderSummativeCell(student, "sts1", index, colIdx, showTrans),
+                );
+              })(),
+              settings.semester === "Genap" && (() => {
+                const colIdx = tpHeaders.length;
+                const { isCellSelected: isSel, selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
+                return React.createElement(
                   "td",
                   {
                     className:
-                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top",
+                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none",
+                    style: style,
+                    onMouseDown: (e) => {
+                      if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, index, colIdx, "nilai-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(index, colIdx),
                   },
-                  renderSummativeCell(student, "sts2"),
-                ),
-              (!settings.semester || settings.semester === "Ganjil") &&
-                React.createElement(
+                  renderSummativeCell(student, "sts2", index, colIdx, showTrans),
+                );
+              })(),
+              (!settings.semester || settings.semester === "Ganjil") && (() => {
+                const colIdx = tpHeaders.length + 1;
+                const { isCellSelected: isSel, selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
+                return React.createElement(
                   "td",
                   {
                     className:
-                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top",
+                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none",
+                    style: style,
+                    onMouseDown: (e) => {
+                      if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, index, colIdx, "nilai-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(index, colIdx),
                   },
-                  renderSummativeCell(student, "sas1"),
-                ),
-              settings.semester === "Genap" &&
-                React.createElement(
+                  renderSummativeCell(student, "sas1", index, colIdx, showTrans),
+                );
+              })(),
+              settings.semester === "Genap" && (() => {
+                const colIdx = tpHeaders.length + 1;
+                const { isCellSelected: isSel, selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
+                return React.createElement(
                   "td",
                   {
                     className:
-                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top",
+                      "p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none",
+                    style: style,
+                    onMouseDown: (e) => {
+                      if (e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+                      if (e.button !== 0) return;
+                      handleMouseDownCell(e, index, colIdx, "nilai-cell");
+                    },
+                    onMouseEnter: () => handleMouseEnterCell(index, colIdx),
                   },
-                  renderSummativeCell(student, "sas2"),
-                ),
+                  renderSummativeCell(student, "sas2", index, colIdx, showTrans),
+                );
+              })(),
               React.createElement(
                 "td",
                 {
