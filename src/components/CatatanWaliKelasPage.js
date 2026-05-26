@@ -150,11 +150,35 @@ const CatatanWaliKelasPage = ({
       getSelectionBounds,
       getSelectionStyle,
       handleMouseDownCell,
-      handleMouseEnterCell
+      handleMouseEnterCell,
+      handleFocusCell
   } = useGridSelection({
       rowsCount: students.length,
       colsCount: 1,
-      containerClass: 'catatan-table-container'
+      containerClass: 'catatan-table-container',
+      onDeleteSelection: (bounds) => {
+        let updatedCount = 0;
+        const currentSemester = settings?.semester || "Ganjil";
+        
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+            for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                if (r >= 0 && c === 0) {
+                    const student = students[r];
+                    if (student) {
+                        const noteKey = currentSemester === "Genap" ? student.id + "_Genap" : student.id;
+                        if (notes[noteKey]) {
+                            onUpdateNote(student.id, "");
+                            updatedCount++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (updatedCount > 0 && showToast) {
+            showToast(`${updatedCount} catatan berhasil dihapus.`, "success");
+        }
+      }
   });
 
   React.useEffect(() => {
@@ -440,6 +464,7 @@ const CatatanWaliKelasPage = ({
                         value: notes[getNoteKey(student.id)] || "",
                         onChange: (e) =>
                           handleNoteChange(student.id, e.target.value),
+                        onFocus: () => handleFocusCell(index, 0),
                         onPaste: (e) => handlePaste(e, student.id),
                         placeholder: "Tulis catatan untuk siswa di sini...",
                         className: `w-full p-2 text-sm rounded-lg transition-all relative z-10 ${

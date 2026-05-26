@@ -1,6 +1,7 @@
 import React from "react";
 import { COCURRICULAR_DIMENSIONS, COCURRICULAR_RATINGS } from "../constants.js";
 import { getClipboardText } from "../utils/clipboard.js";
+import { useGridSelection } from "../hooks/useGridSelection.js";
 
 const DataKokurikulerPage = ({
   students,
@@ -13,142 +14,44 @@ const DataKokurikulerPage = ({
   const currentSemester = settings?.semester || "Ganjil";
   const dimensionField = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
 
-  const [selectionStart, setSelectionStart] = React.useState(null);
-  const [selectionEnd, setSelectionEnd] = React.useState(null);
-  const [isSelecting, setIsSelecting] = React.useState(false);
-  const isProgrammaticFocus = React.useRef(false);
-
-  const handleMouseDownCell = (e, rowIndex, colIndex) => {
-    e.preventDefault(); // Stop text selection and native focus
-    if (e.shiftKey && selectionStart) {
-      setSelectionEnd({ r: rowIndex, c: colIndex });
-    } else {
-      setIsSelecting(true);
-      setSelectionStart({ r: rowIndex, c: colIndex });
-      setSelectionEnd({ r: rowIndex, c: colIndex });
-    }
-
-    setTimeout(() => {
-      const input = document.getElementById(
-        `cocurricular-cell-${rowIndex}-${colIndex}`,
-      );
-      if (input) {
-        isProgrammaticFocus.current = true;
-        input.focus();
-        input.select();
-        setTimeout(() => (isProgrammaticFocus.current = false), 10);
-      }
-    }, 0);
-  };
-
-  const handleMouseEnterCell = (rowIndex, colIndex) => {
-    if (isSelecting) {
-      setSelectionEnd({ r: rowIndex, c: colIndex });
-    }
-  };
-
-  React.useEffect(() => {
-    const handleMouseUpGlobal = () => setIsSelecting(false);
-    const handleKeyDownGlobal = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
-        const isGridActive =
-          document.activeElement.tagName === "BODY" ||
-          document
-            .querySelector(".cocurricular-table-container")
-            ?.contains(document.activeElement);
-        if (isGridActive && students.length > 0) {
-          e.preventDefault();
-          const sel = window.getSelection();
-          if (sel) sel.removeAllRanges();
-          setSelectionStart({ r: -1, c: -2 });
-          setSelectionEnd({
-            r: students.length - 1,
-            c: COCURRICULAR_DIMENSIONS.length - 1,
-          });
-        }
-      }
-    };
-    window.addEventListener("mouseup", handleMouseUpGlobal);
-    window.addEventListener("keydown", handleKeyDownGlobal);
-    return () => {
-      window.removeEventListener("mouseup", handleMouseUpGlobal);
-      window.removeEventListener("keydown", handleKeyDownGlobal);
-    };
-  }, [students.length]);
-
-  const getSelectionBounds = React.useCallback(() => {
-    if (!selectionStart || !selectionEnd) return null;
-    return {
-      minR: Math.min(selectionStart.r, selectionEnd.r),
-      maxR: Math.max(selectionStart.r, selectionEnd.r),
-      minC: Math.min(selectionStart.c, selectionEnd.c),
-      maxC: Math.max(selectionStart.c, selectionEnd.c),
-    };
-  }, [selectionStart, selectionEnd]);
-
-  const getSelectionStyle = React.useCallback(
-    (r, c) => {
-      let isCellSelected = false;
-      let selectionStyle = {};
-      let boxShadows = [];
-      let isLeftmost = false;
-      let isRightmost = false;
-      let isTopmost = false;
-      let isBottommost = false;
-
-      const bounds = getSelectionBounds();
-
-      if (bounds) {
-        isCellSelected =
-          r >= bounds.minR &&
-          r <= bounds.maxR &&
-          c >= bounds.minC &&
-          c <= bounds.maxC;
-
-        if (isCellSelected) {
-          selectionStyle.backgroundColor = "rgba(79, 70, 229, 0.12)"; // indigo transparent
-          if (r === bounds.minR) {
-            boxShadows.push("inset 0 2px 0 0 #4f46e5");
-            isTopmost = true;
-          }
-          if (r === bounds.maxR) {
-            boxShadows.push("inset 0 -2px 0 0 #4f46e5");
-            isBottommost = true;
-          }
-          if (c === bounds.minC) {
-            boxShadows.push("inset 2px 0 0 0 #4f46e5");
-            isLeftmost = true;
-          }
-          if (c === bounds.maxC) {
-            boxShadows.push("inset -2px 0 0 0 #4f46e5");
-            isRightmost = true;
+  const {
+      selectionStart,
+      setSelectionStart,
+      selectionEnd,
+      setSelectionEnd,
+      isSelecting,
+      setIsSelecting,
+      getSelectionBounds,
+      getSelectionStyle,
+      handleMouseDownCell,
+      handleMouseEnterCell,
+      handleFocusCell
+  } = useGridSelection({
+      rowsCount: students.length,
+      colsCount: COCURRICULAR_DIMENSIONS.length,
+      containerClass: 'cocurricular-table-container',
+      onDeleteSelection: (bounds) => {
+        let updatedCount = 0;
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+          for (let c = bounds.minC; c <= bounds.maxC; c++) {
+            if (r >= 0 && c >= 0) {
+              const student = students[r];
+              const dim = COCURRICULAR_DIMENSIONS[c];
+              if (student && dim) {
+                const currentVal = cocurricularData[student.id]?.[dimensionField]?.[dim.id];
+                if (currentVal !== null && currentVal !== undefined && currentVal !== "") {
+                    onUpdateCocurricularData(student.id, dim.id, null);
+                    updatedCount++;
+                }
+              }
+            }
           }
         }
+        if (updatedCount > 0 && showToast) {
+          showToast(`${updatedCount} data berhasil dihapus.`, "success");
+        }
       }
-      if (boxShadows.length > 0) {
-        selectionStyle.boxShadow = boxShadows.join(", ");
-      }
-
-      let isSelectionStartCell =
-        selectionStart && r === selectionStart.r && c === selectionStart.c;
-      let isMultiSelect =
-        bounds && (bounds.maxR > bounds.minR || bounds.maxC > bounds.minC);
-      let showTransparentInput =
-        isCellSelected && isMultiSelect && !isSelectionStartCell;
-
-      return {
-        isCellSelected,
-        selectionStyle,
-        isLeftmost,
-        isRightmost,
-        isTopmost,
-        isBottommost,
-        boxShadows,
-        showTransparentInput,
-      };
-    },
-    [getSelectionBounds, selectionStart],
-  );
+  });
 
   React.useEffect(() => {
     const handleCopyGlobal = (e) => {
@@ -637,78 +540,7 @@ const DataKokurikulerPage = ({
                                 e.target.value,
                               ),
                             onPaste: (e) => handlePaste(e, student.id, dim.id),
-                            onKeyDown: (e) => {
-                              if (
-                                e.shiftKey &&
-                                [
-                                  "ArrowUp",
-                                  "ArrowDown",
-                                  "ArrowLeft",
-                                  "ArrowRight",
-                                ].includes(e.key)
-                              ) {
-                                e.preventDefault();
-                                if (!selectionStart) {
-                                  setSelectionStart({ r: index, c: dimIndex });
-                                }
-                                setSelectionEnd((prev) => {
-                                  let newR = prev ? prev.r : index;
-                                  let newC = prev ? prev.c : dimIndex;
-                                  if (e.key === "ArrowUp")
-                                    newR = Math.max(0, newR - 1);
-                                  if (e.key === "ArrowDown")
-                                    newR = Math.min(
-                                      students.length - 1,
-                                      newR + 1,
-                                    );
-                                  if (e.key === "ArrowLeft")
-                                    newC = Math.max(0, newC - 1);
-                                  if (e.key === "ArrowRight")
-                                    newC = Math.min(
-                                      COCURRICULAR_DIMENSIONS.length - 1,
-                                      newC + 1,
-                                    );
-
-                                  return { r: newR, c: newC };
-                                });
-                              } else if (
-                                !e.shiftKey &&
-                                ["ArrowUp", "ArrowDown"].includes(e.key)
-                              ) {
-                                e.preventDefault();
-                                let newR = index;
-                                if (e.key === "ArrowUp")
-                                  newR = Math.max(0, newR - 1);
-                                if (e.key === "ArrowDown")
-                                  newR = Math.min(
-                                    students.length - 1,
-                                    newR + 1,
-                                  );
-                                setTimeout(() => {
-                                  const nextInput = document.getElementById(
-                                    `cocurricular-cell-${newR}-${dimIndex}`,
-                                  );
-                                  if (nextInput) {
-                                    nextInput.focus();
-                                    nextInput.select();
-                                  }
-                                }, 0);
-                              }
-                            },
-                            onFocus: () => {
-                              if (isProgrammaticFocus.current) return;
-                              if (
-                                !isSelecting &&
-                                (!selectionStart ||
-                                  selectionStart.r !== index ||
-                                  selectionStart.c !== dimIndex ||
-                                  selectionEnd.r !== index ||
-                                  selectionEnd.c !== dimIndex)
-                              ) {
-                                setSelectionStart({ r: index, c: dimIndex });
-                                setSelectionEnd({ r: index, c: dimIndex });
-                              }
-                            },
+                            onFocus: () => handleFocusCell(index, dimIndex),
                             style: {
                               pointerEvents: "none",
                             },

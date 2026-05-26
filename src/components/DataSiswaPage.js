@@ -80,11 +80,35 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         getSelectionBounds,
         getSelectionStyle,
         handleMouseDownCell,
-        handleMouseEnterCell
+        handleMouseEnterCell,
+        handleFocusCell
     } = useGridSelection({
         rowsCount: localStudents.length,
         colsCount: allEditableFields.length,
-        containerClass: 'siswa-table-container'
+        containerClass: 'siswa-table-container',
+        onDeleteSelection: (bounds) => {
+            let updatedCount = 0;
+            const newStudents = [...localStudents];
+            for (let r = bounds.minR; r <= bounds.maxR; r++) {
+                for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                    if (r >= 0 && c >= 0) {
+                        const fieldDef = allEditableFields[c];
+                        if (fieldDef && fieldDef.type !== 'photo') {
+                            const student = newStudents[r];
+                            if (student && student[fieldDef.key] !== "") {
+                                student[fieldDef.key] = "";
+                                updatedCount++;
+                            }
+                        }
+                    }
+                }
+            }
+            if (updatedCount > 0) {
+                setLocalStudents(newStudents);
+                onBulkSaveStudents(newStudents);
+                if (showToast) showToast(`${updatedCount} data berhasil dihapus.`, "success");
+            }
+        }
     });
 
     React.useEffect(() => {
@@ -283,6 +307,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
             value: student[fieldDef.key] || '',
             onChange: (e) => handleInputChange(student.id, fieldDef.key, e.target.value),
             onBlur: handleInputBlur,
+            onFocus: () => handleFocusCell(rowIndex, colIndex),
             onPaste: (e) => handlePaste(e, student.id, fieldDef.key),
             className: `w-full px-2 py-1.5 text-sm rounded-lg transition-all relative z-10 ${
                 showTransparentInput
