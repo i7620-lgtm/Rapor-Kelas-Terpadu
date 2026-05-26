@@ -313,7 +313,7 @@ const GradeInput = ({
     readOnly: readOnly,
     className: `${className} transition-all border ${
       showTransparentInput
-        ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent relative z-10 font-bold"
+        ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 relative z-10 font-bold"
         : !isFilled
           ? "border-red-500 ring-1 ring-red-500"
           : isBelowKkm
@@ -2005,7 +2005,7 @@ const SummativeModal = ({
                                 readOnly: active === "ql",
                                 className: `w-full p-2 text-center border rounded-md relative z-10 transition-all ${
                                   showTransQnt
-                                    ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                    ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                                     : active === "qnt" ? (numericValue !== "" ? (settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"
                                 }`,
                               }),
@@ -2043,7 +2043,7 @@ const SummativeModal = ({
                                   },
                                   className: `w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
                                     showTransQl
-                                      ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                      ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                                       : active === "ql" ? (qualitativeValue !== "" ? (qualitativeValue === "BB" ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500") : "border-slate-300 bg-slate-50"
                                   }`,
                                 },
@@ -2114,7 +2114,7 @@ const SummativeModal = ({
                             },
                             className: `w-20 p-2 text-center border rounded-md relative z-10 transition-all ${
                               getSelectionStyle(index, 0).showTransparentInput
-                                ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 text-transparent"
+                                ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                                 : getNumericValue(studentGrade[type], qualitativeGradingMap) !== null && getNumericValue(studentGrade[type], qualitativeGradingMap) !== "" ? (settings.predikats?.c !== undefined && parseFloat(getNumericValue(studentGrade[type], qualitativeGradingMap)) < settings.predikats.c ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50" : "border-green-500 ring-1 ring-green-500") : "border-red-500 ring-1 ring-red-500"
                             }`,
                           }),
@@ -3859,7 +3859,7 @@ const NilaiTableView = (props) => {
           },
           className: `w-full p-2 text-sm border rounded-md transition-all relative z-10 ${
             showTransparentInput
-              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 text-transparent"
+              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0"
               : !isFilled
                 ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
                 : isBelowKkm
@@ -3919,7 +3919,7 @@ const NilaiTableView = (props) => {
           },
           className: `w-full p-2 text-sm border rounded-md transition-all relative z-10 ${
             showTransparentInput
-              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 text-transparent"
+              ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0"
               : !isFilled
                 ? "text-rose-700 bg-rose-50/30 border-red-500 ring-1 ring-red-500"
                 : isBelowKkm
