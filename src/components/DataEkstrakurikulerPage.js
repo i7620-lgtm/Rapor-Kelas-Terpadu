@@ -109,11 +109,60 @@ const DataEkstrakurikulerPage = ({
       getSelectionBounds,
       getSelectionStyle,
       handleMouseDownCell,
-      handleMouseEnterCell
+      handleMouseEnterCell,
+      handleFocusCell
   } = useGridSelection({
       rowsCount: students.length,
       colsCount: MAX_EXTRA_FIELDS * 2,
-      containerClass: 'ekstra-table-container'
+      containerClass: 'ekstra-table-container',
+      onDeleteSelection: (bounds) => {
+        let updatedCount = 0;
+        const newStudentExtracurricularsMap = new Map(studentExtracurriculars.map(se => [`${se.studentId}_${se.semester || 'Ganjil'}`, { ...se }]));
+        
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+            for (let c = bounds.minC; c <= bounds.maxC; c++) {
+                if (r >= 0 && c >= 0) {
+                    const student = students[r];
+                    if (student) {
+                      const isDesc = c % 2 !== 0;
+                      const extraIdx = Math.floor(c / 2);
+                      const key = `${student.id}_${currentSemester}`;
+                      let extraData = newStudentExtracurricularsMap.get(key);
+                      
+                      if (!extraData) {
+                          extraData = { studentId: student.id, assignedActivities: [], descriptions: {}, semester: currentSemester };
+                          newStudentExtracurricularsMap.set(key, extraData);
+                      }
+                      
+                      const assigned = [...(extraData.assignedActivities || [])];
+                      while (assigned.length < MAX_EXTRA_FIELDS) assigned.push(null);
+                      const descriptions = { ...(extraData.descriptions || {}) };
+                      
+                      if (!isDesc) {
+                          if (assigned[extraIdx] !== null) {
+                              assigned[extraIdx] = null;
+                              updatedCount++;
+                          }
+                      } else {
+                          const actId = assigned[extraIdx];
+                          if (actId && descriptions[actId]) {
+                              descriptions[actId] = "";
+                              updatedCount++;
+                          }
+                      }
+                      extraData.assignedActivities = assigned;
+                      extraData.descriptions = descriptions;
+                    }
+                }
+            }
+        }
+        
+        if (updatedCount > 0) {
+            const resultList = Array.from(newStudentExtracurricularsMap.values());
+            onUpdateStudentExtracurriculars(resultList);
+            if (showToast) showToast(`${updatedCount} data berhasil dihapus.`, "success");
+        }
+      }
   });
 
   React.useEffect(() => {
@@ -581,6 +630,7 @@ const DataEkstrakurikulerPage = ({
                                   i,
                                   e.target.value,
                                 ),
+                              onFocus: () => handleFocusCell(index, colSelectIdx),
                               onPaste: (e) =>
                                 handlePasteActivity(e, student.id, i),
                               className: `w-full p-2 text-sm rounded-md transition-all relative z-10 ${
@@ -638,6 +688,7 @@ const DataEkstrakurikulerPage = ({
                                   currentAssignedId,
                                   e.target.value,
                                 ),
+                              onFocus: () => handleFocusCell(index, colDescIdx),
                               onPaste: (e) =>
                                 handlePasteDescription(e, student.id, i),
                               rows: 2,
