@@ -1475,7 +1475,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     currentRank = i + 1;
                 }
                 if (sortedStudents[i].totalScore > 0) {
-                    ranksMap.set(sortedData[i].studentId, { ...sortedStudents[i], rank: currentRank });
+                    ranksMap.set(sortedStudents[i].studentId, { ...sortedStudents[i], rank: currentRank });
                 }
             }
         }
