@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { generateInitialLayout } from './TransliterationUtil.js'; 
-import domtoimage from 'dom-to-image-more';
+import { generateInitialLayout } from './TransliterationUtil.js';
+import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
@@ -64,20 +64,6 @@ const ReportHeader = ({ settings }) => {
                                 }, el.content)
                             );
                         }
-                        if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                            if (!imageUrl) return null; // Don't render image if URL is empty
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
-                        }
                         if (el.type === 'line') {
                             return (
                                 React.createElement('rect', {
@@ -92,7 +78,28 @@ const ReportHeader = ({ settings }) => {
                         }
                         return null;
                     })
-                )
+                ),
+                layout.map(el => {
+                    if (el.type === 'image') {
+                        const imageUrl = String(settings[el.content] || ''); 
+                        if (!imageUrl) return null;
+                        return (
+                            React.createElement('img', {
+                                key: el.id,
+                                src: imageUrl,
+                                style: {
+                                    position: 'absolute',
+                                    left: `${(el.x / 800) * 100}%`,
+                                    top: `${(el.y / 200) * 100}%`,
+                                    width: `${(el.width / 800) * 100}%`,
+                                    height: `${(el.height / 200) * 100}%`,
+                                    objectFit: 'fill'
+                                }
+                            })
+                        );
+                    }
+                    return null;
+                })
             )
         )
     );
@@ -426,27 +433,48 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 
                 // Keep the exact same style but render it to canvas at scale 1 to keep text sharp
                 const originalTransform = pageRef.current.style.transform;
-                pageRef.current.style.transform = 'scale(1)';
+                const originalWidth = pageRef.current.style.width;
+                const originalHeight = pageRef.current.style.height;
+                const originalPosition = pageRef.current.style.position;
+                const originalLeft = pageRef.current.style.left;
+                const originalTop = pageRef.current.style.top;
+                const originalZIndex = pageRef.current.style.zIndex;
+
+                const pxPerCm = 37.7952755906;
+                const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
+                const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
+
+                pageRef.current.style.transform = 'none';
+                pageRef.current.style.width = widthPx + 'px';
+                pageRef.current.style.height = heightPx + 'px';
+                pageRef.current.style.position = 'absolute';
+                pageRef.current.style.left = '0px';
+                pageRef.current.style.top = '0px';
+                pageRef.current.style.zIndex = '-9999';
                 
                 // Allow some time for the browser to render the unscaled version
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 150));
 
                 const node = pageRef.current;
-                const scaleFactor = 2; // High resolution
                 
-                const imgData = await domtoimage.toJpeg(node, {
-                    quality: 0.98,
-                    bgcolor: '#ffffff',
-                    width: node.clientWidth * scaleFactor,
-                    height: node.clientHeight * scaleFactor,
-                    style: {
-                        transform: `scale(${scaleFactor})`,
-                        transformOrigin: 'top left',
-                        margin: 0
-                    }
+                const canvas = await html2canvas(node, {
+                    scale: 2, // High resolution
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: widthPx,
+                    windowHeight: heightPx,
+                    backgroundColor: '#ffffff'
                 });
                 
                 pageRef.current.style.transform = originalTransform;
+                pageRef.current.style.width = originalWidth;
+                pageRef.current.style.height = originalHeight;
+                pageRef.current.style.position = originalPosition;
+                pageRef.current.style.left = originalLeft;
+                pageRef.current.style.top = originalTop;
+                pageRef.current.style.zIndex = originalZIndex;
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
                 
                 const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
                 const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
