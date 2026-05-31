@@ -1,8 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
- 
+
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
     F4: { width: '21.5cm', height: '33cm' },
@@ -162,6 +160,12 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const [paperSize, setPaperSize] = useState('A4');
     const [isPrinting, setIsPrinting] = useState(false);
     const [isPrintingState, setIsPrintingState] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    }, []);
+
     useEffect(() => {
         const beforePrint = () => setIsPrintingState(true);
         const afterPrint = () => setIsPrintingState(false);
@@ -413,80 +417,81 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }));
     };
 
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(typeof navigator !== 'undefined' ? navigator.userAgent : '');
-
-    const handlePrint = async () => {
+    const handlePrint = () => {
         setIsPrinting(true);
+        showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        if (isMobileDevice) {
-            showToast('Membuat PDF, jangan tutup halaman ini...', 'success');
-            try {
-                // Wait for any re-renders
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                const legerPageElement = document.querySelector('.leger-page');
-                if (!legerPageElement) {
-                    throw new Error('Elemen leger tidak ditemukan');
-                }
-                
-                const originalTransform = legerPageElement.style.transform;
-                legerPageElement.style.transform = 'scale(1)'; // Set scale to 1 for high-quality screenshot
+        const paperSizeCss = {
+            A4: 'size: A4 portrait;',
+            F4: 'size: 21.5cm 33cm;',
+            Letter: 'size: letter portrait;',
+            Legal: 'size: legal portrait;',
+        }[paperSize] || 'size: portrait;';
 
-                const canvas = await html2canvas(legerPageElement, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: legerPageElement.scrollWidth,
-                    windowHeight: legerPageElement.scrollHeight
-                });
-                
-                legerPageElement.style.transform = originalTransform;
-                
-                const imgData = canvas.toDataURL('image/png');
-                
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'cm',
-                    format: [parseFloat(PAPER_SIZES[paperSize].width), parseFloat(PAPER_SIZES[paperSize].height)]
-                });
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Leger_${settings?.nama_kelas || 'Kelas'}.pdf`);
-                showToast('PDF berhasil diunduh.', 'success');
-            } catch (error) {
-                console.error('Error generating PDF:', error);
-                showToast('Gagal membuat PDF.', 'error');
-            } finally {
-                setIsPrinting(false);
+        const style = document.createElement('style');
+        style.id = 'print-leger-style';
+        style.innerHTML = `
+            @page { 
+                ${paperSizeCss} 
+                margin: 0 !important; 
             }
-        } else {
-            showToast('Mempersiapkan pratinjau cetak...', 'success');
+        `;
+        document.head.appendChild(style);
 
-            const paperSizeCss = {
-                A4: 'size: A4 portrait;',
-                F4: 'size: 21.5cm 33cm;',
-                Letter: 'size: letter portrait;',
-                Legal: 'size: legal portrait;',
-            }[paperSize] || 'size: portrait;';
+        setTimeout(() => {
+            window.print();
+            document.getElementById('print-leger-style')?.remove();
+            setIsPrinting(false);
+        }, 500);
+    };
 
-            const style = document.createElement('style');
-            style.id = 'print-leger-style';
-            style.innerHTML = `
-                @page { 
-                    ${paperSizeCss} 
-                    margin: 0 !important; 
-                }
-            `;
-            document.head.appendChild(style);
+    const handleDownloadPdf = async () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan PDF...', 'success');
 
-            setTimeout(() => {
-                window.print();
-                document.getElementById('print-leger-style')?.remove();
-                setIsPrinting(false);
-            }, 500);
+        try {
+            const { default: html2canvas } = await import('html2canvas');
+            const { default: jsPDF } = await import('jspdf');
+
+            const pageElement = pageRef.current;
+            if (!pageElement) throw new Error("Halaman tidak ditemukan");
+
+            const originalTransform = pageElement.style.transform;
+            pageElement.style.transform = 'scale(1)';
+
+            const canvas = await html2canvas(pageElement, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+            });
+
+            pageElement.style.transform = originalTransform;
+
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            
+            let formatParam = 'a4';
+            if (paperSize === 'Legal') formatParam = 'legal';
+            else if (paperSize === 'Letter') formatParam = 'letter';
+            else if (paperSize === 'F4') formatParam = [215, 330];
+
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: formatParam
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Leger_Nilai.pdf`);
+
+            showToast('PDF berhasil diunduh.', 'success');
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            showToast('Gagal membuat PDF.', 'error');
+        } finally {
+            setIsPrinting(false);
         }
     };
 
@@ -651,7 +656,11 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))
                         )
                     ),
-                    React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : (isMobileDevice ? 'Unduh PDF' : 'Cetak Leger (Print)'))
+                    React.createElement('button', { 
+                        onClick: isMobile ? handleDownloadPdf : handlePrint, 
+                        disabled: isPrinting, 
+                        className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" 
+                    }, isPrinting ? (isMobile ? 'Mempersiapkan PDF...' : 'Mempersiapkan...') : (isMobile ? 'Unduh PDF' : 'Cetak Leger (Print)'))
                 )
             ),
             React.createElement('div', { className: "border-t pt-4 mt-4" },
