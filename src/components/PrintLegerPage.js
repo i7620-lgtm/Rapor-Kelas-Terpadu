@@ -194,7 +194,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrintingState) {
+            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -213,7 +213,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState]);
+    }, [paperSize, isPrintingState, isPrinting]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -450,7 +450,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }, 500);
     };
 
-    const pageStyle = isPrintingState ? {
+    const pageStyle = (isPrintingState || isPrinting) ? {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
     } : {
