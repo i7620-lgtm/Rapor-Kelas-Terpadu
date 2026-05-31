@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
@@ -411,6 +413,56 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }));
     };
 
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const handleDownloadPDF = async () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
+
+        try {
+            if (pageRef.current) {
+                // Wait to ensure rendering
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Keep the exact same style but render it to canvas at scale 1 to keep text sharp
+                const originalTransform = pageRef.current.style.transform;
+                pageRef.current.style.transform = 'scale(1)';
+                
+                // Allow some time for the browser to render the unscaled version
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const canvas = await html2canvas(pageRef.current, {
+                    scale: 2, // High resolution
+                    useCORS: true, 
+                    logging: false
+                });
+                
+                pageRef.current.style.transform = originalTransform;
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                
+                const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
+                const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
+                
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'cm',
+                    format: [formatWidth, formatHeight]
+                });
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
+                pdf.save(`Leger_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`);
+                
+                showToast('PDF berhasil diunduh.', 'success');
+            }
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast('Gagal menghasilkan PDF.', 'error');
+        } finally {
+            setIsPrinting(false);
+        }
+    };
+
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
@@ -600,7 +652,9 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))
                         )
                     ),
-                    React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
+                    isMobileDevice ? 
+                        React.createElement('button', { onClick: handleDownloadPDF, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                        React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
                 )
             ),
             React.createElement('div', { className: "border-t pt-4 mt-4" },
