@@ -194,7 +194,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrinting && !isPrintingState) {
+            if (printAreaRef.current) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -205,15 +205,13 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 } else {
                     setScale(1);
                 }
-            } else {
-                setScale(1);
             }
         };
 
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrinting, isPrintingState]);
+    }, [paperSize]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -417,7 +415,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         const paperSizeCss = {
             A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
+            F4: 'size: 21.5cm 33cm portrait;',
             Letter: 'size: letter portrait;',
             Legal: 'size: legal portrait;',
         }[paperSize] || 'size: portrait;';
