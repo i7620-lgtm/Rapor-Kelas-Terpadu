@@ -90,88 +90,57 @@ body {
 }
 
 @media print {
-  /* Gunakan penyesuaian warna presisi tinggi di semua elemen */
-  * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-  }
-
-  /* Sembunyikan elemen non-cetak dan bersihkan ruang agar tinggi dokumen rill */
-  .print-hidden, 
-  nav, 
-  aside, 
-  header, 
-  footer, 
-  button, 
-  select, 
-  input, 
-  .toast,
-  [role="navigation"],
-  .modal-overlay {
-      display: none !important;
-  }
-
-  /* Reset penuh layout leluhur agar elastis, membiarkan konten mengalir ke halaman beralur alami */
-  html, body, #root, #root > div, main {
-      height: auto !important;
-      min-height: auto !important;
-      max-height: none !important;
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: none !important;
-      overflow: visible !important;
-      position: static !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: none !important;
+  /* Aturan @page akan diinjeksikan secara dinamis oleh React */
+  body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
       background-color: #fff !important;
-      box-shadow: none !important;
-      border: none !important;
+      margin: 0 !important;
   }
 
-  /* Sembunyikan semua elemen di body secara default (fallback aman) */
+  /* Sembunyikan semua elemen di body secara default */
   body * {
       visibility: hidden;
   }
 
   /* Tampilkan hanya area cetak dan isinya */
   #print-area, #print-area * {
-      visibility: visible !important;
+      visibility: visible;
   }
 
-  /* Posisikan area cetak di root dokumen agar mulai tepat di koor (0,0) tanpa tumpang tindih margin */
+  /* Posisikan area cetak di root dokumen */
   #print-area {
-      position: relative !important;
-      width: 100% !important;
-      height: auto !important;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
       margin: 0 !important;
       padding: 0 !important;
-      display: block !important;
   }
   
-  /* Reset space-y-* dari Tailwind untuk area cetak */
+  /* Tailwind's space-y-* adds margin-top. Reset this for print. */
   #print-area > * + * {
       margin-top: 0 !important;
   }
   
-  .report-page, .leger-page {
+  .report-page, .leger-page, .piagam-page {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
-    page-break-after: always !important;
-    break-after: page !important;
+    page-break-after: always;
     overflow: hidden !important;
     position: relative !important;
-    box-sizing: border-box !important;
-    display: block !important;
-    transform: none !important; /* Mencegah penskalaan di web print */
-    margin-bottom: 0 !important; /* Mencegah negative margin-bottom dari hasil pre-scale */
+    box-sizing: border-box;
+    transform: none !important;
   }
 
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
-  .report-page:last-of-type, .leger-page:last-of-type {
-    page-break-after: auto !important;
-    break-after: auto !important;
+  .report-page:last-of-type, .leger-page:last-of-type, .piagam-page:last-of-type {
+    page-break-after: auto;
+  }
+
+  .print-hidden {
+      display: none !important;
   }
 }
