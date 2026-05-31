@@ -437,7 +437,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }, 500);
     };
 
-    const pageStyle = {
+    const pageStyle = isPrinting || isPrintingState ? {
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+    } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
