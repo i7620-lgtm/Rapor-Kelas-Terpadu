@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
+import { isMobileDevice, handleMobilePrint } from '../utils/printHelpers.js';
 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
@@ -13,7 +14,7 @@ const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
 const PAGE_BOTTOM_MARGIN_CM = 1.5;
 const HEADER_HEIGHT_CM = 6.0;
 
-const ReportHeader = ({ settings, isMobilePrint }) => {
+const ReportHeader = ({ settings }) => {
     const currentSemester = settings?.semester || 'Ganjil';
     const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
 
@@ -25,9 +26,9 @@ const ReportHeader = ({ settings, isMobilePrint }) => {
         React.createElement('div', {
             className: "absolute",
             style: {
-                top: isMobilePrint ? '0' : `${PAGE_TOP_MARGIN_CM}cm`,
-                left: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                right: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                top: `${PAGE_TOP_MARGIN_CM}cm`,
+                left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
             }
         },
             React.createElement('div', {
@@ -194,7 +195,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current) {
+            if (printAreaRef.current && !isPrinting && !isPrintingState) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -205,13 +206,15 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 } else {
                     setScale(1);
                 }
+            } else {
+                setScale(1);
             }
         };
 
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize]);
+    }, [paperSize, isPrinting, isPrintingState]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -415,47 +418,36 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
         const paperSizeCss = {
             A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm portrait;',
+            F4: 'size: 21.5cm 33cm;',
             Letter: 'size: letter portrait;',
             Legal: 'size: legal portrait;',
         }[paperSize] || 'size: portrait;';
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+        if (isMobileDevice()) {
+            setTimeout(async () => {
+                await handleMobilePrint(printAreaRef, paperSizeCss);
+                setIsPrinting(false);
+            }, 500);
+        } else {
+            const style = document.createElement('style');
+            style.id = 'print-leger-style';
+            style.innerHTML = `
+                @page { 
+                    ${paperSizeCss} 
+                    margin: 0 !important; 
+                }
+            `;
+            document.head.appendChild(style);
 
-        const style = document.createElement('style');
-        style.id = 'print-leger-style';
-        style.innerHTML = isMobile ? `
-            @page { 
-                size: portrait;
-                margin: auto;
-            }
-        ` : `
-            @page { 
-                ${paperSizeCss} 
-                margin: 0 !important; 
-            }
-        `;
-        document.head.appendChild(style);
-
-        setTimeout(() => {
-            window.print();
-            document.getElementById('print-leger-style')?.remove();
-            setIsPrinting(false);
-        }, 500);
+            setTimeout(() => {
+                window.print();
+                document.getElementById('print-leger-style')?.remove();
+                setIsPrinting(false);
+            }, 500);
+        }
     };
 
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isMobilePrint = isMobile && (isPrinting || isPrintingState);
-    const osScale = isMobilePrint ? (isAndroid ? 1.08 : (isIOS ? 1.04 : 1.0)) : 1.0;
-
-    const pageStyle = isPrinting || isPrintingState ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-        transform: isMobilePrint ? `scale(${osScale})` : 'none',
-        transformOrigin: 'top left',
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
@@ -639,14 +631,14 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 className: "leger-page bg-white shadow-lg border relative",
                 style: { ...pageStyle, visibility: isMeasuring ? 'hidden' : 'visible' }
             },
-                React.createElement(ReportHeader, { settings: settings, isMobilePrint: isMobilePrint }),
+                React.createElement(ReportHeader, { settings: settings }),
                 React.createElement('div', {
                     ref: contentRef,
                     className: 'absolute flex flex-col',
                     style: {
-                        top: isMobilePrint ? '0' : `${HEADER_HEIGHT_CM}cm`,
-                        left: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                        right: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                        top: `${HEADER_HEIGHT_CM}cm`,
+                        left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                        right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                     }
                 },
                     React.createElement(LegerHeader, { settings: settings, isCompact: isCompact }),
