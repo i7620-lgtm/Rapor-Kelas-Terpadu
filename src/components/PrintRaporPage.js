@@ -1430,6 +1430,27 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
             window.removeEventListener('afterprint', afterPrint);
         };
     }, []);
+
+    useEffect(() => {
+        const styleId = 'active-print-page-style';
+        document.getElementById(styleId)?.remove();
+
+        const paperSizeCss = {
+            A4: 'size: A4 portrait;',
+            F4: 'size: 21.5cm 33cm;',
+            Letter: 'size: letter portrait;',
+            Legal: 'size: legal portrait;',
+        }[paperSize] || 'size: A4 portrait;';
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
+        document.head.appendChild(style);
+
+        return () => {
+            document.getElementById(styleId)?.remove();
+        };
+    }, [paperSize]);
     const [hideGradesForFaseA, setHideGradesForFaseA] = useState(true);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
@@ -1531,21 +1552,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
-        }[paperSize];
-
-        const style = document.createElement('style');
-        style.id = 'print-page-style';
-        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
-        document.head.appendChild(style);
-
         setTimeout(() => {
             window.print();
-            document.getElementById('print-page-style')?.remove();
             setIsPrinting(false);
         }, 500);
     };
