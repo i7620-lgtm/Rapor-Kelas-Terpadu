@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
+import * as htmlToImage from 'html-to-image';
+import { jsPDF } from 'jspdf';
 import { getGradeNumber } from './DataNilaiPage.js'; // Import getGradeNumber from DataNilaiPage
 import { COCURRICULAR_DIMENSIONS } from '../constants.js';
 
@@ -1516,6 +1518,104 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         }));
     };
     
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const handleDownloadPDF = async () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
+
+        try {
+            if (printAreaRef.current) {
+                // Rapor can have multiple pages, we will capture printAreaRef's children
+                // Or maybe just the print wrapper for simplicity, or capture each page separately
+                
+                // Let's capture the whole print area as a single long image?
+                // Wait, it says "Rapor". Are there multiple pages? Let's check how the DOM is structured.
+                // It's probably a `.rapor-page` class or something similar.
+                const pages = Array.from(printAreaRef.current.querySelectorAll('.rapor-page, .report-page'));
+                
+                if (pages.length === 0) {
+                     // fallback if class is different
+                     showToast('Gagal menemukan halaman.', 'error');
+                     return;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const pxPerCm = 37.7952755906;
+                const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
+                const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
+                const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
+                const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
+                
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'cm',
+                    format: [formatWidth, formatHeight]
+                });
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const node = pages[i];
+                    
+                    const originalTransform = node.style.transform;
+                    const originalWidth = node.style.width;
+                    const originalHeight = node.style.height;
+                    const originalPosition = node.style.position;
+                    const originalLeft = node.style.left;
+                    const originalTop = node.style.top;
+                    const originalZIndex = node.style.zIndex;
+
+                    node.style.transform = 'none';
+                    node.style.width = widthPx + 'px';
+                    node.style.height = heightPx + 'px';
+                    node.style.position = 'absolute';
+                    node.style.left = '0px';
+                    node.style.top = '0px';
+                    node.style.zIndex = '-9999';
+                    
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    
+                    const scaleFactor = 2;
+                    const imgData = await htmlToImage.toJpeg(node, {
+                        quality: 0.98,
+                        backgroundColor: '#ffffff',
+                        pixelRatio: scaleFactor,
+                        style: {
+                            margin: 0
+                        }
+                    });
+                    
+                    node.style.transform = originalTransform;
+                    node.style.width = originalWidth;
+                    node.style.height = originalHeight;
+                    node.style.position = originalPosition;
+                    node.style.left = originalLeft;
+                    node.style.top = originalTop;
+                    node.style.zIndex = originalZIndex;
+                    
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+                    pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
+                }
+                
+                let fileName = 'Rapor.pdf';
+                if (selectedStudentId !== 'all') {
+                    const student = students.find(s => String(s.id) === selectedStudentId);
+                    if (student) fileName = `Rapor_${student.namaLengkap.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+                }
+
+                pdf.save(fileName);
+                showToast('PDF berhasil diunduh.', 'success');
+            }
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+        } finally {
+            setIsPrinting(false);
+        }
+    };
+    
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
@@ -1647,11 +1747,17 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                                 className: "w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                             }, Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
-                        React.createElement('button', { 
-                            onClick: handlePrint,
-                            disabled: isPrinting,
-                            className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
-                        }, isPrinting ? 'Mempersiapkan...' : 'Cetak Rapor (Print)')
+                        isMobileDevice ? 
+                            React.createElement('button', { 
+                                onClick: handleDownloadPDF,
+                                disabled: isPrinting,
+                                className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+                            }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                            React.createElement('button', { 
+                                onClick: handlePrint,
+                                disabled: isPrinting,
+                                className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed" 
+                            }, isPrinting ? 'Mempersiapkan...' : 'Cetak Rapor (Print)')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4" },
