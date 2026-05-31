@@ -2,10 +2,10 @@ import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 're
 import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
-    A4: { width: '21cm', height: '29.7cm' },
-    F4: { width: '21.5cm', height: '33cm' },
-    Letter: { width: '21.59cm', height: '27.94cm' },
-    Legal: { width: '21.59cm', height: '35.56cm' },
+    A4: { width: '29.7cm', height: '21cm' },
+    F4: { width: '33cm', height: '21.5cm' },
+    Letter: { width: '27.94cm', height: '21.59cm' },
+    Legal: { width: '35.56cm', height: '21.59cm' },
 };
 
 const PAGE_TOP_MARGIN_CM = 1.5;
@@ -416,10 +416,10 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         showToast('Mempersiapkan pratinjau cetak...', 'success');
 
         const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
+            A4: 'size: A4 landscape;',
+            F4: 'size: 33cm 21.5cm;',
+            Letter: 'size: letter landscape;',
+            Legal: 'size: legal landscape;',
         }[paperSize];
 
         const style = document.createElement('style');
@@ -431,8 +431,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             }
             @media print {
                 .leger-page {
-                    transform: scale(0.98);
-                    transform-origin: top center;
+                    transform: none !important;
                     box-shadow: none !important;
                     border: none !important;
                     margin-top: 0 !important;
