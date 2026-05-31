@@ -670,27 +670,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
             window.removeEventListener('afterprint', afterPrint);
         };
     }, []);
-
-    useEffect(() => {
-        const styleId = 'active-print-page-style';
-        document.getElementById(styleId)?.remove();
-
-        const paperSizeCss = {
-            A4: 'A4 landscape',
-            F4: '33cm 21.5cm',
-            Letter: 'letter landscape',
-            Legal: 'legal landscape',
-        }[paperSize] || 'A4 landscape';
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `@page { size: ${paperSizeCss}; margin: 0; }`;
-        document.head.appendChild(style);
-
-        return () => {
-            document.getElementById(styleId)?.remove();
-        };
-    }, [paperSize]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
@@ -702,7 +681,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
+            if (printAreaRef.current && !isPrintingState) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -721,7 +700,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState, isPrinting]);
+    }, [paperSize, isPrintingState]);
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -772,10 +751,32 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
+        
+        const styleId = 'print-piagam-style';
+        document.getElementById(styleId)?.remove();
+        
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            @page {
+                size: ${paperSize} landscape;
+                margin: 0;
+            }
+            @media print {
+                .report-page {
+                    transform: none !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                    page-break-after: always;
+                }
+            }
+        `;
+        document.head.appendChild(style);
 
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
+            setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
 
@@ -800,10 +801,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     
 
 
-    const pageStyle = (isPrintingState || isPrinting) ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
