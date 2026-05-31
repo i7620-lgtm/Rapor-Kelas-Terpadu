@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
@@ -431,15 +431,22 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 // Allow some time for the browser to render the unscaled version
                 await new Promise(resolve => setTimeout(resolve, 100));
 
-                const canvas = await html2canvas(pageRef.current, {
-                    scale: 2, // High resolution
-                    useCORS: true, 
-                    logging: false
+                const node = pageRef.current;
+                const scaleFactor = 2; // High resolution
+                
+                const imgData = await domtoimage.toJpeg(node, {
+                    quality: 0.98,
+                    bgcolor: '#ffffff',
+                    width: node.clientWidth * scaleFactor,
+                    height: node.clientHeight * scaleFactor,
+                    style: {
+                        transform: `scale(${scaleFactor})`,
+                        transformOrigin: 'top left',
+                        margin: 0
+                    }
                 });
                 
                 pageRef.current.style.transform = originalTransform;
-
-                const imgData = canvas.toDataURL('image/jpeg', 0.98);
                 
                 const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
                 const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
@@ -457,7 +464,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             }
         } catch (error) {
             console.error('PDF generation error:', error);
-            showToast('Gagal menghasilkan PDF.', 'error');
+            showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
         } finally {
             setIsPrinting(false);
         }
