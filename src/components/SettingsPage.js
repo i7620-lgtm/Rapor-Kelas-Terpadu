@@ -1,4 +1,4 @@
-
+ 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
