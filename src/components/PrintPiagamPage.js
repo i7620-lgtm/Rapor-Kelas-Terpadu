@@ -681,7 +681,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrintingState) {
+            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -700,7 +700,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState]);
+    }, [paperSize, isPrintingState, isPrinting]);
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -808,7 +808,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     
 
 
-    const pageStyle = isPrintingState ? {
+    const pageStyle = (isPrintingState || isPrinting) ? {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
     } : {
