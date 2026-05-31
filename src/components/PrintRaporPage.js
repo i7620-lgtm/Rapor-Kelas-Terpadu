@@ -1297,7 +1297,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     if (academicPageChunks === null && selectedPages.academic) {
         // Render the measurement layout
         return React.createElement(React.Fragment, null,
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { className: 'print-hidden', ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             React.createElement('div', { 
                 className: 'report-page bg-white shadow-lg border box-border relative font-times', 
                 style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
@@ -1329,7 +1329,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { className: 'print-hidden', ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                 React.createElement(CoverPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
             ),
@@ -1572,7 +1572,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
     const pageStyle = isPrinting ? {
         width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
+        // height removed to prevent exact-height overflow triggering blank pages in print mode
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -1705,7 +1705,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 )
             ),
             
-            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8 print:block print:space-y-0" },
                 studentsToRender.map(student => {
                     const rank = studentRanks.get(student.id)?.rank;
                     return React.createElement(ReportPagesForStudent, { 
