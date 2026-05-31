@@ -803,7 +803,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
     const pageStyle = isPrintingState ? {
         width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
+        // height removed to prevent exact-height overflow triggering blank pages in print mode
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -875,7 +875,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     )
                 )
             ),
-            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8 print:block print:space-y-0" },
                 studentsToRender.length > 0 ? studentsToRender.map(student => {
                     const studentData = studentRankings.get(student.id);
                     return React.createElement(PiagamPage, { 
