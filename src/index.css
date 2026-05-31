@@ -90,16 +90,12 @@ body {
 }
 
 @media print {
-  /* Aturan @page akan diinjeksikan secara dinamis */
-  html, body {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-      -webkit-text-size-adjust: 100% !important;
+  /* Aturan @page akan diinjeksikan secara dinamis oleh React */
+  body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
       background-color: #fff !important;
       margin: 0 !important;
-      padding: 0 !important;
-      width: max-content !important;
-      min-width: 100% !important;
   }
 
   /* Sembunyikan semua elemen di body secara default */
@@ -114,7 +110,9 @@ body {
 
   /* Posisikan area cetak di root dokumen */
   #print-area {
-      position: relative !important;
+      position: absolute;
+      left: 0;
+      top: 0;
       width: 100%;
       margin: 0 !important;
       padding: 0 !important;
@@ -131,8 +129,6 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     page-break-after: always;
-    page-break-inside: avoid;
-    break-inside: avoid;
     overflow: hidden !important;
     position: relative !important;
     box-sizing: border-box;
@@ -141,8 +137,7 @@ body {
 
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
   .report-page:last-of-type, .leger-page:last-of-type, .piagam-page:last-of-type {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
+    page-break-after: auto;
   }
 
   .print-hidden {
