@@ -755,11 +755,18 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         const styleId = 'print-piagam-style';
         document.getElementById(styleId)?.remove();
         
+        const paperSizeCss = {
+            A4: 'A4 landscape',
+            F4: '33cm 21.5cm',
+            Letter: 'letter landscape',
+            Legal: 'legal landscape',
+        }[paperSize] || 'A4 landscape';
+
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
             @page {
-                size: ${paperSize} landscape;
+                size: ${paperSizeCss};
                 margin: 0;
             }
             @media print {
@@ -768,13 +775,6 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     margin-top: 0 !important;
                     margin-bottom: 0 !important;
                     page-break-after: always;
-                    break-after: page;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                .report-page:last-of-type {
-                    page-break-after: auto !important;
-                    break-after: auto !important;
                 }
             }
         `;
