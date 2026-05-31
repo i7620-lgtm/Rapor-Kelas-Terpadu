@@ -20,7 +20,7 @@ import useServiceWorker from './hooks/useServiceWorker.js';
 import useWindowDimensions from './hooks/useWindowDimensions.js';
 import ERaporProcessorModal from './components/ERaporProcessorModal.js';
 import LockScreen from './components/LockScreen.js';
-import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
+import { IMAGE_KEYS, loadAllImagesFromDB, saveImageToDB, deleteImageFromDB, processAndCompressImage, getImageDimensions } from './utils/imageDB.js';
 
 const defaultSubjects = [
     { id: 'PAIslam', fullName: 'Pendidikan Agama dan Budi Pekerti (Islam)', label: 'PA Islam', active: true, curriculumKey: 'Pendidikan Agama dan Budi Pekerti (Islam)' },
@@ -52,7 +52,7 @@ const initialSettings = {
   ttd_kepala_sekolah: null, ttd_wali_kelas: null,
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
-  cocurricular_theme: '',
+  cocurricular_theme: '', cocurricular_theme_Genap: '',
   predikats: { a: '90', b: '80', c: '70', d: '0' },
   gradeCalculation: {},
   qualitativeGradingMap: {},
@@ -355,6 +355,7 @@ const App = () => {
       const loaded = loadDataSafe('appAttendance', initialAttendance, Array.isArray);
       return loaded.map(att => ({
           studentId: att.studentId,
+          semester: att.semester || 'Ganjil',
           sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
           izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
           alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
@@ -410,8 +411,17 @@ const App = () => {
 
   const showToast = useCallback((message, type) => { setToast({ message, type }); }, []);
   
-  const handleSettingsChange = useCallback((e) => {
+    const handleSettingsChange = useCallback((e) => {
     const { name, value, type, files } = e.target;
+    if (type === 'remove_image') {
+        deleteImageFromDB(name).then(() => {
+            setSettings(prev => ({ ...prev, [name]: null }));
+        }).catch(err => {
+            console.error("Failed to delete image", err);
+            showToast("Gagal menghapus gambar", "error");
+        });
+        return;
+    }
     if (type === 'file') {
         const file = files && files[0];
         if (file) {
@@ -615,46 +625,64 @@ const App = () => {
         const sortOrder = { 'PABP': 1, 'PP': 2, 'BIndo': 3, 'MTK': 4, 'IPAS': 5, 'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9 };
         displaySubjects.sort((a, b) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99));
 
-        const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Rank"];
-        const legerDataWithTotals = students.map((student, index) => {
-            const studentGrades = grades.find(g => g.studentId === student.id) || { finalGrades: {} };
-            let total = 0, count = 0;
-            const rowGrades = displaySubjects.map(ds => {
-                let grade;
-                if (ds.id === 'PABP') {
-                    const rel = String(student.agama || '').trim().toLowerCase();
-                    if (rel) {
-                        const matched = rel === 'kepercayaan' ? activeSubjects.find(s => s.id === 'PAKTTMYME') : activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${rel})`));
-                        grade = matched ? studentGrades.finalGrades[matched.id] : null;
-                    }
-                } else if (['SB', 'Mulok'].includes(ds.id)) {
-                    const member = activeSubjects.filter(s => s.fullName.startsWith(ds.fullName));
-                    grade = member.map(m => studentGrades.finalGrades[m.id]).find(g => g != null);
-                } else grade = studentGrades.finalGrades[ds.id];
+        const generateLegerRows = (overrideSemester) => {
+            const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Rank"];
+            const simSettings = { ...settings, semester: overrideSemester };
+            const gradeKey = `Kelas ${getGradeNumber(simSettings.nama_kelas) || '5'}`;
+            
+            const legerDataWithTotals = students.map((student, index) => {
+                const studentGrades = grades.find(g => g.studentId === student.id) || { detailedGrades: {} };
+                let total = 0, count = 0;
+                
+                const getSimFinalScore = (subjId) => {
+                    const detailed = studentGrades.detailedGrades[subjId];
+                    if (!detailed) return null;
+                    const config = simSettings.gradeCalculation?.[subjId] || { method: 'rata-rata' };
+                    const subj = activeSubjects.find(s => s.id === subjId) || subjects.find(s => s.id === subjId);
+                    const curriculumKey = subj ? (subj.curriculumKey || subj.fullName) : null;
+                    return calculateFinalGrade(detailed, config, simSettings, subjId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum);
+                };
 
-                if (typeof grade === 'number') { total += grade; count++; }
-                return grade ?? '-';
+                const rowGrades = displaySubjects.map(ds => {
+                    let grade;
+                    if (ds.id === 'PABP') {
+                        const rel = String(student.agama || '').trim().toLowerCase();
+                        if (rel) {
+                            const matched = rel === 'kepercayaan' ? activeSubjects.find(s => s.id === 'PAKTTMYME') : activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${rel})`));
+                            grade = matched ? getSimFinalScore(matched.id) : null;
+                        }
+                    } else if (['SB', 'Mulok'].includes(ds.id)) {
+                        const member = activeSubjects.filter(s => s.fullName.startsWith(ds.fullName));
+                        grade = member.map(m => getSimFinalScore(m.id)).find(g => g != null);
+                    } else grade = getSimFinalScore(ds.id);
+
+                    if (typeof grade === 'number') { total += grade; count++; }
+                    return grade ?? '-';
+                });
+                return { id: student.id, no: index + 1, name: student.namaLengkap, nisn: student.nisn, nis: student.nis, rowGrades, total, avg: count > 0 ? (total / count).toFixed(2) : "0.00" };
             });
-            return { id: student.id, no: index + 1, name: student.namaLengkap, nisn: student.nisn, nis: student.nis, rowGrades, total, avg: count > 0 ? (total / count).toFixed(2) : "0.00" };
-        });
 
-        // Calculate Rank
-        const sortedForRank = [...legerDataWithTotals].sort((a, b) => b.total - a.total);
-        const rankMap = new Map();
-        if (sortedForRank.length > 0) {
-            let curRank = 1;
-            rankMap.set(sortedForRank[0].id, curRank);
-            for (let i = 1; i < sortedForRank.length; i++) {
-                if (sortedForRank[i].total < sortedForRank[i - 1].total) curRank = i + 1;
-                rankMap.set(sortedForRank[i].id, curRank);
+            const sortedForRank = [...legerDataWithTotals].sort((a, b) => b.total - a.total);
+            const rankMap = new Map();
+            if (sortedForRank.length > 0) {
+                let curRank = 1;
+                rankMap.set(sortedForRank[0].id, curRank);
+                for (let i = 1; i < sortedForRank.length; i++) {
+                    if (sortedForRank[i].total < sortedForRank[i - 1].total) curRank = i + 1;
+                    rankMap.set(sortedForRank[i].id, curRank);
+                }
             }
-        }
 
-        const legerRows = [legerHeader, ...legerDataWithTotals.map(d => [
-            d.no, d.name, d.nisn, d.nis, ...d.rowGrades, d.total, d.avg, rankMap.get(d.id)
-        ])];
-        const wsLeger = XLSX.utils.aoa_to_sheet(legerRows);
-        XLSX.utils.book_append_sheet(wb, wsLeger, "Leger");
+            return [legerHeader, ...legerDataWithTotals.map(d => [
+                d.no, d.name, d.nisn, d.nis, ...d.rowGrades, d.total, d.avg, rankMap.get(d.id)
+            ])];
+        };
+
+        const wsLegerGanjil = XLSX.utils.aoa_to_sheet(generateLegerRows('Ganjil'));
+        XLSX.utils.book_append_sheet(wb, wsLegerGanjil, "Leger_Ganjil");
+        
+        const wsLegerGenap = XLSX.utils.aoa_to_sheet(generateLegerRows('Genap'));
+        XLSX.utils.book_append_sheet(wb, wsLegerGenap, "Leger_Genap");
 
         // --- 3. Sheet: Pengaturan ---
         const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout', 'piagam_layout_Genap', 'kop_layout_Genap'];
@@ -662,13 +690,16 @@ const App = () => {
             ["Kunci Pengaturan", "Nilai"],
             ["format_version", "2"],
             ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => {
+                let exportKey = key;
+                if (key === 'cocurricular_theme') exportKey = 'cocurricular_theme_Ganjil';
+                
                 if (typeof val === 'object' && val !== null) {
-                    return [key, JSON.stringify(val)];
+                    return [exportKey, JSON.stringify(val)];
                 }
                 if (typeof val === 'boolean') {
-                    return [key, val ? 'true' : 'false'];
+                    return [exportKey, val ? 'true' : 'false'];
                 }
-                return [key, val ?? ''];
+                return [exportKey, val ?? ''];
             }),
             ["kop_layout", JSON.stringify(settings.kop_layout || [])],
             ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
@@ -773,7 +804,7 @@ const App = () => {
         students.forEach(s => {
             ['Ganjil', 'Genap'].forEach(sem => {
                 const a = attendance.find(x => x.studentId === s.id && (x.semester || 'Ganjil') === sem);
-                if (a && (a.sakit || a.izin || a.alpa)) absensiRows.push([s.id, sem, a.sakit ?? '', a.izin ?? '', a.alpa ?? '']);
+                if (a && (a.sakit != null || a.izin != null || a.alpa != null)) absensiRows.push([s.id, sem, a.sakit ?? '', a.izin ?? '', a.alpa ?? '']);
             });
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(absensiRows), "Absensi");
@@ -884,12 +915,15 @@ const App = () => {
             assetData.forEach(row => { const keyPart = row[0], data = row[1]; if (keyPart && data) { const match = keyPart.match(/^(.*)_part_(\d+)$/); if (match) { const realKey = match[1], idx = parseInt(match[2], 10); if (!chunksByKey[realKey]) chunksByKey[realKey] = []; chunksByKey[realKey][idx] = data; } } });
             Object.entries(chunksByKey).forEach(([key, chunks]) => { assetMap[key] = chunks.join(''); });
         }
+        const wsMapel = findSheet(["Mata Pelajaran"]);
+        if (wsMapel) { const rawMapel = XLSX.utils.sheet_to_json(wsMapel); nSub = defaultSubjects.map(ds => { const found = rawMapel.find(r => r['.'] === ds.id || r['ID'] === ds.id); if (found) return { ...ds, active: found['Status Aktif'] === 'Aktif', curriculumKey: found['Kunci Kurikulum'] || ds.fullName }; return ds; }); rawMapel.forEach(r => { const id = r['.'] || r['ID']; if (id && !defaultSubjects.some(ds => ds.id === id)) nSub.push({ id, fullName: r['Nama Lengkap'] || r['Nama Mata Pelajaran'] || id, label: r['Singkatan'] || id, active: r['Status Aktif'] === 'Aktif', curriculumKey: r['Kunci Kurikulum'] || r['Nama Lengkap'] }); }); }
         const wsP = findSheet(["Pengaturan", "Settings", "Info Sekolah"]);
         if (wsP) {
             const data = XLSX.utils.sheet_to_json(wsP, { header: 1 });
             data.forEach(r => {
                 if (r[0] && r[0] !== 'ID Mata Pelajaran') { 
-                    const key = String(r[0]);
+                    let key = String(r[0]);
+                    if (key === 'cocurricular_theme_Ganjil') key = 'cocurricular_theme';
                     if (['__proto__', 'constructor', 'prototype'].includes(key)) return;
                     
                     if (['A', 'B', 'C', 'D'].includes(key.toUpperCase())) {
@@ -909,7 +943,7 @@ const App = () => {
                         }
                     }
                 }
-                const subjectId = r[0]; if (defaultSubjects.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
+                const subjectId = r[0]; if (nSub.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
             });
             
             // Recalculate qualitativeGradingMap based on imported predikats
@@ -927,8 +961,6 @@ const App = () => {
             
             news = { ...news, ...assetMap };
         }
-        const wsMapel = findSheet(["Mata Pelajaran"]);
-        if (wsMapel) { const rawMapel = XLSX.utils.sheet_to_json(wsMapel); nSub = defaultSubjects.map(ds => { const found = rawMapel.find(r => r['.'] === ds.id || r['ID'] === ds.id); if (found) return { ...ds, active: found['Status Aktif'] === 'Aktif', curriculumKey: found['Kunci Kurikulum'] || ds.fullName }; return ds; }); rawMapel.forEach(r => { const id = r['.'] || r['ID']; if (id && !defaultSubjects.some(ds => ds.id === id)) nSub.push({ id, fullName: r['Nama Lengkap'] || r['Nama Mata Pelajaran'] || id, label: r['Singkatan'] || id, active: r['Status Aktif'] === 'Aktif', curriculumKey: r['Kunci Kurikulum'] || r['Nama Lengkap'] }); }); }
         const wsEkstraDef = findSheet(["Ekstrakurikuler"]);
         if (wsEkstraDef) nEx = XLSX.utils.sheet_to_json(wsEkstraDef).map(r => ({ id: r['ID Unik (Jangan Diubah)'], name: r['Nama Ekstrakurikuler'], active: r['Status Aktif'] === 'Aktif' }));
                 const wsFoto = findSheet(["Foto Siswa"]);

@@ -1,5 +1,6 @@
-
+ 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Upload, Trash2 } from 'lucide-react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
 import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
 
@@ -505,6 +506,11 @@ const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTrans
         onChange(e);
         onSave();
     };
+
+    const handleRemove = () => {
+        onChange({ target: { name: id, value: null, type: 'remove_image' } });
+        onSave();
+    };
     
     return (
      React.createElement('div', { className: `w-full flex flex-col ${containerClassName || ''}` },
@@ -518,14 +524,26 @@ const FileInputField = ({ label, id, onChange, onSave, imagePreview, onMakeTrans
                 ) : (
                     React.createElement('div', { className: "w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs text-center" }, "Pratinjau")
                 ),
-                React.createElement('div', { className: "text-center flex-1" },
-                    React.createElement('div', { className: "flex text-sm text-slate-600 justify-center" },
-                        React.createElement('label', { htmlFor: String(id), className: "relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none" },
-                            React.createElement('span', null, "Unggah file"),
-                            React.createElement('input', { id: String(id), name: String(id), type: "file", className: "sr-only", onChange: handleFileChange, accept: "image/*" })
+                React.createElement('div', { className: "text-center flex-1 space-y-2" },
+                    imagePreview ? (
+                        React.createElement('div', { className: "flex justify-center items-center gap-6" },
+                            React.createElement('label', { htmlFor: String(id), className: "cursor-pointer p-2 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 hover:text-indigo-700 transition-colors tooltip", title: "Ubah Gambar" },
+                                React.createElement(Upload, { size: 18 }),
+                                React.createElement('input', { id: String(id), name: String(id), type: "file", className: "sr-only", onChange: handleFileChange, accept: "image/*" })
+                            ),
+                            React.createElement('button', { onClick: handleRemove, className: "p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors tooltip", title: "Hapus Gambar" },
+                                React.createElement(Trash2, { size: 18 })
+                            )
+                        )
+                    ) : (
+                        React.createElement('div', { className: "flex text-sm text-slate-600 justify-center" },
+                            React.createElement('label', { htmlFor: String(id), className: "relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none" },
+                                React.createElement('span', null, "Unggah file"),
+                                React.createElement('input', { id: String(id), name: String(id), type: "file", className: "sr-only", onChange: handleFileChange, accept: "image/*" })
+                            )
                         )
                     ),
-                     React.createElement('p', { className: "text-xs text-slate-500" }, "PNG atau JPG")
+                    React.createElement('p', { className: "text-xs text-slate-500" }, "Format PNG atau JPG")
                 )
             ),
             imagePreview && (
