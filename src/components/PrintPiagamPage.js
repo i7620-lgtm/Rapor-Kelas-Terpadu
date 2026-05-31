@@ -670,6 +670,27 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
             window.removeEventListener('afterprint', afterPrint);
         };
     }, []);
+
+    useEffect(() => {
+        const styleId = 'active-print-page-style';
+        document.getElementById(styleId)?.remove();
+
+        const paperSizeCss = {
+            A4: 'A4 landscape',
+            F4: '33cm 21.5cm',
+            Letter: 'letter landscape',
+            Legal: 'legal landscape',
+        }[paperSize] || 'A4 landscape';
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `@page { size: ${paperSizeCss}; margin: 0; }`;
+        document.head.appendChild(style);
+
+        return () => {
+            document.getElementById(styleId)?.remove();
+        };
+    }, [paperSize]);
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
@@ -751,39 +772,10 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
-        
-        const styleId = 'print-piagam-style';
-        document.getElementById(styleId)?.remove();
-        
-        const paperSizeCss = {
-            A4: 'A4 landscape',
-            F4: '33cm 21.5cm',
-            Letter: 'letter landscape',
-            Legal: 'legal landscape',
-        }[paperSize] || 'A4 landscape';
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-            @page {
-                size: ${paperSizeCss};
-                margin: 0;
-            }
-            @media print {
-                .report-page {
-                    transform: none !important;
-                    margin-top: 0 !important;
-                    margin-bottom: 0 !important;
-                    page-break-after: always;
-                }
-            }
-        `;
-        document.head.appendChild(style);
 
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
-            setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
         }, 500);
     };
 
