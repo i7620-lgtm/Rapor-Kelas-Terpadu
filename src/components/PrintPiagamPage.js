@@ -1,6 +1,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
+import * as htmlToImage from 'html-to-image';
+import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -748,6 +750,94 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         }));
     };
 
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const handleDownloadPDF = async () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
+
+        try {
+            if (printAreaRef.current) {
+                const pages = Array.from(printAreaRef.current.querySelectorAll('.report-page, .piagam-page'));
+                
+                if (pages.length === 0) {
+                     showToast('Gagal menemukan halaman.', 'error');
+                     return;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const pxPerCm = 37.7952755906;
+                const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
+                const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
+                const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
+                const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
+                
+                // PrintPiagam is typically landscape. A4 width > height
+                const orientation = formatWidth > formatHeight ? 'landscape' : 'portrait';
+
+                const pdf = new jsPDF({
+                    orientation: orientation,
+                    unit: 'cm',
+                    format: [formatWidth, formatHeight]
+                });
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const node = pages[i];
+                    
+                    const originalTransform = node.style.transform;
+                    const originalWidth = node.style.width;
+                    const originalHeight = node.style.height;
+                    const originalPosition = node.style.position;
+                    const originalLeft = node.style.left;
+                    const originalTop = node.style.top;
+                    const originalZIndex = node.style.zIndex;
+
+                    node.style.transform = 'none';
+                    node.style.width = widthPx + 'px';
+                    node.style.height = heightPx + 'px';
+                    node.style.position = 'absolute';
+                    node.style.left = '0px';
+                    node.style.top = '0px';
+                    node.style.zIndex = '-9999';
+                    
+                    await new Promise(resolve => setTimeout(resolve, 150));
+                    
+                    const scaleFactor = 2;
+                    const imgData = await htmlToImage.toJpeg(node, {
+                        quality: 0.98,
+                        backgroundColor: '#ffffff',
+                        pixelRatio: scaleFactor,
+                        style: {
+                            margin: 0
+                        }
+                    });
+                    
+                    node.style.transform = originalTransform;
+                    node.style.width = originalWidth;
+                    node.style.height = originalHeight;
+                    node.style.position = originalPosition;
+                    node.style.left = originalLeft;
+                    node.style.top = originalTop;
+                    node.style.zIndex = originalZIndex;
+                    
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+                    pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
+                }
+                
+                pdf.save(`Piagam_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`);
+                showToast('PDF berhasil diunduh.', 'success');
+            }
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+        } finally {
+            setIsPrinting(false);
+        }
+    };
+
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
@@ -862,7 +952,9 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                                 Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
                         React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
-                        React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
+                        isMobileDevice ?
+                            React.createElement('button', { onClick: handleDownloadPDF, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                            React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4 mt-4" },
