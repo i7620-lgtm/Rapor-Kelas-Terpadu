@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { generateInitialLayout } from './TransliterationUtil.js';
+import { generateInitialLayout } from './TransliterationUtil.js'; 
 import domtoimage from 'dom-to-image-more';
 import { jsPDF } from 'jspdf';
 
