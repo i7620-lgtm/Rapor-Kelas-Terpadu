@@ -108,12 +108,30 @@ body {
       visibility: visible;
   }
 
-  /* Posisikan area cetak di root dokumen */
+  /* Atasi agar elemen kontainer induk tidak membatasi ukuran cetak, menyembunyikan halaman, atau memunculkan halaman kosong ekstra */
+  html, body, #root, #root > div, main {
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      overflow: visible !important;
+      position: static !important;
+      display: block !important;
+      width: auto !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+  }
+
+  /* Posisikan area cetak di root dokumen secara block-level, bukan flexbox */
   #print-area {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
+      display: block !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      height: auto !important;
       margin: 0 !important;
       padding: 0 !important;
   }
@@ -129,6 +147,9 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
     overflow: hidden !important;
     position: relative !important;
     width: 100%;
@@ -139,6 +160,7 @@ body {
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
   .report-page:last-of-type, .leger-page:last-of-type {
     page-break-after: auto;
+    break-after: auto;
   }
 
   .print-hidden {
