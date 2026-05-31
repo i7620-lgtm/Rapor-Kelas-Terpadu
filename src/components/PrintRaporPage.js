@@ -1297,7 +1297,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     if (academicPageChunks === null && selectedPages.academic) {
         // Render the measurement layout
         return React.createElement(React.Fragment, null,
-            React.createElement('div', { className: 'print-hidden', ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             React.createElement('div', { 
                 className: 'report-page bg-white shadow-lg border box-border relative font-times', 
                 style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
@@ -1329,7 +1329,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
 
     return (
         React.createElement(React.Fragment, null,
-            React.createElement('div', { className: 'print-hidden', ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             selectedPages.cover && React.createElement('div', { className: 'report-page bg-white shadow-lg border box-border relative font-times', 'data-student-id': String(student.id), 'data-page-type': 'cover', style: pageStyle },
                 React.createElement(CoverPage, { student: student, settings: settings, onUpdateStudent: restProps.onUpdateStudent })
             ),
@@ -1419,6 +1419,17 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isPrinting, setIsPrinting] = useState(false);
+    const [isPrintingState, setIsPrintingState] = useState(false);
+    useEffect(() => {
+        const beforePrint = () => setIsPrintingState(true);
+        const afterPrint = () => setIsPrintingState(false);
+        window.addEventListener('beforeprint', beforePrint);
+        window.addEventListener('afterprint', afterPrint);
+        return () => {
+            window.removeEventListener('beforeprint', beforePrint);
+            window.removeEventListener('afterprint', afterPrint);
+        };
+    }, []);
     const [hideGradesForFaseA, setHideGradesForFaseA] = useState(true);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
@@ -1522,7 +1533,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
         const paperSizeCss = {
             A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm portrait;',
+            F4: 'size: 21.5cm 33cm;',
             Letter: 'size: letter portrait;',
             Legal: 'size: legal portrait;',
         }[paperSize];
@@ -1548,7 +1559,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrinting) {
+            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 // PAPER_SIZES[paperSize].width is like "21cm" or "21.5cm"
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
@@ -1568,11 +1579,11 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrinting]);
+    }, [paperSize, isPrintingState, isPrinting]);
 
-    const pageStyle = isPrinting ? {
+    const pageStyle = (isPrintingState || isPrinting) ? {
         width: PAPER_SIZES[paperSize].width,
-        // height removed to prevent exact-height overflow triggering blank pages in print mode
+        height: PAPER_SIZES[paperSize].height,
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -1705,7 +1716,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                 )
             ),
             
-            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8 print:block print:space-y-0" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
                 studentsToRender.map(student => {
                     const rank = studentRanks.get(student.id)?.rank;
                     return React.createElement(ReportPagesForStudent, { 
