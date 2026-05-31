@@ -123,7 +123,7 @@ body {
       margin-top: 0 !important;
   }
   
-  .report-page, .leger-page {
+  .report-page, .leger-page, .piagam-page {
     box-shadow: none !important;
     border: none !important;
     margin: 0 !important;
@@ -131,13 +131,12 @@ body {
     page-break-after: always;
     overflow: hidden !important;
     position: relative !important;
-    width: 100%;
-    height: 100%;
     box-sizing: border-box;
+    transform: none !important;
   }
 
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
-  .report-page:last-of-type, .leger-page:last-of-type {
+  .report-page:last-of-type, .leger-page:last-of-type, .piagam-page:last-of-type {
     page-break-after: auto;
   }
 

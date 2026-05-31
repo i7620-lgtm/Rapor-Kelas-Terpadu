@@ -681,7 +681,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrintingState) {
+            if (printAreaRef.current && !isPrinting && !isPrintingState) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -700,7 +700,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState]);
+    }, [paperSize, isPrinting, isPrintingState]);
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
@@ -755,15 +755,22 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
         const styleId = 'print-piagam-style';
         document.getElementById(styleId)?.remove();
         
+        const paperSizeCss = {
+            A4: 'size: A4 landscape;',
+            F4: 'size: 33cm 21.5cm;',
+            Letter: 'size: letter landscape;',
+            Legal: 'size: legal landscape;',
+        }[paperSize] || `size: ${paperSize} landscape;`;
+
         const style = document.createElement('style');
         style.id = styleId;
         style.innerHTML = `
             @page {
-                size: ${paperSize} landscape;
-                margin: 0;
+                ${paperSizeCss}
+                margin: 0 !important;
             }
             @media print {
-                .report-page {
+                .report-page, .piagam-page {
                     transform: none !important;
                     margin-top: 0 !important;
                     margin-bottom: 0 !important;
@@ -801,10 +808,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
     
 
 
-    const pageStyle = isPrintingState ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,

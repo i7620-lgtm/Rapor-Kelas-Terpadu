@@ -1522,14 +1522,14 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
 
         const paperSizeCss = {
             A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm portrait;',
+            F4: 'size: 21.5cm 33cm;',
             Letter: 'size: letter portrait;',
             Legal: 'size: legal portrait;',
-        }[paperSize];
+        }[paperSize] || 'size: portrait;';
 
         const style = document.createElement('style');
         style.id = 'print-page-style';
-        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
+        style.innerHTML = `@page { ${paperSizeCss} margin: 0 !important; }`;
         document.head.appendChild(style);
 
         setTimeout(() => {
@@ -1570,10 +1570,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         return () => window.removeEventListener('resize', updateScale);
     }, [paperSize, isPrinting]);
 
-    const pageStyle = isPrinting ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
