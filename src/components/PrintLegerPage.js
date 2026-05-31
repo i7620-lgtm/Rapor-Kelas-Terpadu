@@ -170,27 +170,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             window.removeEventListener('afterprint', afterPrint);
         };
     }, []);
-
-    useEffect(() => {
-        const styleId = 'active-print-page-style';
-        document.getElementById(styleId)?.remove();
-
-        const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
-        }[paperSize] || 'size: A4 portrait;';
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
-        document.head.appendChild(style);
-
-        return () => {
-            document.getElementById(styleId)?.remove();
-        };
-    }, [paperSize]);
     const [isCompact, setIsCompact] = useState(false);
     const [isMeasuring, setIsMeasuring] = useState(true);
     const [nameFontSize, setNameFontSize] = useState(null);
@@ -215,7 +194,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
+            if (printAreaRef.current && !isPrintingState) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -234,7 +213,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState, isPrinting]);
+    }, [paperSize, isPrintingState]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -436,16 +415,31 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
 
+        const paperSizeCss = {
+            A4: 'size: A4 portrait;',
+            F4: 'size: 21.5cm 33cm portrait;',
+            Letter: 'size: letter portrait;',
+            Legal: 'size: legal portrait;',
+        }[paperSize];
+
+        const style = document.createElement('style');
+        style.id = 'print-leger-style';
+        style.innerHTML = `
+            @page { 
+                ${paperSizeCss} 
+                margin: 0 !important; 
+            }
+        `;
+        document.head.appendChild(style);
+
         setTimeout(() => {
             window.print();
+            document.getElementById('print-leger-style')?.remove();
             setIsPrinting(false);
         }, 500);
     };
 
-    const pageStyle = (isPrintingState || isPrinting) ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
