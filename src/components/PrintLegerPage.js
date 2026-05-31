@@ -14,11 +14,8 @@ const PAGE_BOTTOM_MARGIN_CM = 1.5;
 const HEADER_HEIGHT_CM = 6.0;
 
 const ReportHeader = ({ settings }) => {
-    const currentSemester = settings?.semester || 'Ganjil';
-    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
-
-    const layout = settings[layoutField] && settings[layoutField].length > 0
-        ? settings[layoutField]
+    const layout = settings.kop_layout && settings.kop_layout.length > 0
+        ? settings.kop_layout
         : generateInitialLayout(settings);
 
     return (
@@ -438,13 +435,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                     margin-top: 0 !important;
                     margin-bottom: 0 !important;
                     page-break-after: always;
-                    break-after: page;
-                    page-break-inside: avoid;
-                    break-inside: avoid;
-                }
-                .leger-page:last-of-type {
-                    page-break-after: auto !important;
-                    break-after: auto !important;
                 }
             }
         `;
@@ -478,7 +468,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement('td', { colSpan: displaySubjects.length, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0.5' : 'px-1 py-0.5'}` }, "NILAI MATA PELAJARAN"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JML"),
                 React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RATA-RATA"),
-                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "RANK")
+                React.createElement('td', { rowSpan: 2, className: `border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}` }, "JUARA")
             ),
             React.createElement('tr', { className: "text-center font-bold" },
                 displaySubjects.map(subject => 
@@ -606,9 +596,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     }
 
     return React.createElement(React.Fragment, null,
-        React.createElement('div', { className: "pt-4 sm:pt-8" },
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
-            React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
+        React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+        React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
             React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Cetak Leger"),
@@ -662,8 +651,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 )
             )
         )
-    )
-);
+    );
 };
 
 export default PrintLegerPage;
