@@ -716,15 +716,21 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     let studentNoteContent;
     
     if (shouldDisplayRank) {
-        const rankMessageStart = `Selamat! berhasil meraih `;
+        const rankMessageStart = `Selamat! ${nickname} berhasil meraih `;
         const rankText = `Peringkat ${rank}`;
         const rankMessageEnd = ` di kelas. `;
+        
+        // Strip if the note already starts with a similar message
+        let cleanNote = originalNote.trim();
+        const autoMsgPattern = new RegExp(`Selamat!.*Peringkat \\d+ di kelas\\.?\\s*`, 'i');
+        cleanNote = cleanNote.replace(autoMsgPattern, '').trim();
+
         studentNoteContent = React.createElement(React.Fragment, null, 
             React.createElement('span', null, rankMessageStart),
             React.createElement('strong', null, rankText),
             React.createElement('span', null, rankMessageEnd),
             React.createElement(EditableDescription, { 
-                value: originalNote, 
+                value: cleanNote, 
                 onSave: (val) => onUpdateNote(student.id, val), 
                 placeholder: "Tulis catatan...", 
                 multiline: true,
@@ -1061,9 +1067,11 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
             const rankMessage = `Selamat! ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
             const originalNote = notes[originalNoteKey] || '';
+            const autoMsgPattern = new RegExp(`Selamat!.*Peringkat \\d+ di kelas\\.?\\s*`, 'i');
+            const cleanNote = originalNote.replace(autoMsgPattern, '').trim();
             return {
                 ...notes,
-                [originalNoteKey]: rankMessage + originalNote
+                [originalNoteKey]: rankMessage + cleanNote
             };
         }
         return notes;
