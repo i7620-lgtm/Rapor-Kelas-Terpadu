@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 're
 import { generateInitialLayout } from './TransliterationUtil.js';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-
+ 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
     F4: { width: '21.5cm', height: '33cm' },
