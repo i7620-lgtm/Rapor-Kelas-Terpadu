@@ -452,7 +452,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     const pageStyle = isPrintingState ? {
         width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
+        // height removed to prevent exact-height overflow triggering blank pages in print mode
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -600,7 +600,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     return React.createElement(React.Fragment, null,
         React.createElement('div', { className: "pt-4 sm:pt-8" },
-            React.createElement('div', { ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
+            React.createElement('div', { className: 'print-hidden', ref: cmRef, style: { height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 } }),
             React.createElement('div', { className: "bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden" },
             React.createElement('div', { className: "flex flex-col md:flex-row items-start md:items-center justify-between" },
                 React.createElement('div', null,
@@ -631,7 +631,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 )
             )
         ),
-        React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
+        React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8 print:block print:space-y-0" },
             (students.length > 0) && React.createElement('div', {
                 ref: pageRef,
                 className: "leger-page bg-white shadow-lg border relative",
