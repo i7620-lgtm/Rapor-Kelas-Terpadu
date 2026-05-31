@@ -156,6 +156,11 @@ body {
       margin-top: 0 !important;
   }
   
+  /* Set @page margins globally under print */
+  @page {
+      margin: 0 !important;
+  }
+
   .report-page, .leger-page {
     box-shadow: none !important;
     border: none !important;
@@ -167,6 +172,13 @@ body {
     position: relative !important;
     box-sizing: border-box !important;
     display: block !important;
+    
+    /* Make pages fill the available physical printable area cleanly to avoid shrinking */
+    width: 100% !important;
+    height: 100vh !important;
+    max-width: 100% !important;
+    max-height: 100vh !important;
+    transform: none !important;
   }
 
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
