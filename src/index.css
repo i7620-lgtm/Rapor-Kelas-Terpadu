@@ -110,7 +110,9 @@ body {
 
   /* Posisikan area cetak di root dokumen */
   #print-area {
-      position: relative !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
       width: 100%;
       margin: 0 !important;
       padding: 0 !important;
