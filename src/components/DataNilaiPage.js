@@ -3680,6 +3680,81 @@ const NilaiTableView = (props) => {
     );
   };
 
+  const handleAutoRegressionNonTP = (type) => {
+    const kkm = parseInt(settings.predikats.c, 10);
+    if (isNaN(kkm)) {
+      showToast("KKM (Predikat C) belum diatur di Pengaturan.", "error");
+      return;
+    }
+
+    let minScore = 100;
+    let scoresFound = false;
+
+    relevantStudents.forEach((student) => {
+      const studentGrade = grades.find((g) => g.studentId === student.id);
+      const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+      const score = detailedGrade?.[type];
+
+      if (score !== null && score !== undefined && score !== "") {
+        const numScore = parseInt(score, 10);
+        if (!isNaN(numScore)) {
+          if (numScore < minScore) minScore = numScore;
+          scoresFound = true;
+        }
+      }
+    });
+
+    if (!scoresFound) {
+      showToast("Tidak ada nilai untuk diolah pada kolom ini.", "error");
+      return;
+    }
+
+    if (minScore >= 100) {
+      showToast("Semua nilai sudah maksimal (100).", "info");
+      return;
+    }
+
+    if (minScore >= kkm) {
+      showToast("Nilai terendah sudah mencapai atau melampaui KKM.", "info");
+      return;
+    }
+
+    const updates = relevantStudents.map((student) => {
+      const studentGrade = grades.find((g) => g.studentId === student.id);
+      const detailedGrade = JSON.parse(
+        JSON.stringify(
+          studentGrade?.detailedGrades?.[subject.id] || {
+            slm: [],
+            sts1: null,
+            sts2: null,
+            sas1: null,
+            sas2: null,
+          }
+        )
+      );
+      if (!detailedGrade.slm) detailedGrade.slm = [];
+
+      const oldScore = parseInt(detailedGrade[type], 10);
+      if (!isNaN(oldScore)) {
+        const newScore =
+          oldScore + ((100 - oldScore) * (kkm - minScore)) / (100 - minScore);
+        detailedGrade[type] = Math.round(newScore);
+      }
+
+      return {
+        studentId: student.id,
+        subjectId: subject.id,
+        newDetailedGrade: detailedGrade,
+      };
+    });
+
+    onBulkUpdateGrades(updates);
+    showToast(
+      `Nilai berhasil diolah otomatis menggunakan rumus regresi.`,
+      "success"
+    );
+  };
+
   const handleWeightChange = (
     weightType,
     value,
@@ -4171,7 +4246,36 @@ const NilaiTableView = (props) => {
                   },
                   onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length),
                 },
-                "STS I",
+                React.createElement(
+                  "div",
+                  { className: "flex flex-col items-center justify-center gap-1" },
+                  React.createElement("span", null, "STS I"),
+                  settings.enableAutoRegression &&
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => handleAutoRegressionNonTP("sts1"),
+                        title: "Olah Nilai Otomatis (Regresi)",
+                        className:
+                          "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors",
+                      },
+                      React.createElement(
+                        "svg",
+                        {
+                          className: "w-3 h-3",
+                          fill: "none",
+                          viewBox: "0 0 24 24",
+                          stroke: "currentColor",
+                        },
+                        React.createElement("path", {
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          strokeWidth: 2,
+                          d: "M13 10V3L4 14h7v7l9-11h-7z",
+                        })
+                      )
+                    )
+                ),
               ),
             settings.semester === "Genap" &&
               React.createElement(
@@ -4188,7 +4292,36 @@ const NilaiTableView = (props) => {
                   },
                   onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length),
                 },
-                "STS II",
+                React.createElement(
+                  "div",
+                  { className: "flex flex-col items-center justify-center gap-1" },
+                  React.createElement("span", null, "STS II"),
+                  settings.enableAutoRegression &&
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => handleAutoRegressionNonTP("sts2"),
+                        title: "Olah Nilai Otomatis (Regresi)",
+                        className:
+                          "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors",
+                      },
+                      React.createElement(
+                        "svg",
+                        {
+                          className: "w-3 h-3",
+                          fill: "none",
+                          viewBox: "0 0 24 24",
+                          stroke: "currentColor",
+                        },
+                        React.createElement("path", {
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          strokeWidth: 2,
+                          d: "M13 10V3L4 14h7v7l9-11h-7z",
+                        })
+                      )
+                    )
+                ),
               ),
             (!settings.semester || settings.semester === "Ganjil") &&
               React.createElement(
@@ -4205,7 +4338,36 @@ const NilaiTableView = (props) => {
                   },
                   onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length + 1),
                 },
-                "SAS I",
+                React.createElement(
+                  "div",
+                  { className: "flex flex-col items-center justify-center gap-1" },
+                  React.createElement("span", null, "SAS I"),
+                  settings.enableAutoRegression &&
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => handleAutoRegressionNonTP("sas1"),
+                        title: "Olah Nilai Otomatis (Regresi)",
+                        className:
+                          "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors",
+                      },
+                      React.createElement(
+                        "svg",
+                        {
+                          className: "w-3 h-3",
+                          fill: "none",
+                          viewBox: "0 0 24 24",
+                          stroke: "currentColor",
+                        },
+                        React.createElement("path", {
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          strokeWidth: 2,
+                          d: "M13 10V3L4 14h7v7l9-11h-7z",
+                        })
+                      )
+                    )
+                ),
               ),
             settings.semester === "Genap" &&
               React.createElement(
@@ -4222,7 +4384,36 @@ const NilaiTableView = (props) => {
                   },
                   onMouseEnter: () => handleMouseEnterCell(-1, tpHeaders.length + 1),
                 },
-                gradeNumber === 6 ? "US" : "SAS II",
+                React.createElement(
+                  "div",
+                  { className: "flex flex-col items-center justify-center gap-1" },
+                  React.createElement("span", null, gradeNumber === 6 ? "US" : "SAS II"),
+                  settings.enableAutoRegression &&
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => handleAutoRegressionNonTP("sas2"),
+                        title: "Olah Nilai Otomatis (Regresi)",
+                        className:
+                          "p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors",
+                      },
+                      React.createElement(
+                        "svg",
+                        {
+                          className: "w-3 h-3",
+                          fill: "none",
+                          viewBox: "0 0 24 24",
+                          stroke: "currentColor",
+                        },
+                        React.createElement("path", {
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          strokeWidth: 2,
+                          d: "M13 10V3L4 14h7v7l9-11h-7z",
+                        })
+                      )
+                    )
+                ),
               ),
             React.createElement(
               "th",
