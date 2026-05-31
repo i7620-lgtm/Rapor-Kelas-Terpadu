@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
-import html2canvas from 'html2canvas';
+import * as htmlToImage from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
@@ -457,13 +457,14 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
                 const node = pageRef.current;
                 
-                const canvas = await html2canvas(node, {
-                    scale: 2, // High resolution
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: widthPx,
-                    windowHeight: heightPx,
-                    backgroundColor: '#ffffff'
+                const scaleFactor = 2;
+                const imgData = await htmlToImage.toJpeg(node, {
+                    quality: 0.98,
+                    backgroundColor: '#ffffff',
+                    pixelRatio: scaleFactor,
+                    style: {
+                        margin: 0
+                    }
                 });
                 
                 pageRef.current.style.transform = originalTransform;
@@ -473,8 +474,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 pageRef.current.style.left = originalLeft;
                 pageRef.current.style.top = originalTop;
                 pageRef.current.style.zIndex = originalZIndex;
-
-                const imgData = canvas.toDataURL('image/jpeg', 0.98);
                 
                 const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
                 const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
