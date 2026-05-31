@@ -23,11 +23,11 @@ const ReportHeader = ({ settings, isMobilePrint }) => {
 
     return (
         React.createElement('div', {
-            className: isMobilePrint ? "relative mb-4" : "absolute",
-            style: isMobilePrint ? {} : {
-                top: `${PAGE_TOP_MARGIN_CM}cm`,
-                left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+            className: "absolute",
+            style: {
+                top: isMobilePrint ? '0' : `${PAGE_TOP_MARGIN_CM}cm`,
+                left: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                right: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
             }
         },
             React.createElement('div', {
@@ -445,11 +445,16 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     };
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const isMobilePrint = isMobile && (isPrinting || isPrintingState);
+    const osScale = isMobilePrint ? (isAndroid ? 1.08 : (isIOS ? 1.04 : 1.0)) : 1.0;
 
     const pageStyle = isPrinting || isPrintingState ? {
-        width: isMobilePrint ? '100%' : PAPER_SIZES[paperSize].width,
-        height: isMobilePrint ? 'auto' : PAPER_SIZES[paperSize].height,
+        width: PAPER_SIZES[paperSize].width,
+        height: PAPER_SIZES[paperSize].height,
+        transform: isMobilePrint ? `scale(${osScale})` : 'none',
+        transformOrigin: 'top left',
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -637,15 +642,11 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 React.createElement(ReportHeader, { settings: settings, isMobilePrint: isMobilePrint }),
                 React.createElement('div', {
                     ref: contentRef,
-                    className: isMobilePrint ? 'relative flex flex-col pt-4' : 'absolute flex flex-col',
-                    style: isMobilePrint ? {
-                        paddingLeft: '0',
-                        paddingRight: '0',
-                        paddingBottom: '0'
-                    } : {
-                        top: `${HEADER_HEIGHT_CM}cm`,
-                        left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-                        right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                    className: 'absolute flex flex-col',
+                    style: {
+                        top: isMobilePrint ? '0' : `${HEADER_HEIGHT_CM}cm`,
+                        left: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
+                        right: isMobilePrint ? '0' : `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                     }
                 },
                     React.createElement(LegerHeader, { settings: settings, isCompact: isCompact }),
