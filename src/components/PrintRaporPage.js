@@ -1419,38 +1419,6 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         academic: true,
     });
     const [isPrinting, setIsPrinting] = useState(false);
-    const [isPrintingState, setIsPrintingState] = useState(false);
-    useEffect(() => {
-        const beforePrint = () => setIsPrintingState(true);
-        const afterPrint = () => setIsPrintingState(false);
-        window.addEventListener('beforeprint', beforePrint);
-        window.addEventListener('afterprint', afterPrint);
-        return () => {
-            window.removeEventListener('beforeprint', beforePrint);
-            window.removeEventListener('afterprint', afterPrint);
-        };
-    }, []);
-
-    useEffect(() => {
-        const styleId = 'active-print-page-style';
-        document.getElementById(styleId)?.remove();
-
-        const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
-        }[paperSize] || 'size: A4 portrait;';
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
-        document.head.appendChild(style);
-
-        return () => {
-            document.getElementById(styleId)?.remove();
-        };
-    }, [paperSize]);
     const [hideGradesForFaseA, setHideGradesForFaseA] = useState(true);
     const [printOptions, setPrintOptions] = useState({
         showPrincipalSignature: true,
@@ -1552,8 +1520,21 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
 
+        const paperSizeCss = {
+            A4: 'size: A4 portrait;',
+            F4: 'size: 21.5cm 33cm portrait;',
+            Letter: 'size: letter portrait;',
+            Legal: 'size: legal portrait;',
+        }[paperSize];
+
+        const style = document.createElement('style');
+        style.id = 'print-page-style';
+        style.innerHTML = `@page { ${paperSizeCss} margin: 0; }`;
+        document.head.appendChild(style);
+
         setTimeout(() => {
             window.print();
+            document.getElementById('print-page-style')?.remove();
             setIsPrinting(false);
         }, 500);
     };
@@ -1567,7 +1548,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
     
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !(isPrintingState || isPrinting)) {
+            if (printAreaRef.current && !isPrinting) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 // PAPER_SIZES[paperSize].width is like "21cm" or "21.5cm"
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
@@ -1587,12 +1568,9 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrintingState, isPrinting]);
+    }, [paperSize, isPrinting]);
 
-    const pageStyle = (isPrintingState || isPrinting) ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
-    } : {
+    const pageStyle = {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
         transform: `scale(${scale})`,
