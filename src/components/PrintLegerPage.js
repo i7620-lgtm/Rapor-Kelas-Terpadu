@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { generateInitialLayout } from './TransliterationUtil.js';
 
 const PAPER_SIZES = {
@@ -160,12 +162,6 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     const [paperSize, setPaperSize] = useState('A4');
     const [isPrinting, setIsPrinting] = useState(false);
     const [isPrintingState, setIsPrintingState] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-
-    useEffect(() => {
-        setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-    }, []);
-
     useEffect(() => {
         const beforePrint = () => setIsPrintingState(true);
         const afterPrint = () => setIsPrintingState(false);
@@ -185,6 +181,8 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
     });
     const nameCellRefs = useRef([]);
 
+    const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     const pageRef = useRef(null);
     const contentRef = useRef(null);
     const cmRef = useRef(null);
@@ -200,7 +198,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
 
     useEffect(() => {
         const updateScale = () => {
-            if (printAreaRef.current && !isPrinting && !isPrintingState) {
+            if (printAreaRef.current && !isPrintingState) {
                 const containerWidth = printAreaRef.current.clientWidth;
                 const paperWidthCm = parseFloat(PAPER_SIZES[paperSize].width);
                 const paperWidthPx = paperWidthCm * 37.7952755906;
@@ -219,7 +217,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         updateScale();
         window.addEventListener('resize', updateScale);
         return () => window.removeEventListener('resize', updateScale);
-    }, [paperSize, isPrinting, isPrintingState]);
+    }, [paperSize, isPrintingState]);
 
     const activeSubjects = useMemo(() => (subjects || []).filter(s => s.active), [subjects]);
     
@@ -417,81 +415,80 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }));
     };
 
-    const handlePrint = () => {
+    const handlePrint = async () => {
         setIsPrinting(true);
-        showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        const paperSizeCss = {
-            A4: 'size: A4 portrait;',
-            F4: 'size: 21.5cm 33cm;',
-            Letter: 'size: letter portrait;',
-            Legal: 'size: legal portrait;',
-        }[paperSize] || 'size: portrait;';
+        if (isMobileDevice) {
+            showToast('Mempersiapkan PDF...', 'success');
+            try {
+                if (!pageRef.current) {
+                    throw new Error("Element not found");
+                }
+                
+                // Temporarily remove transform for accurate capture
+                const originalTransform = pageRef.current.style.transform;
+                pageRef.current.style.transform = 'scale(1)';
+                
+                const canvas = await html2canvas(pageRef.current, { 
+                    scale: 2, 
+                    useCORS: true,
+                    logging: false,
+                    allowTaint: true
+                });
+                
+                // Restore scale
+                pageRef.current.style.transform = originalTransform;
 
-        const style = document.createElement('style');
-        style.id = 'print-leger-style';
-        style.innerHTML = `
-            @page { 
-                ${paperSizeCss} 
-                margin: 0 !important; 
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                
+                let format = 'a4';
+                if (paperSize.toLowerCase() === 'f4') format = [215, 330];
+                else if (paperSize.toLowerCase() === 'legal') format = 'legal';
+                else if (paperSize.toLowerCase() === 'letter') format = 'letter';
+                
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: format
+                });
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`Leger_${settings.nama_kelas || 'Kelas'}.pdf`);
+                
+            } catch (error) {
+                console.error("PDF generation error: ", error);
+                showToast('Gagal membuat PDF', 'error');
+            } finally {
+                setIsPrinting(false);
             }
-        `;
-        document.head.appendChild(style);
+        } else {
+            showToast('Mempersiapkan pratinjau cetak...', 'success');
 
-        setTimeout(() => {
-            window.print();
-            document.getElementById('print-leger-style')?.remove();
-            setIsPrinting(false);
-        }, 500);
-    };
+            const paperSizeCss = {
+                A4: 'size: A4 portrait;',
+                F4: 'size: 21.5cm 33cm portrait;',
+                Letter: 'size: letter portrait;',
+                Legal: 'size: legal portrait;',
+            }[paperSize];
 
-    const handleDownloadPdf = async () => {
-        setIsPrinting(true);
-        showToast('Mempersiapkan PDF...', 'success');
+            const style = document.createElement('style');
+            style.id = 'print-leger-style';
+            style.innerHTML = `
+                @page { 
+                    ${paperSizeCss} 
+                    margin: 0 !important; 
+                }
+            `;
+            document.head.appendChild(style);
 
-        try {
-            const { default: html2canvas } = await import('html2canvas');
-            const { default: jsPDF } = await import('jspdf');
-
-            const pageElement = pageRef.current;
-            if (!pageElement) throw new Error("Halaman tidak ditemukan");
-
-            const originalTransform = pageElement.style.transform;
-            pageElement.style.transform = 'scale(1)';
-
-            const canvas = await html2canvas(pageElement, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-            });
-
-            pageElement.style.transform = originalTransform;
-
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            
-            let formatParam = 'a4';
-            if (paperSize === 'Legal') formatParam = 'legal';
-            else if (paperSize === 'Letter') formatParam = 'letter';
-            else if (paperSize === 'F4') formatParam = [215, 330];
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: formatParam
-            });
-
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-            
-            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Leger_Nilai.pdf`);
-
-            showToast('PDF berhasil diunduh.', 'success');
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            showToast('Gagal membuat PDF.', 'error');
-        } finally {
-            setIsPrinting(false);
+            setTimeout(() => {
+                window.print();
+                document.getElementById('print-leger-style')?.remove();
+                setIsPrinting(false);
+            }, 500);
         }
     };
 
@@ -656,11 +653,7 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))
                         )
                     ),
-                    React.createElement('button', { 
-                        onClick: isMobile ? handleDownloadPdf : handlePrint, 
-                        disabled: isPrinting, 
-                        className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" 
-                    }, isPrinting ? (isMobile ? 'Mempersiapkan PDF...' : 'Mempersiapkan...') : (isMobile ? 'Unduh PDF' : 'Cetak Leger (Print)'))
+                    React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? (isMobileDevice ? 'Menyiapkan PDF...' : 'Mempersiapkan...') : (isMobileDevice ? 'Unduh PDF' : 'Cetak Leger (Print)'))
                 )
             ),
             React.createElement('div', { className: "border-t pt-4 mt-4" },
