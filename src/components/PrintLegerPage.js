@@ -13,7 +13,7 @@ const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
 const PAGE_BOTTOM_MARGIN_CM = 1.5;
 const HEADER_HEIGHT_CM = 6.0;
 
-const ReportHeader = ({ settings }) => {
+const ReportHeader = ({ settings, isMobilePrint }) => {
     const currentSemester = settings?.semester || 'Ganjil';
     const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
 
@@ -23,8 +23,8 @@ const ReportHeader = ({ settings }) => {
 
     return (
         React.createElement('div', {
-            className: "absolute",
-            style: {
+            className: isMobilePrint ? "relative mb-4" : "absolute",
+            style: isMobilePrint ? {} : {
                 top: `${PAGE_TOP_MARGIN_CM}cm`,
                 left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                 right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
@@ -420,9 +420,16 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
             Legal: 'size: legal portrait;',
         }[paperSize] || 'size: portrait;';
 
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+
         const style = document.createElement('style');
         style.id = 'print-leger-style';
-        style.innerHTML = `
+        style.innerHTML = isMobile ? `
+            @page { 
+                size: portrait;
+                margin: auto;
+            }
+        ` : `
             @page { 
                 ${paperSizeCss} 
                 margin: 0 !important; 
@@ -437,9 +444,12 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }, 500);
     };
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+    const isMobilePrint = isMobile && (isPrinting || isPrintingState);
+
     const pageStyle = isPrinting || isPrintingState ? {
-        width: PAPER_SIZES[paperSize].width,
-        height: PAPER_SIZES[paperSize].height,
+        width: isMobilePrint ? '100%' : PAPER_SIZES[paperSize].width,
+        height: isMobilePrint ? 'auto' : PAPER_SIZES[paperSize].height,
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -624,11 +634,15 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                 className: "leger-page bg-white shadow-lg border relative",
                 style: { ...pageStyle, visibility: isMeasuring ? 'hidden' : 'visible' }
             },
-                React.createElement(ReportHeader, { settings: settings }),
+                React.createElement(ReportHeader, { settings: settings, isMobilePrint: isMobilePrint }),
                 React.createElement('div', {
                     ref: contentRef,
-                    className: 'absolute flex flex-col',
-                    style: {
+                    className: isMobilePrint ? 'relative flex flex-col pt-4' : 'absolute flex flex-col',
+                    style: isMobilePrint ? {
+                        paddingLeft: '0',
+                        paddingRight: '0',
+                        paddingBottom: '0'
+                    } : {
                         top: `${HEADER_HEIGHT_CM}cm`,
                         left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                         right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
