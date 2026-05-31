@@ -768,6 +768,13 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     margin-top: 0 !important;
                     margin-bottom: 0 !important;
                     page-break-after: always;
+                    break-after: page;
+                    page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                .report-page:last-of-type {
+                    page-break-after: auto !important;
+                    break-after: auto !important;
                 }
             }
         `;
@@ -803,7 +810,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
 
     const pageStyle = isPrintingState ? {
         width: PAPER_SIZES[paperSize].width,
-        // height removed to prevent exact-height overflow triggering blank pages in print mode
+        height: PAPER_SIZES[paperSize].height,
     } : {
         width: PAPER_SIZES[paperSize].width,
         height: PAPER_SIZES[paperSize].height,
@@ -875,7 +882,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     )
                 )
             ),
-            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8 print:block print:space-y-0" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
                 studentsToRender.length > 0 ? studentsToRender.map(student => {
                     const studentData = studentRankings.get(student.id);
                     return React.createElement(PiagamPage, { 
