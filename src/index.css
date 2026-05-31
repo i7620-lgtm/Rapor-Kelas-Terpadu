@@ -137,7 +137,6 @@ body {
     position: relative !important;
     box-sizing: border-box;
     transform: none !important;
-    max-height: 100% !important;
   }
 
   /* Memastikan halaman terakhir tidak memiliki page break setelahnya */
