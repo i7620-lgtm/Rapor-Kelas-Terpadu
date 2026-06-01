@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { generateInitialLayout } from './TransliterationUtil.js';
+import * as htmlToImage from 'html-to-image';
+import { jsPDF } from 'jspdf';
 
 const PAPER_SIZES = {
     A4: { width: '21cm', height: '29.7cm' },
@@ -12,6 +14,48 @@ const PAGE_TOP_MARGIN_CM = 1.5;
 const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
 const PAGE_BOTTOM_MARGIN_CM = 1.5;
 const HEADER_HEIGHT_CM = 6.0;
+
+async function getFontEmbedCSS() {
+    const urls = [
+        'https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese&display=swap',
+        'https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Alex+Brush&family=Dancing+Script:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+    ];
+    let cssText = '';
+    for (const url of urls) {
+        try {
+            const res = await fetch(url);
+            let text = await res.text();
+            const urlRegex = /url\(([^)]+)\)/g;
+            let match;
+            const fontMatches = [];
+            while ((match = urlRegex.exec(text)) !== null) {
+                fontMatches.push(match[1].replace(/['"]/g, ''));
+            }
+            const uniqueFontUrls = [...new Set(fontMatches)];
+            
+            for (const fontUrl of uniqueFontUrls) {
+                try {
+                    const fontRes = await fetch(fontUrl);
+                    const fontBlob = await fontRes.blob();
+                    const base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(fontBlob);
+                    });
+                    text = text.split(fontUrl).join(base64);
+                } catch (err) {
+                    console.error('Failed to fetch font', fontUrl, err);
+                }
+            }
+            cssText += text + '\n';
+        } catch (e) {
+            console.error('Failed to fetch font css', url, e);
+        }
+    }
+    return cssText;
+}
 
 const ReportHeader = ({ settings }) => {
     const currentSemester = settings?.semester || 'Ganjil';
@@ -62,20 +106,6 @@ const ReportHeader = ({ settings }) => {
                                 }, el.content)
                             );
                         }
-                        if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); // Fallback to empty string if no image
-                            if (!imageUrl) return null; // Don't render image if URL is empty
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
-                        }
                         if (el.type === 'line') {
                             return (
                                 React.createElement('rect', {
@@ -90,7 +120,28 @@ const ReportHeader = ({ settings }) => {
                         }
                         return null;
                     })
-                )
+                ),
+                layout.map(el => {
+                    if (el.type === 'image') {
+                        const imageUrl = String(settings[el.content] || ''); 
+                        if (!imageUrl) return null;
+                        return (
+                            React.createElement('img', {
+                                key: el.id,
+                                src: imageUrl,
+                                style: {
+                                    position: 'absolute',
+                                    left: `${(el.x / 800) * 100}%`,
+                                    top: `${(el.y / 200) * 100}%`,
+                                    width: `${(el.width / 800) * 100}%`,
+                                    height: `${(el.height / 200) * 100}%`,
+                                    objectFit: 'fill'
+                                }
+                            })
+                        );
+                    }
+                    return null;
+                })
             )
         )
     );
@@ -411,6 +462,85 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
         }));
     };
 
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    const handleDownloadPDF = async () => {
+        setIsPrinting(true);
+        showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
+
+        try {
+            if (pageRef.current) {
+                // Wait to ensure rendering
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Keep the exact same style but render it to canvas at scale 1 to keep text sharp
+                const originalTransform = pageRef.current.style.transform;
+                const originalWidth = pageRef.current.style.width;
+                const originalHeight = pageRef.current.style.height;
+                const originalPosition = pageRef.current.style.position;
+                const originalLeft = pageRef.current.style.left;
+                const originalTop = pageRef.current.style.top;
+                const originalZIndex = pageRef.current.style.zIndex;
+
+                const pxPerCm = 37.7952755906;
+                const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
+                const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
+
+                pageRef.current.style.transform = 'none';
+                pageRef.current.style.width = widthPx + 'px';
+                pageRef.current.style.height = heightPx + 'px';
+                pageRef.current.style.position = 'absolute';
+                pageRef.current.style.left = '0px';
+                pageRef.current.style.top = '0px';
+                pageRef.current.style.zIndex = '-9999';
+                
+                // Allow some time for the browser to render the unscaled version
+                await new Promise(resolve => setTimeout(resolve, 150));
+
+                const node = pageRef.current;
+                
+                const scaleFactor = 2;
+                const fontEmbedCSSStr = await getFontEmbedCSS();
+                const imgData = await htmlToImage.toJpeg(node, {
+                    quality: 0.98,
+                    backgroundColor: '#ffffff',
+                    pixelRatio: scaleFactor,
+                    fontEmbedCSS: fontEmbedCSSStr,
+                    style: {
+                        margin: 0
+                    }
+                });
+                
+                pageRef.current.style.transform = originalTransform;
+                pageRef.current.style.width = originalWidth;
+                pageRef.current.style.height = originalHeight;
+                pageRef.current.style.position = originalPosition;
+                pageRef.current.style.left = originalLeft;
+                pageRef.current.style.top = originalTop;
+                pageRef.current.style.zIndex = originalZIndex;
+                
+                const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
+                const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
+                
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'cm',
+                    format: [formatWidth, formatHeight]
+                });
+                
+                pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
+                pdf.save(`Leger_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`);
+                
+                showToast('PDF berhasil diunduh.', 'success');
+            }
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+        } finally {
+            setIsPrinting(false);
+        }
+    };
+
     const handlePrint = () => {
         setIsPrinting(true);
         showToast('Mempersiapkan pratinjau cetak...', 'success');
@@ -600,7 +730,9 @@ const PrintLegerPage = ({ students, settings, grades, subjects, showToast }) => 
                             Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`))
                         )
                     ),
-                    React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
+                    isMobileDevice ? 
+                        React.createElement('button', { onClick: handleDownloadPDF, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                        React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)')
                 )
             ),
             React.createElement('div', { className: "border-t pt-4 mt-4" },
