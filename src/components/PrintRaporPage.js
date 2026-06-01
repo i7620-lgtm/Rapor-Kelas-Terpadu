@@ -24,6 +24,48 @@ const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number
 // Footer line is at 2.5cm from bottom. Content stops at 3.0cm from bottom.
 const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
 
+async function getFontEmbedCSS() {
+    const urls = [
+        'https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese&display=swap',
+        'https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Alex+Brush&family=Dancing+Script:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+    ];
+    let cssText = '';
+    for (const url of urls) {
+        try {
+            const res = await fetch(url);
+            let text = await res.text();
+            const urlRegex = /url\(([^)]+)\)/g;
+            let match;
+            const fontMatches = [];
+            while ((match = urlRegex.exec(text)) !== null) {
+                fontMatches.push(match[1].replace(/['"]/g, ''));
+            }
+            const uniqueFontUrls = [...new Set(fontMatches)];
+            
+            for (const fontUrl of uniqueFontUrls) {
+                try {
+                    const fontRes = await fetch(fontUrl);
+                    const fontBlob = await fontRes.blob();
+                    const base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(fontBlob);
+                    });
+                    text = text.split(fontUrl).join(base64);
+                } catch (err) {
+                    console.error('Failed to fetch font', fontUrl, err);
+                }
+            }
+            cssText += text + '\n';
+        } catch (e) {
+            console.error('Failed to fetch font css', url, e);
+        }
+    }
+    return cssText;
+}
+
 const EditableDescription = ({ value, onSave, placeholder, className, style, multiline = false }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [localValue, setLocalValue] = useState(value);
@@ -1554,6 +1596,8 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                     format: [formatWidth, formatHeight]
                 });
                 
+                const fontEmbedCSSStr = await getFontEmbedCSS();
+                
                 for (let i = 0; i < pages.length; i++) {
                     const node = pages[i];
                     
@@ -1580,6 +1624,7 @@ const PrintRaporPage = ({ students, settings, showToast, ...restProps }) => {
                         quality: 0.98,
                         backgroundColor: '#ffffff',
                         pixelRatio: scaleFactor,
+                        fontEmbedCSS: fontEmbedCSSStr,
                         style: {
                             margin: 0
                         }
