@@ -15,6 +15,49 @@ const PIAGAM_WIDTH = 1115;
 const PIAGAM_HEIGHT = 749; 
 const PIAGAM_VIEWBOX = `0 0 ${PIAGAM_WIDTH} ${PIAGAM_HEIGHT}`;
 
+async function getFontEmbedCSS() {
+    const urls = [
+        'https://fonts.googleapis.com/css2?family=Noto+Sans+Balinese&display=swap',
+        'https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Great+Vibes&family=Pinyon+Script&family=Alex+Brush&family=Dancing+Script:wght@400;700&display=swap',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
+    ];
+    let cssText = '';
+    for (const url of urls) {
+        try {
+            const res = await fetch(url);
+            let text = await res.text();
+            const urlRegex = /url\(([^)]+)\)/g;
+            let match;
+            const fontMatches = [];
+            while ((match = urlRegex.exec(text)) !== null) {
+                fontMatches.push(match[1].replace(/['"]/g, ''));
+            }
+            // Ensure unique URLs to prevent double fetching
+            const uniqueFontUrls = [...new Set(fontMatches)];
+            
+            for (const fontUrl of uniqueFontUrls) {
+                try {
+                    const fontRes = await fetch(fontUrl);
+                    const fontBlob = await fontRes.blob();
+                    const base64 = await new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.readAsDataURL(fontBlob);
+                    });
+                    text = text.split(fontUrl).join(base64); // replaceAll alternative for compatibility
+                } catch (err) {
+                    console.error('Failed to fetch font', fontUrl, err);
+                }
+            }
+            cssText += text + '\n';
+        } catch (e) {
+            console.error('Failed to fetch font css', url, e);
+        }
+    }
+    return cssText;
+}
+
 const toRoman = (num) => {
     if (isNaN(num)) return num;
     const roman = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
@@ -782,6 +825,8 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                     format: [formatWidth, formatHeight]
                 });
                 
+                const fontEmbedCSSStr = await getFontEmbedCSS();
+                
                 for (let i = 0; i < pages.length; i++) {
                     const node = pages[i];
                     
@@ -808,6 +853,7 @@ const PrintPiagamPage = ({ students, settings, grades, subjects, onUpdatePiagamL
                         quality: 0.98,
                         backgroundColor: '#ffffff',
                         pixelRatio: scaleFactor,
+                        fontEmbedCSS: fontEmbedCSSStr,
                         style: {
                             margin: 0
                         }
