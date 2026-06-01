@@ -225,6 +225,18 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
         showToast(`${count} baris siswa baru berhasil ditambahkan.`, 'success');
     };
 
+    const handleMoveStudent = (index, direction) => {
+        if ((direction === -1 && index === 0) || (direction === 1 && index === localStudents.length - 1)) return;
+        
+        const newStudents = [...localStudents];
+        const temp = newStudents[index];
+        newStudents[index] = newStudents[index + direction];
+        newStudents[index + direction] = temp;
+        
+        setLocalStudents(newStudents);
+        onBulkSaveStudents(newStudents);
+    };
+
     const handleDelete = (studentId) => {
         const student = students.find(s => s.id === studentId);
         if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa ${student.namaLengkap || 'ini'}? Tindakan ini tidak dapat diurungkan.`)) {
@@ -486,7 +498,31 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                                                 handleMouseDownCell(e, rowIndex, -1);
                                             },
                                             onMouseEnter: () => handleMouseEnterCell(rowIndex, -1),
-                                        }, rowIndex + 1),
+                                        }, 
+                                            React.createElement('div', { className: "flex flex-col items-center justify-center", onMouseDown: (e) => e.stopPropagation() },
+                                                React.createElement('button', {
+                                                    onClick: (e) => { e.stopPropagation(); handleMoveStudent(rowIndex, -1); },
+                                                    disabled: rowIndex === 0,
+                                                    className: `p-0.5 rounded text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${rowIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`,
+                                                    title: "Pindah ke atas"
+                                                },
+                                                    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3.5 w-3.5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 3 },
+                                                        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M5 15l7-7 7 7" })
+                                                    )
+                                                ),
+                                                React.createElement('span', { className: "text-xs font-semibold text-zinc-700 leading-none my-0.5" }, rowIndex + 1),
+                                                React.createElement('button', {
+                                                    onClick: (e) => { e.stopPropagation(); handleMoveStudent(rowIndex, 1); },
+                                                    disabled: rowIndex === localStudents.length - 1,
+                                                    className: `p-0.5 rounded text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${rowIndex === localStudents.length - 1 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`,
+                                                    title: "Pindah ke bawah"
+                                                },
+                                                    React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3.5 w-3.5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 3 },
+                                                        React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", d: "M19 9l-7 7-7-7" })
+                                                    )
+                                                )
+                                            )
+                                        ),
                                         // Name Column -> colIndex: 0
                                         renderCellInput(student, nameField, rowIndex, 0),
                                         // Other Fields Columns -> colIndex: 1 to N
