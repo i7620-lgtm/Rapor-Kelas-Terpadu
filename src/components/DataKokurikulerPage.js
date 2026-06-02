@@ -371,7 +371,7 @@ const DataKokurikulerPage = ({
                       onMouseDown: (e) => {
                         if (e.button !== 0) return;
                         if (e.shiftKey) e.preventDefault();
-                        handleMouseDownCell(e, -1, -2);
+                        handleMouseDownCell(e, -1, -2, "cocurricular-cell");
                       },
                       onMouseEnter: () => handleMouseEnterCell(-1, -2),
                     },
@@ -387,7 +387,7 @@ const DataKokurikulerPage = ({
                       onMouseDown: (e) => {
                         if (e.button !== 0) return;
                         if (e.shiftKey) e.preventDefault();
-                        handleMouseDownCell(e, -1, -1);
+                        handleMouseDownCell(e, -1, -1, "cocurricular-cell");
                       },
                       onMouseEnter: () => handleMouseEnterCell(-1, -1),
                     },
@@ -406,7 +406,7 @@ const DataKokurikulerPage = ({
                           if (e.target.tagName === "BUTTON") return;
                           if (e.button !== 0) return;
                           if (e.shiftKey) e.preventDefault();
-                          handleMouseDownCell(e, -1, dimIndex);
+                          handleMouseDownCell(e, -1, dimIndex, "cocurricular-cell");
                         },
                         onMouseEnter: () => handleMouseEnterCell(-1, dimIndex),
                       },
@@ -462,7 +462,7 @@ const DataKokurikulerPage = ({
                           onMouseDown: (e) => {
                             if (e.button !== 0) return;
                             if (e.shiftKey) e.preventDefault();
-                            handleMouseDownCell(e, index, -2);
+                            handleMouseDownCell(e, index, -2, "cocurricular-cell");
                           },
                           onMouseEnter: () => handleMouseEnterCell(index, -2),
                         },
@@ -478,7 +478,7 @@ const DataKokurikulerPage = ({
                           onMouseDown: (e) => {
                             if (e.button !== 0) return;
                             if (e.shiftKey) e.preventDefault();
-                            handleMouseDownCell(e, index, -1);
+                            handleMouseDownCell(e, index, -1, "cocurricular-cell");
                           },
                           onMouseEnter: () => handleMouseEnterCell(index, -1),
                         },
@@ -524,7 +524,7 @@ const DataKokurikulerPage = ({
                             onMouseDown: (e) => {
                               if (e.button !== 0) return; // Only left click
                               if (e.shiftKey) e.preventDefault();
-                              handleMouseDownCell(e, index, dimIndex);
+                              handleMouseDownCell(e, index, dimIndex, "cocurricular-cell");
                             },
                             onMouseEnter: () =>
                               handleMouseEnterCell(index, dimIndex),
