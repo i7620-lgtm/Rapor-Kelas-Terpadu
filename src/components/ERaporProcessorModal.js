@@ -1,6 +1,6 @@
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { getGradeNumber } from './DataNilaiPage.js';
+import React, { useState, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 
 const getNumericValue = (score, qualitativeGradingMap) => {
     if (typeof score === 'number') return score;
@@ -94,7 +94,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, confirmationData, allSu
 };
 
 
-const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, learningObjectives, settings, showToast, predefinedCurriculum }) => {
+const ERaporProcessorModal = ({ onClose, students, grades, subjects, settings, showToast, predefinedCurriculum }) => {
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -279,7 +279,7 @@ const ERaporProcessorModal = ({ isOpen, onClose, students, grades, subjects, lea
                     let highestColIndex = -1;
                     let lowestColIndex = -1;
 
-                    for (const [code, { text, columnIndex }] of tpMapping.entries()) {
+                    for (const [, { text, columnIndex }] of tpMapping.entries()) {
                         if (text.trim() === highestTp.text.trim()) highestColIndex = columnIndex;
                         if (text.trim() === lowestTp.text.trim()) lowestColIndex = columnIndex;
                     }
