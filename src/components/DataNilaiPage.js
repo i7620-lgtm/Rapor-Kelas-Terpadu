@@ -2364,7 +2364,8 @@ const ManageSlmModal = ({
               if (newSlms.length > 0) {
                  setLocalSlms(prev => [...prev, ...newSlms]);
                  const totalTps = newSlms.reduce((acc, curr) => acc + curr.tps.length, 0);
-                 showToast(`AI berhasil menemukan ${newSlms.length} Lingkup Materi dan ${totalTps} TP.`, "success");
+                 const friendlyModel = data.modelUsed ? data.modelUsed.replace("gemini-3.1-", "").replace("-preview", "") : "Gemini";
+                 showToast(`AI (${friendlyModel}) berhasil menemukan ${newSlms.length} Lingkup Materi dan ${totalTps} TP.`, "success");
                  geminiSuccess = true;
               }
             }
