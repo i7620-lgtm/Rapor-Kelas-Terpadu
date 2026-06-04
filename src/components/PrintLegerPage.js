@@ -163,13 +163,17 @@ const LegerHeader = React.forwardRef(({ settings, isCompact }, ref) => (
 
 const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref) => {
     const getTanggalRapor = () => {
-        if (!settings.tanggal_rapor) {
+        const currentSemester = settings?.semester || 'Ganjil';
+        const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+        const rawTanggalRapor = settings[tanggalRaporKey] || settings.tanggal_rapor || '';
+        
+        if (!rawTanggalRapor) {
             return `${settings.kota_kabupaten || '[Tempat]'}, _________________`;
         }
-        const parts = settings.tanggal_rapor.split(',');
+        const parts = rawTanggalRapor.split(',');
         return parts.length > 1
             ? `${parts[0]}, ${parts.slice(1).join(',').trim()}`
-            : `${settings.kota_kabupaten || '[Tempat]'}, ${settings.tanggal_rapor}`;
+            : `${settings.kota_kabupaten || '[Tempat]'}, ${rawTanggalRapor}`;
     };
 
     return (
