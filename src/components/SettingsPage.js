@@ -1,4 +1,4 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
@@ -1066,7 +1066,8 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             React.createElement('option', { value: 'Genap' }, 'Genap')
                                         )
                                     ),
-                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Ganjil)", id: "tanggal_rapor_ganjil", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor_ganjil || settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown}),
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Genap)", id: "tanggal_rapor_genap", placeholder: "e.g. Jakarta, 22 Juni 2024", value: settings.tanggal_rapor_genap, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
                                 ),
 
                                 // Kolom 2: Kepala Sekolah dan Guru
