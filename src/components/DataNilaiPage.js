@@ -910,6 +910,7 @@ const SummativeModal = ({
   } = useGridSelection({
     rowsCount: relevantStudents.length,
     colsCount: isSLM ? localObjectives.length * 2 : 1,
+    minColIndex: -2,
     containerClass: "nilai-table-container",
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
@@ -1890,6 +1891,8 @@ const SummativeModal = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--2`,
+                        tabIndex: -1,
                         className:
                           "p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
                         style: {
@@ -1911,6 +1914,8 @@ const SummativeModal = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--1`,
+                        tabIndex: -1,
                         className:
                           "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
                         style: {
@@ -3493,6 +3498,7 @@ const NilaiTableView = (props) => {
   } = useGridSelection({
     rowsCount: relevantStudents.length,
     colsCount: columnKeys.length,
+    minColIndex: -2,
     containerClass: "mapel-table-container",
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
@@ -4863,6 +4869,8 @@ const NilaiTableView = (props) => {
               React.createElement(
                 "td",
                 {
+                  id: `nilai-cell-${index}--2`,
+                  tabIndex: -1,
                   className:
                     "p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border select-none cursor-default",
                   style: {
@@ -4883,6 +4891,8 @@ const NilaiTableView = (props) => {
               React.createElement(
                 "td",
                 {
+                  id: `nilai-cell-${index}--1`,
+                  tabIndex: -1,
                   className:
                     "p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default",
                   style: {
