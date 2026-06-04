@@ -543,6 +543,10 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
         if (!text) return '';
         const classRoman = toRoman(parseInt(settings.nama_kelas, 10)) || settings.nama_kelas;
         
+        const currentSemester = settings?.semester || 'Ganjil';
+        const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+        const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || 'Tempat, Tanggal Rapor';
+        
         return text
             .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '')) // Removed .toUpperCase()
             .replace(/\[RANK\]/gi, rank ? toRoman(rank) : '') // Legacy support if user customized layout
@@ -556,7 +560,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
             .replace(/\[nip kepala sekolah\]/gi, settings.nip_kepala_sekolah || '')
             .replace(/\[nama wali kelas\]/gi, settings.nama_wali_kelas || '')
             .replace(/\[nip wali kelas\]/gi, settings.nip_wali_kelas || '')
-            .replace(/Tempat, Tanggal Rapor/gi, settings.tanggal_rapor || 'Tempat, Tanggal Rapor');
+            .replace(/Tempat, Tanggal Rapor/gi, tanggalRaporValue);
     };
 
     return (
