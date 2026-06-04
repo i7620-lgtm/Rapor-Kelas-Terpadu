@@ -3220,6 +3220,24 @@ const NilaiTableView = (props) => {
     x: 0,
     y: 0,
   });
+  const [isCapaianPinned, setIsCapaianPinned] = useState(() => {
+    try {
+      const saved = localStorage.getItem("rkt_is_capaian_pinned");
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCapaianPinned = (val) => {
+    setIsCapaianPinned(val);
+    try {
+      localStorage.setItem("rkt_is_capaian_pinned", String(val));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const tableContainerRef = useRef(null);
 
   const gradeNumber = useMemo(
@@ -4369,16 +4387,10 @@ const NilaiTableView = (props) => {
               },
               "Nama Siswa",
             ),
-            slmHeaders.map((h) => {
-              let dynamicMinWidth = "auto";
-              // If SLM has 1 or 2 TPs, we force a minimum width for the entire SLM header section
-              // to ensure the SLM name can wrap into 2 lines.
-              // Base width for one TP column is 5rem. Max 2x means up to 10rem for colSpan 1.
-              if (h.colSpan === 1) {
-                dynamicMinWidth = "10rem"; // Adjusted from 15rem to 10rem (2x of 5rem)
-              } else if (h.colSpan === 2) {
-                dynamicMinWidth = "20rem"; // (2x of 10rem)
-              }
+            slmHeaders.map((h, slmIdx) => {
+              // Set the header's minWidth to scale proportionally with its colSpan so that
+              // all underlying TP columns can maintain their identical 5rem (80px) width.
+              const dynamicMinWidth = `${h.colSpan * 5}rem`;
 
               return React.createElement(
                 "th",
@@ -4395,10 +4407,8 @@ const NilaiTableView = (props) => {
                     // Wrap in button for tooltip functionality
                     className: "tp-header-button", // Re-use the same button style
                     onMouseEnter: (e) => {
-                      if (truncatedSlmIds[h.id]) {
-                        // Only show tooltip if text is truncated
-                        showTooltip(e, h.name);
-                      }
+                      // Always show tooltip with the full name so the user can easily see the complete name/theme of the Bab
+                      showTooltip(e, h.name);
                     },
                     onMouseLeave: hideTooltip,
                   },
@@ -4408,7 +4418,7 @@ const NilaiTableView = (props) => {
                       ref: (el) => (slmTextRefs.current[h.id] = el), // Assign ref
                       className: "slm-header-text-clamp",
                     },
-                    h.name,
+                    `Bab ${slmIdx + 1}`,
                   ),
                 ),
               );
@@ -4611,21 +4621,44 @@ const NilaiTableView = (props) => {
               {
                 rowSpan: headerRowSpan,
                 className:
-                  "p-2 text-center border-b border-l border-slate-200 min-w-[600px]",
+                  `p-2 text-center border-b border-l border-slate-200 min-w-[600px] ${
+                    isCapaianPinned
+                      ? "sticky right-0 bg-slate-100 z-30 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
+                      : ""
+                  }`,
               },
               React.createElement(
                 "div",
-                { className: "flex flex-col items-center gap-2" },
-                "Capaian Kompetensi",
+                { className: "flex flex-col items-center gap-1.5" },
                 React.createElement(
-                  "button",
-                  {
-                    onClick: handleBulkGenerateDescriptions,
-                    className:
-                      "px-2 py-1 text-[10px] bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300 font-bold",
-                  },
-                  "Generate Otomatis",
+                  "span",
+                  { className: "font-semibold text-slate-800" },
+                  "Capaian Kompetensi"
                 ),
+                React.createElement(
+                  "div",
+                  { className: "flex items-center gap-3 justify-center" },
+                  React.createElement(
+                    "button",
+                    {
+                      onClick: handleBulkGenerateDescriptions,
+                      className:
+                        "px-2 py-0.5 text-[10px] bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300 font-bold shadow-sm transition-colors",
+                    },
+                    "Generate Otomatis",
+                  ),
+                  React.createElement(
+                    "label",
+                    { className: "flex items-center gap-1 text-[10px] text-slate-500 font-medium cursor-pointer select-none" },
+                    React.createElement("input", {
+                      type: "checkbox",
+                      checked: isCapaianPinned,
+                      onChange: (e) => handleToggleCapaianPinned(e.target.checked),
+                      className: "w-3 h-3 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500",
+                    }),
+                    "Kunci Kolom (Sticky)"
+                  )
+                )
               ),
             ),
           ),
@@ -4826,7 +4859,7 @@ const NilaiTableView = (props) => {
 
             return React.createElement(
               "tr",
-              { key: student.id, className: "border-b hover:bg-slate-50" },
+              { key: student.id, className: "border-b hover:bg-slate-50 group" },
               React.createElement(
                 "td",
                 {
@@ -4971,7 +5004,11 @@ const NilaiTableView = (props) => {
                 "td",
                 {
                   className:
-                    "p-2 border-b border-l border-slate-200 min-w-[600px]",
+                    `p-2 border-b border-l border-slate-200 min-w-[600px] ${
+                      isCapaianPinned
+                        ? "sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
+                        : ""
+                    }`,
                 },
                 React.createElement(
                   "div",
