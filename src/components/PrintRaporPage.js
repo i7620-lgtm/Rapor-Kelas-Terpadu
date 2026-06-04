@@ -367,10 +367,15 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 };
 
 const CoverPage = ({ student, settings, onUpdateStudent }) => {
+    const currentSemester = settings?.semester || 'Ganjil';
+    const tanggalRapor = currentSemester.toLowerCase() === 'genap' 
+        ? settings.tanggal_rapor_genap || settings.tanggal_rapor 
+        : settings.tanggal_rapor_ganjil || settings.tanggal_rapor;
+
     const year = useMemo(() => {
-        if (settings.tanggal_rapor) {
+        if (tanggalRapor) {
             try {
-                const parts = settings.tanggal_rapor.split(' ');
+                const parts = tanggalRapor.split(' ');
                 if (parts.length >= 3) {
                     const yearPart = parts[parts.length - 1];
                     const monthName = parts[parts.length - 2];
@@ -396,7 +401,7 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
              return `${currentYear - 1}/${currentYear}`;
         }
         return `${currentYear}/${currentYear + 1}`;
-    }, [settings.tanggal_rapor, settings.tahun_ajaran]);
+    }, [tanggalRapor, settings.tahun_ajaran]);
 
     const coverLogo = settings.logo_cover || '';
 
@@ -499,7 +504,11 @@ const SchoolIdentityPage = ({ settings, onUpdateSettings }) => {
     );
 };
 
-const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
+const StudentIdentityPage = ({ student, settings, onUpdateStudent, onUpdateSettings }) => {
+    const currentSemester = settings?.semester || 'Ganjil';
+    const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+    const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
+
     const identitasSiswa = [
         { key: 'namaLengkap', no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { key: 'nisn', no: '2.', label: 'NISN', value: student.nisn || '-' }, // Splitting NISN/NIS for easier edit
@@ -574,7 +583,7 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
                     student.foto ? React.createElement('img', { src: student.foto, alt: "Foto Siswa", className: "w-full h-full object-cover" }) : 'Pas Foto 3x4'
                 ),
                 React.createElement('div', { className: 'text-center relative' },
-                    React.createElement(EditableDescription, { value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, onSave: (val) => onUpdateSettings('tanggal_rapor', val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
+                    React.createElement(EditableDescription, { value: tanggalRaporValue, onSave: (val) => onUpdateSettings(tanggalRaporKey, val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
                     React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
                     React.createElement('div', { className: 'h-20 w-full relative flex items-center justify-center' },
                         settings.ttd_kepala_sekolah && React.createElement('img', { 
@@ -754,6 +763,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     
     const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
     const currentSemester = settings.semester || 'Ganjil';
+    const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+    const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
 
     const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
     const originalNote = notes[originalNoteKey] || '';
@@ -791,9 +802,9 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     }
 
     const attendanceData = attendance.find(a => a.studentId === student.id && (a.semester || 'Ganjil') === currentSemester) || { sakit: null, izin: null, alpa: null };
-    const sakitCount = attendanceData.sakit ?? 0;
-    const izinCount = attendanceData.izin ?? 0;
-    const alpaCount = attendanceData.alpa ?? 0;
+    const sakitCount = (attendanceData.sakit === null || attendanceData.sakit === undefined || attendanceData.sakit === '') ? 0 : attendanceData.sakit;
+    const izinCount = (attendanceData.izin === null || attendanceData.izin === undefined || attendanceData.izin === '') ? 0 : attendanceData.izin;
+    const alpaCount = (attendanceData.alpa === null || attendanceData.alpa === undefined || attendanceData.alpa === '') ? 0 : attendanceData.alpa;
 
     const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
     
@@ -988,8 +999,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-12' }), React.createElement('div', null, '.........................')),
                 React.createElement('div', { className: 'text-center relative' }, 
                     React.createElement(EditableDescription, { 
-                        value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, 
-                        onSave: (val) => onUpdateSettings('tanggal_rapor', val), 
+                        value: tanggalRaporValue, 
+                        onSave: (val) => onUpdateSettings(tanggalRaporKey, val), 
                         placeholder: "Tempat, Tanggal",
                         className: "text-center justify-center"
                     }), 
