@@ -547,7 +547,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
         const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
         const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || 'Tempat, Tanggal Rapor';
         
-        return text
+        let result = text
             .replace(/\[NAMA SISWA\]/gi, (student.namaLengkap || '')) // Removed .toUpperCase()
             .replace(/\[RANK\]/gi, rank ? toRoman(rank) : '') // Legacy support if user customized layout
             .replace(/\[RANK TEXT\]/gi, rankString) // New placeholder for full rank text
@@ -561,6 +561,23 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
             .replace(/\[nama wali kelas\]/gi, settings.nama_wali_kelas || '')
             .replace(/\[nip wali kelas\]/gi, settings.nip_wali_kelas || '')
             .replace(/Tempat, Tanggal Rapor/gi, tanggalRaporValue);
+
+        const nipKepsekLabel = settings.nip_label_kepala_sekolah || 'NIP';
+        const nipWaliLabel = settings.nip_label_wali_kelas || 'NIP';
+
+        if (text.toLowerCase().includes('[nip kepala sekolah]')) {
+            result = result.replace(/NIP\./gi, `${nipKepsekLabel}.`);
+        } else if (text.toLowerCase().includes('[nip wali kelas]')) {
+            result = result.replace(/NIP\./gi, `${nipWaliLabel}.`);
+        } else {
+            if (settings.nip_kepala_sekolah && result.includes(`NIP. ${settings.nip_kepala_sekolah}`)) {
+                result = result.replace(`NIP. ${settings.nip_kepala_sekolah}`, `${nipKepsekLabel}. ${settings.nip_kepala_sekolah}`);
+            }
+            if (settings.nip_wali_kelas && result.includes(`NIP. ${settings.nip_wali_kelas}`)) {
+                result = result.replace(`NIP. ${settings.nip_wali_kelas}`, `${nipWaliLabel}. ${settings.nip_wali_kelas}`);
+            }
+        }
+        return result;
     };
 
     return (
