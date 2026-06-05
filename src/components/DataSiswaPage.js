@@ -85,6 +85,7 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
     } = useGridSelection({
         rowsCount: localStudents.length,
         colsCount: allEditableFields.length,
+        minColIndex: -1,
         containerClass: 'siswa-table-container',
         onDeleteSelection: (bounds) => {
             let updatedCount = 0;
@@ -491,6 +492,8 @@ const DataSiswaPage = ({ students, namaKelas, onBulkSaveStudents, onDeleteStuden
                                     React.createElement('tr', { key: student.id, className: "bg-white hover:bg-[#fafafa]" },
                                         // No Column -> colIndex: -1
                                         React.createElement('td', { 
+                                            id: `cell-${rowIndex}--1`,
+                                            tabIndex: -1,
                                             className: "px-3 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
                                             style: getSelectionStyle(rowIndex, -1).selectionStyle,
                                             onMouseDown: (e) => {
