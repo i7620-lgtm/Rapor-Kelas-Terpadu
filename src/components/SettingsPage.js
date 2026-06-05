@@ -1074,9 +1074,43 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('div', { className: "flex flex-col gap-4 h-full" },
                                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
                                     React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, status: getStatus(settings.nip_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement('div', { className: 'grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-md border border-slate-200' },
+                                        React.createElement('div', null,
+                                            React.createElement('label', { htmlFor: 'nip_label_kepala_sekolah', className: "block text-xs font-medium text-slate-700 mb-1" }, 'Tipe Nomor Pengenal'),
+                                            React.createElement('select', { 
+                                                id: 'nip_label_kepala_sekolah', 
+                                                name: 'nip_label_kepala_sekolah', 
+                                                value: settings.nip_label_kepala_sekolah || 'NIP', 
+                                                onChange: onSettingsChange, 
+                                                onBlur: onSave, 
+                                                onKeyDown: handleKeyDown,
+                                                className: "w-full px-2 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs text-slate-900"
+                                            },
+                                                React.createElement('option', { value: 'NIP' }, 'NIP'),
+                                                React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
+                                            )
+                                        ),
+                                        React.createElement(FormField, { label: "Nomor Identitas Kepsek", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, status: getStatus(settings.nip_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                    ),
                                     React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, status: getStatus(settings.nip_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                    React.createElement('div', { className: 'grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-md border border-slate-200' },
+                                        React.createElement('div', null,
+                                            React.createElement('label', { htmlFor: 'nip_label_wali_kelas', className: "block text-xs font-medium text-slate-700 mb-1" }, 'Tipe Nomor Pengenal'),
+                                            React.createElement('select', { 
+                                                id: 'nip_label_wali_kelas', 
+                                                name: 'nip_label_wali_kelas', 
+                                                value: settings.nip_label_wali_kelas || 'NIP', 
+                                                onChange: onSettingsChange, 
+                                                onBlur: onSave, 
+                                                onKeyDown: handleKeyDown,
+                                                className: "w-full px-2 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs text-slate-900"
+                                            },
+                                                React.createElement('option', { value: 'NIP' }, 'NIP'),
+                                                React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
+                                            )
+                                        ),
+                                        React.createElement(FormField, { label: "Nomor Identitas Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, status: getStatus(settings.nip_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                    )
                                 ),
 
                                 // Kolom 3: Tanda Tangan (Disesuaikan Tinggi)
