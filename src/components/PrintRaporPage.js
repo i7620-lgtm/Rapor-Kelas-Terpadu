@@ -593,7 +593,7 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent, onUpdateSetti
                         })
                     ),
                     React.createElement('div', { className: 'font-bold underline relative z-20' }, settings.nama_kepala_sekolah || '_________________'),
-                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('div', null, `${settings.nip_label_kepala_sekolah || 'NIP'}. ${settings.nip_kepala_sekolah || '-'}`)
                 )
             )
         )
@@ -1021,7 +1021,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                         })
                     ), 
                     React.createElement('div', { className: 'flex justify-center gap-1' }, 
-                        'NIP.', 
+                        `${settings.nip_label_wali_kelas || 'NIP'}.`, 
                         React.createElement(EditableDescription, { 
                             value: settings.nip_wali_kelas || '-', 
                             onSave: (val) => onUpdateSettings('nip_wali_kelas', val), 
@@ -1050,7 +1050,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                         })
                     ), 
                     React.createElement('div', { className: 'flex justify-center gap-1' }, 
-                        'NIP.', 
+                        `${settings.nip_label_kepala_sekolah || 'NIP'}.`, 
                         React.createElement(EditableDescription, { 
                             value: settings.nip_kepala_sekolah || '-', 
                             onSave: (val) => onUpdateSettings('nip_kepala_sekolah', val), 
