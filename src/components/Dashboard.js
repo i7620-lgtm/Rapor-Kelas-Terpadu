@@ -347,9 +347,11 @@ const Dashboard = ({
 
         // 4. Kokurikuler
         const cocurricData = cocurricularData || {};
+        const currentSemester = settings?.semester || "Ganjil";
+        const coDimensionField = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
         let studentsWithCo = currentStudents.filter(s => {
             const studentCoData = cocurricData[s.id];
-            return studentCoData && Object.values(studentCoData.dimensionRatings || {}).some(r => r);
+            return studentCoData && Object.values(studentCoData[coDimensionField] || {}).some(r => r);
         }).length;
         const coPercentage = Math.round((studentsWithCo / totalStudents) * 100);
         if (coPercentage === 100) {
@@ -359,7 +361,7 @@ const Dashboard = ({
         }
         
         // 5. Ekstrakurikuler
-        let studentsWithExtra = currentStudents.filter(s => currentStudentExtracurriculars.some(se => se.studentId === s.id && se.assignedActivities?.some(activity => activity !== null))).length;
+        let studentsWithExtra = currentStudents.filter(s => currentStudentExtracurriculars.some(se => se.studentId === s.id && (se.semester || 'Ganjil') === currentSemester && se.assignedActivities?.some(activity => activity !== null))).length;
         const extraPercentage = Math.round((studentsWithExtra / totalStudents) * 100);
         if (extraPercentage === 100) {
             results.push({ category: 'Data Lainnya', title: 'Ekstrakurikuler', status: 'good', message: 'Semua siswa memiliki setidaknya satu ekstrakurikuler.', actionText: 'Lihat Ekstrakurikuler', onActionClick: () => setActivePage('DATA_EKSTRAKURIKULER'), percentage: 100 });
@@ -368,7 +370,7 @@ const Dashboard = ({
         }
         
         // 6. Data Absensi
-        let studentsWithAttendance = currentStudents.filter(s => currentAttendance.some(a => a.studentId === s.id && (a.sakit !== null || a.izin !== null || a.alpa !== null))).length;
+        let studentsWithAttendance = currentStudents.filter(s => currentAttendance.some(a => a.studentId === s.id && (a.semester || 'Ganjil') === currentSemester && (a.sakit !== null || a.izin !== null || a.alpa !== null))).length;
         const attendancePercentage = Math.round((studentsWithAttendance / totalStudents) * 100);
         if (attendancePercentage === 100) {
             results.push({ category: 'Data Lainnya', title: 'Data Absensi', status: 'good', message: 'Data absensi semua siswa telah terisi.', actionText: 'Lihat Data Absensi', onActionClick: () => setActivePage('DATA_ABSENSI'), percentage: 100 });
@@ -378,7 +380,11 @@ const Dashboard = ({
 
         // 7. Catatan Wali Kelas
         const checkSimpleCompletion = (data, key, title, page) => {
-            let completed = currentStudents.filter(s => data[s.id] && data[s.id].trim() !== '').length;
+            const getNoteKey = (studentId) => currentSemester === 'Genap' ? studentId + '_Genap' : studentId;
+            let completed = currentStudents.filter(s => {
+                const noteKey = getNoteKey(s.id);
+                return data[noteKey] && data[noteKey].trim() !== '';
+            }).length;
             const percentage = Math.round((completed / totalStudents) * 100);
             if (percentage === 100) {
                 results.push({ category: 'Data Lainnya', title, status: 'good', message: `Semua siswa telah memiliki ${title.toLowerCase()}.`, actionText: `Lihat ${title}`, onActionClick: () => setActivePage(page), percentage: 100 });
@@ -432,4 +438,3 @@ const Dashboard = ({
 };
 
 export default Dashboard;
- 
