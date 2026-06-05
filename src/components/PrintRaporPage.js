@@ -431,7 +431,7 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
 
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
+                React.createElement('div', { className: 'rounded-lg p-2 mt-2', style: { border: '1pt solid #000000' } },
                     React.createElement('div', { className: 'text-2xl font-bold tracking-wider' },
                         React.createElement(EditableDescription, {
                             value: (student.namaLengkap || 'NAMA MURID').toUpperCase(),
@@ -442,11 +442,11 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
                     )
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider flex justify-center gap-1' },
-                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "NISN", className: "w-32 text-right" }),
-                        React.createElement('span', null, '/'),
-                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "NIS", className: "w-24 text-left" })
+                React.createElement('div', { className: 'rounded-lg p-2 mt-2', style: { border: '1pt solid #000000' } },
+                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider flex justify-center items-center gap-2 mx-auto max-w-full' },
+                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "NISN", className: "text-center min-w-0" }),
+                        React.createElement('span', { className: 'px-1 shrink-0' }, '/'),
+                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "NIS", className: "text-center min-w-0" })
                     )
                 )
             )
@@ -714,28 +714,38 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
         tableLayout: 'fixed' 
     };
     const pyClass = compactLevel === 2 ? 'py-0' : compactLevel === 1 ? 'py-[0.5px]' : 'py-[1px]';
-    const hrClass = compactLevel === 2 ? 'my-0 border-t border-black' : compactLevel === 1 ? 'my-[1px]' : 'my-0.5 border-t border-black';
+    const hrStyle = {
+        border: 'none',
+        borderTop: '1pt solid #000000',
+        margin: compactLevel === 2 ? '0' : compactLevel === 1 ? '1px 0' : '2px 0'
+    };
 
-    return React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: tableStyle },
+    const tableStyleMerged = {
+        ...tableStyle,
+        borderCollapse: 'collapse',
+        border: '1pt solid #000000'
+    };
+
+    return React.createElement('table', { className: 'w-full mt-1', style: tableStyleMerged },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
+                React.createElement('td', { className: 'px-1 py-0 w-[5%]', style: { border: '1pt solid #000000' } }, 'No.'),
+                React.createElement('td', { className: 'px-1 py-0 w-[20%]', style: { border: '1pt solid #000000' } }, 'Mata Pelajaran'),
                 !hideGradesForFaseA && (
-                    React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir')
+                    React.createElement('td', { className: 'px-1 py-0 w-[12%] whitespace-nowrap', style: { border: '1pt solid #000000' } }, 'Nilai Akhir')
                 ),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0', style: { width: hideGradesForFaseA ? '75%' : '63%' } }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'px-1 py-0', style: { width: hideGradesForFaseA ? '75%' : '63%', border: '1pt solid #000000' } }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id, id: `row-${studentId}-${item.id}` },
-                    React.createElement('td', { className: `border border-black px-1 ${pyClass} text-center align-top` }, startingIndex + index),
-                    React.createElement('td', { className: `border border-black px-1 ${pyClass} align-top` }, item.name),
+                    React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1pt solid #000000' } }, startingIndex + index),
+                    React.createElement('td', { className: `px-1 ${pyClass} align-top`, style: { border: '1pt solid #000000' } }, item.name),
                     !hideGradesForFaseA && (
-                        React.createElement('td', { className: `border border-black px-1 ${pyClass} text-center align-top` }, item.grade ?? '')
+                        React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1pt solid #000000' } }, item.grade ?? '')
                     ),
-                    React.createElement('td', { className: `border border-black px-1 ${pyClass} align-top leading-tight` },
+                    React.createElement('td', { className: `px-1 ${pyClass} align-top leading-tight`, style: { border: '1pt solid #000000' } },
                         React.createElement(EditableDescription, { 
                             value: item.description.highest, 
                             onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val, item.description),
@@ -743,7 +753,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                             multiline: true
                         }),
                         React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: hrClass }),
+                            React.createElement('hr', { style: hrStyle }),
                             React.createElement(EditableDescription, { 
                                 value: item.description.lowest, 
                                 onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val, item.description),
@@ -921,10 +931,10 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     const extraFontSizeClass = compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt';
 
     // Attendance and notes
-    const attAndNotesGap = compactLevel === 2 ? 'gap-2 mt-0.5' : compactLevel === 1 ? 'gap-3 mt-1' : 'gap-4 mt-1';
+    const attAndNotesGap = compactLevel === 2 ? 'gap-0.5 mt-0.5' : compactLevel === 1 ? 'gap-1 mt-1' : 'gap-1 mt-1';
     const attRowPadding = compactLevel === 2 ? 'py-0.5' : compactLevel === 1 ? 'py-1' : 'py-1';
-    const attendanceW = compactLevel === 2 ? '5.5cm' : compactLevel === 1 ? '6.0cm' : '6.5cm';
-    const notesW = compactLevel === 2 ? '12.5cm' : compactLevel === 1 ? '12.0cm' : '11.5cm';
+    const attendanceW = compactLevel === 2 ? '4.9cm' : compactLevel === 1 ? '5.3cm' : '5.6cm';
+    const attendanceLabelW = compactLevel === 2 ? '2.3cm' : compactLevel === 1 ? '2.5cm' : '2.7cm';
     const notesMinHeight = compactLevel === 2 ? '1.5rem' : compactLevel === 1 ? '2.2rem' : '3rem';
 
     // Parent feedback
@@ -951,8 +961,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             promotionText = `Naik ke Kelas ${nextGrade} (${nextGradeRoman})`;
         }
         
-        return React.createElement('div', { className: `border-2 border-black ${paddingClass} ${marginClass}`, style: { fontSize: fontSizeClass } },
-            React.createElement('div', { className: 'font-bold border-y-2 border-black text-center py-0.5' }, 
+        return React.createElement('div', { className: `${paddingClass} ${marginClass}`, style: { fontSize: fontSizeClass, border: '1pt solid #000000' } },
+            React.createElement('div', { className: 'font-bold text-center py-0.5', style: { borderBottom: '1pt solid #000000' } }, 
                 `Berdasarkan hasil belajar yang dicapai, ${nickname} dinyatakan:`
 			),
             React.createElement('div', { className: 'font-bold mt-0.5 text-center py-0.5' },
@@ -963,7 +973,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
 
     return (
         React.createElement('div', { className: marginClass },
-            showCocurricular && React.createElement('div', { ref: cocurricularRef, className: `border-2 border-black ${paddingClass}`, style: { fontSize: fontSizeClass } },
+            showCocurricular && React.createElement('div', { ref: cocurricularRef, className: `${paddingClass}`, style: { fontSize: fontSizeClass, border: '1pt solid #000000' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
                 React.createElement('div', { className: 'min-h-[1.5rem]' }, 
                     React.createElement(EditableDescription, {
@@ -975,13 +985,13 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                 )
             ),
             (showExtra && extraActivities.length > 0) && React.createElement('div', { ref: extraRef, className: marginClass },
-                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: extraFontSizeClass, tableLayout: 'fixed' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: `border-2 border-black px-2 ${extraPyClass} w-[5%]` }, 'No.'), React.createElement('td', { className: `border-2 border-black px-2 ${extraPyClass} w-[32%]` }, 'Ekstrakurikuler'), React.createElement('td', { className: `border-2 border-black px-2 ${extraPyClass} w-[63%]` }, 'Keterangan'))),
+                React.createElement('table', { className: 'w-full border-collapse', style: { fontSize: extraFontSizeClass, tableLayout: 'fixed', border: '1pt solid #000000' } },
+                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: `px-2 ${extraPyClass} w-[5%]`, style: { border: '1pt solid #000000' } }, 'No.'), React.createElement('td', { className: `px-2 ${extraPyClass} w-[32%]`, style: { border: '1pt solid #000000' } }, 'Ekstrakurikuler'), React.createElement('td', { className: `px-2 ${extraPyClass} w-[63%]`, style: { border: '1pt solid #000000' } }, 'Keterangan'))),
                     React.createElement('tbody', null, extraActivities.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top', id: `row-extra-${student.id}-${index}` }, 
-                            React.createElement('td', { className: `border border-black px-2 ${extraPyClass} text-center` }, index + 1), 
-                            React.createElement('td', { className: `border border-black px-2 ${extraPyClass}` }, item.name), 
-                            React.createElement('td', { className: `border border-black px-2 ${extraPyClass}` }, 
+                            React.createElement('td', { className: `px-2 ${extraPyClass} text-center`, style: { border: '1pt solid #000000' } }, index + 1), 
+                            React.createElement('td', { className: `px-2 ${extraPyClass}`, style: { border: '1pt solid #000000' } }, item.name), 
+                            React.createElement('td', { className: `px-2 ${extraPyClass}`, style: { border: '1pt solid #000000' } }, 
                                 React.createElement(EditableDescription, {
                                     value: item.description,
                                     onSave: (val) => onUpdateExtraDescription(student.id, item.id, val),
@@ -993,42 +1003,43 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     )))
                 )
             ),
-            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: `flex ${attAndNotesGap} items-stretch` },
-                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: fontSizeClass, width: attendanceW } },
-                    React.createElement('div', { className: `font-bold border-b-2 border-black px-2 ${extraPyClass} text-center` }, 'Ketidakhadiran'),
+            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: `w-full flex ${attAndNotesGap} items-stretch` },
+                showAttendance && React.createElement('div', { className: 'flex flex-col flex-shrink-0', style: { fontSize: fontSizeClass, width: attendanceW, border: '1pt solid #000000' } },
+                    React.createElement('div', { className: `font-bold px-2 ${extraPyClass} text-center`, style: { borderBottom: '1pt solid #000000' } }, 'Ketidakhadiran'),
                      React.createElement('div', { className: 'flex-grow flex flex-col justify-around' },
-                        ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
-                            const typeKey = item === 'Sakit' ? 'sakit' : item === 'Izin' ? 'izin' : 'alpa';
-                            const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
-                            
-                            return React.createElement('div', {
-                                key: item,
-                                id: `row-attendance-${student.id}-${item.toLowerCase().replace(/\s+/g, '-')}`,
-                                className: `flex items-center px-2 ${attRowPadding} flex-1 ${index < arr.length - 1 ? 'border-b border-black' : ''}`
-                            },
-                                React.createElement('span', { className: compactLevel === 2 ? 'w-20' : 'w-24' }, item),
-                                React.createElement('span', { className: 'px-1' }, ':'),
-                                React.createElement('div', { className: 'flex-1 text-left flex gap-1 items-center' },
-                                    React.createElement(EditableDescription, {
-                                        value: value,
-                                        onSave: (val) => onUpdateAttendance(student.id, typeKey, val),
-                                        placeholder: "0",
-                                        className: "w-8 text-center"
-                                    }),
-                                    React.createElement('span', null, 'hari')
-                                )
-                            )
-                        })
-                     )
+                         ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
+                             const typeKey = item === 'Sakit' ? 'sakit' : item === 'Izin' ? 'izin' : 'alpa';
+                             const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
+                             
+                             return React.createElement('div', {
+                                 key: item,
+                                 id: `row-attendance-${student.id}-${item.toLowerCase().replace(/\s+/g, '-')}`,
+                                 className: `flex items-center px-2 ${attRowPadding} flex-1`,
+                                 style: index < arr.length - 1 ? { borderBottom: '1pt solid #000000' } : undefined
+                             },
+                                 React.createElement('span', { className: 'whitespace-nowrap', style: { width: attendanceLabelW } }, item),
+                                 React.createElement('span', { className: 'px-1' }, ':'),
+                                 React.createElement('div', { className: 'flex-1 text-left flex gap-1 items-center' },
+                                     React.createElement(EditableDescription, {
+                                         value: value,
+                                         onSave: (val) => onUpdateAttendance(student.id, typeKey, val),
+                                         placeholder: "0",
+                                         className: "w-8 text-center"
+                                     }),
+                                     React.createElement('span', null, 'hari')
+                                 )
+                             )
+                         })
+                      )
                 ),
-                showNotes && React.createElement('div', { className: `border-2 border-black ${paddingClass}`, style: { fontSize: fontSizeClass, width: notesW } },
+                showNotes && React.createElement('div', { className: `${paddingClass} flex-grow flex-1`, style: { fontSize: fontSizeClass, border: '1pt solid #000000' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
                     React.createElement('div', { style: { minHeight: notesMinHeight } }, studentNoteContent)
                 )
             ),
             showDecision && React.createElement('div', { ref: decisionRef, className: marginClass }, renderDecision()),
             showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: marginClass },
-                React.createElement('div', { className: `border-2 border-black ${paddingClass}`, style: { fontSize: fontSizeClass } },
+                React.createElement('div', { className: `${paddingClass}`, style: { fontSize: fontSizeClass, border: '1pt solid #000000' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
                     React.createElement('div', { style: { minHeight: feedbackMinHeight } })
                 )
