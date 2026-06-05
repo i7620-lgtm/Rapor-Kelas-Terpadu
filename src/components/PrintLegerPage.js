@@ -190,7 +190,7 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
                         })
                     ),
                     React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_kepala_sekolah || '____________________'),
-                    React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('p', null, `${settings.nip_label_kepala_sekolah || 'NIP'}. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5 relative" },
                     React.createElement('p', null, getTanggalRapor()),
@@ -203,7 +203,7 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
                         })
                     ),
                     React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_wali_kelas || '____________________'),
-                    React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
+                    React.createElement('p', null, `${settings.nip_label_wali_kelas || 'NIP'}. ${settings.nip_wali_kelas || '-'}`)
                 )
             )
         )
