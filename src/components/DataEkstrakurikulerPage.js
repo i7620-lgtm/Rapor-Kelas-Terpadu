@@ -114,6 +114,7 @@ const DataEkstrakurikulerPage = ({
   } = useGridSelection({
       rowsCount: students.length,
       colsCount: MAX_EXTRA_FIELDS * 2,
+      minColIndex: -2,
       containerClass: 'ekstra-table-container',
       onDeleteSelection: (bounds) => {
         let updatedCount = 0;
@@ -562,6 +563,8 @@ const DataEkstrakurikulerPage = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--2`,
+                        tabIndex: -1,
                         className:
                           "px-3 py-2 text-center border-b border-slate-200 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
                         style: getSelectionStyle(index, -2).selectionStyle,
@@ -576,6 +579,8 @@ const DataEkstrakurikulerPage = ({
                     React.createElement(
                       "th",
                       {
+                        id: `cell-${index}--1`,
+                        tabIndex: -1,
                         scope: "row",
                         className:
                           "px-6 py-4 font-medium text-slate-900 whitespace-nowrap text-left border-b border-slate-200 relative cursor-default select-none",
