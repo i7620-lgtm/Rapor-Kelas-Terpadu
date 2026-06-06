@@ -1074,9 +1074,9 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                 React.createElement('div', { className: "flex flex-col gap-4 h-full" },
                                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
                                     React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement('div', { className: 'bg-slate-50 p-2.5 rounded-lg border border-slate-200 shadow-sm w-full' },
+                                    React.createElement('div', { className: 'w-full' },
                                         React.createElement('label', { htmlFor: 'nip_kepala_sekolah', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Kepsek'),
-                                        React.createElement('div', { className: 'flex gap-2 w-full mt-1.5' },
+                                        React.createElement('div', { className: 'flex gap-2 w-full' },
                                             React.createElement('div', { className: 'w-24 flex-shrink-0' },
                                                 React.createElement('select', { 
                                                     id: 'nip_label_kepala_sekolah', 
@@ -1085,7 +1085,13 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                     onChange: onSettingsChange, 
                                                     onBlur: onSave, 
                                                     onKeyDown: handleKeyDown,
-                                                    className: "w-full h-10 px-2 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-900 focus:outline-none"
+                                                    className: `w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
+                                                        getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                        ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                        ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    }`
                                                 },
                                                     React.createElement('option', { value: 'NIP' }, 'NIP'),
                                                     React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
@@ -1093,12 +1099,12 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             ),
                                             React.createElement('div', { className: 'flex-1' },
                                                 React.createElement('div', { 
-                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden h-10 ${
+                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
                                                         getStatus(settings.nip_kepala_sekolah) === 'bad' 
-                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500 bg-white" 
+                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
                                                         : getStatus(settings.nip_kepala_sekolah) === 'good' 
-                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500 bg-white" 
-                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white"
+                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                     }` 
                                                 },
                                                     React.createElement('input', {
@@ -1109,16 +1115,16 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                         onChange: onSettingsChange,
                                                         onBlur: onSave,
                                                         onKeyDown: handleKeyDown,
-                                                        className: "w-full h-full px-3 text-sm focus:outline-none text-slate-950 bg-white"
+                                                        className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
                                                     })
                                                 )
                                             )
                                         )
                                     ),
                                     React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement('div', { className: 'bg-slate-50 p-2.5 rounded-lg border border-slate-200 shadow-sm w-full' },
+                                    React.createElement('div', { className: 'w-full' },
                                         React.createElement('label', { htmlFor: 'nip_wali_kelas', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Wali Kelas'),
-                                        React.createElement('div', { className: 'flex gap-2 w-full mt-1.5' },
+                                        React.createElement('div', { className: 'flex gap-2 w-full' },
                                             React.createElement('div', { className: 'w-24 flex-shrink-0' },
                                                 React.createElement('select', { 
                                                     id: 'nip_label_wali_kelas', 
@@ -1127,7 +1133,13 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                     onChange: onSettingsChange, 
                                                     onBlur: onSave, 
                                                     onKeyDown: handleKeyDown,
-                                                    className: "w-full h-10 px-2 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm text-slate-900 focus:outline-none"
+                                                    className: `w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
+                                                        getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                        ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                        ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    }`
                                                 },
                                                     React.createElement('option', { value: 'NIP' }, 'NIP'),
                                                     React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
@@ -1135,12 +1147,12 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             ),
                                             React.createElement('div', { className: 'flex-1' },
                                                 React.createElement('div', { 
-                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden h-10 ${
+                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
                                                         getStatus(settings.nip_wali_kelas) === 'bad' 
-                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500 bg-white" 
+                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
                                                         : getStatus(settings.nip_wali_kelas) === 'good' 
-                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500 bg-white" 
-                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-white"
+                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                     }` 
                                                 },
                                                     React.createElement('input', {
@@ -1151,7 +1163,7 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                         onChange: onSettingsChange,
                                                         onBlur: onSave,
                                                         onKeyDown: handleKeyDown,
-                                                        className: "w-full h-full px-3 text-sm focus:outline-none text-slate-950 bg-white"
+                                                        className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
                                                     })
                                                 )
                                             )
