@@ -1,4 +1,4 @@
- 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
@@ -1066,16 +1066,109 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             React.createElement('option', { value: 'Genap' }, 'Genap')
                                         )
                                     ),
-                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: "tanggal_rapor", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Ganjil)", id: "tanggal_rapor_ganjil", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor_ganjil || settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown}),
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Genap)", id: "tanggal_rapor_genap", placeholder: "e.g. Jakarta, 22 Juni 2024", value: settings.tanggal_rapor_genap, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
                                 ),
 
                                 // Kolom 2: Kepala Sekolah dan Guru
                                 React.createElement('div', { className: "flex flex-col gap-4 h-full" },
                                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
                                     React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Kepala Sekolah", id: "nip_kepala_sekolah", value: settings.nip_kepala_sekolah, status: getStatus(settings.nip_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement('div', { className: 'w-full' },
+                                        React.createElement('label', { htmlFor: 'nip_kepala_sekolah', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Kepsek'),
+                                        React.createElement('div', { className: 'flex gap-2 w-full' },
+                                            React.createElement('div', { className: 'w-24 flex-shrink-0' },
+                                                React.createElement('select', { 
+                                                    id: 'nip_label_kepala_sekolah', 
+                                                    name: 'nip_label_kepala_sekolah', 
+                                                    value: settings.nip_label_kepala_sekolah || 'NIP', 
+                                                    onChange: onSettingsChange, 
+                                                    onBlur: onSave, 
+                                                    onKeyDown: handleKeyDown,
+                                                    className: `w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
+                                                        getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                        ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                        ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    }`
+                                                },
+                                                    React.createElement('option', { value: 'NIP' }, 'NIP'),
+                                                    React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
+                                                )
+                                            ),
+                                            React.createElement('div', { className: 'flex-1' },
+                                                React.createElement('div', { 
+                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
+                                                        getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
+                                                    }` 
+                                                },
+                                                    React.createElement('input', {
+                                                        type: 'text',
+                                                        id: 'nip_kepala_sekolah',
+                                                        name: 'nip_kepala_sekolah',
+                                                        value: settings.nip_kepala_sekolah ?? '',
+                                                        onChange: onSettingsChange,
+                                                        onBlur: onSave,
+                                                        onKeyDown: handleKeyDown,
+                                                        className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    ),
                                     React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
-                                    React.createElement(FormField, { label: "NIP Wali Kelas", id: "nip_wali_kelas", value: settings.nip_wali_kelas, status: getStatus(settings.nip_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown })
+                                    React.createElement('div', { className: 'w-full' },
+                                        React.createElement('label', { htmlFor: 'nip_wali_kelas', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Wali Kelas'),
+                                        React.createElement('div', { className: 'flex gap-2 w-full' },
+                                            React.createElement('div', { className: 'w-24 flex-shrink-0' },
+                                                React.createElement('select', { 
+                                                    id: 'nip_label_wali_kelas', 
+                                                    name: 'nip_label_wali_kelas', 
+                                                    value: settings.nip_label_wali_kelas || 'NIP', 
+                                                    onChange: onSettingsChange, 
+                                                    onBlur: onSave, 
+                                                    onKeyDown: handleKeyDown,
+                                                    className: `w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
+                                                        getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                        ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                        ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    }`
+                                                },
+                                                    React.createElement('option', { value: 'NIP' }, 'NIP'),
+                                                    React.createElement('option', { value: 'NIPPPK' }, 'NIPPPK')
+                                                )
+                                            ),
+                                            React.createElement('div', { className: 'flex-1' },
+                                                React.createElement('div', { 
+                                                    className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
+                                                        getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                        ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
+                                                        : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                        ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
+                                                        : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
+                                                    }` 
+                                                },
+                                                    React.createElement('input', {
+                                                        type: 'text',
+                                                        id: 'nip_wali_kelas',
+                                                        name: 'nip_wali_kelas',
+                                                        value: settings.nip_wali_kelas ?? '',
+                                                        onChange: onSettingsChange,
+                                                        onBlur: onSave,
+                                                        onKeyDown: handleKeyDown,
+                                                        className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    )
                                 ),
 
                                 // Kolom 3: Tanda Tangan (Disesuaikan Tinggi)

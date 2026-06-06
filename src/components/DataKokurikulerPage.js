@@ -29,6 +29,7 @@ const DataKokurikulerPage = ({
   } = useGridSelection({
       rowsCount: students.length,
       colsCount: COCURRICULAR_DIMENSIONS.length,
+      minColIndex: -2,
       containerClass: 'cocurricular-table-container',
       onDeleteSelection: (bounds) => {
         let updatedCount = 0;
@@ -456,6 +457,8 @@ const DataKokurikulerPage = ({
                       React.createElement(
                         "td",
                         {
+                          id: `cocurricular-cell-${index}--2`,
+                          tabIndex: -1,
                           className:
                             "px-3 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none",
                           style: getSelectionStyle(index, -2).selectionStyle,
@@ -471,6 +474,8 @@ const DataKokurikulerPage = ({
                       React.createElement(
                         "th",
                         {
+                          id: `cocurricular-cell-${index}--1`,
+                          tabIndex: -1,
                           scope: "row",
                           className:
                             "px-6 py-4 font-medium text-zinc-900 whitespace-nowrap text-left border-b border-zinc-200/60 relative cursor-default select-none",

@@ -155,6 +155,7 @@ const CatatanWaliKelasPage = ({
   } = useGridSelection({
       rowsCount: students.length,
       colsCount: 1,
+      minColIndex: -2,
       containerClass: 'catatan-table-container',
       onDeleteSelection: (bounds) => {
         let updatedCount = 0;
@@ -421,6 +422,8 @@ const CatatanWaliKelasPage = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--2`,
+                        tabIndex: -1,
                         className:
                           "px-6 py-4 sticky left-0 z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-zinc-200/60 relative cursor-default select-none",
                         style: getSelectionStyle(index, -2).selectionStyle,
@@ -435,6 +438,8 @@ const CatatanWaliKelasPage = ({
                     React.createElement(
                       "th",
                       {
+                        id: `cell-${index}--1`,
+                        tabIndex: -1,
                         scope: "row",
                         className:
                           "px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60 relative cursor-default select-none",

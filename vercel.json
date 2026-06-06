@@ -1,16 +1,7 @@
 {
-  "headers": [
-    {
-      "source": "/(.*\\.ts)",
-      "headers": [
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
-      ]
-    },
-    {
-      "source": "/(.*\\.tsx)",
-      "headers": [
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
-      ]
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/((?!api).+\\.[^/\\.]+$)", "destination": "/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -910,6 +910,7 @@ const SummativeModal = ({
   } = useGridSelection({
     rowsCount: relevantStudents.length,
     colsCount: isSLM ? localObjectives.length * 2 : 1,
+    minColIndex: -2,
     containerClass: "nilai-table-container",
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
@@ -1890,6 +1891,8 @@ const SummativeModal = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--2`,
+                        tabIndex: -1,
                         className:
                           "p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
                         style: {
@@ -1911,6 +1914,8 @@ const SummativeModal = ({
                     React.createElement(
                       "td",
                       {
+                        id: `cell-${index}--1`,
+                        tabIndex: -1,
                         className:
                           "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
                         style: {
@@ -2192,6 +2197,8 @@ const ManageSlmModal = ({
   const [localActiveIds, setLocalActiveIds] = useState(new Set());
   const [isTpSelectionModalOpen, setIsTpSelectionModalOpen] = useState(false);
   const [slmForTpSelection, setSlmForTpSelection] = useState(null);
+  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -2316,6 +2323,170 @@ const ManageSlmModal = ({
         return slm;
       }),
     );
+  };
+
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsProcessingOcr(true);
+      const isOnline = navigator.onLine;
+
+      let geminiSuccess = false;
+
+      if (isOnline) {
+        showToast("Online terdeteksi. Memproses menggunakan Gemini Flash Lite (AI)...", "info");
+        try {
+          // Convert file to base64
+          const base64Data = await new Promise((resolve, reject) => {
+             const reader = new FileReader();
+             reader.readAsDataURL(file);
+             reader.onload = () => resolve(reader.result.split(',')[1]);
+             reader.onerror = error => reject(error);
+          });
+
+          const response = await fetch("/api/ocr", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              imageBase64: base64Data,
+              mimeType: file.type
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.result && Array.isArray(data.result) && data.result.length > 0) {
+              const newSlms = data.result.map(slm => ({
+                 id: `slm_ocr_ai_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+                 name: slm.name || "Hasil AI",
+                 tps: (slm.tps || []).map(t => ({ text: t, isEdited: true }))
+              })).filter(slm => slm.tps.length > 0);
+
+              if (newSlms.length > 0) {
+                 setLocalSlms(prev => [...prev, ...newSlms]);
+                 const totalTps = newSlms.reduce((acc, curr) => acc + curr.tps.length, 0);
+                 const friendlyModel = data.modelUsed ? data.modelUsed.replace("gemini-3.1-", "").replace("-preview", "") : "Gemini";
+                 showToast(`AI (${friendlyModel}) berhasil menemukan ${newSlms.length} Lingkup Materi dan ${totalTps} TP.`, "success");
+                 geminiSuccess = true;
+              }
+            }
+          } else {
+             console.warn("Gemini OCR failed or quota exceeded", await response.text());
+          }
+        } catch (aiErr) {
+          console.warn("Gemini OCR request failed:", aiErr);
+        }
+      } 
+      
+      if (!geminiSuccess) {
+        if (isOnline) {
+          showToast("Gemini AI gagal atau kuota habis. Beralih ke OCR Offline...", "warning");
+        } else {
+          showToast("Offline terdeteksi. Memproses OCR mode offline, harap tunggu...", "info");
+        }
+        
+        // Dynamically import tesseract.js
+        const Tesseract = await import('tesseract.js');
+        
+        const worker = await Tesseract.createWorker('ind', 1, {
+           workerPath: '/tesseract/worker.min.js',
+           corePath: '/tesseract/tesseract-core.wasm.js',
+           langPath: '/tesseract',
+           logger: m => {
+               if (m.status === "recognizing text") {
+                   // console.log("Progress:", m.progress);
+               }
+           },
+        });
+
+        const ret = await worker.recognize(file);
+        await worker.terminate();
+
+        const text = ret.data.text;
+        
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+        
+        let identifiedSlms = [];
+        let currentSlm = null;
+
+        // Heuristik mendeteksi judul bab
+        const babRegex = /^(bab\s+[\dIVX]+|pembelajaran\s+\d+|unit\s+\d+|tema\s+\d+)\b/i;
+        const isJudulIndicator = /^(a\.|b\.|c\.|d\.)\s+[A-Z]/; // Judul sub-bab
+        
+        // Kata kerja operasional umum di awal TP
+        const verbRegex = /^(peserta didik|siswa|memahami|menjelaskan|menganalisis|mengidentifikasi|mendeskripsikan|menyebutkan|mampu|dapat|menyajikan|mempraktikkan|menunjukkan|menerapkan|mengevaluasi|mencipta|menguraikan|menyimpulkan|menggunakan)/i;
+
+        // Heuristik mendeteksi daftar (1., a., -, *) untuk Tujuan Pembelajaran
+        const listRegex = /^(\d+[\.\)]|-[ \t]+|\*[ \t]+|[a-z][\.\)])\s*(.+)/i;
+
+        lines.forEach(line => {
+          const babMatch = line.match(babRegex);
+          
+          // Asumsi judul jika All Caps tetapi bukan kalimat panjang, atau cocok pola Bab/SubBab
+          const isJudul = babMatch || isJudulIndicator.test(line) || (line === line.toUpperCase() && line.length > 8 && line.length < 50 && !listRegex.test(line));
+          
+          if (isJudul) {
+            if (currentSlm && currentSlm.tps.length > 0) {
+              identifiedSlms.push(currentSlm);
+            }
+            let name = line;
+            if (name.length > 55) name = name.substring(0, 55) + "...";
+            currentSlm = {
+               id: `slm_ocr_local_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+               name: name,
+               tps: []
+            };
+          } else {
+             // Evaluasi apakah baris ini Tujuan Pembelajaran
+             let tpText = line;
+             let isTp = false;
+
+             if (listRegex.test(line)) {
+                const match = line.match(listRegex);
+                tpText = match ? match[2].trim() : line;
+                // Jika ini list item, kita asumsikan TP jika teks setelahnya mengandung kata kerja yg relevan
+                // atau cukup panjang (asumsi buku teks list biasanya TP jika dlm bab)
+                if (tpText.length > 10) isTp = true;
+             } else if (verbRegex.test(line)) {
+                isTp = true;
+             }
+
+             if (isTp && tpText.length > 10) {
+                if (!currentSlm) {
+                   currentSlm = {
+                      id: `slm_ocr_local_${Date.now()}_temp`,
+                      name: "Hasil Scan OCR",
+                      tps: []
+                   };
+                }
+                currentSlm.tps.push({ text: tpText, isEdited: true });
+             }
+          }
+        });
+        
+        if (currentSlm && currentSlm.tps.length > 0) {
+            identifiedSlms.push(currentSlm);
+        }
+
+        if (identifiedSlms.length > 0) {
+           setLocalSlms(prev => [...prev, ...identifiedSlms]);
+           const totalTps = identifiedSlms.reduce((acc, curr) => acc + curr.tps.length, 0);
+           showToast(`Offline OCR berhasil menemukan ${identifiedSlms.length} Lingkup Materi dan ${totalTps} TP.`, "success");
+        } else {
+           showToast("Tidak ditemukan Lingkup Materi atau TP yang relevan dalam gambar lewat Offline OCR. Pastikan gambar jelas.", "error");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memproses gambar. Pastikan file valid.", "error");
+    } finally {
+      setIsProcessingOcr(false);
+      e.target.value = "";
+    }
   };
 
   const handleSaveChanges = () => {
@@ -2594,6 +2765,22 @@ const ManageSlmModal = ({
                 "w-full mt-4 p-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400",
             },
             "+ Tambah Lingkup Materi Baru",
+          ),
+          React.createElement("input", {
+            type: "file",
+            accept: "image/*",
+            ref: fileInputRef,
+            onChange: handleOcrUpload,
+            className: "hidden",
+          }),
+          React.createElement(
+            "button",
+            {
+              onClick: () => fileInputRef.current?.click(),
+              disabled: isProcessingOcr,
+              className: `w-full mt-2 p-3 border-2 border-dashed border-indigo-300 rounded-lg text-indigo-500 hover:bg-indigo-50 transition-all ${isProcessingOcr ? "opacity-50 cursor-not-allowed" : ""}`,
+            },
+            isProcessingOcr ? "Memproses Gambar..." : "📷 Scan Lingkup Materi / TP dari Gambar (Offline)",
           ),
         ),
         React.createElement(
@@ -3038,6 +3225,24 @@ const NilaiTableView = (props) => {
     x: 0,
     y: 0,
   });
+  const [isCapaianPinned, setIsCapaianPinned] = useState(() => {
+    try {
+      const saved = localStorage.getItem("rkt_is_capaian_pinned");
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleCapaianPinned = (val) => {
+    setIsCapaianPinned(val);
+    try {
+      localStorage.setItem("rkt_is_capaian_pinned", String(val));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const tableContainerRef = useRef(null);
 
   const gradeNumber = useMemo(
@@ -3293,6 +3498,7 @@ const NilaiTableView = (props) => {
   } = useGridSelection({
     rowsCount: relevantStudents.length,
     colsCount: columnKeys.length,
+    minColIndex: -2,
     containerClass: "mapel-table-container",
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
@@ -4187,16 +4393,10 @@ const NilaiTableView = (props) => {
               },
               "Nama Siswa",
             ),
-            slmHeaders.map((h) => {
-              let dynamicMinWidth = "auto";
-              // If SLM has 1 or 2 TPs, we force a minimum width for the entire SLM header section
-              // to ensure the SLM name can wrap into 2 lines.
-              // Base width for one TP column is 5rem. Max 2x means up to 10rem for colSpan 1.
-              if (h.colSpan === 1) {
-                dynamicMinWidth = "10rem"; // Adjusted from 15rem to 10rem (2x of 5rem)
-              } else if (h.colSpan === 2) {
-                dynamicMinWidth = "20rem"; // (2x of 10rem)
-              }
+            slmHeaders.map((h, slmIdx) => {
+              // Set the header's minWidth to scale proportionally with its colSpan so that
+              // all underlying TP columns can maintain their identical 5rem (80px) width.
+              const dynamicMinWidth = `${h.colSpan * 5}rem`;
 
               return React.createElement(
                 "th",
@@ -4213,10 +4413,8 @@ const NilaiTableView = (props) => {
                     // Wrap in button for tooltip functionality
                     className: "tp-header-button", // Re-use the same button style
                     onMouseEnter: (e) => {
-                      if (truncatedSlmIds[h.id]) {
-                        // Only show tooltip if text is truncated
-                        showTooltip(e, h.name);
-                      }
+                      // Always show tooltip with the full name so the user can easily see the complete name/theme of the Bab
+                      showTooltip(e, h.name);
                     },
                     onMouseLeave: hideTooltip,
                   },
@@ -4226,7 +4424,7 @@ const NilaiTableView = (props) => {
                       ref: (el) => (slmTextRefs.current[h.id] = el), // Assign ref
                       className: "slm-header-text-clamp",
                     },
-                    h.name,
+                    `Bab ${slmIdx + 1}`,
                   ),
                 ),
               );
@@ -4429,21 +4627,44 @@ const NilaiTableView = (props) => {
               {
                 rowSpan: headerRowSpan,
                 className:
-                  "p-2 text-center border-b border-l border-slate-200 min-w-[600px]",
+                  `p-2 text-center border-b border-l border-slate-200 min-w-[600px] ${
+                    isCapaianPinned
+                      ? "sticky right-0 bg-slate-100 z-30 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
+                      : ""
+                  }`,
               },
               React.createElement(
                 "div",
-                { className: "flex flex-col items-center gap-2" },
-                "Capaian Kompetensi",
+                { className: "flex flex-col items-center gap-1.5" },
                 React.createElement(
-                  "button",
-                  {
-                    onClick: handleBulkGenerateDescriptions,
-                    className:
-                      "px-2 py-1 text-[10px] bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300 font-bold",
-                  },
-                  "Generate Otomatis",
+                  "span",
+                  { className: "font-semibold text-slate-800" },
+                  "Capaian Kompetensi"
                 ),
+                React.createElement(
+                  "div",
+                  { className: "flex items-center gap-3 justify-center" },
+                  React.createElement(
+                    "button",
+                    {
+                      onClick: handleBulkGenerateDescriptions,
+                      className:
+                        "px-2 py-0.5 text-[10px] bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300 font-bold shadow-sm transition-colors",
+                    },
+                    "Generate Otomatis",
+                  ),
+                  React.createElement(
+                    "label",
+                    { className: "flex items-center gap-1 text-[10px] text-slate-500 font-medium cursor-pointer select-none" },
+                    React.createElement("input", {
+                      type: "checkbox",
+                      checked: isCapaianPinned,
+                      onChange: (e) => handleToggleCapaianPinned(e.target.checked),
+                      className: "w-3 h-3 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500",
+                    }),
+                    "Kunci Kolom (Sticky)"
+                  )
+                )
               ),
             ),
           ),
@@ -4644,10 +4865,12 @@ const NilaiTableView = (props) => {
 
             return React.createElement(
               "tr",
-              { key: student.id, className: "border-b hover:bg-slate-50" },
+              { key: student.id, className: "border-b hover:bg-slate-50 group" },
               React.createElement(
                 "td",
                 {
+                  id: `nilai-cell-${index}--2`,
+                  tabIndex: -1,
                   className:
                     "p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top box-border select-none cursor-default",
                   style: {
@@ -4668,6 +4891,8 @@ const NilaiTableView = (props) => {
               React.createElement(
                 "td",
                 {
+                  id: `nilai-cell-${index}--1`,
+                  tabIndex: -1,
                   className:
                     "p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default",
                   style: {
@@ -4789,7 +5014,11 @@ const NilaiTableView = (props) => {
                 "td",
                 {
                   className:
-                    "p-2 border-b border-l border-slate-200 min-w-[600px]",
+                    `p-2 border-b border-l border-slate-200 min-w-[600px] ${
+                      isCapaianPinned
+                        ? "sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
+                        : ""
+                    }`,
                 },
                 React.createElement(
                   "div",

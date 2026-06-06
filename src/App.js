@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'; 
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
 import Navigation from './components/Navigation.js';
@@ -51,8 +51,9 @@ const initialSettings = {
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
   logo_dinas: null, logo_cover: null, piagam_background: null,
   ttd_kepala_sekolah: null, ttd_wali_kelas: null,
-  nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
+  nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '', tanggal_rapor_ganjil: '', tanggal_rapor_genap: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
+  nip_label_kepala_sekolah: 'NIP', nip_label_wali_kelas: 'NIP',
   cocurricular_theme: '', cocurricular_theme_Genap: '',
   predikats: { a: '90', b: '80', c: '70', d: '0' },
   gradeCalculation: {},

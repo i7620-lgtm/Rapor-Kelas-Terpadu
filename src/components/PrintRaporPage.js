@@ -20,9 +20,9 @@ const PAGE_BOTTOM_MARGIN_CM = 1.5; // Standard bottom margin of the paper in cm
 const PAGE_NUMBER_FOOTER_HEIGHT_CM = 1.0; // Estimated height of the page number footer (text + line)
 
 // New derived constant for the 'bottom' CSS property of the main content area
-// Adjusted to provide a safer buffer (0.5cm) above the footer line to prevents overlap
-// Footer line is at 2.5cm from bottom. Content stops at 3.0cm from bottom.
-const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM + 0.5;
+// Configured to align exactly with the top of the footer container (2.5cm from bottom).
+// The symmetrical spacing is handled by adding mt-2 and mb-2 to the footer line.
+const REPORT_CONTENT_BOTTOM_OFFSET_CM = PAGE_BOTTOM_MARGIN_CM + PAGE_NUMBER_FOOTER_HEIGHT_CM;
 
 async function getFontEmbedCSS() {
     const urls = [
@@ -136,7 +136,7 @@ const EditableDescription = ({ value, onSave, placeholder, className, style, mul
         className: `cursor-text relative group hover:bg-yellow-50 rounded px-1 -mx-1 transition-colors print:hover:bg-transparent ${className || ''}`,
         style: style
     },
-        localValue || React.createElement('span', { className: "text-gray-400 italic print:hidden" }, placeholder),
+        (localValue !== undefined && localValue !== null && localValue !== '') ? localValue : React.createElement('span', { className: "text-gray-400 italic print:hidden" }, placeholder),
         React.createElement('span', { className: "absolute top-0 right-0 opacity-0 group-hover:opacity-100 text-gray-400 print:hidden pointer-events-none" }, 
             React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-3 w-3", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor" },
                 React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" })
@@ -367,10 +367,15 @@ const generateDescription = (student, subject, gradeData, learningObjectives, se
 };
 
 const CoverPage = ({ student, settings, onUpdateStudent }) => {
+    const currentSemester = settings?.semester || 'Ganjil';
+    const tanggalRapor = currentSemester.toLowerCase() === 'genap' 
+        ? settings.tanggal_rapor_genap || settings.tanggal_rapor 
+        : settings.tanggal_rapor_ganjil || settings.tanggal_rapor;
+
     const year = useMemo(() => {
-        if (settings.tanggal_rapor) {
+        if (tanggalRapor) {
             try {
-                const parts = settings.tanggal_rapor.split(' ');
+                const parts = tanggalRapor.split(' ');
                 if (parts.length >= 3) {
                     const yearPart = parts[parts.length - 1];
                     const monthName = parts[parts.length - 2];
@@ -396,7 +401,7 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
              return `${currentYear - 1}/${currentYear}`;
         }
         return `${currentYear}/${currentYear + 1}`;
-    }, [settings.tanggal_rapor, settings.tahun_ajaran]);
+    }, [tanggalRapor, settings.tahun_ajaran]);
 
     const coverLogo = settings.logo_cover || '';
 
@@ -426,7 +431,7 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
 
             React.createElement('div', { className: 'mt-24 w-full px-8' },
                 React.createElement('p', { className: 'text-sm' }, 'Nama Murid:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
+                React.createElement('div', { className: 'rounded-lg p-2 mt-2', style: { border: '1.5pt solid black' } },
                     React.createElement('div', { className: 'text-2xl font-bold tracking-wider' },
                         React.createElement(EditableDescription, {
                             value: (student.namaLengkap || 'NAMA MURID').toUpperCase(),
@@ -437,11 +442,11 @@ const CoverPage = ({ student, settings, onUpdateStudent }) => {
                     )
                 ),
                 React.createElement('p', { className: 'text-sm mt-4' }, 'NISN/NIS:'),
-                React.createElement('div', { className: 'border-2 border-black rounded-lg p-2 mt-2' },
-                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider flex justify-center gap-1' },
-                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "NISN", className: "w-32 text-right" }),
-                        React.createElement('span', null, '/'),
-                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "NIS", className: "w-24 text-left" })
+                React.createElement('div', { className: 'rounded-lg p-2 mt-2', style: { border: '1.5pt solid black' } },
+                    React.createElement('div', { className: 'text-2xl font-bold tracking-wider flex justify-center items-center gap-2 mx-auto max-w-full' },
+                        React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "NISN", className: "text-center min-w-0" }),
+                        React.createElement('span', { className: 'px-1 shrink-0' }, '/'),
+                        React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "NIS", className: "text-center min-w-0" })
                     )
                 )
             )
@@ -499,7 +504,11 @@ const SchoolIdentityPage = ({ settings, onUpdateSettings }) => {
     );
 };
 
-const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
+const StudentIdentityPage = ({ student, settings, onUpdateStudent, onUpdateSettings }) => {
+    const currentSemester = settings?.semester || 'Ganjil';
+    const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+    const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
+
     const identitasSiswa = [
         { key: 'namaLengkap', no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { key: 'nisn', no: '2.', label: 'NISN', value: student.nisn || '-' }, // Splitting NISN/NIS for easier edit
@@ -574,7 +583,7 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
                     student.foto ? React.createElement('img', { src: student.foto, alt: "Foto Siswa", className: "w-full h-full object-cover" }) : 'Pas Foto 3x4'
                 ),
                 React.createElement('div', { className: 'text-center relative' },
-                    React.createElement(EditableDescription, { value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, onSave: (val) => onUpdateSettings('tanggal_rapor', val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
+                    React.createElement(EditableDescription, { value: tanggalRaporValue, onSave: (val) => onUpdateSettings(tanggalRaporKey, val), placeholder: "Tempat, Tanggal" }), // Read-only helper, but lets make it static or global setting update? Let's assume static display for signature block usually, or update settings.
                     React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
                     React.createElement('div', { className: 'h-20 w-full relative flex items-center justify-center' },
                         settings.ttd_kepala_sekolah && React.createElement('img', { 
@@ -584,7 +593,7 @@ const StudentIdentityPage = ({ student, settings, onUpdateStudent }) => {
                         })
                     ),
                     React.createElement('div', { className: 'font-bold underline relative z-20' }, settings.nama_kepala_sekolah || '_________________'),
-                    React.createElement('div', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('div', null, `${settings.nip_label_kepala_sekolah || 'NIP'}. ${settings.nip_kepala_sekolah || '-'}`)
                 )
             )
         )
@@ -603,87 +612,93 @@ const getDynamicStyle = (text, baseSize = 11, smallSize = 9, thresholds = [35, 4
     return { fontSize: `${fontSize}pt` };
 };
 
-const ReportStudentInfo = React.forwardRef(({ student, settings, onUpdateStudent, onUpdateSettings }, ref) => {
+const ReportStudentInfo = React.forwardRef(({ student, settings, onUpdateStudent, onUpdateSettings, compactLevel = 0 }, ref) => {
     const gradeNumber = getGradeNumber(settings.nama_kelas);
     const phase = getPhase(gradeNumber);
     
+    const mbClass = compactLevel === 2 ? 'mb-1' : compactLevel === 1 ? 'mb-2' : 'mb-4';
+    const titleStyle = { fontSize: compactLevel === 2 ? '11pt' : compactLevel === 1 ? '11.5pt' : '12pt' };
+    const tableMbClass = compactLevel === 2 ? 'mb-0.5' : compactLevel === 1 ? 'mb-1' : 'mb-2';
+    const tableStyle = { fontSize: compactLevel === 2 ? '10pt' : compactLevel === 1 ? '10.5pt' : '11pt', tableLayout: 'fixed' };
+    const pyClass = compactLevel === 2 ? 'py-0' : compactLevel === 1 ? 'py-[1px]' : 'py-0.5';
+    
     return React.createElement('div', { ref: ref },
-        React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'LAPORAN HASIL BELAJAR'),
-        React.createElement('table', { className: 'w-full mb-2', style: { fontSize: '11pt', tableLayout: 'fixed' } },
+        React.createElement('h2', { className: `text-center font-bold ${mbClass}`, style: titleStyle }, 'LAPORAN HASIL BELAJAR'),
+        React.createElement('table', { className: `w-full ${tableMbClass}`, style: tableStyle },
             React.createElement('tbody', null,
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0.5', style: { width: '15%' } }, 'Nama Murid'),
-                    React.createElement('td', { className: 'py-0.5 text-center', style: { width: '1%' } }, ':'),
-                    React.createElement('td', { className: 'py-0.5 font-bold', style: { width: '45%', wordBreak: 'break-word' } },
+                    React.createElement('td', { className: pyClass, style: { width: '15%' } }, 'Nama Murid'),
+                    React.createElement('td', { className: `${pyClass} text-center`, style: { width: '1%' } }, ':'),
+                    React.createElement('td', { className: `${pyClass} font-bold`, style: { width: '45%', wordBreak: 'break-word' } },
                         React.createElement(EditableDescription, {
                             value: (student.namaLengkap || '').toUpperCase(),
                             onSave: (val) => onUpdateStudent(student.id, 'namaLengkap', val),
                             placeholder: "NAMA MURID",
                             className: "font-bold uppercase",
-                            style: { fontSize: '11pt' }
+                            style: { fontSize: compactLevel === 2 ? '10pt' : compactLevel === 1 ? '10.5pt' : '11pt' }
                         })
                     ),
-                    React.createElement('td', { className: 'py-0.5 pl-6', style: { width: '19%' } }, 'Kelas'),
-                    React.createElement('td', { className: 'py-0.5 text-center', style: { width: '1%' } }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { width: '19%', whiteSpace: 'nowrap', overflow: 'hidden' } },
+                    React.createElement('td', { className: `${pyClass} pl-6`, style: { width: '19%' } }, 'Kelas'),
+                    React.createElement('td', { className: `${pyClass} text-center`, style: { width: '1%' } }, ':'),
+                    React.createElement('td', { className: pyClass, style: { width: '19%', whiteSpace: 'nowrap', overflow: 'hidden' } },
                         React.createElement(EditableDescription, {
                             value: settings.nama_kelas || '',
                             onSave: (val) => onUpdateSettings('nama_kelas', val),
                             placeholder: "Kelas",
-                            style: getDynamicStyle(settings.nama_kelas, 11, 9, [10, 12])
+                            style: getDynamicStyle(settings.nama_kelas, compactLevel === 2 ? 10 : compactLevel === 1 ? 10.5 : 11, 9, [10, 12])
                         })
                     )
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0.5' }, 'NISN/NIS'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { width: '45%' } },
+                    React.createElement('td', { className: pyClass }, 'NISN/NIS'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: `${pyClass}`, style: { width: '45%' } },
                         React.createElement('div', { className: 'flex gap-1 items-center' },
                             React.createElement(EditableDescription, { value: student.nisn || '-', onSave: (val) => onUpdateStudent(student.id, 'nisn', val), placeholder: "-" }),
                             React.createElement('span', null, '/'),
                             React.createElement(EditableDescription, { value: student.nis || '-', onSave: (val) => onUpdateStudent(student.id, 'nis', val), placeholder: "-" })
                         )
                     ),
-                    React.createElement('td', { className: 'py-0.5 pl-6', style: { width: '19%' } }, 'Fase'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { whiteSpace: 'nowrap', overflow: 'hidden' } }, phase)
+                    React.createElement('td', { className: `${pyClass} pl-6`, style: { width: '19%' } }, 'Fase'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: pyClass, style: { whiteSpace: 'nowrap', overflow: 'hidden' } }, phase)
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0.5' }, 'Nama Sekolah'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { width: '45%', whiteSpace: 'nowrap', overflow: 'hidden' } },
+                    React.createElement('td', { className: pyClass }, 'Nama Sekolah'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: `${pyClass}`, style: { width: '45%', whiteSpace: 'nowrap', overflow: 'hidden' } },
                         React.createElement(EditableDescription, {
                             value: settings.nama_sekolah || '',
                             onSave: (val) => onUpdateSettings('nama_sekolah', val),
                             placeholder: "Nama Sekolah",
-                            style: getDynamicStyle(settings.nama_sekolah, 11, 9, [40, 50])
+                            style: getDynamicStyle(settings.nama_sekolah, compactLevel === 2 ? 10 : compactLevel === 1 ? 10.5 : 11, 9, [40, 50])
                         })
                     ),
-                    React.createElement('td', { className: 'py-0.5 pl-6', style: { width: '19%' } }, 'Semester'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { whiteSpace: 'nowrap', overflow: 'hidden' } },
+                    React.createElement('td', { className: `${pyClass} pl-6`, style: { width: '19%' } }, 'Semester'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: pyClass, style: { whiteSpace: 'nowrap', overflow: 'hidden' } },
                         React.createElement(EditableDescription, { value: settings.semester || '', onSave: (val) => onUpdateSettings('semester', val), placeholder: "Semester" })
                     )
                 ),
                 React.createElement('tr', { className: 'align-top' },
-                    React.createElement('td', { className: 'py-0.5' }, 'Alamat Sekolah'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { width: '45%', whiteSpace: 'nowrap', overflow: 'hidden' } },
+                    React.createElement('td', { className: pyClass }, 'Alamat Sekolah'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: `${pyClass}`, style: { width: '45%', whiteSpace: 'nowrap', overflow: 'hidden' } },
                         React.createElement(EditableDescription, {
                             value: settings.alamat_sekolah || '',
                             onSave: (val) => onUpdateSettings('alamat_sekolah', val),
                             placeholder: "Alamat",
-                            style: getDynamicStyle(settings.alamat_sekolah, 11, 9, [45, 55])
+                            style: getDynamicStyle(settings.alamat_sekolah, compactLevel === 2 ? 10 : compactLevel === 1 ? 10.5 : 11, 9, [45, 55])
                         })
                     ),
-                    React.createElement('td', { className: 'py-0.5 pl-6', style: { width: '19%' } }, 'Tahun Pelajaran'),
-                    React.createElement('td', { className: 'py-0.5 text-center' }, ':'),
-                    React.createElement('td', { className: 'py-0.5', style: { width: '19%', whiteSpace: 'nowrap', overflow: 'hidden' } },
+                    React.createElement('td', { className: `${pyClass} pl-6`, style: { width: '19%' } }, 'Tahun Pelajaran'),
+                    React.createElement('td', { className: `${pyClass} text-center` }, ':'),
+                    React.createElement('td', { className: pyClass, style: { width: '19%', whiteSpace: 'nowrap', overflow: 'hidden' } },
                         React.createElement(EditableDescription, {
                             value: settings.tahun_ajaran || '',
                             onSave: (val) => onUpdateSettings('tahun_ajaran', val),
                             placeholder: "TA",
-                            style: { ...getDynamicStyle(settings.tahun_ajaran, 11, 9, [12, 15]), width: 'calc(100% - 5px)' }
+                            style: { ...getDynamicStyle(settings.tahun_ajaran, compactLevel === 2 ? 10 : compactLevel === 1 ? 10.5 : 11, 9, [12, 15]), width: 'calc(100% - 5px)' }
                         })
                     )
                 )
@@ -693,27 +708,44 @@ const ReportStudentInfo = React.forwardRef(({ student, settings, onUpdateStudent
 });
 
 
-const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA, studentId, onUpdateDescription }, ref) => (
-    React.createElement('table', { className: 'w-full border-collapse border-2 border-black mt-1', style: { fontSize: '10pt', tableLayout: 'fixed' } },
+const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, headerRef, hideGradesForFaseA, studentId, onUpdateDescription, compactLevel = 0 }, ref) => {
+    const tableStyle = { 
+        fontSize: compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt', 
+        tableLayout: 'fixed' 
+    };
+    const pyClass = compactLevel === 2 ? 'py-0' : compactLevel === 1 ? 'py-[0.5px]' : 'py-[1px]';
+    const hrStyle = {
+        border: 'none',
+        borderTop: '1.5pt solid black',
+        margin: compactLevel === 2 ? '0' : compactLevel === 1 ? '1px 0' : '2px 0'
+    };
+
+    const tableStyleMerged = {
+        ...tableStyle,
+        borderCollapse: 'collapse',
+        border: '1.5pt solid black'
+    };
+
+    return React.createElement('table', { className: 'w-full mt-1', style: tableStyleMerged },
         React.createElement('thead', { ref: headerRef, className: "report-header-group" },
             React.createElement('tr', { className: 'font-bold text-center' },
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[5%]' }, 'No.'),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[20%]' }, 'Mata Pelajaran'),
+                React.createElement('td', { className: 'px-1 py-0 w-[5%]', style: { border: '1.5pt solid black' } }, 'No.'),
+                React.createElement('td', { className: 'px-1 py-0 w-[20%]', style: { border: '1.5pt solid black' } }, 'Mata Pelajaran'),
                 !hideGradesForFaseA && (
-                    React.createElement('td', { className: 'border-2 border-black px-1 py-0 w-[12%] whitespace-nowrap' }, 'Nilai Akhir')
+                    React.createElement('td', { className: 'px-1 py-0 w-[12%] whitespace-nowrap', style: { border: '1.5pt solid black' } }, 'Nilai Akhir')
                 ),
-                React.createElement('td', { className: 'border-2 border-black px-1 py-0', style: { width: hideGradesForFaseA ? '75%' : '63%' } }, 'Capaian Kompetensi')
+                React.createElement('td', { className: 'px-1 py-0', style: { width: hideGradesForFaseA ? '75%' : '63%', border: '1.5pt solid black' } }, 'Capaian Kompetensi')
             )
         ),
         React.createElement('tbody', { ref: ref },
             subjectsToRender.map((item, index) => (
                 React.createElement('tr', { key: item.id, id: `row-${studentId}-${item.id}` },
-                    React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, startingIndex + index),
-                    React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top' }, item.name),
+                    React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1.5pt solid black' } }, startingIndex + index),
+                    React.createElement('td', { className: `px-1 ${pyClass} align-top`, style: { border: '1.5pt solid black' } }, item.name),
                     !hideGradesForFaseA && (
-                        React.createElement('td', { className: 'border border-black px-1 py-[1px] text-center align-top' }, item.grade ?? '')
+                        React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1.5pt solid black' } }, item.grade ?? '')
                     ),
-                    React.createElement('td', { className: 'border border-black px-1 py-[1px] align-top leading-tight' },
+                    React.createElement('td', { className: `px-1 ${pyClass} align-top leading-tight`, style: { border: '1.5pt solid black' } },
                         React.createElement(EditableDescription, { 
                             value: item.description.highest, 
                             onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'highest', val, item.description),
@@ -721,7 +753,7 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                             multiline: true
                         }),
                         React.createElement(React.Fragment, null,
-                            React.createElement('hr', { className: 'my-0.5 border-t border-black' }),
+                            React.createElement('hr', { style: hrStyle }),
                             React.createElement(EditableDescription, { 
                                 value: item.description.lowest, 
                                 onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val, item.description),
@@ -733,8 +765,8 @@ const AcademicTable = React.forwardRef(({ subjectsToRender, startingIndex = 1, h
                 )
             ))
         )
-    )
-));
+    );
+});
 
 const ReportFooterContent = React.forwardRef((props, ref) => {
     const { 
@@ -743,7 +775,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         showCocurricular, showExtra, showNotes, showAttendance, showDecision, 
         showParentFeedback, showParentTeacherSignature, showHeadmasterSignature,
         printOptions,
-        onUpdateNote, onUpdateAttendance, onUpdateExtraDescription, onUpdateCocurricularManual, onUpdateSettings
+        onUpdateNote, onUpdateAttendance, onUpdateExtraDescription, onUpdateCocurricularManual, onUpdateSettings,
+        compactLevel = 0
     } = props;
     const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = ref || {};
 
@@ -754,6 +787,8 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     
     const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
     const currentSemester = settings.semester || 'Ganjil';
+    const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+    const tanggalRaporValue = settings[tanggalRaporKey] || settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
 
     const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
     const originalNote = notes[originalNoteKey] || '';
@@ -791,9 +826,9 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
     }
 
     const attendanceData = attendance.find(a => a.studentId === student.id && (a.semester || 'Ganjil') === currentSemester) || { sakit: null, izin: null, alpa: null };
-    const sakitCount = attendanceData.sakit ?? 0;
-    const izinCount = attendanceData.izin ?? 0;
-    const alpaCount = attendanceData.alpa ?? 0;
+    const sakitCount = (attendanceData.sakit === null || attendanceData.sakit === undefined || attendanceData.sakit === '') ? 0 : attendanceData.sakit;
+    const izinCount = (attendanceData.izin === null || attendanceData.izin === undefined || attendanceData.izin === '') ? 0 : attendanceData.izin;
+    const alpaCount = (attendanceData.alpa === null || attendanceData.alpa === undefined || attendanceData.alpa === '') ? 0 : attendanceData.alpa;
 
     const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
     
@@ -887,6 +922,29 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
         
     }, [student, settings, cocurricularData, nickname]);
 
+    const fontSizeClass = compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt';
+    const paddingClass = compactLevel === 2 ? 'p-1' : compactLevel === 1 ? 'p-1.5' : 'p-2';
+    const marginClass = compactLevel === 2 ? 'mt-0.5' : compactLevel === 1 ? 'mt-1' : 'mt-1';
+    
+    // Extra curves table
+    const extraPyClass = compactLevel === 2 ? 'py-0' : compactLevel === 1 ? 'py-[1px]' : 'py-[2px]';
+    const extraFontSizeClass = compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt';
+
+    // Attendance and notes
+    const attAndNotesGap = compactLevel === 2 ? 'gap-0.5 mt-0.5' : compactLevel === 1 ? 'gap-1 mt-1' : 'gap-1 mt-1';
+    const attRowPadding = compactLevel === 2 ? 'py-0.5' : compactLevel === 1 ? 'py-1' : 'py-1';
+    const attendanceW = compactLevel === 2 ? '4.9cm' : compactLevel === 1 ? '5.3cm' : '5.6cm';
+    const attendanceLabelW = compactLevel === 2 ? '2.3cm' : compactLevel === 1 ? '2.5cm' : '2.7cm';
+    const notesMinHeight = compactLevel === 2 ? '1.5rem' : compactLevel === 1 ? '2.2rem' : '3rem';
+
+    // Parent feedback (height standardized with decision table)
+
+    // Signatures
+    const sigFontSizeClass = '10pt';
+    const sigWrapperHeight = 'h-16';
+    const waliImgHeight = 'h-14';
+    const kepsekImgHeight = 'h-16';
+
     const renderDecision = () => {
         const isSemesterGenap = settings.semester?.toLowerCase().includes('genap');
         if (!isSemesterGenap) return null;
@@ -902,21 +960,21 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
             promotionText = `Naik ke Kelas ${nextGrade} (${nextGradeRoman})`;
         }
         
-        return React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
-            React.createElement('div', { className: 'font-bold border-y-2 border-black text-center py-1' }, 
+        return React.createElement('div', { className: `${paddingClass}`, style: { fontSize: fontSizeClass, border: '1.5pt solid black' } },
+            React.createElement('div', { className: 'font-bold text-center py-0.5', style: { borderBottom: '1.5pt solid black' } }, 
                 `Berdasarkan hasil belajar yang dicapai, ${nickname} dinyatakan:`
-            ),
-            React.createElement('div', { className: 'font-bold mt-1 text-center py-1' },
-                React.createElement(EditableDescription, { value: promotionText, onSave: () => {}, placeholder: promotionText, className: "text-center justify-center font-bold" }) // Decision text usually auto, but can be editable if we add logic. For now acts as visual edit but no save
+			),
+            React.createElement('div', { className: 'font-bold mt-0.5 text-center py-0.5' },
+                React.createElement(EditableDescription, { value: promotionText, onSave: () => {}, placeholder: promotionText, className: "text-center justify-center font-bold" })
             )
         );
     };
 
     return (
-        React.createElement('div', { className: 'mt-1' },
-            showCocurricular && React.createElement('div', { ref: cocurricularRef, className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
+        React.createElement('div', { className: marginClass },
+            showCocurricular && React.createElement('div', { ref: cocurricularRef, className: `${paddingClass}`, style: { fontSize: fontSizeClass, border: '1.5pt solid black' } },
                 React.createElement('div', { className: 'font-bold mb-1' }, 'Kokurikuler'),
-                React.createElement('div', { className: 'min-h-[2rem]' }, 
+                React.createElement('div', { className: 'min-h-[1.5rem]' }, 
                     React.createElement(EditableDescription, {
                         value: cocurricularDescription,
                         onSave: (val) => onUpdateCocurricularManual(student.id, val),
@@ -925,14 +983,14 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     })
                 )
             ),
-            (showExtra && extraActivities.length > 0) && React.createElement('div', { ref: extraRef, className: 'mt-1' },
-                React.createElement('table', { className: 'w-full border-collapse border-2 border-black', style: { fontSize: '10pt', tableLayout: 'fixed' } },
-                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[5%]' }, 'No.'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[32%]' }, 'Ekstrakurikuler'), React.createElement('td', { className: 'border-2 border-black px-2 py-1 w-[63%]' }, 'Keterangan'))),
+            (showExtra && extraActivities.length > 0) && React.createElement('div', { ref: extraRef, className: marginClass },
+                React.createElement('table', { className: 'w-full border-collapse', style: { fontSize: extraFontSizeClass, tableLayout: 'fixed', border: '1.5pt solid black' } },
+                    React.createElement('thead', null, React.createElement('tr', { className: 'font-bold text-center' }, React.createElement('td', { className: `px-2 ${extraPyClass} w-[5%]`, style: { border: '1.5pt solid black' } }, 'No.'), React.createElement('td', { className: `px-2 ${extraPyClass} w-[32%]`, style: { border: '1.5pt solid black' } }, 'Ekstrakurikuler'), React.createElement('td', { className: `px-2 ${extraPyClass} w-[63%]`, style: { border: '1.5pt solid black' } }, 'Keterangan'))),
                     React.createElement('tbody', null, extraActivities.map((item, index) => (
                         React.createElement('tr', { key: index, className: 'align-top', id: `row-extra-${student.id}-${index}` }, 
-                            React.createElement('td', { className: 'border border-black px-2 py-[2px] text-center' }, index + 1), 
-                            React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, item.name), 
-                            React.createElement('td', { className: 'border border-black px-2 py-[2px]' }, 
+                            React.createElement('td', { className: `px-2 ${extraPyClass} text-center`, style: { border: '1.5pt solid black' } }, index + 1), 
+                            React.createElement('td', { className: `px-2 ${extraPyClass}`, style: { border: '1.5pt solid black' } }, item.name), 
+                            React.createElement('td', { className: `px-2 ${extraPyClass}`, style: { border: '1.5pt solid black' } }, 
                                 React.createElement(EditableDescription, {
                                     value: item.description,
                                     onSave: (val) => onUpdateExtraDescription(student.id, item.id, val),
@@ -944,61 +1002,69 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     )))
                 )
             ),
-            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: 'flex gap-4 mt-1 items-stretch' },
-                showAttendance && React.createElement('div', { className: 'border-2 border-black flex flex-col', style: { fontSize: '10pt', width: '6.5cm' } },
-                    React.createElement('div', { className: 'font-bold border-b-2 border-black px-2 py-1 text-center' }, 'Ketidakhadiran'),
-                     React.createElement('div', { className: 'flex-grow flex flex-col' },
-                        ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
-                            const typeKey = item === 'Sakit' ? 'sakit' : item === 'Izin' ? 'izin' : 'alpa';
-                            const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
-                            
-                            return React.createElement('div', {
-                                key: item,
-                                id: `row-attendance-${student.id}-${item.toLowerCase().replace(/\s+/g, '-')}`,
-                                className: `flex items-center px-2 py-1 flex-1 ${index < arr.length - 1 ? 'border-b border-black' : ''}`
-                            },
-                                React.createElement('span', { className: 'w-28' }, item),
-                                React.createElement('span', { className: 'px-1' }, ':'),
-                                React.createElement('div', { className: 'flex-1 text-left flex gap-1 items-center' },
-                                    React.createElement(EditableDescription, {
-                                        value: value,
-                                        onSave: (val) => onUpdateAttendance(student.id, typeKey, val),
-                                        placeholder: "0",
-                                        className: "w-8 text-center"
-                                    }),
-                                    React.createElement('span', null, 'hari')
-                                )
-                            )
-                        })
-                    )
+            (showAttendance || showNotes) && React.createElement('div', { ref: attendanceAndNotesRef, className: `w-full flex ${attAndNotesGap} items-stretch` },
+                showAttendance && React.createElement('div', { className: 'flex flex-col flex-shrink-0', style: { fontSize: fontSizeClass, width: attendanceW, border: '1.5pt solid black' } },
+                    React.createElement('div', { className: `font-bold px-2 ${extraPyClass} text-center`, style: { borderBottom: '1.5pt solid black' } }, 'Ketidakhadiran'),
+                     React.createElement('div', { className: 'flex-grow flex flex-col justify-around' },
+                         ['Sakit', 'Izin', 'Tanpa Keterangan'].map((item, index, arr) => {
+                             const typeKey = item === 'Sakit' ? 'sakit' : item === 'Izin' ? 'izin' : 'alpa';
+                             const value = item === 'Sakit' ? sakitCount : item === 'Izin' ? izinCount : alpaCount;
+                             
+                             return React.createElement('div', {
+                                 key: item,
+                                 id: `row-attendance-${student.id}-${item.toLowerCase().replace(/\s+/g, '-')}`,
+                                 className: `flex items-center px-2 ${attRowPadding} flex-1`,
+                                 style: index < arr.length - 1 ? { borderBottom: '1.5pt solid black' } : undefined
+                             },
+                                 React.createElement('span', { className: 'whitespace-nowrap', style: { width: attendanceLabelW } }, item),
+                                 React.createElement('span', { className: 'px-1' }, ':'),
+                                 React.createElement('div', { className: 'flex-1 text-left flex gap-1 items-center' },
+                                     React.createElement(EditableDescription, {
+                                         value: value,
+                                         onSave: (val) => onUpdateAttendance(student.id, typeKey, val),
+                                         placeholder: "0",
+                                         className: "w-8 text-center"
+                                     }),
+                                     React.createElement('span', null, 'hari')
+                                 )
+                             )
+                         })
+                      )
                 ),
-                showNotes && React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt', width: '11.5cm' } },
+                showNotes && React.createElement('div', { className: `${paddingClass} flex-grow flex-1`, style: { fontSize: fontSizeClass, border: '1.5pt solid black' } },
                     React.createElement('div', { className: 'font-bold mb-1' }, 'Catatan Wali Kelas'),
-                    React.createElement('div', { className: 'min-h-[3rem]' }, studentNoteContent)
+                    React.createElement('div', { style: { minHeight: notesMinHeight } }, studentNoteContent)
                 )
             ),
-            showDecision && React.createElement('div', { ref: decisionRef, className: 'mt-1' }, renderDecision()),
-            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: 'mt-1' },
-                React.createElement('div', { className: 'border-2 border-black p-2', style: { fontSize: '10pt' } },
-                    React.createElement('div', { className: 'font-bold mb-1' }, 'Tanggapan Orang Tua/Wali Murid'),
-                    React.createElement('div', { style: { minHeight: '1.5cm' } })
+            showDecision && React.createElement('div', { ref: decisionRef, className: marginClass }, renderDecision()),
+            showParentFeedback && React.createElement('div', { ref: parentFeedbackRef, className: marginClass },
+                React.createElement('div', { className: `${paddingClass}`, style: { fontSize: fontSizeClass, border: '1.5pt solid black' } },
+                    React.createElement('div', { className: 'font-bold py-0.5', style: { borderBottom: '1.5pt solid transparent' } }, 'Tanggapan Orang Tua/Wali Murid'),
+                    React.createElement('div', { className: 'font-bold mt-0.5 py-0.5' }, 
+                        React.createElement('br', null)
+                    )
                 )
             ),
-            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: 'mt-1 flex justify-between', style: { fontSize: '12pt' } },
-                React.createElement('div', { className: 'text-center' }, React.createElement('div', null, 'Mengetahui:'), React.createElement('div', null, 'Orang Tua/Wali,'), React.createElement('div', { className: 'h-12' }), React.createElement('div', null, '.........................')),
+            showParentTeacherSignature && React.createElement('div', { ref: signaturesRef, className: `${marginClass} flex justify-between`, style: { fontSize: sigFontSizeClass } },
+                React.createElement('div', { className: 'text-center' }, 
+                    React.createElement('div', null, 'Mengetahui:'), 
+                    React.createElement('div', null, 'Orang Tua/Wali,'), 
+                    React.createElement('div', { className: sigWrapperHeight }), 
+                    React.createElement('div', null, '.........................')
+                ),
                 React.createElement('div', { className: 'text-center relative' }, 
                     React.createElement(EditableDescription, { 
-                        value: settings.tanggal_rapor || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`, 
-                        onSave: (val) => onUpdateSettings('tanggal_rapor', val), 
+                        value: tanggalRaporValue, 
+                        onSave: (val) => onUpdateSettings(tanggalRaporKey, val), 
                         placeholder: "Tempat, Tanggal",
                         className: "text-center justify-center"
                     }), 
-                    React.createElement('div', null, 'Wali Kelas,'), 
-                    React.createElement('div', { className: 'h-12 w-full flex items-center justify-center relative' },
+                    React.createElement('div', null, 'Wali Kelas,'),
+                    React.createElement('div', { className: `${sigWrapperHeight} w-full flex items-center justify-center relative` },
                         settings.ttd_wali_kelas && printOptions?.showTeacherSignature && React.createElement('img', { 
                             src: settings.ttd_wali_kelas, 
                             alt: "TTD Wali Kelas", 
-                            className: 'h-16 object-contain absolute z-10' 
+                            className: `${waliImgHeight} object-contain absolute z-10 p-2` 
                         })
                     ), 
                     React.createElement('div', { className: 'font-bold underline relative z-20' }, 
@@ -1010,7 +1076,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                         })
                     ), 
                     React.createElement('div', { className: 'flex justify-center gap-1' }, 
-                        'NIP.', 
+                        `${settings.nip_label_wali_kelas || 'NIP'}.`, 
                         React.createElement(EditableDescription, { 
                             value: settings.nip_wali_kelas || '-', 
                             onSave: (val) => onUpdateSettings('nip_wali_kelas', val), 
@@ -1019,15 +1085,15 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                     )
                 )
             ),
-            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: 'mt-1 flex justify-center text-center', style: { fontSize: '12pt' } }, 
+            showHeadmasterSignature && React.createElement('div', { ref: headmasterRef, className: `${marginClass} flex justify-center text-center`, style: { fontSize: sigFontSizeClass } }, 
                 React.createElement('div', { className: 'relative' }, 
                     React.createElement('div', null, 'Mengetahui,'), 
                     React.createElement('div', null, 'Kepala Sekolah,'), 
-                    React.createElement('div', { className: 'h-12 w-full flex items-center justify-center relative' },
+                    React.createElement('div', { className: `${sigWrapperHeight} w-full flex items-center justify-center relative` },
                         settings.ttd_kepala_sekolah && printOptions?.showPrincipalSignature && React.createElement('img', { 
                             src: settings.ttd_kepala_sekolah, 
                             alt: "TTD Kepala Sekolah", 
-                            className: 'h-20 object-contain absolute z-10' 
+                            className: `${kepsekImgHeight} object-contain absolute z-10 p-2` 
                         })
                     ), 
                     React.createElement('div', { className: 'font-bold underline relative z-20' }, 
@@ -1039,7 +1105,7 @@ const ReportFooterContent = React.forwardRef((props, ref) => {
                         })
                     ), 
                     React.createElement('div', { className: 'flex justify-center gap-1' }, 
-                        'NIP.', 
+                        `${settings.nip_label_kepala_sekolah || 'NIP'}.`, 
                         React.createElement(EditableDescription, { 
                             value: settings.nip_kepala_sekolah || '-', 
                             onSave: (val) => onUpdateSettings('nip_kepala_sekolah', val), 
@@ -1067,7 +1133,7 @@ const PageFooter = ({ student, settings, currentPage }) => {
                 height: `${PAGE_NUMBER_FOOTER_HEIGHT_CM}cm`,
             }
         },
-            React.createElement('div', { className: "border-t border-slate-400 mb-2" }),
+            React.createElement('div', { className: "border-t border-slate-400 mb-[20px]", style: { marginTop: '0px' } }),
             React.createElement('div', { className: "flex justify-between items-center" },
                 React.createElement('div', null,
                     `${className} | ${studentName} | ${nisn}`
@@ -1085,6 +1151,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     const { grades, subjects, learningObjectives, attendance, notes, extracurriculars, studentExtracurriculars, cocurricularData, onUpdateDescription } = restProps;
     const gradeData = grades.find(g => g.studentId === student.id);
     const [academicPageChunks, setAcademicPageChunks] = useState(null);
+    const [compactLevel, setCompactLevel] = useState(0);
 
     const studentInfoRef = useRef(null);
     const tableHeaderRef = useRef(null);
@@ -1218,6 +1285,11 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
     }, [student, subjects, gradeData, learningObjectives, settings]);
 
     useEffect(() => {
+        setCompactLevel(0);
+        setAcademicPageChunks(null);
+    }, [reportSubjects, paperSize, selectedPages.academic, student.id, shouldDisplayRank, printOptions, grades, attendance, notes, studentExtracurriculars, cocurricularData]);
+
+    useEffect(() => {
         if (!selectedPages.academic) {
             setAcademicPageChunks([]);
             return;
@@ -1237,7 +1309,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 return;
             }
 
-            const SAFETY_MARGIN_PX = 8; // Reduced to 8px per user request
+            const SAFETY_MARGIN_PX = 20; // Standarisasi 20px jarak konten atas dengan garis footer
             const pageHeightPx = parseFloat(PAPER_SIZES[paperSize].height) * cmToPx;
             const firstPageAvailableHeight = pageHeightPx - (HEADER_HEIGHT_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
             const subsequentPageAvailableHeight = pageHeightPx - (PAGE_TOP_MARGIN_CM * cmToPx) - (REPORT_CONTENT_BOTTOM_OFFSET_CM * cmToPx) - SAFETY_MARGIN_PX;
@@ -1287,7 +1359,7 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
             let isFirstPage = true;
             
             // Fixed buffer to ensure space between last academic item and footer items
-            const ITEM_SPACING_BUFFER = 10; // Increased spacing (was 5)
+            const ITEM_SPACING_BUFFER = compactLevel === 2 ? 4 : compactLevel === 1 ? 6 : 10;
 
             while (currentItemIndex < allItems.length) {
                 let currentChunk = [];
@@ -1329,13 +1401,39 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 allChunks.push(currentChunk);
                 isFirstPage = false;
             }
-             setAcademicPageChunks(allChunks);
+
+            if (allChunks.length > 2 && compactLevel < 2) {
+                setCompactLevel(prev => prev + 1);
+                setAcademicPageChunks(null);
+            } else if (allChunks.length === 2 && compactLevel === 0) {
+                // Check if page 1 has significant wasted space
+                const page1 = allChunks[0];
+                let heightUsedPage1 = studentInfoRef.current.offsetHeight;
+                const hasAcademics1 = page1.some(i => i.type === 'academic');
+                if (hasAcademics1) heightUsedPage1 += tableHeaderRef.current.offsetHeight + 5;
+                
+                let spacing = 0;
+                page1.forEach(item => {
+                   heightUsedPage1 += item.height + spacing;
+                   if (item.type === 'academic') spacing = ITEM_SPACING_BUFFER;
+                   else spacing = 0;
+                });
+                
+                if (firstPageAvailableHeight - heightUsedPage1 > 75) {
+                    setCompactLevel(1);
+                    setAcademicPageChunks(null);
+                } else {
+                    setAcademicPageChunks(allChunks);
+                }
+            } else {
+                setAcademicPageChunks(allChunks);
+            }
         };
         
         const timer = setTimeout(calculateChunks, 100);
         return () => clearTimeout(timer);
 
-    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx, shouldDisplayRank, printOptions]);
+    }, [reportSubjects, paperSize, selectedPages.academic, student.id, cmToPx, shouldDisplayRank, printOptions, compactLevel]);
 
 
     if (academicPageChunks === null && selectedPages.academic) {
@@ -1347,10 +1445,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                 style: { ...pageStyle, visibility: 'hidden', position: 'absolute', zIndex: -1 } 
             },
                  React.createElement('div', { className: 'absolute flex flex-col', style: {
-                    top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt'
+                    top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `calc(${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm + 20px)`, fontSize: '10.5pt'
                 } },
-                    React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings, ref: studentInfoRef }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
+                    React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings, ref: studentInfoRef, compactLevel }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                         rank: rank, rankingOption: rankingOption,
@@ -1362,7 +1460,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                         onUpdateExtraDescription: restProps.onUpdateExtraDescription,
                         onUpdateCocurricularManual: restProps.onUpdateCocurricularManual,
                         onUpdateSettings: restProps.onUpdateSettings,
-                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef }
+                        ref: { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef },
+                        compactLevel
                     })
                 )
             )
@@ -1412,10 +1511,10 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                     isFirstAcademicPage && React.createElement(ReportHeader, { settings: settings }),
                     
                     React.createElement('div', { className: 'absolute flex flex-col', style: {
-                        top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm`, fontSize: '10.5pt',
+                        top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `calc(${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm + 20px)`, fontSize: '10.5pt',
                     }},
-                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription }),
+                        isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent: restProps.onUpdateStudent, onUpdateSettings: restProps.onUpdateSettings, compactLevel }),
+                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel }),
                         React.createElement(ReportFooterContent, { 
                             student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                             rank: rank, rankingOption: rankingOption,
@@ -1432,7 +1531,8 @@ const ReportPagesForStudent = ({ student, settings, pageStyle, selectedPages, pa
                             onUpdateAttendance: restProps.onUpdateAttendance,
                             onUpdateExtraDescription: restProps.onUpdateExtraDescription,
                             onUpdateCocurricularManual: restProps.onUpdateCocurricularManual,
-                            onUpdateSettings: restProps.onUpdateSettings
+                            onUpdateSettings: restProps.onUpdateSettings,
+                            compactLevel
                         })
                     ),
                     

@@ -1,6 +1,63 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
-export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-table-container", onDeleteSelection }) {
+const scrollCellIntoView = (el, containerClass) => {
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+    
+    // Adjust scroll due to sticky headers/columns
+    setTimeout(() => {
+        const container = el.closest(`.${containerClass}`) || el.closest('.overflow-auto') || el.closest('.overflow-y-auto') || el.closest('div[style*="overflow"]');
+        if (!container) return;
+        
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        
+        let maxStickyTop = 0;
+        let maxStickyLeft = 0;
+
+        const elStyle = window.getComputedStyle(el);
+        const isElStickyTop = el.classList.contains('sticky') && (elStyle.top !== 'auto' || el.classList.contains('top-0'));
+        const isElStickyLeft = el.classList.contains('sticky') && (elStyle.left !== 'auto' || el.classList.contains('left-0'));
+        
+        // Find sticky siblings/parents
+        const stickies = container.querySelectorAll('.sticky');
+        stickies.forEach(sticky => {
+            if (sticky === el) return; // Ignore itself when determining obstacle boundaries
+
+            const style = window.getComputedStyle(sticky);
+            const rect = sticky.getBoundingClientRect();
+            
+            // Estimate if it's a top header
+            if ((style.top !== 'auto' || sticky.classList.contains('top-0')) && rect.top <= containerRect.top + 100) {
+                maxStickyTop = Math.max(maxStickyTop, rect.bottom - containerRect.top);
+            }
+            // Estimate if it's a left col
+            if ((style.left !== 'auto' || sticky.classList.contains('left-0')) && (rect.left - containerRect.left) < containerRect.width / 2) {
+                maxStickyLeft = Math.max(maxStickyLeft, rect.right - containerRect.left);
+            }
+        });
+        
+        // Add a bit of padding to the offsets, but only if the target element isn't itself a sticky element of that type
+        const topOffset = (!isElStickyTop && maxStickyTop > 0) ? maxStickyTop + 10 : 0;
+        const leftOffset = (!isElStickyLeft && maxStickyLeft > 0) ? maxStickyLeft + 10 : 0;
+        const bottomOffset = 20;
+        const rightOffset = 20;
+
+        if (topOffset > 0 && elRect.top < containerRect.top + topOffset) {
+            container.scrollTop -= (containerRect.top + topOffset - elRect.top);
+        } else if (elRect.bottom > containerRect.bottom - bottomOffset) {
+            container.scrollTop += (elRect.bottom - (containerRect.bottom - bottomOffset));
+        }
+
+        if (leftOffset > 0 && elRect.left < containerRect.left + leftOffset) {
+            container.scrollLeft -= (containerRect.left + leftOffset - elRect.left);
+        } else if (elRect.right > containerRect.right - rightOffset) {
+            container.scrollLeft += (elRect.right - (containerRect.right - rightOffset));
+        }
+    }, 10);
+};
+
+export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, containerClass = "grid-table-container", onDeleteSelection }) {
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -28,7 +85,7 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
           e.preventDefault();
           const sel = window.getSelection();
           if (sel) sel.removeAllRanges();
-          setSelectionStart({ r: -1, c: -2 });
+          setSelectionStart({ r: -1, c: minColIndex });
           setSelectionEnd({
             r: rowsCount - 1,
             c: colsCount - 1,
@@ -44,7 +101,16 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
           // UNLESS they are holding shift (which means they want to select).
           const isInputActive = document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA";
           if (!e.shiftKey && isInputActive && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-              return; // Let native text navigation happen
+              const input = document.activeElement;
+              // Allow cell navigation if text is fully selected, or caret is at the very edge.
+              const isFullySelected = input.selectionStart === 0 && input.selectionEnd === input.value.length;
+              const isAtStart = input.selectionStart === 0 && input.selectionEnd === 0;
+              const isAtEnd = input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+              
+              if (!isFullySelected) {
+                  if (e.key === "ArrowLeft" && !isAtStart) return;
+                  if (e.key === "ArrowRight" && !isAtEnd) return;
+              }
           }
 
           e.preventDefault();
@@ -55,28 +121,34 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
              let newC = prevEnd.c;
              if (e.key === "ArrowUp") newR = Math.max(0, newR - 1);
              if (e.key === "ArrowDown") newR = Math.min(rowsCount - 1, newR + 1);
-             if (e.key === "ArrowLeft") newC = Math.max(0, newC - 1);
+             if (e.key === "ArrowLeft") newC = Math.max(minColIndex, newC - 1);
              if (e.key === "ArrowRight") newC = Math.min(colsCount - 1, newC + 1);
              
              if (!e.shiftKey) {
                  // Without shift, we move the whole selection to the new cell
                  setSelectionStart({ r: newR, c: newC });
                  setTimeout(() => {
-                     const input = document.getElementById(`cell-${newR}-${newC}`) || document.querySelector(`.${containerClass} [id$="-${newR}-${newC}"]`);
+                     const input = document.getElementById(`cell-${newR}-${newC}`) || document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`);
                      if (input) {
                          isProgrammaticFocus.current = true;
                          input.focus();
                          if (typeof input.select === 'function') {
                              input.select();
                          }
+                         scrollCellIntoView(input, containerClass);
                          setTimeout(() => (isProgrammaticFocus.current = false), 10);
+                     } else {
+                         const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`);
+                         if (el) {
+                             scrollCellIntoView(el, containerClass);
+                         }
                      }
                  }, 0);
              } else {
                  setTimeout(() => {
-                     const el = document.querySelector(`.${containerClass} [id$="-${newR}-${newC}"]`);
+                     const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`);
                      if (el) {
-                         el.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+                         scrollCellIntoView(el, containerClass);
                      }
                  }, 10);
              }
@@ -106,7 +178,7 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
       window.removeEventListener("mouseup", handleMouseUpGlobal);
       window.removeEventListener("keydown", handleKeyDownGlobal);
     };
-  }, [rowsCount, colsCount, containerClass, getSelectionBounds, onDeleteSelection]);
+  }, [rowsCount, colsCount, minColIndex, containerClass, getSelectionBounds, onDeleteSelection]);
 
   const getSelectionStyle = useCallback(
     (r, c) => {
@@ -193,7 +265,9 @@ export function useGridSelection({ rowsCount, colsCount, containerClass = "grid-
         if (input) {
           isProgrammaticFocus.current = true;
           input.focus();
-          input.select();
+          if (typeof input.select === 'function') {
+            input.select();
+          }
           setTimeout(() => (isProgrammaticFocus.current = false), 10);
         }
       }, 0);

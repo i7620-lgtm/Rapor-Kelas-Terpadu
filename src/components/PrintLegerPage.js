@@ -163,13 +163,17 @@ const LegerHeader = React.forwardRef(({ settings, isCompact }, ref) => (
 
 const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref) => {
     const getTanggalRapor = () => {
-        if (!settings.tanggal_rapor) {
+        const currentSemester = settings?.semester || 'Ganjil';
+        const tanggalRaporKey = currentSemester.toLowerCase() === 'genap' ? 'tanggal_rapor_genap' : 'tanggal_rapor_ganjil';
+        const rawTanggalRapor = settings[tanggalRaporKey] || settings.tanggal_rapor || '';
+        
+        if (!rawTanggalRapor) {
             return `${settings.kota_kabupaten || '[Tempat]'}, _________________`;
         }
-        const parts = settings.tanggal_rapor.split(',');
+        const parts = rawTanggalRapor.split(',');
         return parts.length > 1
             ? `${parts[0]}, ${parts.slice(1).join(',').trim()}`
-            : `${settings.kota_kabupaten || '[Tempat]'}, ${settings.tanggal_rapor}`;
+            : `${settings.kota_kabupaten || '[Tempat]'}, ${rawTanggalRapor}`;
     };
 
     return (
@@ -186,7 +190,7 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
                         })
                     ),
                     React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_kepala_sekolah || '____________________'),
-                    React.createElement('p', null, `NIP. ${settings.nip_kepala_sekolah || '-'}`)
+                    React.createElement('p', null, `${settings.nip_label_kepala_sekolah || 'NIP'}. ${settings.nip_kepala_sekolah || '-'}`)
                 ),
                 React.createElement('div', { className: "text-center w-2/5 relative" },
                     React.createElement('p', null, getTanggalRapor()),
@@ -199,7 +203,7 @@ const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref
                         })
                     ),
                     React.createElement('p', { className: "font-bold underline relative z-20" }, settings.nama_wali_kelas || '____________________'),
-                    React.createElement('p', null, `NIP. ${settings.nip_wali_kelas || '-'}`)
+                    React.createElement('p', null, `${settings.nip_label_wali_kelas || 'NIP'}. ${settings.nip_wali_kelas || '-'}`)
                 )
             )
         )

@@ -89,6 +89,21 @@ body {
   color: #c2410c !important;
 }
 
+/* Custom robust 1pt thick border utilities */
+.border-print-heavy {
+  border: 1pt solid #000000 !important;
+}
+.border-t-print-heavy {
+  border-top: 1pt solid #000000 !important;
+}
+.border-b-print-heavy {
+  border-bottom: 1pt solid #000000 !important;
+}
+.border-y-print-heavy {
+  border-top: 1pt solid #000000 !important;
+  border-bottom: 1pt solid #000000 !important;
+}
+
 @media print {
   /* Aturan @page akan diinjeksikan secara dinamis oleh React */
   body {
