@@ -6,6 +6,7 @@ import React, {
   useRef,
   useLayoutEffect,
 } from "react";
+import Tesseract from "tesseract.js";
 import { QUALITATIVE_DESCRIPTORS } from "../constants.js";
 import { getClipboardText } from "../utils/clipboard.js";
 import { useGridSelection } from "../hooks/useGridSelection.js";
@@ -822,6 +823,802 @@ const TPSelectionModal = ({
         ),
       ),
     ),
+  );
+};
+
+const OfflineOcrAssistantModal = ({
+  isOpen,
+  onClose,
+  onApply,
+  imageSrc,
+  detectedLines,
+  isRunningOcr,
+  showToast
+}) => {
+  const [judulBab, setJudulBab] = useState("");
+  const [tps, setTps] = useState([]);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [localLines, setLocalLines] = useState([]);
+
+  // New cropping & interactive selection helper states
+  const [cropRole, setCropRole] = useState("none"); // "none" | "bab" | "tp"
+  const [dragStart, setDragStart] = useState(null);
+  const [dragEnd, setDragEnd] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnalyzingCrop, setIsAnalyzingCrop] = useState(false);
+  const [isFullOcrRunning, setIsFullOcrRunning] = useState(false);
+
+  const imageRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setJudulBab("");
+      setTps([]);
+      setZoomLevel(100);
+      setLocalLines([...detectedLines]);
+      setCropRole("none");
+      setDragStart(null);
+      setDragEnd(null);
+      setIsDragging(false);
+      setIsAnalyzingCrop(false);
+      setIsFullOcrRunning(false);
+    }
+  }, [isOpen, detectedLines]);
+
+  if (!isOpen) return null;
+
+  const handleAddTpManual = () => {
+    setTps(prev => [...prev, ""]);
+  };
+
+  const handleUpdateTpText = (index, val) => {
+    setTps(prev => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
+  };
+
+  const handleRemoveTp = (index) => {
+    setTps(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const setAsJudulBab = (text) => {
+    if (!text || !text.trim()) return;
+    setJudulBab(text.trim());
+    showToast("Berhasil diatur sebagai Judul Bab!", "success");
+  };
+
+  const addAsTp = (text) => {
+    if (!text || !text.trim()) return;
+    setTps(prev => [...prev, text.trim()]);
+    showToast("Berhasil ditambahkan ke daftar TP!", "success");
+  };
+
+  const handleClear = () => {
+    setJudulBab("");
+    setTps([]);
+  };
+
+  const handleSubmit = () => {
+    if (!judulBab.trim()) {
+      showToast("Judul Bab tidak boleh kosong.", "error");
+      return;
+    }
+    const filteredTps = tps.map(t => t.trim()).filter(t => t.length > 0);
+    if (filteredTps.length === 0) {
+      showToast("Tambahkan minimal 1 Tujuan Pembelajaran (TP).", "error");
+      return;
+    }
+    onApply(judulBab.trim(), filteredTps);
+    onClose();
+  };
+
+  // Dragging event handlers for relative image crop
+  const handleMouseDown = (e) => {
+    if (cropRole === "none") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setDragStart({ x, y });
+    setDragEnd({ x, y });
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !dragStart) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    setDragEnd({ x, y });
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging || !dragStart || !dragEnd) return;
+    setIsDragging(false);
+    
+    const x1 = dragStart.x;
+    const y1 = dragStart.y;
+    const x2 = dragEnd.x;
+    const y2 = dragEnd.y;
+    
+    processCroppedOcr(x1, y1, x2, y2, cropRole);
+  };
+
+  const handleTouchStart = (e) => {
+    if (cropRole === "none") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = (touch.clientX - rect.left) / rect.width;
+    const y = (touch.clientY - rect.top) / rect.height;
+    setDragStart({ x, y });
+    setDragEnd({ x, y });
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || !dragStart) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+    setDragEnd({ x, y });
+  };
+
+  const handleTouchEnd = () => {
+    handleMouseUp();
+  };
+
+  const processCroppedOcr = async (x1, y1, x2, y2, role) => {
+    if (!imageRef.current) return;
+    const imgEl = imageRef.current;
+    
+    const nw = imgEl.naturalWidth;
+    const nh = imgEl.naturalHeight;
+    
+    const px = Math.min(x1, x2) * nw;
+    const py = Math.min(y1, y2) * nh;
+    const pw = Math.abs(x1 - x2) * nw;
+    const ph = Math.abs(y1 - y2) * nh;
+    
+    if (pw < 8 || ph < 8) return;
+    
+    setIsAnalyzingCrop(true);
+    showToast("Mengekstrak teks daerah sorotan...", "info");
+    
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = pw;
+      canvas.height = ph;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(imgEl, px, py, pw, ph, 0, 0, pw, ph);
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsAnalyzingCrop(false);
+          return;
+        }
+        try {
+          const origin = window.location.origin;
+          const worker = await Tesseract.createWorker('ind+eng', 1, {
+            workerPath: `${origin}/tesseract/worker.min.js`,
+            corePath: `${origin}/tesseract/tesseract-core.wasm.js`,
+            langPath: `${origin}/tesseract`,
+            workerBlobURL: false,
+          });
+
+          const ret = await worker.recognize(blob);
+          await worker.terminate();
+
+          const text = (ret.data.text || "")
+            .replace(/[|❑■●○•♦❖✿/_\\°©®()[\]{}]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          
+          if (!text) {
+            showToast("Teks tidak terdeteksi di area ini. Coba perbesar area sorotan.", "warning");
+          } else {
+            if (role === "bab") {
+              setJudulBab(text);
+              showToast("Judul Bab diisi dari sorotan gambar!", "success");
+            } else if (role === "tp") {
+              setTps(prev => [...prev, text]);
+              showToast("Tujuan Pembelajaran (TP) ditambahkan dari sorotan gambar!", "success");
+            }
+          }
+        } catch (err) {
+          console.error("Local Cropped OCR error:", err);
+          showToast("Terjadi kesalahan pengolahan gambar offline.", "error");
+        } finally {
+          setIsAnalyzingCrop(false);
+          setDragStart(null);
+          setDragEnd(null);
+        }
+      }, "image/jpeg", 0.95);
+    } catch (cropErr) {
+      console.error(cropErr);
+      setIsAnalyzingCrop(false);
+      showToast("Gagal memotong area gambar.", "error");
+    }
+  };
+
+  const runFullOcr = async () => {
+    if (isFullOcrRunning) return;
+    setIsFullOcrRunning(true);
+    showToast("Memproses OCR offline seluruh gambar, harap tunggu...", "info");
+    
+    try {
+      const imgEl = imageRef.current || new Image();
+      if (!imgEl.src) {
+        imgEl.src = imageSrc;
+      }
+      
+      const width = imgEl.naturalWidth || 1500;
+      const height = imgEl.naturalHeight || 2000;
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(imgEl, 0, 0, width, height);
+      
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+      
+      let totalLuma = 0;
+      const numPixels = data.length / 4;
+      for (let i = 0; i < data.length; i += 4) {
+        totalLuma += 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+      }
+      const avgLuma = totalLuma / numPixels;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i+1];
+        const b = data[i+2];
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+        let val = 255;
+        if (luma < avgLuma * 0.88) {
+          val = Math.max(0, Math.round((luma / avgLuma) * 110 - 15));
+        } else {
+          val = 255;
+        }
+        data[i] = val;
+        data[i+1] = val;
+        data[i+2] = val;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      
+      canvas.toBlob(async (blob) => {
+        try {
+          const origin = window.location.origin;
+          const worker = await Tesseract.createWorker('ind+eng', 1, {
+            workerPath: `${origin}/tesseract/worker.min.js`,
+            corePath: `${origin}/tesseract/tesseract-core.wasm.js`,
+            langPath: `${origin}/tesseract`,
+            workerBlobURL: false,
+          });
+
+          const ret = await worker.recognize(blob || canvas);
+          await worker.terminate();
+
+          const text = ret.data.text || "";
+          const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+          const cleanedLines = rawLines.map(line => {
+            return line
+              .replace(/[|❑■●○•♦❖✿/_\\°©®()[\]{}]/g, '')
+              .replace(/\s+/g, ' ')
+              .trim();
+          }).filter(line => line.length > 2);
+
+          setLocalLines(cleanedLines);
+          showToast("Selesai memindai! Potongan kalimat teks berhasil diekstrak.", "success");
+        } catch (err) {
+          console.error("Full scan error:", err);
+          showToast("Gagal memindai gambar otomatis.", "error");
+        } finally {
+          setIsFullOcrRunning(false);
+        }
+      }, "image/jpeg", 0.95);
+    } catch (err) {
+      console.error(err);
+      showToast("Gagal memproses gambar untuk scan otomatis.", "error");
+      setIsFullOcrRunning(false);
+    }
+  };
+
+  return React.createElement(
+    "div",
+    {
+      className: "fixed inset-0 bg-black bg-opacity-80 z-[100] flex items-center justify-center p-2 sm:p-4",
+    },
+    React.createElement(
+      "div",
+      {
+        className: "bg-slate-900 text-slate-100 rounded-xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col border border-slate-700",
+      },
+      // Header
+      React.createElement(
+        "div",
+        { className: "p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950 rounded-t-xl flex-shrink-0" },
+        React.createElement(
+          "div",
+          null,
+          React.createElement(
+            "h3",
+            { className: "text-md sm:text-lg font-bold text-white flex items-center gap-2" },
+            "📷 Asisten Input Gambar Offline (Penyunting Visual)"
+          ),
+          React.createElement(
+            "p",
+            { className: "text-xs text-slate-400 mt-0.5" },
+            "Atur mode sorot manual di bawah gambar acuan, lalu seret kotak langsung ke area bab/TP pada gambar untuk mengambil teks otomatis secara rapi."
+          )
+        ),
+        React.createElement(
+          "button",
+          {
+            onClick: onClose,
+            className: "text-slate-400 hover:text-white hover:bg-slate-800 px-3 py-1.5 rounded-full transition-all text-xl font-bold",
+          },
+          "×"
+        )
+      ),
+      // Body
+      React.createElement(
+        "div",
+        { className: "flex-grow overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0" },
+        
+        // Left column: Image viewer (col-span-5)
+        React.createElement(
+          "div",
+          { className: "lg:col-span-5 flex flex-col gap-3 min-h-0" },
+          ...[
+            React.createElement(
+              "div",
+              { className: "flex items-center justify-between" },
+              ...[
+                React.createElement(
+                  "span",
+                  { className: "text-xs font-semibold text-slate-300 uppercase tracking-wider" },
+                  "🖼️ GAMBAR ACUAN UNGGAHAN"
+                ),
+                React.createElement(
+                  "div",
+                  { className: "flex gap-1" },
+                  ...[
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => setZoomLevel(prev => Math.max(50, prev - 25)),
+                        className: "px-2 py-0.5 text-[10px] bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700",
+                      },
+                      "Zoom Out"
+                    ),
+                    React.createElement(
+                      "span",
+                      { className: "text-[10px] font-mono select-none px-1.5 py-0.5 text-slate-400 bg-slate-950 rounded" },
+                      `${zoomLevel}%`
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: () => setZoomLevel(prev => Math.min(250, prev + 25)),
+                        className: "px-2 py-0.5 text-[10px] bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700",
+                      },
+                      "Zoom In"
+                    )
+                  ]
+                )
+              ]
+            ),
+
+            // Mode selection toolbar for image highlight
+            React.createElement(
+              "div",
+              { className: "bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-2" },
+              ...[
+                React.createElement(
+                  "div",
+                  { className: "flex items-center justify-between" },
+                  ...[
+                    React.createElement("span", { className: "text-[11px] font-bold text-slate-300" }, "Mode Alat Sorot Manual:"),
+                    cropRole !== "none" && React.createElement(
+                      "button",
+                      {
+                        onClick: () => setCropRole("none"),
+                        className: "text-[10px] text-red-400 hover:underline"
+                      },
+                      "Matikan Sorot [×]"
+                    )
+                  ]
+                ),
+                React.createElement(
+                  "div",
+                  { className: "grid grid-cols-3 gap-1.5" },
+                  ...[
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => setCropRole("none"),
+                        className: `px-2 py-1.5 text-[11px] font-medium rounded transition-all border ${
+                          cropRole === "none"
+                            ? "bg-slate-800 text-white border-slate-600 font-bold"
+                            : "bg-slate-900 text-slate-400 border-transparent hover:text-slate-200"
+                        }`
+                      },
+                      "🖐️ Geser/Zoom"
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => {
+                          setCropRole("bab");
+                          showToast("Mode Sorot Bab Aktif! Seret kotak di area judul bab.", "info");
+                        },
+                        className: `px-2 py-1.5 text-[11px] font-semibold rounded transition-all border ${
+                          cropRole === "bab"
+                            ? "bg-indigo-600 text-white border-indigo-400 font-bold"
+                            : "bg-slate-900 text-slate-400 border-transparent hover:text-indigo-300 hover:bg-slate-800"
+                        }`
+                      },
+                      "🏷️ Sorot Bab"
+                    ),
+                    React.createElement(
+                      "button",
+                      {
+                        type: "button",
+                        onClick: () => {
+                          setCropRole("tp");
+                          showToast("Mode Sorot TP Aktif! Seret kotak di area tujuan pembelajaran.", "info");
+                        },
+                        className: `px-2 py-1.5 text-[11px] font-semibold rounded transition-all border ${
+                          cropRole === "tp"
+                            ? "bg-emerald-600 text-white border-emerald-400 font-bold"
+                            : "bg-slate-900 text-slate-400 border-transparent hover:text-emerald-300 hover:bg-slate-800"
+                        }`
+                      },
+                      "🎯 Sorot TP"
+                    )
+                  ]
+                ),
+                React.createElement(
+                  "p",
+                  { className: "text-[10px] text-slate-400" },
+                  cropRole === "none"
+                    ? "Mode geser & perbesar acuan gambar secara bebas tanpa mencoret."
+                    : cropRole === "bab"
+                    ? "💡 Tarik kotak/drag di atas teks Bab pada gambar di bawah untuk otomatis mengidentifikasi Judul Bab."
+                    : "💡 Tarik kotak/drag di atas teks TP pada gambar di bawah untuk otomatis memperbanyak list TP."
+                )
+              ]
+            ),
+
+            // Image Container Box
+            React.createElement(
+              "div",
+              {
+                className: "flex-grow border border-slate-800 rounded-lg bg-slate-950 overflow-auto flex items-start justify-center p-3 relative min-h-[220px] sm:min-h-[300px] lg:min-h-0 max-h-[40vh] lg:max-h-[54vh] relative select-none",
+              },
+              ...[
+                // Loading spinner overlay specifically for cropped crop ocr
+                isAnalyzingCrop && React.createElement(
+                  "div",
+                  { className: "absolute inset-0 bg-slate-950/80 z-20 flex flex-col items-center justify-center gap-2" },
+                  ...[
+                    React.createElement("div", { className: "w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" }),
+                    React.createElement("span", { className: "text-xs text-indigo-400 font-semibold" }, "Membaca area sorotan...")
+                  ]
+                ),
+
+                // Absolute Relative image container to fit overlay perfectly
+                React.createElement(
+                  "div",
+                  {
+                    className: "relative inline-block select-none",
+                    style: { width: `${zoomLevel}%`, maxWidth: "none" }
+                  },
+                  ...[
+                    React.createElement("img", {
+                      ref: imageRef,
+                      src: imageSrc,
+                      alt: "Uploaded reference",
+                      referrerPolicy: "no-referrer",
+                      className: "w-full h-auto object-contain select-none pointer-events-none transition-all duration-150",
+                    }),
+
+                    // Interactive dragging overlay
+                    cropRole !== "none" && React.createElement(
+                      "div",
+                      {
+                        className: "absolute inset-0 cursor-crosshair bg-indigo-500/5 select-none z-10",
+                        onMouseDown: handleMouseDown,
+                        onMouseMove: handleMouseMove,
+                        onMouseUp: handleMouseUp,
+                        onTouchStart: handleTouchStart,
+                        onTouchMove: handleTouchMove,
+                        onTouchEnd: handleTouchEnd,
+                      },
+                      ...[
+                        // Visual selection box
+                        isDragging && dragStart && dragEnd && React.createElement(
+                          "div",
+                          {
+                            className: `absolute border-2 border-dashed ${
+                              cropRole === "bab" ? "border-indigo-500 bg-indigo-500/15" : "border-emerald-500 bg-emerald-500/15"
+                            } pointer-events-none z-20`,
+                            style: {
+                              left: `${Math.min(dragStart.x, dragEnd.x) * 100}%`,
+                              top: `${Math.min(dragStart.y, dragEnd.y) * 100}%`,
+                              width: `${Math.abs(dragStart.x - dragEnd.x) * 100}%`,
+                              height: `${Math.abs(dragStart.y - dragEnd.y) * 100}%`,
+                            }
+                          },
+                          React.createElement(
+                            "span",
+                            {
+                              className: `absolute text-[10px] font-bold text-white px-1.5 py-0.5 rounded shadow whitespace-nowrap ${
+                                cropRole === "bab" ? "bg-indigo-600 border border-indigo-400" : "bg-emerald-600 border border-emerald-400"
+                              }`,
+                              style: {
+                                bottom: '100%',
+                                left: '-2px',
+                                marginBottom: '4px'
+                              }
+                            },
+                            cropRole === "bab" ? "🏷️ Sorot Area Bab" : "🎯 Sorot Area TP"
+                          )
+                        )
+                      ]
+                    )
+                  ]
+                )
+              ]
+            )
+          ]
+        ),
+
+        // Right column: Text Snippet Selection & Live Draft Editor (col-span-7)
+        React.createElement(
+          "div",
+          { className: "lg:col-span-7 flex flex-col gap-4 min-h-0" },
+          ...[
+            // Part 1: Extracted Text Lines
+            React.createElement(
+              "div",
+              { className: "flex flex-col gap-2" },
+              ...[
+                React.createElement(
+                  "div",
+                  { className: "flex items-center justify-between" },
+                  ...[
+                    React.createElement(
+                      "span",
+                      { className: "text-xs font-semibold text-slate-300 uppercase tracking-wider" },
+                      "✂️ HASIL PEMINDAIAN GLOBAL / SOROTAN"
+                    ),
+                    localLines.length === 0 && !isRunningOcr && !isFullOcrRunning && React.createElement(
+                      "button",
+                      {
+                        onClick: runFullOcr,
+                        className: "px-2.5 py-1 bg-indigo-950/60 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 rounded text-[10px] font-semibold transition-all"
+                      },
+                      "🔍 Pindai Seluruh Gambar Otomatis"
+                    )
+                  ]
+                ),
+                (isRunningOcr || isFullOcrRunning)
+                  ? React.createElement(
+                      "div",
+                      { className: "p-8 border border-slate-800/80 rounded-lg bg-slate-950/80 flex flex-col items-center justify-center gap-2" },
+                      ...[
+                        React.createElement(
+                          "div",
+                          { className: "w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" }
+                        ),
+                        React.createElement(
+                          "span",
+                          { className: "text-xs text-indigo-400 font-medium animate-pulse" },
+                          "Mengekstrak teks otomatis secara offline..."
+                        )
+                      ]
+                    )
+                  : localLines.length === 0
+                    ? React.createElement(
+                        "div",
+                        { className: "p-4 border border-dashed border-slate-800 rounded-lg bg-slate-950/40 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2" },
+                        ...[
+                          React.createElement("p", null, "Gunakan tombol alat mode di sebelah kiri untuk menyorot secara manual langsung dari gambar."),
+                          React.createElement("small", { className: "text-[10px] text-slate-500" }, "Atau klik tombol di bawah untuk memindai seluruh halaman sekaligus secara otomatis:"),
+                          React.createElement(
+                            "button",
+                            {
+                              type: "button",
+                              onClick: runFullOcr,
+                              className: "px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold transition-colors"
+                            },
+                            "🔍 Mulai Pindai Semua Otomatis"
+                          )
+                        ]
+                      )
+                    : React.createElement(
+                        "div",
+                        { className: "max-h-[22vh] overflow-y-auto border border-slate-800 rounded-lg p-2 bg-slate-950 space-y-2 text-slate-100" },
+                        localLines.map((line, index) =>
+                          React.createElement(
+                            "div",
+                            { key: index, className: "flex items-center gap-2 p-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded transition-all" },
+                            ...[
+                              React.createElement("input", {
+                                type: "text",
+                                value: line,
+                                onChange: (e) => {
+                                  const val = e.target.value;
+                                  setLocalLines(prev => {
+                                    const next = [...prev];
+                                    next[index] = val;
+                                    return next;
+                                  });
+                                },
+                                className: "flex-grow bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded px-2 py-1 outline-none focus:border-indigo-500"
+                              }),
+                              React.createElement(
+                                "button",
+                                {
+                                  onClick: () => setAsJudulBab(line),
+                                  className: "px-2 py-1 bg-indigo-600 hover:bg-indigo-550 text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors"
+                                },
+                                "🏷️ Bab"
+                              ),
+                              React.createElement(
+                                "button",
+                                {
+                                  onClick: () => addAsTp(line),
+                                  className: "px-2 py-1 bg-emerald-600 hover:bg-emerald-555 text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors"
+                                },
+                                "🎯 TP"
+                              )
+                            ]
+                          )
+                        )
+                      )
+              ]
+            ),
+
+            // Part 2: Draft Editor - Form Input Construction
+            React.createElement(
+              "div",
+              { className: "flex flex-col gap-2 bg-slate-950 p-4 border border-slate-800 rounded-lg flex-grow overflow-y-auto max-h-[35vh]" },
+              ...[
+                React.createElement(
+                  "span",
+                  { className: "text-xs font-semibold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-1" },
+                  "✏️ KONSTRUKSI MATERI & TP BARU"
+                ),
+                
+                // Input for Judul Bab
+                React.createElement(
+                  "div",
+                  { className: "space-y-1 mt-2" },
+                  ...[
+                    React.createElement(
+                      "label",
+                      { className: "text-xs font-medium text-slate-400" },
+                      "Nama Lingkup Materi (Judul Bab):"
+                    ),
+                    React.createElement("input", {
+                      type: "text",
+                      value: judulBab,
+                      onChange: (e) => setJudulBab(e.target.value),
+                      placeholder: "Contoh: Bab 1 Bilangan Cacah, atau sorot lewat '🏷️ Bab' diatas",
+                      className: "w-full bg-slate-900 border border-slate-800 focus:border-indigo-500 text-slate-100 rounded px-3 py-1.5 text-sm outline-none"
+                    })
+                  ]
+                ),
+
+                // Tujuan Pembelajaran List
+                React.createElement(
+                  "div",
+                  { className: "space-y-2 mt-3" },
+                  ...[
+                    React.createElement(
+                      "label",
+                      { className: "text-xs font-medium text-slate-400 block" },
+                      "Daftar Tujuan Pembelajaran (TP):"
+                    ),
+                    tps.length === 0
+                      ? React.createElement(
+                          "p",
+                          { className: "text-xs text-slate-500 italic py-2 text-center border border-dashed border-slate-800 rounded-md" },
+                          "Belum ada TP. Sorot area TP di atas atau tambah manual di bawah."
+                        )
+                      : tps.map((tp, idx) =>
+                          React.createElement(
+                            "div",
+                            { key: idx, className: "flex items-start gap-2" },
+                            ...[
+                              React.createElement(
+                                "span",
+                                { className: "text-xs text-slate-500 font-bold pt-2.5" },
+                                `TP ${idx + 1}:`
+                              ),
+                              React.createElement("textarea", {
+                                value: tp,
+                                onChange: (e) => handleUpdateTpText(idx, e.target.value),
+                                placeholder: `Isi Tujuan Pembelajaran ${idx + 1}`,
+                                rows: 2,
+                                className: "flex-grow bg-slate-900 border border-slate-800 focus:border-indigo-500 text-slate-100 text-xs rounded p-2 resize-none outline-none"
+                              }),
+                              React.createElement(
+                                "button",
+                                {
+                                  onClick: () => handleRemoveTp(idx),
+                                  className: "text-red-400 hover:text-red-650 font-bold text-lg p-1.5 self-center"
+                                },
+                                "×"
+                              )
+                            ]
+                          )
+                        )
+                  ]
+                ),
+
+                // Form actions
+                React.createElement(
+                  "div",
+                  { className: "flex gap-2 pt-2 justify-between flex-wrap" },
+                  ...[
+                    React.createElement(
+                      "button",
+                      {
+                        onClick: handleAddTpManual,
+                        className: "px-3 py-1 text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-indigo-900/60 rounded-md transition-colors"
+                      },
+                      "+ Tambah TP Baru secara Manual"
+                    ),
+                    (judulBab || tps.length > 0)
+                      ? React.createElement(
+                          "button",
+                          {
+                            onClick: handleClear,
+                            className: "px-3 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-950/20 rounded transition-colors"
+                          },
+                          "Kosongkan Formulir"
+                        )
+                      : null
+                  ]
+                )
+              ]
+            )
+          ]
+        )
+      ),
+      // Footer
+      React.createElement(
+        "div",
+        { className: "p-4 border-t border-slate-800 flex justify-end gap-3 bg-slate-950 rounded-b-xl flex-shrink-0" },
+        ...[
+          React.createElement(
+            "button",
+            {
+              onClick: onClose,
+              className: "px-4 py-2 text-sm font-medium bg-slate-850 hover:bg-slate-800 text-slate-300 border border-slate-700/60 rounded-md transition-colors",
+            },
+            "Batal"
+          ),
+          React.createElement(
+            "button",
+            {
+              onClick: handleSubmit,
+              className: "px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-lg active:bg-indigo-700 transition-colors",
+            },
+            "Impor & Masukkan ke Tabel"
+          )
+        ]
+      )
+    )
   );
 };
 
@@ -2200,6 +2997,21 @@ const ManageSlmModal = ({
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const fileInputRef = useRef(null);
 
+  const [isOfflineOcrModalOpen, setIsOfflineOcrModalOpen] = useState(false);
+  const [offlineOcrImageSrc, setOfflineOcrImageSrc] = useState(null);
+  const [offlineOcrDetectedLines, setOfflineOcrDetectedLines] = useState([]);
+  const [offlineIsRunningOcr, setOfflineIsRunningOcr] = useState(false);
+
+  const handleApplyOfflineOcr = (judul, tpTexts) => {
+    const newSlm = {
+      id: `slm_ocr_local_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
+      name: judul,
+      tps: tpTexts.map(text => ({ text, isEdited: true }))
+    };
+    setLocalSlms(prev => [...prev, newSlm]);
+    showToast(`Materi "${judul}" berhasil ditambahkan lewat asisten gambar!`, "success");
+  };
+
   useEffect(() => {
     if (isOpen) {
       setLocalSlms(JSON.parse(JSON.stringify(allSlms))); // Deep copy
@@ -2384,101 +3196,17 @@ const ManageSlmModal = ({
       
       if (!geminiSuccess) {
         if (isOnline) {
-          showToast("Gemini AI gagal atau kuota habis. Beralih ke OCR Offline...", "warning");
+          showToast("Gemini AI gagal atau kuota habis. Membuka Asisten Input Gambar Offline...", "warning");
         } else {
-          showToast("Offline terdeteksi. Memproses OCR mode offline, harap tunggu...", "info");
+          showToast("Offline terdeteksi. Membuka Asisten Input Gambar Offline...", "info");
         }
         
-        // Dynamically import tesseract.js
-        const Tesseract = await import('tesseract.js');
-        
-        const worker = await Tesseract.createWorker('ind', 1, {
-           workerPath: '/tesseract/worker.min.js',
-           corePath: '/tesseract/tesseract-core.wasm.js',
-           langPath: '/tesseract',
-           logger: m => {
-               if (m.status === "recognizing text") {
-                   // console.log("Progress:", m.progress);
-               }
-           },
-        });
-
-        const ret = await worker.recognize(file);
-        await worker.terminate();
-
-        const text = ret.data.text;
-        
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
-        
-        let identifiedSlms = [];
-        let currentSlm = null;
-
-        // Heuristik mendeteksi judul bab
-        const babRegex = /^(bab\s+[\dIVX]+|pembelajaran\s+\d+|unit\s+\d+|tema\s+\d+)\b/i;
-        const isJudulIndicator = /^(a\.|b\.|c\.|d\.)\s+[A-Z]/; // Judul sub-bab
-        
-        // Kata kerja operasional umum di awal TP
-        const verbRegex = /^(peserta didik|siswa|memahami|menjelaskan|menganalisis|mengidentifikasi|mendeskripsikan|menyebutkan|mampu|dapat|menyajikan|mempraktikkan|menunjukkan|menerapkan|mengevaluasi|mencipta|menguraikan|menyimpulkan|menggunakan)/i;
-
-        // Heuristik mendeteksi daftar (1., a., -, *) untuk Tujuan Pembelajaran
-        const listRegex = /^(\d+[\.\)]|-[ \t]+|\*[ \t]+|[a-z][\.\)])\s*(.+)/i;
-
-        lines.forEach(line => {
-          const babMatch = line.match(babRegex);
-          
-          // Asumsi judul jika All Caps tetapi bukan kalimat panjang, atau cocok pola Bab/SubBab
-          const isJudul = babMatch || isJudulIndicator.test(line) || (line === line.toUpperCase() && line.length > 8 && line.length < 50 && !listRegex.test(line));
-          
-          if (isJudul) {
-            if (currentSlm && currentSlm.tps.length > 0) {
-              identifiedSlms.push(currentSlm);
-            }
-            let name = line;
-            if (name.length > 55) name = name.substring(0, 55) + "...";
-            currentSlm = {
-               id: `slm_ocr_local_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
-               name: name,
-               tps: []
-            };
-          } else {
-             // Evaluasi apakah baris ini Tujuan Pembelajaran
-             let tpText = line;
-             let isTp = false;
-
-             if (listRegex.test(line)) {
-                const match = line.match(listRegex);
-                tpText = match ? match[2].trim() : line;
-                // Jika ini list item, kita asumsikan TP jika teks setelahnya mengandung kata kerja yg relevan
-                // atau cukup panjang (asumsi buku teks list biasanya TP jika dlm bab)
-                if (tpText.length > 10) isTp = true;
-             } else if (verbRegex.test(line)) {
-                isTp = true;
-             }
-
-             if (isTp && tpText.length > 10) {
-                if (!currentSlm) {
-                   currentSlm = {
-                      id: `slm_ocr_local_${Date.now()}_temp`,
-                      name: "Hasil Scan OCR",
-                      tps: []
-                   };
-                }
-                currentSlm.tps.push({ text: tpText, isEdited: true });
-             }
-          }
-        });
-        
-        if (currentSlm && currentSlm.tps.length > 0) {
-            identifiedSlms.push(currentSlm);
-        }
-
-        if (identifiedSlms.length > 0) {
-           setLocalSlms(prev => [...prev, ...identifiedSlms]);
-           const totalTps = identifiedSlms.reduce((acc, curr) => acc + curr.tps.length, 0);
-           showToast(`Offline OCR berhasil menemukan ${identifiedSlms.length} Lingkup Materi dan ${totalTps} TP.`, "success");
-        } else {
-           showToast("Tidak ditemukan Lingkup Materi atau TP yang relevan dalam gambar lewat Offline OCR. Pastikan gambar jelas.", "error");
-        }
+        // Read file as object URL to preview immediately
+        const fileUrl = URL.createObjectURL(file);
+        setOfflineOcrImageSrc(fileUrl);
+        setOfflineOcrDetectedLines([]);
+        setOfflineIsRunningOcr(false);
+        setIsOfflineOcrModalOpen(true);
       }
     } catch (err) {
       console.error(err);
@@ -2594,6 +3322,18 @@ const ManageSlmModal = ({
       subject: subject,
       availableTPs: availableTPsForSelection,
       isLoading: !predefinedCurriculum,
+    }),
+    React.createElement(OfflineOcrAssistantModal, {
+      isOpen: isOfflineOcrModalOpen,
+      onClose: () => {
+        setIsOfflineOcrModalOpen(false);
+        setIsProcessingOcr(false);
+      },
+      onApply: handleApplyOfflineOcr,
+      imageSrc: offlineOcrImageSrc,
+      detectedLines: offlineOcrDetectedLines,
+      isRunningOcr: offlineIsRunningOcr,
+      showToast: showToast
     }),
     React.createElement(
       "div",
@@ -3391,7 +4131,9 @@ const NilaiTableView = (props) => {
       setActiveSlmIds((prev) => {
         const next = [...prev, ...newIds];
         if (onUpdateSlmVisibility) {
-          onUpdateSlmVisibility(subject.id, next);
+          setTimeout(() => {
+            onUpdateSlmVisibility(subject.id, next);
+          }, 0);
         }
         return next;
       });

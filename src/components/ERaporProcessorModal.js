@@ -1,6 +1,7 @@
- 
+
 import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
+import { getGradeNumber } from './DataNilaiPage';
 
 const getNumericValue = (score, qualitativeGradingMap) => {
     if (typeof score === 'number') return score;
@@ -94,7 +95,7 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, confirmationData, allSu
 };
 
 
-const ERaporProcessorModal = ({ onClose, students, grades, subjects, settings, showToast, predefinedCurriculum }) => {
+const ERaporProcessorModal = ({ onClose, students, grades, subjects, settings, showToast, predefinedCurriculum, learningObjectives }) => {
     const [file, setFile] = useState(null);
     const [fileName, setFileName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -240,6 +241,34 @@ const ERaporProcessorModal = ({ onClose, students, grades, subjects, settings, s
         try {
             const { workbook, ws, subject, studentMap, tpMapping, fileName, nilaiRaporColIndex } = analysisResult;
             
+            const currentSemester = settings?.semester || 'Ganjil';
+            const currentGradeNumber = getGradeNumber(settings?.nama_kelas);
+            let objectivesForSubject = [];
+            
+            if (currentGradeNumber !== null && learningObjectives) {
+                let objectivesForCurrentClass = null;
+                for (const key in learningObjectives) {
+                    if (getGradeNumber(key) === currentGradeNumber) {
+                        objectivesForCurrentClass = learningObjectives[key];
+                        break;
+                    }
+                }
+                objectivesForSubject = objectivesForCurrentClass?.[subject.fullName] || [];
+            }
+
+            const activeSlmIds = settings?.slmVisibility?.[subject.id];
+
+            const tpTextMap = new Map();
+            const slmSemesterMap = new Map();
+
+            objectivesForSubject.forEach(obj => {
+                if (!tpTextMap.has(obj.slmId)) {
+                    tpTextMap.set(obj.slmId, []);
+                    slmSemesterMap.set(obj.slmId, obj.semester || 'Semua');
+                }
+                tpTextMap.get(obj.slmId).push(obj.text);
+            });
+
             // Loop through students found in the map
             for (const [rowIndex, studentId] of studentMap.entries()) {
                 const studentData = students.find(s => s.id === studentId);
@@ -253,20 +282,31 @@ const ERaporProcessorModal = ({ onClose, students, grades, subjects, settings, s
                     XLSX.utils.sheet_add_aoa(ws, [[finalGrade]], { origin: cellRef });
                 }
 
-                // 2. Find Highest & Lowest TP scores
+                // 2. Find Highest & Lowest TP scores based on current semester
                 const allTpsWithScores = [];
                 const detailedGrade = gradeData.detailedGrades?.[subject.id];
-                if(detailedGrade?.slm){
-                    detailedGrade.slm.forEach(slm => {
-                        const curriculumKey = subject.curriculumKey || subject.fullName;
-                        const tpsForSlm = predefinedCurriculum[curriculumKey]?.find(item => item.slm === slm.name)?.tp || [];
-                        slm.scores.forEach((score, tpIndex) => {
-                            const numericScore = getNumericValue(score, settings.qualitativeGradingMap);
-                            const tpText = tpsForSlm[tpIndex];
-                            if(numericScore !== null && tpText) {
-                                allTpsWithScores.push({ score: numericScore, text: tpText });
-                            }
-                        });
+                
+                if (detailedGrade?.slm) {
+                    const visibleSlms = detailedGrade.slm.filter(slm => {
+                        const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
+                        const slmSemester = slmSemesterMap.get(slm.id) || 'Semua';
+                        const isCorrectSemester = slmSemester === 'Semua' || slmSemester === currentSemester;
+                        return isVisible && isCorrectSemester;
+                    });
+
+                    visibleSlms.forEach(slm => {
+                        const tpTextsForThisSlm = tpTextMap.get(slm.id);
+                        if (tpTextsForThisSlm && slm.scores) {
+                            slm.scores.forEach((score, tpIndex) => {
+                                const numericScore = getNumericValue(score, settings.qualitativeGradingMap);
+                                if (typeof numericScore === 'number' && tpIndex < tpTextsForThisSlm.length) {
+                                    allTpsWithScores.push({
+                                        score: numericScore,
+                                        text: tpTextsForThisSlm[tpIndex]
+                                    });
+                                }
+                            });
+                        }
                     });
                 }
                 
