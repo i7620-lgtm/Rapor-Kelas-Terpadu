@@ -1,4 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import localforage from 'localforage';
+
+localforage.config({
+  name: 'ERaporApp',
+  version: 1.0,
+  storeName: 'erapor_data',
+  description: 'E-Rapor Application Data'
+});
 import * as XLSX from 'xlsx';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
 import Navigation from './components/Navigation.js';
@@ -74,6 +82,7 @@ const initialCocurricularData = {};
 const initialAttendance = [];
 const initialStudentExtracurriculars = [];
 const initialFormativeJournal = {};
+const initialLearningObjectives = {};
 
 const deepMerge = (target, source) => {
     if (typeof target !== 'object' || target === null) return source !== undefined ? source : target;
@@ -93,7 +102,41 @@ const deepMerge = (target, source) => {
     return merged;
 };
 
-const loadDataSafe = (key, fallbackValue, validator = null) => {
+
+const loadDataSafeAsync = async (key, fallbackValue, validator = null) => {
+    try {
+        let val = await localforage.getItem(key);
+        if (val === null) {
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    val = parsed;
+                    await localforage.setItem(key, parsed);
+                } catch(e) {}
+            }
+        }
+        if (val === null) return fallbackValue;
+
+        if (validator && !validator(val)) {
+            console.warn(`Data validation failed for key: ${key}. Reverting to fallback.`);
+            return fallbackValue;
+        }
+        if (Array.isArray(fallbackValue) && !Array.isArray(val)) {
+            return fallbackValue;
+        }
+        if (typeof fallbackValue === 'object' && !Array.isArray(fallbackValue) && fallbackValue !== null) {
+             return deepMerge(fallbackValue, val);
+        }
+        return val;
+    } catch (e) {
+        console.error(`Error loading ${key}:`, e);
+        return fallbackValue;
+    }
+};
+
+
+const loadDataSafeSync_DEPRECATEDSync_DEPRECATED = (key, fallbackValue, validator = null) => {
     try {
         const saved = localStorage.getItem(key);
         if (!saved) return fallbackValue;
@@ -285,21 +328,84 @@ const App = () => {
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-      const savedSettings = loadDataSafe('appSettings', initialSettings);
-      if (!savedSettings?.appLock?.enabled || savedSettings?.appLock?.pin?.length !== 6) {
-          return true; // Already "unlocked" if lock is not fully configured
-      }
-      return sessionStorage.getItem('appUnlocked') === 'true'; // Check session storage
-  });
+  const [isUnlocked, setIsUnlocked] = useState(true);
     
   const isInitialMount = useRef(true);
 
   const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
 
-  const [settings, setSettings] = useState(() => {
-      return loadDataSafe('appSettings', initialSettings);
-  });
+  
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  useEffect(() => {
+     let isMounted = true;
+     const initializeAllData = async () => {
+         const settingsData = await loadDataSafeAsync("appSettings", initialSettings);
+         let unlocked = true;
+         if (settingsData?.appLock?.enabled && settingsData?.appLock?.pin?.length === 6) {
+             unlocked = sessionStorage.getItem('appUnlocked') === 'true';
+         }
+         const studentsData = await loadDataSafeAsync("appStudents", initialStudents, Array.isArray);
+         const gradesData = await loadDataSafeAsync("appGrades", initialGrades, Array.isArray);
+         const notesData = await loadDataSafeAsync("appNotes", initialNotes);
+         const cocurricularDataData = await loadDataSafeAsync("appCocurricularData", initialCocurricularData);
+         
+         let attendanceData = await loadDataSafeAsync("appAttendance", initialAttendance, Array.isArray);
+         attendanceData = attendanceData.map(att => ({
+             studentId: att.studentId,
+             semester: att.semester || "Ganjil",
+             sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
+             izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
+             alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
+         }));
+
+         const extracurricularsData = await loadDataSafeAsync("appExtracurriculars", [], Array.isArray);
+         const studentExData = await loadDataSafeAsync("appStudentExtracurriculars", initialStudentExtracurriculars, Array.isArray);
+         
+         const loadedSubjects = await loadDataSafeAsync("appSubjects", defaultSubjects, Array.isArray);
+         const newSubjects = [...loadedSubjects];
+         let hasUpdates = false;
+         defaultSubjects.forEach(ds => {
+             if (!newSubjects.find(s => s.id === ds.id)) {
+                 newSubjects.push({...ds, active: false});
+                 hasUpdates = true;
+             }
+         });
+         newSubjects.forEach(s => {
+             const ds = defaultSubjects.find(d => d.id === s.id);
+             if (ds && (!s.curriculumKey || s.curriculumKey !== ds.curriculumKey)) {
+                 s.curriculumKey = ds.curriculumKey;
+                 hasUpdates = true;
+             }
+         });
+         if (hasUpdates) await localforage.setItem("appSubjects", newSubjects);
+
+         const loData = await loadDataSafeAsync("appLearningObjectives", initialLearningObjectives);
+         const fjData = await loadDataSafeAsync("appFormativeJournal", initialFormativeJournal);
+
+         if (isMounted) {
+            setSettings(settingsData);
+            setStudents(studentsData);
+            setGrades(gradesData);
+            setNotes(notesData);
+            setCocurricularData(cocurricularDataData);
+            setAttendance(attendanceData);
+            setExtracurriculars(extracurricularsData);
+            setStudentExtracurriculars(studentExData);
+            setSubjects(newSubjects);
+            setLearningObjectives(loData);
+            setFormativeJournal(fjData);
+            setIsDataLoaded(true);
+            setIsUnlocked(unlocked);
+            setIsLoading(false); // remove the general isLoading
+         }
+     };
+     initializeAllData();
+     return () => { isMounted = false; };
+  }, []);
+
+
+const [settings, setSettings] = useState(initialSettings);
 
   useEffect(() => {
       const initImages = async () => {
@@ -337,76 +443,25 @@ const App = () => {
       initImages();
   }, []);
 
-  const [students, setStudents] = useState(() => 
-      loadDataSafe('appStudents', initialStudents, Array.isArray)
-  );
+  const [students, setStudents] = useState([]);
 
-  const [grades, setGrades] = useState(() => 
-      loadDataSafe('appGrades', initialGrades, Array.isArray)
-  );
+  const [grades, setGrades] = useState([]);
 
-  const [notes, setNotes] = useState(() => 
-      loadDataSafe('appNotes', initialNotes)
-  );
+  const [notes, setNotes] = useState({});
 
-  const [cocurricularData, setCocurricularData] = useState(() => 
-      loadDataSafe('appCocurricularData', initialCocurricularData)
-  );
+  const [cocurricularData, setCocurricularData] = useState({});
 
-  const [attendance, setAttendance] = useState(() => {
-      const loaded = loadDataSafe('appAttendance', initialAttendance, Array.isArray);
-      return loaded.map(att => ({
-          studentId: att.studentId,
-          semester: att.semester || 'Ganjil',
-          sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
-          izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
-          alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
-      }));
-  });
+  const [attendance, setAttendance] = useState([]);
 
-  const [extracurriculars, setExtracurriculars] = useState(() => 
-      loadDataSafe('appExtracurriculars', [], Array.isArray)
-  );
+  const [extracurriculars, setExtracurriculars] = useState([]);
 
-  const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => 
-      loadDataSafe('appStudentExtracurriculars', initialStudentExtracurriculars, Array.isArray)
-  );
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState([]);
 
-  const [subjects, setSubjects] = useState(() => {
-      const loaded = loadDataSafe('appSubjects', defaultSubjects, Array.isArray);
-      const newSubjects = [...loaded];
-      let hasUpdates = false;
+  const [subjects, setSubjects] = useState([]);
 
-      // Add missing default subjects
-      defaultSubjects.forEach(ds => {
-          if (!newSubjects.find(s => s.id === ds.id)) {
-              newSubjects.push({...ds, active: false}); // default newly added subjects to inactive so it doesn't pollute their view
-              hasUpdates = true;
-          }
-      });
+  const [learningObjectives, setLearningObjectives] = useState({});
 
-      // Ensure curriculumKey exists on existing default items
-      newSubjects.forEach(s => {
-          const ds = defaultSubjects.find(d => d.id === s.id);
-          if (ds && (!s.curriculumKey || s.curriculumKey !== ds.curriculumKey)) {
-              s.curriculumKey = ds.curriculumKey;
-              hasUpdates = true;
-          }
-      });
-
-      if (hasUpdates) {
-          localStorage.setItem('appSubjects', JSON.stringify(newSubjects));
-      }
-      return newSubjects;
-  });
-
-  const [learningObjectives, setLearningObjectives] = useState(() => 
-      loadDataSafe('appLearningObjectives', {})
-  );
-
-  const [formativeJournal, setFormativeJournal] = useState(() => 
-      loadDataSafe('appFormativeJournal', initialFormativeJournal)
-  );
+  const [formativeJournal, setFormativeJournal] = useState({});
   
   const [predefinedCurriculum, setPredefinedCurriculum] = useState(null);
   const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
@@ -900,6 +955,50 @@ const App = () => {
         }
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fotoSiswaRows), "Foto Siswa");
 
+        
+        // --- NEW RELATIONAL DB EXPORT ---
+        const currentSem = settings.semester || "Ganjil";
+        const currentTA = settings.tahun_ajaran || "2023/2024";
+
+        const rSettings = [ ["TA", "Semester", "Key", "Value"] ];
+        Object.entries(settings).forEach(([k,v]) => {
+           if (typeof v === "object") rSettings.push([currentTA, currentSem, k, JSON.stringify(v)]);
+           else rSettings.push([currentTA, currentSem, k, v]);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rSettings), "_Settings");
+
+        const rStudents = [ ["TA", "Semester", "ID", "NIS", "NISN", "Nama", "L/P", "Tempat Lahir", "Tanggal Lahir", "Agama", "Alamat"] ];
+        students.forEach(s => rStudents.push([currentTA, currentSem, s.id, s.nis, s.nisn, s.namaLengkap, s.jenisKelamin, s.tempatLahir, s.tanggalLahir, s.agama, s.alamat]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "_Students");
+
+        const rGrades = [ ["TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
+        grades.forEach(g => {
+            Object.entries(g.detailedGrades || {}).forEach(([subId, detail]) => {
+                const subDetail = detail || {};
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS1", subDetail.sts1 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS1", subDetail.sas1 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS2", subDetail.sts2 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS2", subDetail.sas2 || ""]);
+                (subDetail.slm || []).forEach((slm, i) => {
+                    const avg = slm.scores && slm.scores.length > 0 ? slm.scores.reduce((a, b) => a + (typeof b==="number"?b:0), 0) / slm.scores.length : "";
+                    rGrades.push([currentTA, currentSem, g.studentId, subId, "SLM_" + slm.id, avg]);
+                });
+            });
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrades), "_Nilai");
+        
+        const rAbsensi = [ ["TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
+        attendance.forEach(a => rAbsensi.push([currentTA, a.semester || currentSem, a.studentId, a.sakit, a.izin, a.alpa]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "_Absensi");
+
+        const rEkskul = [ ["TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
+        studentExtracurriculars.forEach(se => {
+             Object.entries(se.descriptions || {}).forEach(([eid, desc]) => {
+                 rEkskul.push([currentTA, se.semester || currentSem, se.studentId, eid, desc]);
+             });
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rEkskul), "_Ekskul");
+
         return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
     } catch (e) { console.error("Export Error:", e); return null; }
   }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, predefinedCurriculum]);
@@ -908,7 +1007,33 @@ const App = () => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
         const workbook = XLSX.read(await blob.arrayBuffer());
         let news = { ...initialSettings }, nStud = [], nAtt = [], nNot = {}, nStEx = [], nCo = {}, nGr = [], nSub = [...defaultSubjects], nEx = [], nLO = {}, nFJ = {};
-        const findSheet = (names) => { for (const name of names) { const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, '_')); if (found) return workbook.Sheets[found]; } return null; };
+        
+        const findSheet = (names)
+        
+        const rSettingsSheet = workbook.Sheets["_Settings"];
+        if (rSettingsSheet) {
+            const currentTA = settings.tahun_ajaran || "2023/2024";
+            const currentSem = settings.semester || "Ganjil";
+            const data = XLSX.utils.sheet_to_json(rSettingsSheet, { header: 1 });
+            data.slice(1).forEach(r => {
+                if (r[0] === currentTA && r[1] === currentSem && r[2]) {
+                    try { news[r[2]] = JSON.parse(r[3]); } catch(e) { news[r[2]] = r[3]; }
+                }
+            });
+            
+            const rStudentsSheet = workbook.Sheets["_Students"];
+            if (rStudentsSheet) {
+                 nStud = [];
+                 XLSX.utils.sheet_to_json(rStudentsSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem) {
+                         nStud.push({ id: r[2], nis: r[3], nisn: r[4], namaLengkap: r[5], jenisKelamin: r[6], tempatLahir: r[7], tanggalLahir: r[8], agama: r[9], alamat: r[10] });
+                     }
+                 });
+            }
+            // we skip _Nilai parsing here to prioritize old sheets or just let old sheets override since they are user friendly.
+        }
+
+
         const wsAset = findSheet(["Aset Gambar", "Images", "Assets"]);
         const assetMap = {};
         if (wsAset) {
@@ -1223,18 +1348,18 @@ const App = () => {
                 delete settingsToSave[key];
             }
         });
-        localStorage.setItem('appSettings', JSON.stringify(settingsToSave)); 
+        if (isDataLoaded) localforage.setItem('appSettings', settingsToSave); 
     }, [settings]);
-    useEffect(() => { localStorage.setItem('appStudents', JSON.stringify(students)); }, [students]);
-    useEffect(() => { localStorage.setItem('appGrades', JSON.stringify(grades)); }, [grades]);
-    useEffect(() => { localStorage.setItem('appNotes', JSON.stringify(notes)); }, [notes]);
-    useEffect(() => { localStorage.setItem('appAttendance', JSON.stringify(attendance)); }, [attendance]);
-    useEffect(() => { localStorage.setItem('appCocurricularData', JSON.stringify(cocurricularData)); }, [cocurricularData]);
-    useEffect(() => { localStorage.setItem('appStudentExtracurriculars', JSON.stringify(studentExtracurriculars)); }, [studentExtracurriculars]);
-    useEffect(() => { localStorage.setItem('appSubjects', JSON.stringify(subjects)); }, [subjects]);
-    useEffect(() => { localStorage.setItem('appExtracurriculars', JSON.stringify(extracurriculars)); }, [extracurriculars]);
-    useEffect(() => { localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives)); }, [learningObjectives]);
-    useEffect(() => { localStorage.setItem('appFormativeJournal', JSON.stringify(formativeJournal)); }, [formativeJournal]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudents', students); }, [students, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appGrades', grades); }, [grades, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appNotes', notes); }, [notes, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appAttendance', attendance); }, [attendance, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appCocurricularData', cocurricularData); }, [cocurricularData, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudentExtracurriculars', studentExtracurriculars); }, [studentExtracurriculars, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appSubjects', subjects); }, [subjects, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appExtracurriculars', extracurriculars); }, [extracurriculars, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appLearningObjectives', learningObjectives); }, [learningObjectives, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appFormativeJournal', formativeJournal); }, [formativeJournal, isDataLoaded]);
     
     useEffect(() => {
         isInitialMount.current = false;
@@ -1267,7 +1392,7 @@ const App = () => {
       }) : React.createElement(React.Fragment, null,
           isERaporModalOpen && React.createElement(ERaporProcessorModal, {
               onClose: () => setIsERaporModalOpen(false),
-              students, grades, subjects, settings, showToast, predefinedCurriculum,
+              students, grades, subjects, settings, showToast, predefinedCurriculum, learningObjectives
           }),
           React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
             React.createElement(Navigation, { 
