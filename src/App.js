@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'; 
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import localforage from 'localforage';
 
 localforage.config({
@@ -641,322 +641,331 @@ const [settings, setSettings] = useState(initialSettings);
         initializeApp();
     }, []);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
   const exportToExcelBlob = useCallback(async () => {
-    if (typeof XLSX === 'undefined') return null;
+    if (typeof XLSX === "undefined") return null;
     try {
         const wb = XLSX.utils.book_new();
-        
-        // --- 1. Sheet: Petunjuk ---
-        const wsPetunjuk = XLSX.utils.aoa_to_sheet([
-            ["Petunjuk Penggunaan Template RKT"],
-            ["1. Sheet 'Leger' berisi ringkasan nilai seluruh siswa."],
-            ["2. Jangan mengubah nama-nama sheet (lembar kerja) data mentah (Nilai_, Absensi, dll)."],
-            ["3. Jangan mengubah header (baris pertama) pada setiap sheet data mentah."],
-            ["4. Simpan file ini dan unggah kembali ke aplikasi RKT untuk mengembalikan data."]
-        ]);
-        XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
-
-        // --- 2. Sheet: Leger (SUMMARY) ---
-        const activeSubjects = subjects.filter(s => s.active);
-        const displaySubjects = [];
-        const addedGroupPrefixes = new Set();
-        const groups = [
-            { prefix: 'Pendidikan Agama dan Budi Pekerti', base: { id: 'PABP', label: 'PABP', fullName: 'Pendidikan Agama dan Budi Pekerti' } },
-            { prefix: 'Seni Budaya', base: { id: 'SB', label: 'SENI', fullName: 'Seni Budaya' } },
-            { prefix: 'Muatan Lokal', base: { id: 'Mulok', label: 'MULOK', fullName: 'Muatan Lokal' } }
-        ];
-        
-        activeSubjects.forEach(subject => {
-            let group = groups.find(g => subject.fullName.startsWith(g.prefix));
-            if (!group && (subject.id === 'PAKTTMYME' || subject.fullName.toLowerCase().includes('kepercayaan terhadap tuhan'))) {
-                group = groups.find(g => g.base.id === 'PABP');
-            }
-            if (group) {
-                if (!addedGroupPrefixes.has(group.prefix)) {
-                    displaySubjects.push(group.base);
-                    addedGroupPrefixes.add(group.prefix);
-                }
-            } else displaySubjects.push(subject);
-        });
-        
-        const sortOrder = { 'PABP': 1, 'PP': 2, 'BIndo': 3, 'MTK': 4, 'IPAS': 5, 'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9 };
-        displaySubjects.sort((a, b) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99));
-
-        const generateLegerRows = (overrideSemester) => {
-            const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Rank"];
-            const simSettings = { ...settings, semester: overrideSemester };
-            const gradeKey = `Kelas ${getGradeNumber(simSettings.nama_kelas) || '5'}`;
-            
-            const legerDataWithTotals = students.map((student, index) => {
-                const studentGrades = grades.find(g => g.studentId === student.id) || { detailedGrades: {} };
-                let total = 0, count = 0;
-                
-                const getSimFinalScore = (subjId) => {
-                    const detailed = studentGrades.detailedGrades[subjId];
-                    if (!detailed) return null;
-                    const config = simSettings.gradeCalculation?.[subjId] || { method: 'rata-rata' };
-                    const subj = activeSubjects.find(s => s.id === subjId) || subjects.find(s => s.id === subjId);
-                    const curriculumKey = subj ? (subj.curriculumKey || subj.fullName) : null;
-                    return calculateFinalGrade(detailed, config, simSettings, subjId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum);
-                };
-
-                const rowGrades = displaySubjects.map(ds => {
-                    let grade;
-                    if (ds.id === 'PABP') {
-                        const rel = String(student.agama || '').trim().toLowerCase();
-                        if (rel) {
-                            const matched = rel === 'kepercayaan' ? activeSubjects.find(s => s.id === 'PAKTTMYME') : activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${rel})`));
-                            grade = matched ? getSimFinalScore(matched.id) : null;
-                        }
-                    } else if (['SB', 'Mulok'].includes(ds.id)) {
-                        const member = activeSubjects.filter(s => s.fullName.startsWith(ds.fullName));
-                        grade = member.map(m => getSimFinalScore(m.id)).find(g => g != null);
-                    } else grade = getSimFinalScore(ds.id);
-
-                    if (typeof grade === 'number') { total += grade; count++; }
-                    return grade ?? '-';
-                });
-                return { id: student.id, no: index + 1, name: student.namaLengkap, nisn: student.nisn, nis: student.nis, rowGrades, total, avg: count > 0 ? (total / count).toFixed(2) : "0.00" };
-            });
-
-            const sortedForRank = [...legerDataWithTotals].sort((a, b) => b.total - a.total);
-            const rankMap = new Map();
-            if (sortedForRank.length > 0) {
-                let curRank = 1;
-                rankMap.set(sortedForRank[0].id, curRank);
-                for (let i = 1; i < sortedForRank.length; i++) {
-                    if (sortedForRank[i].total < sortedForRank[i - 1].total) curRank = i + 1;
-                    rankMap.set(sortedForRank[i].id, curRank);
-                }
-            }
-
-            return [legerHeader, ...legerDataWithTotals.map(d => [
-                d.no, d.name, d.nisn, d.nis, ...d.rowGrades, d.total, d.avg, rankMap.get(d.id)
-            ])];
-        };
-
-        const wsLegerGanjil = XLSX.utils.aoa_to_sheet(generateLegerRows('Ganjil'));
-        XLSX.utils.book_append_sheet(wb, wsLegerGanjil, "Leger_Ganjil");
-        
-        const wsLegerGenap = XLSX.utils.aoa_to_sheet(generateLegerRows('Genap'));
-        XLSX.utils.book_append_sheet(wb, wsLegerGenap, "Leger_Genap");
-
-        // --- 3. Sheet: Pengaturan ---
-        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout', 'piagam_layout_Genap', 'kop_layout_Genap'];
-        const settingsRows = [
-            ["Kunci Pengaturan", "Nilai"],
-            ["format_version", "2"],
-            ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => {
-                let exportKey = key;
-                if (key === 'cocurricular_theme') exportKey = 'cocurricular_theme_Ganjil';
-                
-                if (typeof val === 'object' && val !== null) {
-                    return [exportKey, JSON.stringify(val)];
-                }
-                if (typeof val === 'boolean') {
-                    return [exportKey, val ? 'true' : 'false'];
-                }
-                return [exportKey, val ?? ''];
-            }),
-            ["kop_layout", JSON.stringify(settings.kop_layout || [])],
-            ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
-            ["kop_layout_Genap", JSON.stringify(settings.kop_layout_Genap || [])],
-            ["piagam_layout_Genap", JSON.stringify(settings.piagam_layout_Genap || [])],
-            [],
-            ["Pengaturan Rentang Nilai (Predikat)"],
-            ["Predikat", "Nilai Minimum"],
-            ["A", settings.predikats.a],
-            ["B", settings.predikats.b],
-            ["C", settings.predikats.c],
-            ["D", settings.predikats.d],
-            [],
-            ["Pengaturan Cara Pengolahan Nilai Rapor"],
-            ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot (JSON)", "SLM Visibility (JSON)"]
-        ];
-        subjects.forEach(s => {
-            const config = settings.gradeCalculation?.[s.id] || {};
-            const visibility = settings.slmVisibility?.[s.id] || [];
-            settingsRows.push([s.id, config.method || 'rata-rata', JSON.stringify(config.weights || {}), JSON.stringify(visibility)]);
-        });
-        const wsSettings = XLSX.utils.aoa_to_sheet(settingsRows);
-        XLSX.utils.book_append_sheet(wb, wsSettings, "Pengaturan");
-
-        // --- 4. Sheet: Mata Pelajaran ---
-        const wsMapel = XLSX.utils.aoa_to_sheet([[".", "Nama Lengkap", "Singkatan", "Status Aktif", "Kunci Kurikulum"], ...subjects.map(s => [s.id, s.fullName, s.label, s.active ? "Aktif" : "Tidak Aktif", s.curriculumKey || s.fullName])]);
-        XLSX.utils.book_append_sheet(wb, wsMapel, "Mata Pelajaran");
-
-        // --- 5. Sheet: Ekstrakurikuler ---
-        const wsEkstra = XLSX.utils.aoa_to_sheet([["ID Unik (Jangan Diubah)", "Nama Ekstrakurikuler", "Status Aktif"], ...extracurriculars.map(e => [e.id, e.name, e.active ? "Aktif" : "Tidak Aktif"])]);
-        XLSX.utils.book_append_sheet(wb, wsEkstra, "Ekstrakurikuler");
-
-        // --- 6. Sheet: Daftar Siswa ---
-        const wsSiswa = XLSX.utils.aoa_to_sheet([["ID Siswa (Otomatis)", "Nama Lengkap", "Nama Panggilan", "NIS", "NISN", "Tempat, Tanggal Lahir", "Jenis Kelamin", "Agama", "Asal TK", "Alamat Siswa", "Diterima di Kelas", "Diterima Tanggal", "Nama Ayah", "Nama Ibu", "Pekerjaan Ayah", "Pekerjaan Ibu", "Alamat Orang Tua", "Telepon Orang Tua", "Nama Wali", "Pekerjaan Wali", "Alamat Wali", "Telepon Wali"], ...students.map(s => [s.id, s.namaLengkap, s.namaPanggilan, s.nis, s.nisn, s.ttl, s.jenisKelamin, s.agama, s.asalTk, s.alamatSiswa, s.diterimaDiKelas, s.diterimaTanggal, s.namaAyah, s.namaIbu, s.pekerjaanAyah, s.pekerjaanIbu, s.alamatOrangTua, s.teleponOrangTua, s.namaWali, s.pekerjaanWali, s.alamatWali, s.teleponWali])]);
-        XLSX.utils.book_append_sheet(wb, wsSiswa, "Daftar Siswa");
-
-        // --- 7. Sheet: Tujuan Pembelajaran ---
-        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
-        const masterCurriculum = new Map();
-        if (predefinedCurriculum) {
-            subjects.filter(s => s.active).forEach(sub => {
-                const preData = predefinedCurriculum[sub.curriculumKey || sub.fullName];
-                if (preData) {
-                    const preHalf = Math.ceil(preData.length / 2);
-                    masterCurriculum.set(sub.id, preData.map((slm, i) => ({ id: `slm_predefined_${sub.id}_${i}`, name: slm.slm, tps: slm.tp.map(t => ({ text: t })), semester: i < preHalf ? "Ganjil" : "Genap" })));
-                }
-            });
-        }
-        if (learningObjectives[gradeKey]) {
-            subjects.filter(s => s.active).forEach(sub => {
-                const userTps = learningObjectives[gradeKey][sub.curriculumKey || sub.fullName];
-                if (!userTps) return;
-                let subSlms = masterCurriculum.get(sub.id) || [];
-                const userTpsBySlm = userTps.reduce((acc, tp) => { if (!acc[tp.slmId]) acc[tp.slmId] = { items: [], semester: tp.semester || "Semua" }; acc[tp.slmId].items.push({ text: tp.text }); return acc; }, {});
-                Object.entries(userTpsBySlm).forEach(([slmId, tpData]) => {
-                    const idx = subSlms.findIndex(s => s.id === slmId);
-                    if (idx > -1) { subSlms[idx].tps = tpData.items; subSlms[idx].semester = tpData.semester; const name = grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name; if (name) subSlms[idx].name = name; }
-                    else subSlms.push({ id: slmId, name: grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name || 'Lingkup Materi Kustom', tps: tpData.items, semester: tpData.semester });
-                });
-                masterCurriculum.set(sub.id, subSlms);
-            });
-        }
-        const tpRows = [["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Semester", "Deskripsi Tujuan Pembelajaran (TP)"]];
-        masterCurriculum.forEach((slms, subId) => {
-            const sub = subjects.find(s => s.id === subId);
-            if (sub) slms.forEach(slm => slm.tps.forEach(tp => tpRows.push([subId, sub.curriculumKey || sub.fullName, slm.id, slm.name, slm.semester || "Semua", tp.text])));
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tpRows), "Tujuan Pembelajaran");
-
-        // --- 8. Sheets: Nilai_{MapelID} ---
-        subjects.filter(s => s.active).forEach(sub => {
-            const subSlms = masterCurriculum.get(sub.id);
-            const headers = ["ID Siswa", "Nama Siswa"];
-            const colMap = [];
-            if (subSlms) subSlms.forEach(slm => slm.tps.forEach((tp, i) => { headers.push(`${slm.id}_TP${i + 1}`); colMap.push({ type: 'tp', slmId: slm.id, index: i }); }));
-            headers.push("STS 1 (Ganjil)", "SAS 1 (Ganjil)", "STS 2 (Genap)", "SAS 2 (Genap)", "Deskripsi Tinggi (Ganjil)", "Deskripsi Rendah (Ganjil)", "Deskripsi Tinggi (Genap)", "Deskripsi Rendah (Genap)");
-            const sheetRows = [headers];
-            students.forEach(st => {
-                const sGr = grades.find(g => g.studentId === st.id)?.detailedGrades?.[sub.id];
-                const row = [st.id, st.namaLengkap];
-                colMap.forEach(m => { const slm = sGr?.slm?.find(s => s.id === m.slmId); row.push(slm?.scores?.[m.index] ?? ''); });
-                
-                const expSts1 = sGr?.sts1 !== undefined && sGr?.sts1 !== null ? sGr.sts1 : (sGr?.sts !== undefined ? sGr.sts : '');
-                const expSas1 = sGr?.sas1 !== undefined && sGr?.sas1 !== null ? sGr.sas1 : (sGr?.sas !== undefined ? sGr.sas : '');
-                
-                row.push(expSts1, expSas1, sGr?.sts2 ?? '', sGr?.sas2 ?? '');
-                
-                const descGanjilHeight = sGr?.descriptions?.highest || '';
-                const descGanjilLow = sGr?.descriptions?.lowest || '';
-                
-                const descGenapHeight = sGr?.descriptions_Genap?.highest || '';
-                const descGenapLow = sGr?.descriptions_Genap?.lowest || '';
-                
-                row.push(descGanjilHeight, descGanjilLow, descGenapHeight, descGenapLow);
-                sheetRows.push(row);
-            });
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows), `Nilai_${sub.id}`);
-        });
-
-        // --- 9. Data Lainnya (Absensi, Ekstra, Kokur, Catatan, Jurnal, Aset) ---
-        const absensiRows = [["ID Siswa", "Semester", "Sakit", "Izin", "Alpa"]];
-        students.forEach(s => {
-            ['Ganjil', 'Genap'].forEach(sem => {
-                const a = attendance.find(x => x.studentId === s.id && (x.semester || 'Ganjil') === sem);
-                if (a && (a.sakit != null || a.izin != null || a.alpa != null)) absensiRows.push([s.id, sem, a.sakit ?? '', a.izin ?? '', a.alpa ?? '']);
-            });
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(absensiRows), "Absensi");
-
-        const exRows = [["ID Siswa", "Nama Siswa", "Semester", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"]];
-        studentExtracurriculars.forEach(se => { 
-            const st = students.find(s => s.id === se.studentId); 
-            const sem = se.semester || 'Ganjil';
-            if (st) se.assignedActivities.forEach((actId, i) => { 
-                if (actId) exRows.push([se.studentId, st.namaLengkap, sem, i + 1, actId, se.descriptions?.[actId] || '']); 
-            }); 
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(exRows), "Data Ekstra");
-
-        const koRows = [["ID Siswa", "Nama Siswa", "Semester", "Deskripsi Manual", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
-        students.forEach(s => { 
-            const co = cocurricularData[s.id] || {}; 
-            ['Ganjil', 'Genap'].forEach(sem => {
-                const fieldName = sem === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
-                const ratings = co[fieldName];
-                
-                // Allow export if there are ratings or a manual description
-                if ((ratings && Object.keys(ratings).length > 0) || (ratings && ratings.manualDescription) || co.manualDescription) {
-                    const row = [s.id, s.namaLengkap, sem]; 
-                    
-                    // Prioritize semester-specific manualDescription, then fallback to global manualDescription for Ganjil
-                    const manualDesc = ratings?.manualDescription || (sem === 'Ganjil' ? co.manualDescription : '');
-                    row.push(manualDesc || '');
-                    
-                    COCURRICULAR_DIMENSIONS.forEach(d => row.push(ratings?.[d.id] || '')); 
-                    koRows.push(row);
-                }
-            });
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(koRows), "Data Kokurikuler");
-
-        const catatanRows = [["ID Siswa", "Semester", "Catatan Wali Kelas"]];
-        students.forEach(s => {
-            if (notes[s.id]) catatanRows.push([s.id, 'Ganjil', notes[s.id]]);
-            if (notes[s.id + '_Genap']) catatanRows.push([s.id, 'Genap', notes[s.id + '_Genap']]);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catatanRows), "Catatan Wali Kelas");
-
-        const jfRows = [["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan", "Semester"]];
-        Object.entries(formativeJournal).forEach(([sid, ns]) => ns.forEach(n => jfRows.push([sid, n.id, n.date, n.type, n.subjectId || '', n.slmId || '', n.tpId || '', n.topic || '', n.note || '', n.semester || 'Ganjil'])));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(jfRows), "Jurnal Formatif");
-        const asetRows = [["Kunci Aset", "Data Base64"]];
-        const asToSa = { 'logo_sekolah': settings.logo_sekolah, 'logo_dinas': settings.logo_dinas, 'logo_cover': settings.logo_cover, 'piagam_background': settings.piagam_background, 'ttd_kepala_sekolah': settings.ttd_kepala_sekolah, 'ttd_wali_kelas': settings.ttd_wali_kelas };
-        
-        for (const [k, b] of Object.entries(asToSa)) {
-            if (b && typeof b === 'string') {
-                let base64Data = b;
-                if (b.startsWith('blob:')) {
-                    try {
-                        const res = await fetch(b);
-                        const blob = await res.blob();
-                        base64Data = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (e) {
-                        console.error(`Failed to convert blob to base64 for ${k}`, e);
-                    }
-                }
-                chunkString(base64Data, 30000).forEach((c, i) => asetRows.push([`${k}_part_${i}`, c]));
-            }
-        }
-        
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asetRows), "Aset Gambar");
-
-        const fotoSiswaRows = [["ID Siswa", "Part Index", "Data Base64"]];
-        for (const student of students) {
-            if (student.foto && typeof student.foto === 'string') {
-                let base64Data = student.foto;
-                if (base64Data.startsWith('blob:')) {
-                    try {
-                        const res = await fetch(base64Data);
-                        const blob = await res.blob();
-                        base64Data = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (e) {
-                        console.error(`Failed to convert blob to base64 for foto ${student.id}`, e);
-                    }
-                }
-                chunkString(base64Data, 30000).forEach((c, i) => fotoSiswaRows.push([student.id, i, c]));
-            }
-        }
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fotoSiswaRows), "Foto Siswa");
-
-        
-        // --- NEW RELATIONAL DB EXPORT ---
+        // --- NEW RELATIONAL DB EXPORT (Format 2) ---
         const currentSem = settings.semester || "Ganjil";
         const currentTA = settings.tahun_ajaran || "2023/2024";
 
@@ -999,16 +1008,21 @@ const [settings, setSettings] = useState(initialSettings);
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rEkskul), "_Ekskul");
 
-        return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
-    } catch (e) { console.error("Export Error:", e); return null; }
-  }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, predefinedCurriculum]);
+        return new Blob([XLSX.write(wb, { type: "array", bookType: "xlsx" })], { type: "application/octet-stream" });
+    } catch (e) {
+        console.error("Export Error Format 2:", e);
+        return null;
+    }
+  }, [settings, students, grades, attendance, studentExtracurriculars]);
 
-    const parseExcelBlob = useCallback(async (blob) => {
+
+
+  const parseExcelBlob = useCallback(async (blob) => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
         const workbook = XLSX.read(await blob.arrayBuffer());
         let news = { ...initialSettings }, nStud = [], nAtt = [], nNot = {}, nStEx = [], nCo = {}, nGr = [], nSub = [...defaultSubjects], nEx = [], nLO = {}, nFJ = {};
         
-        const findSheet = (names)
+        const findSheet = (names) => { for (const name of names) { const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, "_")); if (found) return workbook.Sheets[found]; } return null; };
         
         const rSettingsSheet = workbook.Sheets["_Settings"];
         if (rSettingsSheet) {
@@ -1030,7 +1044,65 @@ const [settings, setSettings] = useState(initialSettings);
                      }
                  });
             }
-            // we skip _Nilai parsing here to prioritize old sheets or just let old sheets override since they are user friendly.
+            
+            const rGradesSheet = workbook.Sheets["_Nilai"];
+            if (rGradesSheet) {
+                 nGr = [];
+                 const gradeMap = {};
+                 XLSX.utils.sheet_to_json(rGradesSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3] && r[4]) {
+                         const studentId = r[2];
+                         const subId = r[3];
+                         const category = r[4];
+                         const score = r[5] === "" ? "" : Number(r[5]);
+                         
+                         if (!gradeMap[studentId]) gradeMap[studentId] = { studentId, semester: currentSem, detailedGrades: {} };
+                         if (!gradeMap[studentId].detailedGrades[subId]) gradeMap[studentId].detailedGrades[subId] = { slm: [] };
+                         
+                         const detail = gradeMap[studentId].detailedGrades[subId];
+                         if (category === "STS1") detail.sts1 = score;
+                         else if (category === "SAS1") detail.sas1 = score;
+                         else if (category === "STS2") detail.sts2 = score;
+                         else if (category === "SAS2") detail.sas2 = score;
+                         else if (category.startsWith("SLM_")) {
+                             const id = category.replace("SLM_", "");
+                             detail.slm.push({ id, scores: score !== "" ? [score] : [], score: score });
+                         }
+                     }
+                 });
+                 nGr = Object.values(gradeMap);
+            }
+
+            const rAbsensiSheet = workbook.Sheets["_Absensi"];
+            if (rAbsensiSheet) {
+                nAtt = [];
+                XLSX.utils.sheet_to_json(rAbsensiSheet, {header: 1}).slice(1).forEach(r => {
+                    if (r[0] === currentTA && r[1] === currentSem && r[2]) {
+                        nAtt.push({ studentId: r[2], semester: currentSem, sakit: r[3], izin: r[4], alpa: r[5] });
+                    }
+                });
+            }
+
+            const rEkskulSheet = workbook.Sheets["_Ekskul"];
+            if (rEkskulSheet) {
+                 nStEx = [];
+                 const exMap = {};
+                 XLSX.utils.sheet_to_json(rEkskulSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3]) {
+                         const studentId = r[2];
+                         const ekskulId = r[3];
+                         const desc = r[4] || "";
+                         
+                         if (!exMap[studentId]) exMap[studentId] = { studentId, semester: currentSem, descriptions: {} };
+                         exMap[studentId].descriptions[ekskulId] = desc;
+                         
+                         // ensure nEx has this ID just in case
+                         if (!nEx.find(e => e.id === ekskulId)) nEx.push({ id: ekskulId, name: ekskulId });
+                     }
+                 });
+                 nStEx = Object.values(exMap);
+            }
+
         }
 
 
@@ -1313,15 +1385,27 @@ const [settings, setSettings] = useState(initialSettings);
         } finally { setIsLoading(false); }
     }, [parseExcelBlob, showToast]);
 
+
+
+
+
+
+
+
+
+
+
     const handleExportAll = useCallback(async () => {
         const blob = await exportToExcelBlob();
         if (!blob) return;
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = getDynamicRKTFileName(settings);
+        link.download = getDynamicRKTFileName(settings) + ".xlsx";
         link.click();
         showToast('File berhasil diunduh (Format Lengkap)!', 'success');
     }, [exportToExcelBlob, settings, showToast]);
+
+    
 
     const handleImportAll = useCallback(() => {
         const input = document.createElement('input');
@@ -1396,7 +1480,8 @@ const [settings, setSettings] = useState(initialSettings);
           }),
           React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
             React.createElement(Navigation, { 
-                activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
+                activePage, setActivePage: handleNavigate, onExport: handleExportAll,
+                onImport: handleImportAll,
                 onIsiERapor: () => setIsERaporModalOpen(true),
                 isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
             }),
