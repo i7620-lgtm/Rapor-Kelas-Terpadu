@@ -969,18 +969,53 @@ const [settings, setSettings] = useState(initialSettings);
         const currentSem = settings.semester || "Ganjil";
         const currentTA = settings.tahun_ajaran || "2023/2024";
 
-        const rSettings = [ ["TA", "Semester", "Key", "Value"] ];
+        const sortRelationalRows = (rows, compareRest = null) => {
+            if (!rows || rows.length <= 1) return rows;
+            const header = rows[0];
+            const dataRows = rows.slice(1);
+            dataRows.sort((a, b) => {
+                // TA (Tahun Ajaran) is index 0 - descending
+                const taA = String(a[0] || "");
+                const taB = String(b[0] || "");
+                if (taA !== taB) {
+                    return taB.localeCompare(taA);
+                }
+                
+                // Semester is index 1 - descending ("Genap" before "Ganjil")
+                const semA = String(a[1] || "");
+                const semB = String(b[1] || "");
+                const weightA = semA === "Genap" ? 2 : (semA === "Ganjil" ? 1 : 0);
+                const weightB = semB === "Genap" ? 2 : (semB === "Ganjil" ? 1 : 0);
+                if (weightA !== weightB) {
+                    return weightB - weightA;
+                }
+                
+                if (compareRest) {
+                    return compareRest(a, b);
+                }
+                
+                // Default stable/tidying sorting: Key/Student ID is index 2 - ascending
+                const idA = String(a[2] || "");
+                const idB = String(b[2] || "");
+                return idA.localeCompare(idB);
+            });
+            return [header, ...dataRows];
+        };
+
+        let rSettings = [ ["TA", "Semester", "Key", "Value"] ];
         Object.entries(settings).forEach(([k,v]) => {
            if (typeof v === "object") rSettings.push([currentTA, currentSem, k, JSON.stringify(v)]);
            else rSettings.push([currentTA, currentSem, k, v]);
         });
+        rSettings = sortRelationalRows(rSettings);
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rSettings), "_Settings");
 
-        const rStudents = [ ["TA", "Semester", "ID", "NIS", "NISN", "Nama", "L/P", "Tempat Lahir", "Tanggal Lahir", "Agama", "Alamat"] ];
+        let rStudents = [ ["TA", "Semester", "ID", "NIS", "NISN", "Nama", "L/P", "Tempat Lahir", "Tanggal Lahir", "Agama", "Alamat"] ];
         students.forEach(s => rStudents.push([currentTA, currentSem, s.id, s.nis, s.nisn, s.namaLengkap, s.jenisKelamin, s.tempatLahir, s.tanggalLahir, s.agama, s.alamat]));
+        rStudents = sortRelationalRows(rStudents);
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "_Students");
 
-        const rGrades = [ ["TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
+        let rGrades = [ ["TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
         grades.forEach(g => {
             Object.entries(g.detailedGrades || {}).forEach(([subId, detail]) => {
                 const subDetail = detail || {};
@@ -994,17 +1029,37 @@ const [settings, setSettings] = useState(initialSettings);
                 });
             });
         });
+        rGrades = sortRelationalRows(rGrades, (a, b) => {
+            const idA = String(a[2] || "");
+            const idB = String(b[2] || "");
+            if (idA !== idB) return idA.localeCompare(idB);
+            const subA = String(a[3] || "");
+            const subB = String(b[3] || "");
+            if (subA !== subB) return subA.localeCompare(subB);
+            const catA = String(a[4] || "");
+            const catB = String(b[4] || "");
+            return catA.localeCompare(catB);
+        });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrades), "_Nilai");
         
-        const rAbsensi = [ ["TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
+        let rAbsensi = [ ["TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
         attendance.forEach(a => rAbsensi.push([currentTA, a.semester || currentSem, a.studentId, a.sakit, a.izin, a.alpa]));
+        rAbsensi = sortRelationalRows(rAbsensi);
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "_Absensi");
 
-        const rEkskul = [ ["TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
+        let rEkskul = [ ["TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
         studentExtracurriculars.forEach(se => {
              Object.entries(se.descriptions || {}).forEach(([eid, desc]) => {
                  rEkskul.push([currentTA, se.semester || currentSem, se.studentId, eid, desc]);
              });
+        });
+        rEkskul = sortRelationalRows(rEkskul, (a, b) => {
+            const idA = String(a[2] || "");
+            const idB = String(b[2] || "");
+            if (idA !== idB) return idA.localeCompare(idB);
+            const exA = String(a[3] || "");
+            const exB = String(b[3] || "");
+            return exA.localeCompare(exB);
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rEkskul), "_Ekskul");
 
