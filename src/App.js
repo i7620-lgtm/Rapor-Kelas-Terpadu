@@ -1,4 +1,12 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import localforage from 'localforage';
+
+localforage.config({
+  name: 'ERaporApp',
+  version: 1.0,
+  storeName: 'erapor_data',
+  description: 'E-Rapor Application Data'
+});
 import * as XLSX from 'xlsx';
 import { NAV_ITEMS, COCURRICULAR_DIMENSIONS } from './constants.js';
 import Navigation from './components/Navigation.js';
@@ -74,6 +82,7 @@ const initialCocurricularData = {};
 const initialAttendance = [];
 const initialStudentExtracurriculars = [];
 const initialFormativeJournal = {};
+const initialLearningObjectives = {};
 
 const deepMerge = (target, source) => {
     if (typeof target !== 'object' || target === null) return source !== undefined ? source : target;
@@ -93,7 +102,41 @@ const deepMerge = (target, source) => {
     return merged;
 };
 
-const loadDataSafe = (key, fallbackValue, validator = null) => {
+
+const loadDataSafeAsync = async (key, fallbackValue, validator = null) => {
+    try {
+        let val = await localforage.getItem(key);
+        if (val === null) {
+            const saved = localStorage.getItem(key);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    val = parsed;
+                    await localforage.setItem(key, parsed);
+                } catch(e) {}
+            }
+        }
+        if (val === null) return fallbackValue;
+
+        if (validator && !validator(val)) {
+            console.warn(`Data validation failed for key: ${key}. Reverting to fallback.`);
+            return fallbackValue;
+        }
+        if (Array.isArray(fallbackValue) && !Array.isArray(val)) {
+            return fallbackValue;
+        }
+        if (typeof fallbackValue === 'object' && !Array.isArray(fallbackValue) && fallbackValue !== null) {
+             return deepMerge(fallbackValue, val);
+        }
+        return val;
+    } catch (e) {
+        console.error(`Error loading ${key}:`, e);
+        return fallbackValue;
+    }
+};
+
+
+const loadDataSafeSync_DEPRECATEDSync_DEPRECATED = (key, fallbackValue, validator = null) => {
     try {
         const saved = localStorage.getItem(key);
         if (!saved) return fallbackValue;
@@ -285,21 +328,84 @@ const App = () => {
   const [activeNilaiTab, setActiveNilaiTab] = useState('keseluruhan'); 
   const { isMobile } = useWindowDimensions();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(() => {
-      const savedSettings = loadDataSafe('appSettings', initialSettings);
-      if (!savedSettings?.appLock?.enabled || savedSettings?.appLock?.pin?.length !== 6) {
-          return true; // Already "unlocked" if lock is not fully configured
-      }
-      return sessionStorage.getItem('appUnlocked') === 'true'; // Check session storage
-  });
+  const [isUnlocked, setIsUnlocked] = useState(true);
     
   const isInitialMount = useRef(true);
 
   const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
 
-  const [settings, setSettings] = useState(() => {
-      return loadDataSafe('appSettings', initialSettings);
-  });
+  
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  useEffect(() => {
+     let isMounted = true;
+     const initializeAllData = async () => {
+         const settingsData = await loadDataSafeAsync("appSettings", initialSettings);
+         let unlocked = true;
+         if (settingsData?.appLock?.enabled && settingsData?.appLock?.pin?.length === 6) {
+             unlocked = sessionStorage.getItem('appUnlocked') === 'true';
+         }
+         const studentsData = await loadDataSafeAsync("appStudents", initialStudents, Array.isArray);
+         const gradesData = await loadDataSafeAsync("appGrades", initialGrades, Array.isArray);
+         const notesData = await loadDataSafeAsync("appNotes", initialNotes);
+         const cocurricularDataData = await loadDataSafeAsync("appCocurricularData", initialCocurricularData);
+         
+         let attendanceData = await loadDataSafeAsync("appAttendance", initialAttendance, Array.isArray);
+         attendanceData = attendanceData.map(att => ({
+             studentId: att.studentId,
+             semester: att.semester || "Ganjil",
+             sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
+             izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
+             alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
+         }));
+
+         const extracurricularsData = await loadDataSafeAsync("appExtracurriculars", [], Array.isArray);
+         const studentExData = await loadDataSafeAsync("appStudentExtracurriculars", initialStudentExtracurriculars, Array.isArray);
+         
+         const loadedSubjects = await loadDataSafeAsync("appSubjects", defaultSubjects, Array.isArray);
+         const newSubjects = [...loadedSubjects];
+         let hasUpdates = false;
+         defaultSubjects.forEach(ds => {
+             if (!newSubjects.find(s => s.id === ds.id)) {
+                 newSubjects.push({...ds, active: false});
+                 hasUpdates = true;
+             }
+         });
+         newSubjects.forEach(s => {
+             const ds = defaultSubjects.find(d => d.id === s.id);
+             if (ds && (!s.curriculumKey || s.curriculumKey !== ds.curriculumKey)) {
+                 s.curriculumKey = ds.curriculumKey;
+                 hasUpdates = true;
+             }
+         });
+         if (hasUpdates) await localforage.setItem("appSubjects", newSubjects);
+
+         const loData = await loadDataSafeAsync("appLearningObjectives", initialLearningObjectives);
+         const fjData = await loadDataSafeAsync("appFormativeJournal", initialFormativeJournal);
+
+         if (isMounted) {
+            setSettings(settingsData);
+            setStudents(studentsData);
+            setGrades(gradesData);
+            setNotes(notesData);
+            setCocurricularData(cocurricularDataData);
+            setAttendance(attendanceData);
+            setExtracurriculars(extracurricularsData);
+            setStudentExtracurriculars(studentExData);
+            setSubjects(newSubjects);
+            setLearningObjectives(loData);
+            setFormativeJournal(fjData);
+            setIsDataLoaded(true);
+            setIsUnlocked(unlocked);
+            setIsLoading(false); // remove the general isLoading
+         }
+     };
+     initializeAllData();
+     return () => { isMounted = false; };
+  }, []);
+
+
+const [settings, setSettings] = useState(initialSettings);
 
   useEffect(() => {
       const initImages = async () => {
@@ -337,76 +443,25 @@ const App = () => {
       initImages();
   }, []);
 
-  const [students, setStudents] = useState(() => 
-      loadDataSafe('appStudents', initialStudents, Array.isArray)
-  );
+  const [students, setStudents] = useState([]);
 
-  const [grades, setGrades] = useState(() => 
-      loadDataSafe('appGrades', initialGrades, Array.isArray)
-  );
+  const [grades, setGrades] = useState([]);
 
-  const [notes, setNotes] = useState(() => 
-      loadDataSafe('appNotes', initialNotes)
-  );
+  const [notes, setNotes] = useState({});
 
-  const [cocurricularData, setCocurricularData] = useState(() => 
-      loadDataSafe('appCocurricularData', initialCocurricularData)
-  );
+  const [cocurricularData, setCocurricularData] = useState({});
 
-  const [attendance, setAttendance] = useState(() => {
-      const loaded = loadDataSafe('appAttendance', initialAttendance, Array.isArray);
-      return loaded.map(att => ({
-          studentId: att.studentId,
-          semester: att.semester || 'Ganjil',
-          sakit: (att.sakit === 0 || att.sakit) ? Number(att.sakit) : null,
-          izin: (att.izin === 0 || att.izin) ? Number(att.izin) : null,
-          alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
-      }));
-  });
+  const [attendance, setAttendance] = useState([]);
 
-  const [extracurriculars, setExtracurriculars] = useState(() => 
-      loadDataSafe('appExtracurriculars', [], Array.isArray)
-  );
+  const [extracurriculars, setExtracurriculars] = useState([]);
 
-  const [studentExtracurriculars, setStudentExtracurriculars] = useState(() => 
-      loadDataSafe('appStudentExtracurriculars', initialStudentExtracurriculars, Array.isArray)
-  );
+  const [studentExtracurriculars, setStudentExtracurriculars] = useState([]);
 
-  const [subjects, setSubjects] = useState(() => {
-      const loaded = loadDataSafe('appSubjects', defaultSubjects, Array.isArray);
-      const newSubjects = [...loaded];
-      let hasUpdates = false;
+  const [subjects, setSubjects] = useState([]);
 
-      // Add missing default subjects
-      defaultSubjects.forEach(ds => {
-          if (!newSubjects.find(s => s.id === ds.id)) {
-              newSubjects.push({...ds, active: false}); // default newly added subjects to inactive so it doesn't pollute their view
-              hasUpdates = true;
-          }
-      });
+  const [learningObjectives, setLearningObjectives] = useState({});
 
-      // Ensure curriculumKey exists on existing default items
-      newSubjects.forEach(s => {
-          const ds = defaultSubjects.find(d => d.id === s.id);
-          if (ds && (!s.curriculumKey || s.curriculumKey !== ds.curriculumKey)) {
-              s.curriculumKey = ds.curriculumKey;
-              hasUpdates = true;
-          }
-      });
-
-      if (hasUpdates) {
-          localStorage.setItem('appSubjects', JSON.stringify(newSubjects));
-      }
-      return newSubjects;
-  });
-
-  const [learningObjectives, setLearningObjectives] = useState(() => 
-      loadDataSafe('appLearningObjectives', {})
-  );
-
-  const [formativeJournal, setFormativeJournal] = useState(() => 
-      loadDataSafe('appFormativeJournal', initialFormativeJournal)
-  );
+  const [formativeJournal, setFormativeJournal] = useState({});
   
   const [predefinedCurriculum, setPredefinedCurriculum] = useState(null);
   const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
@@ -586,329 +641,526 @@ const App = () => {
         initializeApp();
     }, []);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
   const exportToExcelBlob = useCallback(async () => {
-    if (typeof XLSX === 'undefined') return null;
+    if (typeof XLSX === "undefined") return null;
     try {
         const wb = XLSX.utils.book_new();
-        
-        // --- 1. Sheet: Petunjuk ---
-        const wsPetunjuk = XLSX.utils.aoa_to_sheet([
-            ["Petunjuk Penggunaan Template RKT"],
-            ["1. Sheet 'Leger' berisi ringkasan nilai seluruh siswa."],
-            ["2. Jangan mengubah nama-nama sheet (lembar kerja) data mentah (Nilai_, Absensi, dll)."],
-            ["3. Jangan mengubah header (baris pertama) pada setiap sheet data mentah."],
-            ["4. Simpan file ini dan unggah kembali ke aplikasi RKT untuk mengembalikan data."]
-        ]);
-        XLSX.utils.book_append_sheet(wb, wsPetunjuk, "Petunjuk");
+        // --- NEW RELATIONAL DB EXPORT (Format 2) ---
+        const currentSem = settings.semester || "Ganjil";
+        const currentTA = settings.tahun_ajaran || "2023/2024";
 
-        // --- 2. Sheet: Leger (SUMMARY) ---
-        const activeSubjects = subjects.filter(s => s.active);
-        const displaySubjects = [];
-        const addedGroupPrefixes = new Set();
-        const groups = [
-            { prefix: 'Pendidikan Agama dan Budi Pekerti', base: { id: 'PABP', label: 'PABP', fullName: 'Pendidikan Agama dan Budi Pekerti' } },
-            { prefix: 'Seni Budaya', base: { id: 'SB', label: 'SENI', fullName: 'Seni Budaya' } },
-            { prefix: 'Muatan Lokal', base: { id: 'Mulok', label: 'MULOK', fullName: 'Muatan Lokal' } }
-        ];
-        
-        activeSubjects.forEach(subject => {
-            let group = groups.find(g => subject.fullName.startsWith(g.prefix));
-            if (!group && (subject.id === 'PAKTTMYME' || subject.fullName.toLowerCase().includes('kepercayaan terhadap tuhan'))) {
-                group = groups.find(g => g.base.id === 'PABP');
-            }
-            if (group) {
-                if (!addedGroupPrefixes.has(group.prefix)) {
-                    displaySubjects.push(group.base);
-                    addedGroupPrefixes.add(group.prefix);
+        const sortRelationalRows = (rows, compareRest = null) => {
+            if (!rows || rows.length <= 1) return rows;
+            const header = rows[0];
+            const dataRows = rows.slice(1);
+            dataRows.sort((a, b) => {
+                // TA (Tahun Ajaran) is index 0 - descending
+                const taA = String(a[0] || "");
+                const taB = String(b[0] || "");
+                if (taA !== taB) {
+                    return taB.localeCompare(taA);
                 }
-            } else displaySubjects.push(subject);
-        });
-        
-        const sortOrder = { 'PABP': 1, 'PP': 2, 'BIndo': 3, 'MTK': 4, 'IPAS': 5, 'SB': 6, 'PJOK': 7, 'BIng': 8, 'Mulok': 9 };
-        displaySubjects.sort((a, b) => (sortOrder[a.id] || 99) - (sortOrder[b.id] || 99));
-
-        const generateLegerRows = (overrideSemester) => {
-            const legerHeader = ["No", "Nama Siswa", "NISN", "NIS", ...displaySubjects.map(s => s.label), "Jumlah", "Rata-rata", "Rank"];
-            const simSettings = { ...settings, semester: overrideSemester };
-            const gradeKey = `Kelas ${getGradeNumber(simSettings.nama_kelas) || '5'}`;
-            
-            const legerDataWithTotals = students.map((student, index) => {
-                const studentGrades = grades.find(g => g.studentId === student.id) || { detailedGrades: {} };
-                let total = 0, count = 0;
                 
-                const getSimFinalScore = (subjId) => {
-                    const detailed = studentGrades.detailedGrades[subjId];
-                    if (!detailed) return null;
-                    const config = simSettings.gradeCalculation?.[subjId] || { method: 'rata-rata' };
-                    const subj = activeSubjects.find(s => s.id === subjId) || subjects.find(s => s.id === subjId);
-                    const curriculumKey = subj ? (subj.curriculumKey || subj.fullName) : null;
-                    return calculateFinalGrade(detailed, config, simSettings, subjId, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum);
-                };
-
-                const rowGrades = displaySubjects.map(ds => {
-                    let grade;
-                    if (ds.id === 'PABP') {
-                        const rel = String(student.agama || '').trim().toLowerCase();
-                        if (rel) {
-                            const matched = rel === 'kepercayaan' ? activeSubjects.find(s => s.id === 'PAKTTMYME') : activeSubjects.find(s => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${rel})`));
-                            grade = matched ? getSimFinalScore(matched.id) : null;
-                        }
-                    } else if (['SB', 'Mulok'].includes(ds.id)) {
-                        const member = activeSubjects.filter(s => s.fullName.startsWith(ds.fullName));
-                        grade = member.map(m => getSimFinalScore(m.id)).find(g => g != null);
-                    } else grade = getSimFinalScore(ds.id);
-
-                    if (typeof grade === 'number') { total += grade; count++; }
-                    return grade ?? '-';
-                });
-                return { id: student.id, no: index + 1, name: student.namaLengkap, nisn: student.nisn, nis: student.nis, rowGrades, total, avg: count > 0 ? (total / count).toFixed(2) : "0.00" };
-            });
-
-            const sortedForRank = [...legerDataWithTotals].sort((a, b) => b.total - a.total);
-            const rankMap = new Map();
-            if (sortedForRank.length > 0) {
-                let curRank = 1;
-                rankMap.set(sortedForRank[0].id, curRank);
-                for (let i = 1; i < sortedForRank.length; i++) {
-                    if (sortedForRank[i].total < sortedForRank[i - 1].total) curRank = i + 1;
-                    rankMap.set(sortedForRank[i].id, curRank);
+                // Semester is index 1 - descending ("Genap" before "Ganjil")
+                const semA = String(a[1] || "");
+                const semB = String(b[1] || "");
+                const weightA = semA === "Genap" ? 2 : (semA === "Ganjil" ? 1 : 0);
+                const weightB = semB === "Genap" ? 2 : (semB === "Ganjil" ? 1 : 0);
+                if (weightA !== weightB) {
+                    return weightB - weightA;
                 }
-            }
-
-            return [legerHeader, ...legerDataWithTotals.map(d => [
-                d.no, d.name, d.nisn, d.nis, ...d.rowGrades, d.total, d.avg, rankMap.get(d.id)
-            ])];
+                
+                if (compareRest) {
+                    return compareRest(a, b);
+                }
+                
+                // Default stable/tidying sorting: Key/Student ID is index 2 - ascending
+                const idA = String(a[2] || "");
+                const idB = String(b[2] || "");
+                return idA.localeCompare(idB);
+            });
+            return [header, ...dataRows];
         };
 
-        const wsLegerGanjil = XLSX.utils.aoa_to_sheet(generateLegerRows('Ganjil'));
-        XLSX.utils.book_append_sheet(wb, wsLegerGanjil, "Leger_Ganjil");
-        
-        const wsLegerGenap = XLSX.utils.aoa_to_sheet(generateLegerRows('Genap'));
-        XLSX.utils.book_append_sheet(wb, wsLegerGenap, "Leger_Genap");
-
-        // --- 3. Sheet: Pengaturan ---
-        const excludeKeys = ['predikats', 'gradeCalculation', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'qualitativeGradingMap', 'slmVisibility', 'ttd_kepala_sekolah', 'ttd_wali_kelas', 'kop_layout', 'piagam_layout', 'piagam_layout_Genap', 'kop_layout_Genap'];
-        const settingsRows = [
-            ["Kunci Pengaturan", "Nilai"],
-            ["format_version", "2"],
-            ...Object.entries(settings).filter(([key]) => !excludeKeys.includes(key)).map(([key, val]) => {
-                let exportKey = key;
-                if (key === 'cocurricular_theme') exportKey = 'cocurricular_theme_Ganjil';
-                
-                if (typeof val === 'object' && val !== null) {
-                    return [exportKey, JSON.stringify(val)];
-                }
-                if (typeof val === 'boolean') {
-                    return [exportKey, val ? 'true' : 'false'];
-                }
-                return [exportKey, val ?? ''];
-            }),
-            ["kop_layout", JSON.stringify(settings.kop_layout || [])],
-            ["piagam_layout", JSON.stringify(settings.piagam_layout || [])],
-            ["kop_layout_Genap", JSON.stringify(settings.kop_layout_Genap || [])],
-            ["piagam_layout_Genap", JSON.stringify(settings.piagam_layout_Genap || [])],
-            [],
-            ["Pengaturan Rentang Nilai (Predikat)"],
-            ["Predikat", "Nilai Minimum"],
-            ["A", settings.predikats.a],
-            ["B", settings.predikats.b],
-            ["C", settings.predikats.c],
-            ["D", settings.predikats.d],
-            [],
-            ["Pengaturan Cara Pengolahan Nilai Rapor"],
-            ["ID Mata Pelajaran", "Metode Perhitungan", "Bobot (JSON)", "SLM Visibility (JSON)"]
-        ];
-        subjects.forEach(s => {
-            const config = settings.gradeCalculation?.[s.id] || {};
-            const visibility = settings.slmVisibility?.[s.id] || [];
-            settingsRows.push([s.id, config.method || 'rata-rata', JSON.stringify(config.weights || {}), JSON.stringify(visibility)]);
+        let rSettings = [ ["TA", "Semester", "Key", "Value"] ];
+        Object.entries(settings).forEach(([k,v]) => {
+           if (typeof v === "object") rSettings.push([currentTA, currentSem, k, JSON.stringify(v)]);
+           else rSettings.push([currentTA, currentSem, k, v]);
         });
-        const wsSettings = XLSX.utils.aoa_to_sheet(settingsRows);
-        XLSX.utils.book_append_sheet(wb, wsSettings, "Pengaturan");
+        rSettings = sortRelationalRows(rSettings);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rSettings), "_Settings");
 
-        // --- 4. Sheet: Mata Pelajaran ---
-        const wsMapel = XLSX.utils.aoa_to_sheet([[".", "Nama Lengkap", "Singkatan", "Status Aktif", "Kunci Kurikulum"], ...subjects.map(s => [s.id, s.fullName, s.label, s.active ? "Aktif" : "Tidak Aktif", s.curriculumKey || s.fullName])]);
-        XLSX.utils.book_append_sheet(wb, wsMapel, "Mata Pelajaran");
+        let rStudents = [ ["TA", "Semester", "ID", "NIS", "NISN", "Nama", "L/P", "Tempat Lahir", "Tanggal Lahir", "Agama", "Alamat"] ];
+        students.forEach(s => rStudents.push([currentTA, currentSem, s.id, s.nis, s.nisn, s.namaLengkap, s.jenisKelamin, s.tempatLahir, s.tanggalLahir, s.agama, s.alamat]));
+        rStudents = sortRelationalRows(rStudents);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "_Students");
 
-        // --- 5. Sheet: Ekstrakurikuler ---
-        const wsEkstra = XLSX.utils.aoa_to_sheet([["ID Unik (Jangan Diubah)", "Nama Ekstrakurikuler", "Status Aktif"], ...extracurriculars.map(e => [e.id, e.name, e.active ? "Aktif" : "Tidak Aktif"])]);
-        XLSX.utils.book_append_sheet(wb, wsEkstra, "Ekstrakurikuler");
-
-        // --- 6. Sheet: Daftar Siswa ---
-        const wsSiswa = XLSX.utils.aoa_to_sheet([["ID Siswa (Otomatis)", "Nama Lengkap", "Nama Panggilan", "NIS", "NISN", "Tempat, Tanggal Lahir", "Jenis Kelamin", "Agama", "Asal TK", "Alamat Siswa", "Diterima di Kelas", "Diterima Tanggal", "Nama Ayah", "Nama Ibu", "Pekerjaan Ayah", "Pekerjaan Ibu", "Alamat Orang Tua", "Telepon Orang Tua", "Nama Wali", "Pekerjaan Wali", "Alamat Wali", "Telepon Wali"], ...students.map(s => [s.id, s.namaLengkap, s.namaPanggilan, s.nis, s.nisn, s.ttl, s.jenisKelamin, s.agama, s.asalTk, s.alamatSiswa, s.diterimaDiKelas, s.diterimaTanggal, s.namaAyah, s.namaIbu, s.pekerjaanAyah, s.pekerjaanIbu, s.alamatOrangTua, s.teleponOrangTua, s.namaWali, s.pekerjaanWali, s.alamatWali, s.teleponWali])]);
-        XLSX.utils.book_append_sheet(wb, wsSiswa, "Daftar Siswa");
-
-        // --- 7. Sheet: Tujuan Pembelajaran ---
-        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas)}`;
-        const masterCurriculum = new Map();
-        if (predefinedCurriculum) {
-            subjects.filter(s => s.active).forEach(sub => {
-                const preData = predefinedCurriculum[sub.curriculumKey || sub.fullName];
-                if (preData) {
-                    const preHalf = Math.ceil(preData.length / 2);
-                    masterCurriculum.set(sub.id, preData.map((slm, i) => ({ id: `slm_predefined_${sub.id}_${i}`, name: slm.slm, tps: slm.tp.map(t => ({ text: t })), semester: i < preHalf ? "Ganjil" : "Genap" })));
-                }
-            });
-        }
-        if (learningObjectives[gradeKey]) {
-            subjects.filter(s => s.active).forEach(sub => {
-                const userTps = learningObjectives[gradeKey][sub.curriculumKey || sub.fullName];
-                if (!userTps) return;
-                let subSlms = masterCurriculum.get(sub.id) || [];
-                const userTpsBySlm = userTps.reduce((acc, tp) => { if (!acc[tp.slmId]) acc[tp.slmId] = { items: [], semester: tp.semester || "Semua" }; acc[tp.slmId].items.push({ text: tp.text }); return acc; }, {});
-                Object.entries(userTpsBySlm).forEach(([slmId, tpData]) => {
-                    const idx = subSlms.findIndex(s => s.id === slmId);
-                    if (idx > -1) { subSlms[idx].tps = tpData.items; subSlms[idx].semester = tpData.semester; const name = grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name; if (name) subSlms[idx].name = name; }
-                    else subSlms.push({ id: slmId, name: grades[0]?.detailedGrades?.[sub.id]?.slm.find(s => s.id === slmId)?.name || 'Lingkup Materi Kustom', tps: tpData.items, semester: tpData.semester });
+        let rGrades = [ ["TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
+        grades.forEach(g => {
+            Object.entries(g.detailedGrades || {}).forEach(([subId, detail]) => {
+                const subDetail = detail || {};
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS1", subDetail.sts1 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS1", subDetail.sas1 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS2", subDetail.sts2 || ""]);
+                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS2", subDetail.sas2 || ""]);
+                (subDetail.slm || []).forEach((slm, i) => {
+                    const avg = slm.scores && slm.scores.length > 0 ? slm.scores.reduce((a, b) => a + (typeof b==="number"?b:0), 0) / slm.scores.length : "";
+                    rGrades.push([currentTA, currentSem, g.studentId, subId, "SLM_" + slm.id, avg]);
                 });
-                masterCurriculum.set(sub.id, subSlms);
-            });
-        }
-        const tpRows = [["ID Mata Pelajaran", "Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Semester", "Deskripsi Tujuan Pembelajaran (TP)"]];
-        masterCurriculum.forEach((slms, subId) => {
-            const sub = subjects.find(s => s.id === subId);
-            if (sub) slms.forEach(slm => slm.tps.forEach(tp => tpRows.push([subId, sub.curriculumKey || sub.fullName, slm.id, slm.name, slm.semester || "Semua", tp.text])));
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tpRows), "Tujuan Pembelajaran");
-
-        // --- 8. Sheets: Nilai_{MapelID} ---
-        subjects.filter(s => s.active).forEach(sub => {
-            const subSlms = masterCurriculum.get(sub.id);
-            const headers = ["ID Siswa", "Nama Siswa"];
-            const colMap = [];
-            if (subSlms) subSlms.forEach(slm => slm.tps.forEach((tp, i) => { headers.push(`${slm.id}_TP${i + 1}`); colMap.push({ type: 'tp', slmId: slm.id, index: i }); }));
-            headers.push("STS 1 (Ganjil)", "SAS 1 (Ganjil)", "STS 2 (Genap)", "SAS 2 (Genap)", "Deskripsi Tinggi (Ganjil)", "Deskripsi Rendah (Ganjil)", "Deskripsi Tinggi (Genap)", "Deskripsi Rendah (Genap)");
-            const sheetRows = [headers];
-            students.forEach(st => {
-                const sGr = grades.find(g => g.studentId === st.id)?.detailedGrades?.[sub.id];
-                const row = [st.id, st.namaLengkap];
-                colMap.forEach(m => { const slm = sGr?.slm?.find(s => s.id === m.slmId); row.push(slm?.scores?.[m.index] ?? ''); });
-                
-                const expSts1 = sGr?.sts1 !== undefined && sGr?.sts1 !== null ? sGr.sts1 : (sGr?.sts !== undefined ? sGr.sts : '');
-                const expSas1 = sGr?.sas1 !== undefined && sGr?.sas1 !== null ? sGr.sas1 : (sGr?.sas !== undefined ? sGr.sas : '');
-                
-                row.push(expSts1, expSas1, sGr?.sts2 ?? '', sGr?.sas2 ?? '');
-                
-                const descGanjilHeight = sGr?.descriptions?.highest || '';
-                const descGanjilLow = sGr?.descriptions?.lowest || '';
-                
-                const descGenapHeight = sGr?.descriptions_Genap?.highest || '';
-                const descGenapLow = sGr?.descriptions_Genap?.lowest || '';
-                
-                row.push(descGanjilHeight, descGanjilLow, descGenapHeight, descGenapLow);
-                sheetRows.push(row);
-            });
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetRows), `Nilai_${sub.id}`);
-        });
-
-        // --- 9. Data Lainnya (Absensi, Ekstra, Kokur, Catatan, Jurnal, Aset) ---
-        const absensiRows = [["ID Siswa", "Semester", "Sakit", "Izin", "Alpa"]];
-        students.forEach(s => {
-            ['Ganjil', 'Genap'].forEach(sem => {
-                const a = attendance.find(x => x.studentId === s.id && (x.semester || 'Ganjil') === sem);
-                if (a && (a.sakit != null || a.izin != null || a.alpa != null)) absensiRows.push([s.id, sem, a.sakit ?? '', a.izin ?? '', a.alpa ?? '']);
             });
         });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(absensiRows), "Absensi");
-
-        const exRows = [["ID Siswa", "Nama Siswa", "Semester", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"]];
-        studentExtracurriculars.forEach(se => { 
-            const st = students.find(s => s.id === se.studentId); 
-            const sem = se.semester || 'Ganjil';
-            if (st) se.assignedActivities.forEach((actId, i) => { 
-                if (actId) exRows.push([se.studentId, st.namaLengkap, sem, i + 1, actId, se.descriptions?.[actId] || '']); 
-            }); 
+        rGrades = sortRelationalRows(rGrades, (a, b) => {
+            const idA = String(a[2] || "");
+            const idB = String(b[2] || "");
+            if (idA !== idB) return idA.localeCompare(idB);
+            const subA = String(a[3] || "");
+            const subB = String(b[3] || "");
+            if (subA !== subB) return subA.localeCompare(subB);
+            const catA = String(a[4] || "");
+            const catB = String(b[4] || "");
+            return catA.localeCompare(catB);
         });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(exRows), "Data Ekstra");
-
-        const koRows = [["ID Siswa", "Nama Siswa", "Semester", "Deskripsi Manual", ...COCURRICULAR_DIMENSIONS.map(d => d.id)]];
-        students.forEach(s => { 
-            const co = cocurricularData[s.id] || {}; 
-            ['Ganjil', 'Genap'].forEach(sem => {
-                const fieldName = sem === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
-                const ratings = co[fieldName];
-                
-                // Allow export if there are ratings or a manual description
-                if ((ratings && Object.keys(ratings).length > 0) || (ratings && ratings.manualDescription) || co.manualDescription) {
-                    const row = [s.id, s.namaLengkap, sem]; 
-                    
-                    // Prioritize semester-specific manualDescription, then fallback to global manualDescription for Ganjil
-                    const manualDesc = ratings?.manualDescription || (sem === 'Ganjil' ? co.manualDescription : '');
-                    row.push(manualDesc || '');
-                    
-                    COCURRICULAR_DIMENSIONS.forEach(d => row.push(ratings?.[d.id] || '')); 
-                    koRows.push(row);
-                }
-            });
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(koRows), "Data Kokurikuler");
-
-        const catatanRows = [["ID Siswa", "Semester", "Catatan Wali Kelas"]];
-        students.forEach(s => {
-            if (notes[s.id]) catatanRows.push([s.id, 'Ganjil', notes[s.id]]);
-            if (notes[s.id + '_Genap']) catatanRows.push([s.id, 'Genap', notes[s.id + '_Genap']]);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(catatanRows), "Catatan Wali Kelas");
-
-        const jfRows = [["ID Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan", "Semester"]];
-        Object.entries(formativeJournal).forEach(([sid, ns]) => ns.forEach(n => jfRows.push([sid, n.id, n.date, n.type, n.subjectId || '', n.slmId || '', n.tpId || '', n.topic || '', n.note || '', n.semester || 'Ganjil'])));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(jfRows), "Jurnal Formatif");
-        const asetRows = [["Kunci Aset", "Data Base64"]];
-        const asToSa = { 'logo_sekolah': settings.logo_sekolah, 'logo_dinas': settings.logo_dinas, 'logo_cover': settings.logo_cover, 'piagam_background': settings.piagam_background, 'ttd_kepala_sekolah': settings.ttd_kepala_sekolah, 'ttd_wali_kelas': settings.ttd_wali_kelas };
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrades), "_Nilai");
         
-        for (const [k, b] of Object.entries(asToSa)) {
-            if (b && typeof b === 'string') {
-                let base64Data = b;
-                if (b.startsWith('blob:')) {
-                    try {
-                        const res = await fetch(b);
-                        const blob = await res.blob();
-                        base64Data = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (e) {
-                        console.error(`Failed to convert blob to base64 for ${k}`, e);
-                    }
-                }
-                chunkString(base64Data, 30000).forEach((c, i) => asetRows.push([`${k}_part_${i}`, c]));
-            }
-        }
-        
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(asetRows), "Aset Gambar");
+        let rAbsensi = [ ["TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
+        attendance.forEach(a => rAbsensi.push([currentTA, a.semester || currentSem, a.studentId, a.sakit, a.izin, a.alpa]));
+        rAbsensi = sortRelationalRows(rAbsensi);
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "_Absensi");
 
-        const fotoSiswaRows = [["ID Siswa", "Part Index", "Data Base64"]];
-        for (const student of students) {
-            if (student.foto && typeof student.foto === 'string') {
-                let base64Data = student.foto;
-                if (base64Data.startsWith('blob:')) {
-                    try {
-                        const res = await fetch(base64Data);
-                        const blob = await res.blob();
-                        base64Data = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch (e) {
-                        console.error(`Failed to convert blob to base64 for foto ${student.id}`, e);
-                    }
-                }
-                chunkString(base64Data, 30000).forEach((c, i) => fotoSiswaRows.push([student.id, i, c]));
-            }
-        }
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fotoSiswaRows), "Foto Siswa");
+        let rEkskul = [ ["TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
+        studentExtracurriculars.forEach(se => {
+             Object.entries(se.descriptions || {}).forEach(([eid, desc]) => {
+                 rEkskul.push([currentTA, se.semester || currentSem, se.studentId, eid, desc]);
+             });
+        });
+        rEkskul = sortRelationalRows(rEkskul, (a, b) => {
+            const idA = String(a[2] || "");
+            const idB = String(b[2] || "");
+            if (idA !== idB) return idA.localeCompare(idB);
+            const exA = String(a[3] || "");
+            const exB = String(b[3] || "");
+            return exA.localeCompare(exB);
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rEkskul), "_Ekskul");
 
-        return new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/octet-stream' });
-    } catch (e) { console.error("Export Error:", e); return null; }
-  }, [settings, students, grades, notes, attendance, studentExtracurriculars, subjects, cocurricularData, extracurriculars, learningObjectives, formativeJournal, predefinedCurriculum]);
+        return new Blob([XLSX.write(wb, { type: "array", bookType: "xlsx" })], { type: "application/octet-stream" });
+    } catch (e) {
+        console.error("Export Error Format 2:", e);
+        return null;
+    }
+  }, [settings, students, grades, attendance, studentExtracurriculars]);
 
-    const parseExcelBlob = useCallback(async (blob) => {
+
+
+  const parseExcelBlob = useCallback(async (blob) => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
         const workbook = XLSX.read(await blob.arrayBuffer());
         let news = { ...initialSettings }, nStud = [], nAtt = [], nNot = {}, nStEx = [], nCo = {}, nGr = [], nSub = [...defaultSubjects], nEx = [], nLO = {}, nFJ = {};
-        const findSheet = (names) => { for (const name of names) { const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, '_')); if (found) return workbook.Sheets[found]; } return null; };
+        
+        const findSheet = (names) => { for (const name of names) { const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, "_")); if (found) return workbook.Sheets[found]; } return null; };
+        
+        const rSettingsSheet = workbook.Sheets["_Settings"];
+        if (rSettingsSheet) {
+            const currentTA = settings.tahun_ajaran || "2023/2024";
+            const currentSem = settings.semester || "Ganjil";
+            const data = XLSX.utils.sheet_to_json(rSettingsSheet, { header: 1 });
+            data.slice(1).forEach(r => {
+                if (r[0] === currentTA && r[1] === currentSem && r[2]) {
+                    try { news[r[2]] = JSON.parse(r[3]); } catch(e) { news[r[2]] = r[3]; }
+                }
+            });
+            
+            const rStudentsSheet = workbook.Sheets["_Students"];
+            if (rStudentsSheet) {
+                 nStud = [];
+                 XLSX.utils.sheet_to_json(rStudentsSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem) {
+                         nStud.push({ id: r[2], nis: r[3], nisn: r[4], namaLengkap: r[5], jenisKelamin: r[6], tempatLahir: r[7], tanggalLahir: r[8], agama: r[9], alamat: r[10] });
+                     }
+                 });
+            }
+            
+            const rGradesSheet = workbook.Sheets["_Nilai"];
+            if (rGradesSheet) {
+                 nGr = [];
+                 const gradeMap = {};
+                 XLSX.utils.sheet_to_json(rGradesSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3] && r[4]) {
+                         const studentId = r[2];
+                         const subId = r[3];
+                         const category = r[4];
+                         const score = r[5] === "" ? "" : Number(r[5]);
+                         
+                         if (!gradeMap[studentId]) gradeMap[studentId] = { studentId, semester: currentSem, detailedGrades: {} };
+                         if (!gradeMap[studentId].detailedGrades[subId]) gradeMap[studentId].detailedGrades[subId] = { slm: [] };
+                         
+                         const detail = gradeMap[studentId].detailedGrades[subId];
+                         if (category === "STS1") detail.sts1 = score;
+                         else if (category === "SAS1") detail.sas1 = score;
+                         else if (category === "STS2") detail.sts2 = score;
+                         else if (category === "SAS2") detail.sas2 = score;
+                         else if (category.startsWith("SLM_")) {
+                             const id = category.replace("SLM_", "");
+                             detail.slm.push({ id, scores: score !== "" ? [score] : [], score: score });
+                         }
+                     }
+                 });
+                 nGr = Object.values(gradeMap);
+            }
+
+            const rAbsensiSheet = workbook.Sheets["_Absensi"];
+            if (rAbsensiSheet) {
+                nAtt = [];
+                XLSX.utils.sheet_to_json(rAbsensiSheet, {header: 1}).slice(1).forEach(r => {
+                    if (r[0] === currentTA && r[1] === currentSem && r[2]) {
+                        nAtt.push({ studentId: r[2], semester: currentSem, sakit: r[3], izin: r[4], alpa: r[5] });
+                    }
+                });
+            }
+
+            const rEkskulSheet = workbook.Sheets["_Ekskul"];
+            if (rEkskulSheet) {
+                 nStEx = [];
+                 const exMap = {};
+                 XLSX.utils.sheet_to_json(rEkskulSheet, {header: 1}).slice(1).forEach(r => {
+                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3]) {
+                         const studentId = r[2];
+                         const ekskulId = r[3];
+                         const desc = r[4] || "";
+                         
+                         if (!exMap[studentId]) exMap[studentId] = { studentId, semester: currentSem, descriptions: {} };
+                         exMap[studentId].descriptions[ekskulId] = desc;
+                         
+                         // ensure nEx has this ID just in case
+                         if (!nEx.find(e => e.id === ekskulId)) nEx.push({ id: ekskulId, name: ekskulId });
+                     }
+                 });
+                 nStEx = Object.values(exMap);
+            }
+
+        }
+
+
         const wsAset = findSheet(["Aset Gambar", "Images", "Assets"]);
         const assetMap = {};
         if (wsAset) {
@@ -1188,15 +1440,27 @@ const App = () => {
         } finally { setIsLoading(false); }
     }, [parseExcelBlob, showToast]);
 
+
+
+
+
+
+
+
+
+
+
     const handleExportAll = useCallback(async () => {
         const blob = await exportToExcelBlob();
         if (!blob) return;
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = getDynamicRKTFileName(settings);
+        link.download = getDynamicRKTFileName(settings) + ".xlsx";
         link.click();
         showToast('File berhasil diunduh (Format Lengkap)!', 'success');
     }, [exportToExcelBlob, settings, showToast]);
+
+    
 
     const handleImportAll = useCallback(() => {
         const input = document.createElement('input');
@@ -1223,18 +1487,18 @@ const App = () => {
                 delete settingsToSave[key];
             }
         });
-        localStorage.setItem('appSettings', JSON.stringify(settingsToSave)); 
+        if (isDataLoaded) localforage.setItem('appSettings', settingsToSave); 
     }, [settings]);
-    useEffect(() => { localStorage.setItem('appStudents', JSON.stringify(students)); }, [students]);
-    useEffect(() => { localStorage.setItem('appGrades', JSON.stringify(grades)); }, [grades]);
-    useEffect(() => { localStorage.setItem('appNotes', JSON.stringify(notes)); }, [notes]);
-    useEffect(() => { localStorage.setItem('appAttendance', JSON.stringify(attendance)); }, [attendance]);
-    useEffect(() => { localStorage.setItem('appCocurricularData', JSON.stringify(cocurricularData)); }, [cocurricularData]);
-    useEffect(() => { localStorage.setItem('appStudentExtracurriculars', JSON.stringify(studentExtracurriculars)); }, [studentExtracurriculars]);
-    useEffect(() => { localStorage.setItem('appSubjects', JSON.stringify(subjects)); }, [subjects]);
-    useEffect(() => { localStorage.setItem('appExtracurriculars', JSON.stringify(extracurriculars)); }, [extracurriculars]);
-    useEffect(() => { localStorage.setItem('appLearningObjectives', JSON.stringify(learningObjectives)); }, [learningObjectives]);
-    useEffect(() => { localStorage.setItem('appFormativeJournal', JSON.stringify(formativeJournal)); }, [formativeJournal]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudents', students); }, [students, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appGrades', grades); }, [grades, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appNotes', notes); }, [notes, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appAttendance', attendance); }, [attendance, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appCocurricularData', cocurricularData); }, [cocurricularData, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudentExtracurriculars', studentExtracurriculars); }, [studentExtracurriculars, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appSubjects', subjects); }, [subjects, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appExtracurriculars', extracurriculars); }, [extracurriculars, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appLearningObjectives', learningObjectives); }, [learningObjectives, isDataLoaded]);
+    useEffect(() => { if (isDataLoaded) localforage.setItem('appFormativeJournal', formativeJournal); }, [formativeJournal, isDataLoaded]);
     
     useEffect(() => {
         isInitialMount.current = false;
@@ -1267,11 +1531,12 @@ const App = () => {
       }) : React.createElement(React.Fragment, null,
           isERaporModalOpen && React.createElement(ERaporProcessorModal, {
               onClose: () => setIsERaporModalOpen(false),
-              students, grades, subjects, settings, showToast, predefinedCurriculum,
+              students, grades, subjects, settings, showToast, predefinedCurriculum, learningObjectives
           }),
           React.createElement('div', { className: "flex flex-col xl:flex-row h-[100dvh] w-full bg-slate-100 overflow-hidden" },
             React.createElement(Navigation, { 
-                activePage, setActivePage: handleNavigate, onExport: handleExportAll, onImport: handleImportAll,
+                activePage, setActivePage: handleNavigate, onExport: handleExportAll,
+                onImport: handleImportAll,
                 onIsiERapor: () => setIsERaporModalOpen(true),
                 isMobile, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName: NAV_ITEMS.find(i => i.id === activePage)?.label || 'Dashboard' 
             }),
