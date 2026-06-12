@@ -1,8 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants.js';
 
-const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, ...props }) => {
+const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor }) => {
   const handleDataAction = (id) => {
       if (id === 'EKSPORT') onExport();
       else if (id === 'IMPORT') onImport();
@@ -65,7 +65,7 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
   );
 };
 
-const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName, ...props }) => {
+const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName }) => {
     const handleNavClick = (id) => {
         setActivePage(id);
         setIsMobileMenuOpen(false);
