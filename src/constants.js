@@ -71,6 +71,20 @@ export const QUALITATIVE_DESCRIPTORS = {
     BB: 'Belum Berkembang',
 };
 
+export const getContextualKey = (settings, baseKey) => {
+    if (!settings) return baseKey;
+    const kls = String(settings.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
+    const ta = String(settings.tahun_ajaran || '').replace(/[^a-zA-Z0-9]/g, '');
+    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
+    return `${baseKey}_ctx_${kls}_${ta}_${sem}`;
+};
+
+export const getContextualValue = (settings, baseKey) => {
+    if (!settings) return '';
+    const dynKey = getContextualKey(settings, baseKey);
+    return settings[dynKey] || settings[baseKey] || '';
+};
+
 export const getTanggalRaporKey = (settings) => {
     if (!settings) return 'tanggal_rapor';
     const kls = String(settings.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
