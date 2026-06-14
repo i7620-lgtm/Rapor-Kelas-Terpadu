@@ -560,7 +560,14 @@ const [settings, setSettings] = useState(initialSettings);
         return;
     }
     if (name) { 
-        setSettings(prev => ({ ...prev, [name]: value }));
+        setSettings(prev => {
+            const newSettings = { ...prev, [name]: value };
+            const ctxMatch = name.match(/^(.*?)_ctx_[^_]+_[^_]+_[^_]+$/);
+            if (ctxMatch) {
+                newSettings[ctxMatch[1]] = value;
+            }
+            return newSettings;
+        });
     }
 }, [showToast]);
 
@@ -1641,7 +1648,12 @@ const [settings, setSettings] = useState(initialSettings);
                     }); 
                 },
                 onUpdateStudent: (id, k, v) => setStudents(prev => prev.map(s => s.id === id ? { ...s, [k]: v } : s)),
-                onUpdateSettings: (k, v) => setSettings(s => ({ ...s, [k]: v })),
+                onUpdateSettings: (k, v) => setSettings(s => {
+                    const newS = { ...s, [k]: v };
+                    const ctxMatch = k.match(/^(.*?)_ctx_[^_]+_[^_]+_[^_]+$/);
+                    if (ctxMatch) newS[ctxMatch[1]] = v;
+                    return newS;
+                }),
                 onUpdateNote: (sid, v) => setNotes(n => { const key = settings?.semester === 'Genap' ? sid + '_Genap' : sid; return { ...n, [key]: v }; }),
                 onUpdateAttendance: (sid, k, v) => setAttendance(prev => { 
                     const n = [...prev]; 
