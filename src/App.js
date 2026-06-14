@@ -59,7 +59,7 @@ const initialSettings = {
   telepon_sekolah: '', website_sekolah: '', faksimile: '', logo_sekolah: null,
   logo_dinas: null, logo_cover: null, piagam_background: null,
   ttd_kepala_sekolah: null, ttd_wali_kelas: null,
-  nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '', tanggal_rapor_ganjil: '', tanggal_rapor_genap: '',
+  nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   nip_label_kepala_sekolah: 'NIP', nip_label_wali_kelas: 'NIP',
   cocurricular_theme: '', cocurricular_theme_Genap: '',
