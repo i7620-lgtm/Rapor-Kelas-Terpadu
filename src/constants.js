@@ -71,6 +71,20 @@ export const QUALITATIVE_DESCRIPTORS = {
     BB: 'Belum Berkembang',
 };
 
+export const getTanggalRaporKey = (settings) => {
+    if (!settings) return 'tanggal_rapor';
+    const kls = String(settings.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
+    const ta = String(settings.tahun_ajaran || '').replace(/[^a-zA-Z0-9]/g, '');
+    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
+    return `tanggal_rapor_ctx_${kls}_${ta}_${sem}`;
+};
+
+export const getTanggalRaporValue = (settings) => {
+    if (!settings) return '';
+    const dynKey = getTanggalRaporKey(settings);
+    return settings[dynKey] || '';
+};
+
 export const FORMATIVE_ASSESSMENT_TYPES = [
     'Observasi',
     'Kuis Singkat',
