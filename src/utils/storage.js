@@ -1,4 +1,4 @@
-import localforage from 'localforage';
+import localforage from 'localforage'; 
 
 export const deepMerge = (target, source) => {
     if (typeof target !== 'object' || target === null) return source !== undefined ? source : target;
