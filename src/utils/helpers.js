@@ -1,4 +1,4 @@
-export const getDynamicRKTFileName = (currentSettings) => {
+export const getDynamicRKTFileName = (currentSettings) => { 
     const sanitize = (str) => String(str || '').replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim();
     const schoolName = sanitize(currentSettings?.nama_sekolah || 'Nama Sekolah');
     const className = sanitize(currentSettings?.nama_kelas || 'Kelas');
