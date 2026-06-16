@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
 import { transliterate, generatePemdaText, expandAndCapitalizeSchoolName, generateInitialLayout, removeImageBackground } from './TransliterationUtil.js';
-import { QUALITATIVE_DESCRIPTORS } from '../constants.js';
+import { QUALITATIVE_DESCRIPTORS , getTanggalRaporKey, getTanggalRaporValue , getContextualKey, getContextualValue } from '../constants.js';
 
 
 const placeholderSvg = "data:image/svg+xml,%3Csvg%22100%22%20height%3D%22100%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22100%22%20height%3D%22100%22%20fill%3D%22%23e2e8f0%22/%3E%3Ctext%20x%3D%2250%22%20y%3D%2255%22%20font-family%3D%22sans-serif%22%20font-size%3D%2214%22%20fill%3D%22%2394a3b8%22%20text-anchor%3D%22middle%22%3ELogo%3C/text%3E%3C/svg%3E";
@@ -1066,22 +1066,22 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             React.createElement('option', { value: 'Genap' }, 'Genap')
                                         )
                                     ),
-                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Ganjil)", id: "tanggal_rapor_ganjil", placeholder: "e.g. Jakarta, 20 Desember 2023", value: settings.tanggal_rapor_ganjil || settings.tanggal_rapor, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown}),
-                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor (Genap)", id: "tanggal_rapor_genap", placeholder: "e.g. Jakarta, 22 Juni 2024", value: settings.tanggal_rapor_genap, onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
+                                    
+                                    React.createElement(FormField, { label: "Tempat, Tanggal Rapor", id: getTanggalRaporKey(settings), placeholder: "e.g. Jakarta, 22 Juni 2024", value: getTanggalRaporValue(settings) || "",  onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown})
                                 ),
 
                                 // Kolom 2: Kepala Sekolah dan Guru
                                 React.createElement('div', { className: "flex flex-col gap-4 h-full" },
                                     React.createElement('h3', { className: "text-xl font-bold text-slate-800 border-b pb-2 mb-2" }, "Kepala Sekolah dan Guru"),
-                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: "nama_kepala_sekolah", value: settings.nama_kepala_sekolah, status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Nama Kepala Sekolah", id: getContextualKey(settings, 'nama_kepala_sekolah'), value: getContextualValue(settings, 'nama_kepala_sekolah'), status: getStatus(settings.nama_kepala_sekolah), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', { className: 'w-full' },
                                         React.createElement('label', { htmlFor: 'nip_kepala_sekolah', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Kepsek'),
                                         React.createElement('div', { className: 'flex gap-2 w-full' },
                                             React.createElement('div', { className: 'w-24 flex-shrink-0' },
                                                 React.createElement('select', { 
-                                                    id: 'nip_label_kepala_sekolah', 
-                                                    name: 'nip_label_kepala_sekolah', 
-                                                    value: settings.nip_label_kepala_sekolah || 'NIP', 
+                                                    id: getContextualKey(settings, 'nip_label_kepala_sekolah'), 
+                                                    name: getContextualKey(settings, 'nip_label_kepala_sekolah'), 
+                                                    value: getContextualValue(settings, 'nip_label_kepala_sekolah') || 'NIP', 
                                                     onChange: onSettingsChange, 
                                                     onBlur: onSave, 
                                                     onKeyDown: handleKeyDown,
@@ -1109,9 +1109,9 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                 },
                                                     React.createElement('input', {
                                                         type: 'text',
-                                                        id: 'nip_kepala_sekolah',
-                                                        name: 'nip_kepala_sekolah',
-                                                        value: settings.nip_kepala_sekolah ?? '',
+                                                        id: getContextualKey(settings, 'nip_kepala_sekolah'),
+                                                        name: getContextualKey(settings, 'nip_kepala_sekolah'),
+                                                        value: getContextualValue(settings, 'nip_kepala_sekolah') ?? '',
                                                         onChange: onSettingsChange,
                                                         onBlur: onSave,
                                                         onKeyDown: handleKeyDown,
@@ -1121,15 +1121,15 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                             )
                                         )
                                     ),
-                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: "nama_wali_kelas", value: settings.nama_wali_kelas, status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
+                                    React.createElement(FormField, { label: "Nama Wali Kelas", id: getContextualKey(settings, 'nama_wali_kelas'), value: getContextualValue(settings, 'nama_wali_kelas'), status: getStatus(settings.nama_wali_kelas), onChange: onSettingsChange, onBlur: onSave, onKeyDown: handleKeyDown }),
                                     React.createElement('div', { className: 'w-full' },
                                         React.createElement('label', { htmlFor: 'nip_wali_kelas', className: "block text-sm font-medium text-slate-700 mb-1" }, 'Tipe dan Nomor Pengenal Wali Kelas'),
                                         React.createElement('div', { className: 'flex gap-2 w-full' },
                                             React.createElement('div', { className: 'w-24 flex-shrink-0' },
                                                 React.createElement('select', { 
-                                                    id: 'nip_label_wali_kelas', 
-                                                    name: 'nip_label_wali_kelas', 
-                                                    value: settings.nip_label_wali_kelas || 'NIP', 
+                                                    id: getContextualKey(settings, 'nip_label_wali_kelas'), 
+                                                    name: getContextualKey(settings, 'nip_label_wali_kelas'), 
+                                                    value: getContextualValue(settings, 'nip_label_wali_kelas') || 'NIP', 
                                                     onChange: onSettingsChange, 
                                                     onBlur: onSave, 
                                                     onKeyDown: handleKeyDown,
@@ -1157,9 +1157,9 @@ const SettingsPage = ({ settings, onSettingsChange, onSave, onUpdateKopLayout, s
                                                 },
                                                     React.createElement('input', {
                                                         type: 'text',
-                                                        id: 'nip_wali_kelas',
-                                                        name: 'nip_wali_kelas',
-                                                        value: settings.nip_wali_kelas ?? '',
+                                                        id: getContextualKey(settings, 'nip_wali_kelas'),
+                                                        name: getContextualKey(settings, 'nip_wali_kelas'),
+                                                        value: getContextualValue(settings, 'nip_wali_kelas') ?? '',
                                                         onChange: onSettingsChange,
                                                         onBlur: onSave,
                                                         onKeyDown: handleKeyDown,
