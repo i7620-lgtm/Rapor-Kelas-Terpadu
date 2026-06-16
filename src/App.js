@@ -1,4 +1,4 @@
-import React, { 
+import React, {
   useState,
   useCallback,
   useEffect,
@@ -47,6 +47,7 @@ import Toast from "./components/Toast.js";
 import useServiceWorker from "./hooks/useServiceWorker.js";
 import useWindowDimensions from "./hooks/useWindowDimensions.js";
 import ERaporProcessorModal from "./components/ERaporProcessorModal.js";
+import SemesterChangeModal from "./components/SemesterChangeModal.js";
 import LockScreen from "./components/LockScreen.js";
 import {
   IMAGE_KEYS,
@@ -58,7 +59,18 @@ import {
 } from "./utils/imageDB.js";
 import { loadDataSafeAsync } from "./utils/storage.js";
 import { calculateFinalGrade } from "./utils/gradeCalculations.js";
-import { exportToExcelBlob, parseExcelBlob } from "./utils/excel.js";
+import {
+  exportToExcelBlob,
+  parseExcelBlob,
+  sanitizeGrades,
+  sanitizeNotes,
+  sanitizeAttendance,
+  sanitizeStudentExtracurriculars,
+  sanitizeCocurricularData,
+  sanitizeLearningObjectives,
+  sanitizeFormativeJournal,
+  sanitizeSettings
+} from "./utils/excel.js";
 
 import { getDynamicRKTFileName, chunkString } from "./utils/helpers.js";
 
@@ -96,6 +108,8 @@ const App = () => {
   const isInitialMount = useRef(true);
 
   const [isERaporModalOpen, setIsERaporModalOpen] = useState(false);
+  const [pendingSemester, setPendingSemester] = useState(null);
+  const [showSemesterModal, setShowSemesterModal] = useState(false);
 
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [activePartition, setActivePartition] = useState("");
@@ -390,6 +404,20 @@ const App = () => {
         setSettings((prev) => ({ ...prev, [name]: value }));
         return;
       }
+      if (name === "semester" && value !== settings.semester) {
+        const hasData = students.length > 0 || 
+                        grades.some(g => Object.keys(g?.detailedGrades || {}).length > 0) || 
+                        Object.keys(notes || {}).length > 0 || 
+                        attendance.length > 0 || 
+                        Object.keys(cocurricularData || {}).length > 0 || 
+                        (studentExtracurriculars || []).length > 0 || 
+                        Object.keys(formativeJournal || {}).length > 0;
+        if (hasData) {
+          setPendingSemester(value);
+          setShowSemesterModal(true);
+          return;
+        }
+      }
       if (name) {
         setSettings((prev) => {
           const newSettings = { ...prev, [name]: value };
@@ -401,8 +429,61 @@ const App = () => {
         });
       }
     },
-    [showToast],
+    [
+      showToast,
+      settings.semester,
+      students,
+      grades,
+      notes,
+      attendance,
+      cocurricularData,
+      studentExtracurriculars,
+      formativeJournal
+    ],
   );
+
+  const handleConfirmSemesterChange = useCallback((retainedCategories) => {
+    if (!pendingSemester) return;
+
+    if (!retainedCategories.students) {
+      setStudents([]);
+    }
+    if (!retainedCategories.grades) {
+      setGrades([]);
+    }
+    if (!retainedCategories.formativeJournal) {
+      setFormativeJournal({});
+    }
+    if (!retainedCategories.cocurricularData) {
+      setCocurricularData({});
+    }
+    if (!retainedCategories.studentExtracurriculars) {
+      setStudentExtracurriculars([]);
+    }
+    if (!retainedCategories.attendance) {
+      setAttendance([]);
+    }
+    if (!retainedCategories.notes) {
+      setNotes({});
+    }
+
+    setSettings((prev) => ({
+      ...prev,
+      semester: pendingSemester,
+      retainedCategories: {
+        ...(prev.retainedCategories || {}),
+        ...retainedCategories
+      }
+    }));
+    showToast(`Semester berhasil diubah ke ${pendingSemester} dan data disesuaikan.`, "success");
+    setPendingSemester(null);
+    setShowSemesterModal(false);
+  }, [pendingSemester, showToast]);
+
+  const handleCancelSemesterChange = useCallback(() => {
+    setPendingSemester(null);
+    setShowSemesterModal(false);
+  }, []);
 
   useEffect(() => {
     if (gradeNumber) {
@@ -626,7 +707,102 @@ const App = () => {
   }, [importFromExcelBlob, showToast]);
 
   useEffect(() => {
-    const settingsToSave = { ...settings };
+    if (!isDataLoaded || isLoading) return;
+    const sem = settings.semester || "Ganjil";
+
+    setSettings((prev) => {
+      const sanitized = sanitizeSettings(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setGrades((prev) => {
+      if (settings?.retainedCategories?.grades) {
+        return prev;
+      }
+      const sanitized = sanitizeGrades(prev, sem, learningObjectives, settings.nama_kelas, subjects);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setNotes((prev) => {
+      if (settings?.retainedCategories?.notes) {
+        return prev;
+      }
+      const sanitized = sanitizeNotes(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setAttendance((prev) => {
+      if (settings?.retainedCategories?.attendance) {
+        return prev;
+      }
+      const sanitized = sanitizeAttendance(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setStudentExtracurriculars((prev) => {
+      if (settings?.retainedCategories?.studentExtracurriculars) {
+        return prev;
+      }
+      const sanitized = sanitizeStudentExtracurriculars(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setCocurricularData((prev) => {
+      if (settings?.retainedCategories?.cocurricularData) {
+        return prev;
+      }
+      const sanitized = sanitizeCocurricularData(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setLearningObjectives((prev) => {
+      const sanitized = sanitizeLearningObjectives(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+
+    setFormativeJournal((prev) => {
+      if (settings?.retainedCategories?.formativeJournal) {
+        return prev;
+      }
+      const sanitized = sanitizeFormativeJournal(prev, sem);
+      if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
+        return sanitized;
+      }
+      return prev;
+    });
+  }, [
+    settings.semester,
+    isDataLoaded,
+    isLoading,
+    settings.nama_kelas,
+    subjects,
+    learningObjectives,
+    settings.retainedCategories
+  ]);
+
+  useEffect(() => {
+    let settingsToSave = { ...settings };
     IMAGE_KEYS.forEach((key) => {
       if (
         settingsToSave[key] &&
@@ -637,6 +813,7 @@ const App = () => {
       }
     });
     if (isDataLoaded && !isLoading) {
+      settingsToSave = sanitizeSettings(settingsToSave, settings.semester || "Ganjil");
       localforage.setItem("appSettings", settingsToSave);
     }
   }, [settings, isDataLoaded, isLoading]);
@@ -736,6 +913,21 @@ const App = () => {
               showToast,
               predefinedCurriculum,
               learningObjectives,
+            }),
+          showSemesterModal &&
+            React.createElement(SemesterChangeModal, {
+              isOpen: showSemesterModal,
+              currentSemester: settings.semester || "Ganjil",
+              pendingSemester: pendingSemester,
+              onClose: handleCancelSemesterChange,
+              onConfirm: handleConfirmSemesterChange,
+              students,
+              grades,
+              attendance,
+              notes,
+              cocurricularData,
+              studentExtracurriculars,
+              formativeJournal,
             }),
           React.createElement(
             "div",
