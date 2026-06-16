@@ -444,41 +444,123 @@ const App = () => {
 
   const handleConfirmSemesterChange = useCallback((retainedCategories) => {
     if (!pendingSemester) return;
+    const oldSem = settings.semester || "Ganjil";
+    const newSem = pendingSemester;
 
     if (!retainedCategories.students) {
       setStudents([]);
     }
+
     if (!retainedCategories.grades) {
       setGrades([]);
+    } else {
+      setGrades((prev) =>
+        prev.map((g) => {
+          const newDet = { ...(g.detailedGrades || {}) };
+          Object.values(newDet).forEach((det) => {
+            if (oldSem === "Ganjil" && newSem === "Genap") {
+              det.sts2 = det.sts1;
+              det.sas2 = det.sas1;
+              det.descriptions_Genap = JSON.parse(
+                JSON.stringify(det.descriptions || {}),
+              );
+            } else if (oldSem === "Genap" && newSem === "Ganjil") {
+              det.sts1 = det.sts2;
+              det.sas1 = det.sas2;
+              det.descriptions = JSON.parse(
+                JSON.stringify(det.descriptions_Genap || {}),
+              );
+            }
+          });
+          return { ...g, detailedGrades: newDet };
+        }),
+      );
     }
+
     if (!retainedCategories.formativeJournal) {
       setFormativeJournal({});
+    } else {
+      setFormativeJournal((prev) => {
+        const nextJournal = {};
+        Object.entries(prev || {}).forEach(([sid, list]) => {
+          if (Array.isArray(list)) {
+            nextJournal[sid] = list.map((item) => ({ ...item, semester: newSem }));
+          }
+        });
+        return nextJournal;
+      });
     }
+
     if (!retainedCategories.cocurricularData) {
       setCocurricularData({});
+    } else {
+      setCocurricularData((prev) => {
+        const nextCo = {};
+        Object.entries(prev || {}).forEach(([sid, data]) => {
+          const sData = { ...data };
+          if (oldSem === "Ganjil" && newSem === "Genap" && sData.dimensionRatings) {
+            sData.dimensionRatings_Genap = JSON.parse(
+              JSON.stringify(sData.dimensionRatings),
+            );
+          } else if (oldSem === "Genap" && newSem === "Ganjil" && sData.dimensionRatings_Genap) {
+            sData.dimensionRatings = JSON.parse(
+              JSON.stringify(sData.dimensionRatings_Genap),
+            );
+          }
+          nextCo[sid] = sData;
+        });
+        return nextCo;
+      });
     }
+
     if (!retainedCategories.studentExtracurriculars) {
       setStudentExtracurriculars([]);
+    } else {
+      setStudentExtracurriculars((prev) =>
+        (prev || []).map((se) => ({ ...se, semester: newSem })),
+      );
     }
+
     if (!retainedCategories.attendance) {
       setAttendance([]);
+    } else {
+      setAttendance((prev) =>
+        (prev || []).map((a) => ({ ...a, semester: newSem })),
+      );
     }
+
     if (!retainedCategories.notes) {
       setNotes({});
+    } else {
+      setNotes((prev) => {
+        const nextNotes = {};
+        Object.entries(prev || {}).forEach(([key, val]) => {
+          const baseId = key.replace("_Genap", "");
+          if (newSem === "Genap") {
+            nextNotes[`${baseId}_Genap`] = val;
+          } else {
+            nextNotes[baseId] = val;
+          }
+        });
+        return nextNotes;
+      });
     }
 
     setSettings((prev) => ({
       ...prev,
-      semester: pendingSemester,
-      retainedCategories: {
-        ...(prev.retainedCategories || {}),
-        ...retainedCategories
-      }
+      semester: newSem
     }));
-    showToast(`Semester berhasil diubah ke ${pendingSemester} dan data disesuaikan.`, "success");
+    showToast(
+      `Semester berhasil diubah ke ${newSem} dan data disesuaikan.`,
+      "success",
+    );
     setPendingSemester(null);
     setShowSemesterModal(false);
-  }, [pendingSemester, showToast]);
+  }, [
+    pendingSemester,
+    settings.semester,
+    showToast
+  ]);
 
   const handleCancelSemesterChange = useCallback(() => {
     setPendingSemester(null);
@@ -719,9 +801,6 @@ const App = () => {
     });
 
     setGrades((prev) => {
-      if (settings?.retainedCategories?.grades) {
-        return prev;
-      }
       const sanitized = sanitizeGrades(prev, sem, learningObjectives, settings.nama_kelas, subjects);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -730,9 +809,6 @@ const App = () => {
     });
 
     setNotes((prev) => {
-      if (settings?.retainedCategories?.notes) {
-        return prev;
-      }
       const sanitized = sanitizeNotes(prev, sem);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -741,9 +817,6 @@ const App = () => {
     });
 
     setAttendance((prev) => {
-      if (settings?.retainedCategories?.attendance) {
-        return prev;
-      }
       const sanitized = sanitizeAttendance(prev, sem);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -752,9 +825,6 @@ const App = () => {
     });
 
     setStudentExtracurriculars((prev) => {
-      if (settings?.retainedCategories?.studentExtracurriculars) {
-        return prev;
-      }
       const sanitized = sanitizeStudentExtracurriculars(prev, sem);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -763,9 +833,6 @@ const App = () => {
     });
 
     setCocurricularData((prev) => {
-      if (settings?.retainedCategories?.cocurricularData) {
-        return prev;
-      }
       const sanitized = sanitizeCocurricularData(prev, sem);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -782,9 +849,6 @@ const App = () => {
     });
 
     setFormativeJournal((prev) => {
-      if (settings?.retainedCategories?.formativeJournal) {
-        return prev;
-      }
       const sanitized = sanitizeFormativeJournal(prev, sem);
       if (JSON.stringify(prev) !== JSON.stringify(sanitized)) {
         return sanitized;
@@ -797,8 +861,7 @@ const App = () => {
     isLoading,
     settings.nama_kelas,
     subjects,
-    learningObjectives,
-    settings.retainedCategories
+    learningObjectives
   ]);
 
   useEffect(() => {
