@@ -103,9 +103,19 @@ const deepMerge = (target, source) => {
 };
 
 
-const loadDataSafeAsync = async (key, fallbackValue, validator = null) => {
+const getPartitionKey = (settingsData) => {
+    const kls = String(settingsData?.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
+    const ta = String(settingsData?.tahun_ajaran || '').replace(/[^a-zA-Z0-9]/g, '');
+    const sem = String(settingsData?.semester || '').replace(/[^a-zA-Z0-9]/g, '');
+    return kls + '_' + ta + '_' + sem;
+};
+
+const loadDataSafeAsync = async (key, fallbackValue, validator = null, legacyKey = null) => {
     try {
         let val = await localforage.getItem(key);
+        if (val === null && legacyKey) {
+            val = await localforage.getItem(legacyKey);
+        }
         if (val === null) {
             const saved = localStorage.getItem(key);
             if (saved) {
@@ -114,6 +124,15 @@ const loadDataSafeAsync = async (key, fallbackValue, validator = null) => {
                     val = parsed;
                     await localforage.setItem(key, parsed);
                 } catch(e) {}
+            } else if (legacyKey) {
+                const legacySaved = localStorage.getItem(legacyKey);
+                if (legacySaved) {
+                    try {
+                        const parsed = JSON.parse(legacySaved);
+                        val = parsed;
+                        await localforage.setItem(key, parsed);
+                    } catch(e) {}
+                }
             }
         }
         if (val === null) return fallbackValue;
@@ -336,21 +355,31 @@ const App = () => {
 
   
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [activePartition, setActivePartition] = useState("");
 
   useEffect(() => {
      let isMounted = true;
      const initializeAllData = async () => {
-         const settingsData = await loadDataSafeAsync("appSettings", initialSettings);
+         const lastContext = await localforage.getItem("appLastContext") || {};
+         let settingsData = await loadDataSafeAsync("appSettings", initialSettings);
+         settingsData = { ...settingsData, ...lastContext };
+
          let unlocked = true;
          if (settingsData?.appLock?.enabled && settingsData?.appLock?.pin?.length === 6) {
              unlocked = sessionStorage.getItem('appUnlocked') === 'true';
          }
-         const studentsData = await loadDataSafeAsync("appStudents", initialStudents, Array.isArray);
-         const gradesData = await loadDataSafeAsync("appGrades", initialGrades, Array.isArray);
-         const notesData = await loadDataSafeAsync("appNotes", initialNotes);
-         const cocurricularDataData = await loadDataSafeAsync("appCocurricularData", initialCocurricularData);
+         const currentPartition = getPartitionKey(settingsData);
+         setActivePartition(currentPartition);
+
+         const pSettings = await localforage.getItem("appSettings_" + currentPartition);
+         if (pSettings) settingsData = { ...settingsData, ...pSettings, nama_kelas: settingsData.nama_kelas, tahun_ajaran: settingsData.tahun_ajaran, semester: settingsData.semester };
+
+         const studentsData = await loadDataSafeAsync("appStudents_" + currentPartition, initialStudents, Array.isArray, "appStudents");
+         const gradesData = await loadDataSafeAsync("appGrades_" + currentPartition, initialGrades, Array.isArray, "appGrades");
+         const notesData = await loadDataSafeAsync("appNotes_" + currentPartition, initialNotes, null, "appNotes");
+         const cocurricularDataData = await loadDataSafeAsync("appCocurricularData_" + currentPartition, initialCocurricularData, null, "appCocurricularData");
          
-         let attendanceData = await loadDataSafeAsync("appAttendance", initialAttendance, Array.isArray);
+         let attendanceData = await loadDataSafeAsync("appAttendance_" + currentPartition, initialAttendance, Array.isArray, "appAttendance");
          attendanceData = attendanceData.map(att => ({
              studentId: att.studentId,
              semester: att.semester || "Ganjil",
@@ -359,10 +388,10 @@ const App = () => {
              alpa: (att.alpa === 0 || att.alpa) ? Number(att.alpa) : null
          }));
 
-         const extracurricularsData = await loadDataSafeAsync("appExtracurriculars", [], Array.isArray);
-         const studentExData = await loadDataSafeAsync("appStudentExtracurriculars", initialStudentExtracurriculars, Array.isArray);
+         const extracurricularsData = await loadDataSafeAsync("appExtracurriculars_" + currentPartition, [], Array.isArray, "appExtracurriculars");
+         const studentExData = await loadDataSafeAsync("appStudentExtracurriculars_" + currentPartition, initialStudentExtracurriculars, Array.isArray, "appStudentExtracurriculars");
          
-         const loadedSubjects = await loadDataSafeAsync("appSubjects", defaultSubjects, Array.isArray);
+         const loadedSubjects = await loadDataSafeAsync("appSubjects_" + currentPartition, defaultSubjects, Array.isArray, "appSubjects");
          const newSubjects = [...loadedSubjects];
          let hasUpdates = false;
          defaultSubjects.forEach(ds => {
@@ -378,10 +407,10 @@ const App = () => {
                  hasUpdates = true;
              }
          });
-         if (hasUpdates) await localforage.setItem("appSubjects", newSubjects);
+         if (hasUpdates) await localforage.setItem("appSubjects_" + currentPartition, newSubjects);
 
-         const loData = await loadDataSafeAsync("appLearningObjectives", initialLearningObjectives);
-         const fjData = await loadDataSafeAsync("appFormativeJournal", initialFormativeJournal);
+         const loData = await loadDataSafeAsync("appLearningObjectives_" + currentPartition, initialLearningObjectives, null, "appLearningObjectives");
+         const fjData = await loadDataSafeAsync("appFormativeJournal_" + currentPartition, initialFormativeJournal, null, "appFormativeJournal");
 
          if (isMounted) {
             setSettings(settingsData);
@@ -460,15 +489,43 @@ const [settings, setSettings] = useState(initialSettings);
   const [subjects, setSubjects] = useState([]);
 
   const [learningObjectives, setLearningObjectives] = useState({});
-
   const [formativeJournal, setFormativeJournal] = useState({});
-  
   const [predefinedCurriculum, setPredefinedCurriculum] = useState(null);
   const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
 
   const showToast = useCallback((message, type) => { setToast({ message, type }); }, []);
-  
-    const handleSettingsChange = useCallback((e) => {
+
+  const targetPartition = useMemo(() => getPartitionKey(settings), [settings]);
+  useEffect(() => {
+     if (!isDataLoaded || !activePartition) return;
+     if (targetPartition !== activePartition) {
+         const doLoad = async () => {
+             setIsLoading(true);
+             const sd = await localforage.getItem("appStudents_" + targetPartition);
+             if (sd) {
+                 setStudents(sd);
+                 setGrades(await loadDataSafeAsync("appGrades_" + targetPartition, [], Array.isArray));
+                 setNotes(await loadDataSafeAsync("appNotes_" + targetPartition, {}));
+                 setAttendance(await loadDataSafeAsync("appAttendance_" + targetPartition, [], Array.isArray));
+                 setCocurricularData(await loadDataSafeAsync("appCocurricularData_" + targetPartition, {}));
+                 setStudentExtracurriculars(await loadDataSafeAsync("appStudentExtracurriculars_" + targetPartition, [], Array.isArray));
+                 setSubjects(await loadDataSafeAsync("appSubjects_" + targetPartition, defaultSubjects, Array.isArray));
+                 setExtracurriculars(await loadDataSafeAsync("appExtracurriculars_" + targetPartition, [], Array.isArray));
+                 setLearningObjectives(await loadDataSafeAsync("appLearningObjectives_" + targetPartition, {}));
+                 setFormativeJournal(await loadDataSafeAsync("appFormativeJournal_" + targetPartition, {}));
+                 const pSettings = await localforage.getItem("appSettings_" + targetPartition);
+                 if (pSettings) {
+                     setSettings(prev => ({ ...prev, ...pSettings, nama_kelas: prev.nama_kelas, tahun_ajaran: prev.tahun_ajaran, semester: prev.semester }));
+                 }
+             }
+             setActivePartition(targetPartition);
+             setIsLoading(false);
+         };
+         doLoad();
+     }
+  }, [targetPartition, activePartition, isDataLoaded]);
+
+  const handleSettingsChange = useCallback((e) => {
     const { name, value, type, files } = e.target;
     if (type === 'remove_image') {
         deleteImageFromDB(name).then(() => {
@@ -972,103 +1029,148 @@ const [settings, setSettings] = useState(initialSettings);
     if (typeof XLSX === "undefined") return null;
     try {
         const wb = XLSX.utils.book_new();
-        // --- NEW RELATIONAL DB EXPORT (Format 2) ---
-        const currentSem = settings.semester || "Ganjil";
-        const currentTA = settings.tahun_ajaran || "2023/2024";
-
+        
         const sortRelationalRows = (rows, compareRest = null) => {
             if (!rows || rows.length <= 1) return rows;
             const header = rows[0];
             const dataRows = rows.slice(1);
             dataRows.sort((a, b) => {
-                // TA (Tahun Ajaran) is index 0 - descending
-                const taA = String(a[0] || "");
-                const taB = String(b[0] || "");
-                if (taA !== taB) {
-                    return taB.localeCompare(taA);
-                }
+                const klsA = String(a[0] || "");
+                const klsB = String(b[0] || "");
+                if (klsA !== klsB) return klsA.localeCompare(klsB);
                 
-                // Semester is index 1 - descending ("Genap" before "Ganjil")
-                const semA = String(a[1] || "");
-                const semB = String(b[1] || "");
+                const taA = String(a[1] || "");
+                const taB = String(b[1] || "");
+                if (taA !== taB) return taB.localeCompare(taA);
+                
+                const semA = String(a[2] || "");
+                const semB = String(b[2] || "");
                 const weightA = semA === "Genap" ? 2 : (semA === "Ganjil" ? 1 : 0);
                 const weightB = semB === "Genap" ? 2 : (semB === "Ganjil" ? 1 : 0);
-                if (weightA !== weightB) {
-                    return weightB - weightA;
-                }
+                if (weightA !== weightB) return weightB - weightA;
                 
-                if (compareRest) {
-                    return compareRest(a, b);
-                }
-                
-                // Default stable/tidying sorting: Key/Student ID is index 2 - ascending
-                const idA = String(a[2] || "");
-                const idB = String(b[2] || "");
+                if (compareRest) return compareRest(a, b);
+                const idA = String(a[3] || "");
+                const idB = String(b[3] || "");
                 return idA.localeCompare(idB);
             });
             return [header, ...dataRows];
         };
 
-        let rSettings = [ ["TA", "Semester", "Key", "Value"] ];
-        Object.entries(settings).forEach(([k,v]) => {
-           if (typeof v === "object") rSettings.push([currentTA, currentSem, k, JSON.stringify(v)]);
-           else rSettings.push([currentTA, currentSem, k, v]);
-        });
-        rSettings = sortRelationalRows(rSettings);
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rSettings), "_Settings");
-
-        let rStudents = [ ["TA", "Semester", "ID", "NIS", "NISN", "Nama", "L/P", "Tempat Lahir", "Tanggal Lahir", "Agama", "Alamat"] ];
-        students.forEach(s => rStudents.push([currentTA, currentSem, s.id, s.nis, s.nisn, s.namaLengkap, s.jenisKelamin, s.tempatLahir, s.tanggalLahir, s.agama, s.alamat]));
-        rStudents = sortRelationalRows(rStudents);
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "_Students");
-
-        let rGrades = [ ["TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
-        grades.forEach(g => {
-            Object.entries(g.detailedGrades || {}).forEach(([subId, detail]) => {
-                const subDetail = detail || {};
-                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS1", subDetail.sts1 || ""]);
-                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS1", subDetail.sas1 || ""]);
-                rGrades.push([currentTA, currentSem, g.studentId, subId, "STS2", subDetail.sts2 || ""]);
-                rGrades.push([currentTA, currentSem, g.studentId, subId, "SAS2", subDetail.sas2 || ""]);
-                (subDetail.slm || []).forEach((slm, i) => {
-                    const avg = slm.scores && slm.scores.length > 0 ? slm.scores.reduce((a, b) => a + (typeof b==="number"?b:0), 0) / slm.scores.length : "";
-                    rGrades.push([currentTA, currentSem, g.studentId, subId, "SLM_" + slm.id, avg]);
-                });
-            });
-        });
-        rGrades = sortRelationalRows(rGrades, (a, b) => {
-            const idA = String(a[2] || "");
-            const idB = String(b[2] || "");
-            if (idA !== idB) return idA.localeCompare(idB);
-            const subA = String(a[3] || "");
-            const subB = String(b[3] || "");
-            if (subA !== subB) return subA.localeCompare(subB);
-            const catA = String(a[4] || "");
-            const catB = String(b[4] || "");
-            return catA.localeCompare(catB);
-        });
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrades), "_Nilai");
+        const keys = await localforage.keys();
+        const partitions = keys.filter(k => k.startsWith("appSettings_")).map(k => k.replace("appSettings_", ""));
         
-        let rAbsensi = [ ["TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
-        attendance.forEach(a => rAbsensi.push([currentTA, a.semester || currentSem, a.studentId, a.sakit, a.izin, a.alpa]));
-        rAbsensi = sortRelationalRows(rAbsensi);
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "_Absensi");
+        let rSettings = [ ["Kelas", "TA", "Semester", "Key", "ValueChunks..."] ];
+        let rStudents = [ ["Kelas", "TA", "Semester", "ID", "namaLengkap", "namaPanggilan", "nis", "nisn", "ttl", "jenisKelamin", "agama", "asalTk", "alamatSiswa", "diterimaDiKelas", "diterimaTanggal", "namaAyah", "namaIbu", "pekerjaanAyah", "pekerjaanIbu", "alamatOrangTua", "teleponOrangTua", "namaWali", "pekerjaanWali", "alamatWali", "teleponWali"] ];
+        let rGrades = [ ["Kelas", "TA", "Semester", "Student ID", "Subject ID", "Category", "Score"] ];
+        let rAbsensi = [ ["Kelas", "TA", "Semester", "Student ID", "Sakit", "Izin", "Alpa"] ];
+        let rEkskul = [ ["Kelas", "TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
+        let rCatatan = [ ["Kelas", "TA", "Semester", "Student ID", "Catatan Wali Kelas"] ];
+        let rKo = [ ["Kelas", "TA", "Semester", "Student ID", "Beriman", "Kebinekaan", "Bergotong Royong", "Mandiri", "Bernalar Kritis", "Kreatif", "Deskripsi Manual"] ];
 
-        let rEkskul = [ ["TA", "Semester", "Student ID", "Ekskul ID", "Deskripsi"] ];
-        studentExtracurriculars.forEach(se => {
-             Object.entries(se.descriptions || {}).forEach(([eid, desc]) => {
-                 rEkskul.push([currentTA, se.semester || currentSem, se.studentId, eid, desc]);
+        const allDataForPartition = async (p) => {
+            const pSet = await localforage.getItem("appSettings_" + p) || {};
+            return {
+                kelas: pSet.nama_kelas || "Tidak Diketahui",
+                ta: pSet.tahun_ajaran || "Tidak Diketahui",
+                sem: pSet.semester || "Tidak Diketahui",
+                set: pSet,
+                stud: await localforage.getItem("appStudents_" + p) || [],
+                grad: await localforage.getItem("appGrades_" + p) || [],
+                abs: await localforage.getItem("appAttendance_" + p) || [],
+                ext: await localforage.getItem("appStudentExtracurriculars_" + p) || [],
+                not: await localforage.getItem("appNotes_" + p) || {},
+                ko: await localforage.getItem("appCocurricularData_" + p) || {}
+            };
+        };
+
+        // If data is just added purely, we can also add global settings
+        const globalSettings = await localforage.getItem("appSettings") || {};
+        Object.entries(globalSettings).forEach(([k,v]) => {
+           let strVal = typeof v === "object" ? JSON.stringify(v) : String(v);
+           if (strVal == null) strVal = "";
+           const chunks = chunkString(strVal, 30000);
+           rSettings.push(["[Global]", "[Global]", "[Global]", k, ...chunks]);
+        });
+
+        for (const p of partitions) {
+             const d = await allDataForPartition(p);
+             
+             Object.entries(d.set).forEach(([k,v]) => {
+                 let strVal = typeof v === "object" ? JSON.stringify(v) : String(v);
+                 if (strVal == null) strVal = "";
+                 const chunks = chunkString(strVal, 30000);
+                 rSettings.push([d.kelas, d.ta, d.sem, k, ...chunks]);
              });
-        });
-        rEkskul = sortRelationalRows(rEkskul, (a, b) => {
-            const idA = String(a[2] || "");
-            const idB = String(b[2] || "");
-            if (idA !== idB) return idA.localeCompare(idB);
-            const exA = String(a[3] || "");
-            const exB = String(b[3] || "");
-            return exA.localeCompare(exB);
-        });
+
+             d.stud.forEach(s => rStudents.push([d.kelas, d.ta, d.sem, s.id, s["namaLengkap"] || "", s["namaPanggilan"] || "", s["nis"] || "", s["nisn"] || "", s["ttl"] || "", s["jenisKelamin"] || "", s["agama"] || "", s["asalTk"] || "", s["alamatSiswa"] || "", s["diterimaDiKelas"] || "", s["diterimaTanggal"] || "", s["namaAyah"] || "", s["namaIbu"] || "", s["pekerjaanAyah"] || "", s["pekerjaanIbu"] || "", s["alamatOrangTua"] || "", s["teleponOrangTua"] || "", s["namaWali"] || "", s["pekerjaanWali"] || "", s["alamatWali"] || "", s["teleponWali"] || ""]));
+             
+             d.grad.forEach(g => {
+                 Object.entries(g.detailedGrades || {}).forEach(([subId, detail]) => {
+                     const subDetail = detail || {};
+                     rGrades.push([d.kelas, d.ta, d.sem, g.studentId, subId, "STS1", subDetail.sts1 || ""]);
+                     rGrades.push([d.kelas, d.ta, d.sem, g.studentId, subId, "SAS1", subDetail.sas1 || ""]);
+                     rGrades.push([d.kelas, d.ta, d.sem, g.studentId, subId, "STS2", subDetail.sts2 || ""]);
+                     rGrades.push([d.kelas, d.ta, d.sem, g.studentId, subId, "SAS2", subDetail.sas2 || ""]);
+                     (subDetail.slm || []).forEach((slm, i) => {
+                         const avg = slm.scores && slm.scores.length > 0 ? slm.scores.reduce((a, b) => a + (typeof b==="number"?b:0), 0) / slm.scores.length : "";
+                         rGrades.push([d.kelas, d.ta, d.sem, g.studentId, subId, "SLM_" + slm.id, avg]);
+                     });
+                 });
+             });
+
+             d.abs.forEach(a => rAbsensi.push([d.kelas, d.ta, d.sem, a.studentId, a.sakit, a.izin, a.alpa]));
+
+             d.ext.forEach(se => {
+                 Object.entries(se.descriptions || {}).forEach(([eid, desc]) => {
+                     rEkskul.push([d.kelas, d.ta, d.sem, se.studentId, eid, desc]);
+                 });
+             });
+
+             Object.entries(d.not).forEach(([k, v]) => {
+                 const isGenap = k.endsWith("_Genap");
+                 const sid = isGenap ? k.replace("_Genap", "") : k;
+                 rCatatan.push([d.kelas, d.ta, d.sem, sid, v]);
+             });
+
+             Object.entries(d.ko).forEach(([sid, data]) => {
+                 if (data.dimensionRatings) {
+                      const dim = data.dimensionRatings;
+                      rKo.push([d.kelas, d.ta, "Ganjil", sid, dim.beriman, dim.kebinekaan, dim.bergotong_royong, dim.mandiri, dim.bernalar_kritis, dim.kreatif, dim.manualDescription]);
+                 }
+                 if (data.dimensionRatings_Genap) {
+                      const dim = data.dimensionRatings_Genap;
+                      rKo.push([d.kelas, d.ta, "Genap", sid, dim.beriman, dim.kebinekaan, dim.bergotong_royong, dim.mandiri, dim.bernalar_kritis, dim.kreatif, dim.manualDescription]);
+                 }
+             });
+        }
+
+        rSettings = sortRelationalRows(rSettings);
+        rStudents = sortRelationalRows(rStudents);
+        rGrades = sortRelationalRows(rGrades, (a, b) => { const c=String(a[3]).localeCompare(String(b[3])); return c!==0 ? c : String(a[4]).localeCompare(String(b[4])); });
+        rAbsensi = sortRelationalRows(rAbsensi);
+        rEkskul = sortRelationalRows(rEkskul, (a, b) => { const c=String(a[3]).localeCompare(String(b[3])); return c!==0 ? c : String(a[4]).localeCompare(String(b[4])); });
+        rCatatan = sortRelationalRows(rCatatan);
+        rKo = sortRelationalRows(rKo);
+
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rSettings), "_Settings");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "_Students");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrades), "_Nilai");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "_Absensi");
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rEkskul), "_Ekskul");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rCatatan), "_Catatan");
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rKo), "_Kokurikuler");
+
+        let rStore = [ ["StoreKey", "JSONDataChunks..."] ];
+        for (const k of keys) {
+             const dataObj = await localforage.getItem(k);
+             if (dataObj !== null) {
+                 const jsonStr = JSON.stringify(dataObj);
+                 const chunks = chunkString(jsonStr, 30000);
+                 rStore.push([k, ...chunks]);
+             }
+        }
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStore), "_DataStore");
 
         return new Blob([XLSX.write(wb, { type: "array", bookType: "xlsx" })], { type: "application/octet-stream" });
     } catch (e) {
@@ -1082,89 +1184,59 @@ const [settings, setSettings] = useState(initialSettings);
   const parseExcelBlob = useCallback(async (blob) => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
         const workbook = XLSX.read(await blob.arrayBuffer());
-        let news = { ...initialSettings }, nStud = [], nAtt = [], nNot = {}, nStEx = [], nCo = {}, nGr = [], nSub = [...defaultSubjects], nEx = [], nLO = {}, nFJ = {};
+        let news = { ...initialSettings }, nStud = [], nAtt = [], nNot = {}, nStEx = [], nCo = {}, nGr = [], nSub = [...defaultSubjects], nEx = [], nLO = {}, nFJ = {}, nStudentPhotos = {};
         
         const findSheet = (names) => { for (const name of names) { const found = workbook.SheetNames.find(sn => sn.toLowerCase().trim() === name.toLowerCase() || sn.toLowerCase().trim() === name.toLowerCase().replace(/\s/g, "_")); if (found) return workbook.Sheets[found]; } return null; };
         
-        const rSettingsSheet = workbook.Sheets["_Settings"];
-        if (rSettingsSheet) {
-            const currentTA = settings.tahun_ajaran || "2023/2024";
-            const currentSem = settings.semester || "Ganjil";
-            const data = XLSX.utils.sheet_to_json(rSettingsSheet, { header: 1 });
-            data.slice(1).forEach(r => {
-                if (r[0] === currentTA && r[1] === currentSem && r[2]) {
-                    try { news[r[2]] = JSON.parse(r[3]); } catch(e) { news[r[2]] = r[3]; }
-                }
-            });
+        const rStoreSheet = workbook.Sheets["_DataStore"];
+        if (rStoreSheet) {
+             const storeData = XLSX.utils.sheet_to_json(rStoreSheet, { header: 1 });
+             for (const r of storeData.slice(1)) {
+                 try {
+                     const key = r[0];
+                     if (key) {
+                         const jsonStr = r.slice(1).join("");
+                         const parsed = JSON.parse(jsonStr);
+                         await localforage.setItem(key, parsed);
+                     }
+                 } catch(e) {}
+             }
+             
+            let loadedSettings = await localforage.getItem("appSettings") || initialSettings;
+            let currentTA = loadedSettings.tahun_ajaran || "2023/2024";
+            let currentSem = loadedSettings.semester || "Ganjil";
+            const rSettingsSheet = workbook.Sheets["_Settings"];
+            if (rSettingsSheet) {
+                 const data = XLSX.utils.sheet_to_json(rSettingsSheet, { header: 1 });
+                 if (data.length > 1) { 
+                      const gTA = data[1][1]; const gSem = data[1][2];
+                      if (gTA && gTA !== "[Global]") currentTA = gTA;
+                      if (gSem && gSem !== "[Global]") currentSem = gSem;
+                 }
+            }
             
-            const rStudentsSheet = workbook.Sheets["_Students"];
-            if (rStudentsSheet) {
-                 nStud = [];
-                 XLSX.utils.sheet_to_json(rStudentsSheet, {header: 1}).slice(1).forEach(r => {
-                     if (r[0] === currentTA && r[1] === currentSem) {
-                         nStud.push({ id: r[2], nis: r[3], nisn: r[4], namaLengkap: r[5], jenisKelamin: r[6], tempatLahir: r[7], tanggalLahir: r[8], agama: r[9], alamat: r[10] });
-                     }
-                 });
-            }
+            let pKey = getPartitionKey({ ...loadedSettings, tahun_ajaran: currentTA, semester: currentSem });
+            if (activePartition) pKey = activePartition;
             
-            const rGradesSheet = workbook.Sheets["_Nilai"];
-            if (rGradesSheet) {
-                 nGr = [];
-                 const gradeMap = {};
-                 XLSX.utils.sheet_to_json(rGradesSheet, {header: 1}).slice(1).forEach(r => {
-                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3] && r[4]) {
-                         const studentId = r[2];
-                         const subId = r[3];
-                         const category = r[4];
-                         const score = r[5] === "" ? "" : Number(r[5]);
-                         
-                         if (!gradeMap[studentId]) gradeMap[studentId] = { studentId, semester: currentSem, detailedGrades: {} };
-                         if (!gradeMap[studentId].detailedGrades[subId]) gradeMap[studentId].detailedGrades[subId] = { slm: [] };
-                         
-                         const detail = gradeMap[studentId].detailedGrades[subId];
-                         if (category === "STS1") detail.sts1 = score;
-                         else if (category === "SAS1") detail.sas1 = score;
-                         else if (category === "STS2") detail.sts2 = score;
-                         else if (category === "SAS2") detail.sas2 = score;
-                         else if (category.startsWith("SLM_")) {
-                             const id = category.replace("SLM_", "");
-                             detail.slm.push({ id, scores: score !== "" ? [score] : [], score: score });
-                         }
-                     }
-                 });
-                 nGr = Object.values(gradeMap);
+            const sd = await localforage.getItem("appStudents_" + pKey) || [];
+            const gd = await localforage.getItem("appGrades_" + pKey) || [];
+            const ad = await localforage.getItem("appAttendance_" + pKey) || [];
+            const se = await localforage.getItem("appStudentExtracurriculars_" + pKey) || [];
+            const no = await localforage.getItem("appNotes_" + pKey) || {};
+            const co = await localforage.getItem("appCocurricularData_" + pKey) || {};
+            
+            const su = await localforage.getItem("appSubjects_" + pKey) || defaultSubjects;
+            const ex = await localforage.getItem("appExtracurriculars_" + pKey) || [];
+            const lo = await localforage.getItem("appLearningObjectives_" + pKey) || {};
+            const fj = await localforage.getItem("appFormativeJournal_" + pKey) || {};
+
+            let s = loadedSettings;
+            const currentPSet = await localforage.getItem("appSettings_" + pKey);
+            if (currentPSet) {
+                 s = { ...loadedSettings, ...currentPSet, nama_kelas: loadedSettings.nama_kelas, tahun_ajaran: loadedSettings.tahun_ajaran, semester: loadedSettings.semester };
             }
 
-            const rAbsensiSheet = workbook.Sheets["_Absensi"];
-            if (rAbsensiSheet) {
-                nAtt = [];
-                XLSX.utils.sheet_to_json(rAbsensiSheet, {header: 1}).slice(1).forEach(r => {
-                    if (r[0] === currentTA && r[1] === currentSem && r[2]) {
-                        nAtt.push({ studentId: r[2], semester: currentSem, sakit: r[3], izin: r[4], alpa: r[5] });
-                    }
-                });
-            }
-
-            const rEkskulSheet = workbook.Sheets["_Ekskul"];
-            if (rEkskulSheet) {
-                 nStEx = [];
-                 const exMap = {};
-                 XLSX.utils.sheet_to_json(rEkskulSheet, {header: 1}).slice(1).forEach(r => {
-                     if (r[0] === currentTA && r[1] === currentSem && r[2] && r[3]) {
-                         const studentId = r[2];
-                         const ekskulId = r[3];
-                         const desc = r[4] || "";
-                         
-                         if (!exMap[studentId]) exMap[studentId] = { studentId, semester: currentSem, descriptions: {} };
-                         exMap[studentId].descriptions[ekskulId] = desc;
-                         
-                         // ensure nEx has this ID just in case
-                         if (!nEx.find(e => e.id === ekskulId)) nEx.push({ id: ekskulId, name: ekskulId });
-                     }
-                 });
-                 nStEx = Object.values(exMap);
-            }
-
+            return { settings: s, students: sd, grades: gd, attendance: ad, studentExtracurriculars: se, notes: no, cocurricularData: co, subjects: su, extracurriculars: ex, learningObjectives: lo, formativeJournal: fj };
         }
 
 
@@ -1487,6 +1559,8 @@ const [settings, setSettings] = useState(initialSettings);
         input.click();
     }, [importFromExcelBlob, showToast]);
 
+    const currentPartitionForSave = getPartitionKey(settings);
+
     useEffect(() => { 
         const settingsToSave = { ...settings };
         IMAGE_KEYS.forEach(key => {
@@ -1494,18 +1568,27 @@ const [settings, setSettings] = useState(initialSettings);
                 delete settingsToSave[key];
             }
         });
-        if (isDataLoaded) localforage.setItem('appSettings', settingsToSave); 
-    }, [settings]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudents', students); }, [students, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appGrades', grades); }, [grades, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appNotes', notes); }, [notes, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appAttendance', attendance); }, [attendance, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appCocurricularData', cocurricularData); }, [cocurricularData, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appStudentExtracurriculars', studentExtracurriculars); }, [studentExtracurriculars, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appSubjects', subjects); }, [subjects, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appExtracurriculars', extracurriculars); }, [extracurriculars, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appLearningObjectives', learningObjectives); }, [learningObjectives, isDataLoaded]);
-    useEffect(() => { if (isDataLoaded) localforage.setItem('appFormativeJournal', formativeJournal); }, [formativeJournal, isDataLoaded]);
+        if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) {
+             localforage.setItem('appSettings', settingsToSave); 
+             localforage.setItem('appSettings_' + activePartition, settingsToSave);
+             localforage.setItem('appLastContext', {
+                 nama_kelas: settingsToSave.nama_kelas,
+                 tahun_ajaran: settingsToSave.tahun_ajaran,
+                 semester: settingsToSave.semester
+             });
+        }
+    }, [settings, isDataLoaded, isLoading, activePartition, currentPartitionForSave]);
+    
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appStudents_' + activePartition, students); }, [students, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appGrades_' + activePartition, grades); }, [grades, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appNotes_' + activePartition, notes); }, [notes, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appAttendance_' + activePartition, attendance); }, [attendance, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appCocurricularData_' + activePartition, cocurricularData); }, [cocurricularData, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appStudentExtracurriculars_' + activePartition, studentExtracurriculars); }, [studentExtracurriculars, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appSubjects_' + activePartition, subjects); }, [subjects, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appExtracurriculars_' + activePartition, extracurriculars); }, [extracurriculars, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appLearningObjectives_' + activePartition, learningObjectives); }, [learningObjectives, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
+    useEffect(() => { if (isDataLoaded && !isLoading && activePartition === currentPartitionForSave) localforage.setItem('appFormativeJournal_' + activePartition, formativeJournal); }, [formativeJournal, isDataLoaded, activePartition, currentPartitionForSave, isLoading]);
     
     useEffect(() => {
         isInitialMount.current = false;
