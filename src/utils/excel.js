@@ -159,27 +159,14 @@ export const exportToExcelBlob = async ({
         const activeSemester = settings.semester || "Ganjil";
         const isGenap = activeSemester === "Genap";
 
-        // Sanitize everything to the active semester before building worksheets
-        const cleanSettings = sanitizeSettings(settings, activeSemester);
-        const cleanGrades = settings?.retainedCategories?.grades
-            ? grades
-            : sanitizeGrades(grades, activeSemester, learningObjectives, settings.nama_kelas, subjects);
-        const cleanAttendance = settings?.retainedCategories?.attendance
-            ? attendance
-            : sanitizeAttendance(attendance, activeSemester);
-        const cleanStudentExtracurriculars = settings?.retainedCategories?.studentExtracurriculars
-            ? studentExtracurriculars
-            : sanitizeStudentExtracurriculars(studentExtracurriculars, activeSemester);
-        const cleanNotes = settings?.retainedCategories?.notes
-            ? notes
-            : sanitizeNotes(notes, activeSemester);
-        const cleanCocurricularData = settings?.retainedCategories?.cocurricularData
-            ? cocurricularData
-            : sanitizeCocurricularData(cocurricularData, activeSemester);
-        const cleanLearningObjectives = sanitizeLearningObjectives(learningObjectives, activeSemester);
-        const cleanFormativeJournal = settings?.retainedCategories?.formativeJournal
-            ? formativeJournal
-            : sanitizeFormativeJournal(formativeJournal, activeSemester);
+         const cleanSettings = sanitizeSettings(settings, activeSemester);
+         const cleanGrades = sanitizeGrades(grades, activeSemester, learningObjectives, settings.nama_kelas, subjects);
+         const cleanAttendance = sanitizeAttendance(attendance, activeSemester);
+         const cleanStudentExtracurriculars = sanitizeStudentExtracurriculars(studentExtracurriculars, activeSemester);
+         const cleanNotes = sanitizeNotes(notes, activeSemester);
+         const cleanCocurricularData = sanitizeCocurricularData(cocurricularData, activeSemester);
+         const cleanLearningObjectives = sanitizeLearningObjectives(learningObjectives, activeSemester);
+         const cleanFormativeJournal = sanitizeFormativeJournal(formativeJournal, activeSemester);
 
         // 1. Settings (Readable)
         let rSettings = [ ["Kunci Pengaturan Nilai", "Nilai"] ];
@@ -502,15 +489,15 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
              return {
                  settings: sanitizeSettings(loadedSettings, activeSemester),
                  students: sd,
-                 grades: loadedSettings?.retainedCategories?.grades ? gd : sanitizeGrades(gd, activeSemester, lo, loadedSettings.nama_kelas, su),
-                 attendance: loadedSettings?.retainedCategories?.attendance ? ad : sanitizeAttendance(ad, activeSemester),
-                 studentExtracurriculars: loadedSettings?.retainedCategories?.studentExtracurriculars ? se : sanitizeStudentExtracurriculars(se, activeSemester),
-                 notes: loadedSettings?.retainedCategories?.notes ? no : sanitizeNotes(no, activeSemester),
-                 cocurricularData: loadedSettings?.retainedCategories?.cocurricularData ? co : sanitizeCocurricularData(co, activeSemester),
+                 grades: sanitizeGrades(gd, activeSemester, lo, loadedSettings.nama_kelas, su),
+                 attendance: sanitizeAttendance(ad, activeSemester),
+                 studentExtracurriculars: sanitizeStudentExtracurriculars(se, activeSemester),
+                 notes: sanitizeNotes(no, activeSemester),
+                 cocurricularData: sanitizeCocurricularData(co, activeSemester),
                  subjects: su,
                  extracurriculars: ex,
                  learningObjectives: sanitizeLearningObjectives(lo, activeSemester),
-                 formativeJournal: loadedSettings?.retainedCategories?.formativeJournal ? fj : sanitizeFormativeJournal(fj, activeSemester)
+                 formativeJournal: sanitizeFormativeJournal(fj, activeSemester)
              };
         }
 
@@ -772,14 +759,14 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         return {
             settings: sanitizeSettings(news, news.semester),
             students: nStud,
-            attendance: news?.retainedCategories?.attendance ? nAtt : sanitizeAttendance(nAtt, news.semester),
-            notes: news?.retainedCategories?.notes ? nNot : sanitizeNotes(nNot, news.semester),
-            studentExtracurriculars: news?.retainedCategories?.studentExtracurriculars ? nStEx : sanitizeStudentExtracurriculars(nStEx, news.semester),
-            cocurricularData: news?.retainedCategories?.cocurricularData ? nCo : sanitizeCocurricularData(nCo, news.semester),
-            grades: news?.retainedCategories?.grades ? nGr : sanitizeGrades(nGr, news.semester, nLO, news.nama_kelas, nSub),
+            attendance: sanitizeAttendance(nAtt, news.semester),
+            notes: sanitizeNotes(nNot, news.semester),
+            studentExtracurriculars: sanitizeStudentExtracurriculars(nStEx, news.semester),
+            cocurricularData: sanitizeCocurricularData(nCo, news.semester),
+            grades: sanitizeGrades(nGr, news.semester, nLO, news.nama_kelas, nSub),
             subjects: nSub,
             extracurriculars: nEx,
             learningObjectives: sanitizeLearningObjectives(nLO, news.semester),
-            formativeJournal: news?.retainedCategories?.formativeJournal ? nFJ : sanitizeFormativeJournal(nFJ, news.semester)
+            formativeJournal: sanitizeFormativeJournal(nFJ, news.semester)
         };
     };
