@@ -92,7 +92,7 @@ export const SummativeTableRow = React.memo(({
         id: `cell-${index}--1`,
         tabIndex: -1,
         className:
-          "p-2 font-medium sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
+          "p-2 font-medium lg:sticky lg:z-10 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default",
         style: {
           left: "50px",
           ...getSelectionStyle(index, -1).selectionStyle,

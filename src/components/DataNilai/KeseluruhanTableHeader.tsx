@@ -29,7 +29,7 @@ export const KeseluruhanTableHeader = ({ sortBy, displaySubjects }) => {
         "th",
         {
           className:
-            "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 sticky top-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none",
+            "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 lg:sticky top-0 z-30 lg:z-40 bg-slate-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none",
           style: { left: "60px", top: 0 },
         },
         "Nama Siswa",

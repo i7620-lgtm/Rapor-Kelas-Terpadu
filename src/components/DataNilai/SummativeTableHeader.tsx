@@ -51,7 +51,7 @@ export const SummativeTableHeader = ({
         {
           rowSpan: headerRowSpan,
           className:
-            "p-2 align-middle border-b border-r sticky top-0 z-20 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[200px] max-w-[300px] box-border select-none cursor-default",
+            "p-2 align-middle border-b border-r lg:sticky top-0 lg:z-20 bg-slate-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[200px] max-w-[300px] box-border select-none cursor-default",
           style: {
             left: "50px",
             top: 0,

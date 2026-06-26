@@ -78,7 +78,7 @@ export const NilaiTableMainHeaderRow: React.FC<NilaiTableMainHeaderRowProps> = (
       {/* 2. Column NAMA SISWA */}
       <th
         rowSpan={headerRowSpan}
-        className="p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] sticky top-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default"
+        className="p-2 border-b border-r border-slate-200 min-w-[200px] max-w-[300px] lg:sticky top-0 lg:z-40 bg-slate-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default"
         style={{
           left: "50px",
           top: 0,

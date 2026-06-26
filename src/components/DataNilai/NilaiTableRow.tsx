@@ -136,7 +136,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
       <td
         id={`nilai-cell-${index}--1`}
         tabIndex={-1}
-        className="p-2 border-b border-r border-slate-200 align-top sticky z-20 bg-white group-hover:bg-slate-50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default"
+        className="p-2 border-b border-r border-slate-200 align-top lg:sticky lg:z-20 bg-white group-hover:bg-slate-50 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default"
         style={{
           left: "50px",
           ...getSelectionStyle(index, -1).selectionStyle,

@@ -47,7 +47,7 @@ export const KeseluruhanTableRow = React.memo(({
       {
         id: `keseluruhan-cell-${rowIndex}-1`,
         tabIndex: -1,
-        className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? "text-red-600 font-bold" : "text-slate-900"} cursor-default select-none`,
+        className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 lg:sticky lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? "text-red-600 font-bold" : "text-slate-900"} cursor-default select-none`,
         style: {
           left: "60px",
           ...getSelectionStyle(rowIndex, 1).selectionStyle,
