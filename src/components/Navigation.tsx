@@ -2,7 +2,7 @@
 import React from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants';
 
-const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor }) => {
+const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, currentPageName }) => {
   const handleDataAction = (id) => {
       if (id === 'EKSPORT') onExport();
       else if (id === 'IMPORT') onImport();
@@ -13,17 +13,31 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
   const allNavItems = [...NAV_ITEMS, ...DATA_ACTIONS];
 
   return (
-    React.createElement('aside', { className: "w-16 hover:w-64 bg-white border-r border-zinc-200 shadow-sm flex flex-col print-hidden transition-all duration-300 overflow-hidden group z-50 absolute h-full xl:relative" },
-      React.createElement('div', { className: "flex items-center justify-center h-16 border-b border-zinc-100 px-4 min-w-[16rem]" },
-        React.createElement('div', { className: "text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300" },
-          React.createElement('h1', { className: "text-2xl font-extrabold text-indigo-600 tracking-tight" }, "RKT"),
-          React.createElement('p', { className: "text-xs text-zinc-500 font-medium tracking-wide" }, "Rapor Kelas Terpadu")
+    React.createElement('header', { className: "w-full bg-white border-b border-zinc-200 shadow-sm flex flex-col print-hidden flex-shrink-0 z-50 sticky top-0" },
+      React.createElement('div', { className: "flex items-center justify-between px-6 h-16" },
+        React.createElement('div', { className: "flex items-center" },
+            React.createElement('h1', { className: "text-2xl font-extrabold text-indigo-600 tracking-tight" }, "RKT"),
+            React.createElement('span', { className: 'mx-4 text-zinc-300' }, '/'),
+            React.createElement('h2', { className: 'text-xl font-medium text-zinc-700' }, currentPageName)
         ),
-        React.createElement('div', { className: "absolute left-0 w-16 flex justify-center items-center group-hover:opacity-0 transition-opacity duration-300" },
-            React.createElement('h1', { className: "text-xl font-extrabold text-indigo-600 tracking-tight" }, "RKT")
+        React.createElement('div', { className: "flex items-center gap-4" },
+            React.createElement('a', { 
+                href: "/terms.html", 
+                target: "_blank", 
+                rel: "noopener noreferrer", 
+                className: "text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
+            }, "Ketentuan Layanan"),
+            React.createElement('span', { className: "text-zinc-300" }, "•"),
+            React.createElement('a', { 
+                href: "/privacy.html", 
+                target: "_blank", 
+                rel: "noopener noreferrer", 
+                className: "text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
+            }, "Kebijakan Privasi")
         )
       ),
-      React.createElement('nav', { className: "flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden min-w-[16rem]" },
+      React.createElement('div', { className: "border-t border-zinc-100" }),
+      React.createElement('nav', { className: "flex-1 px-6 py-3 overflow-x-auto whitespace-nowrap scrollbar-hide flex gap-3 items-center no-scrollbar" },
         allNavItems.map((item) => (
           React.createElement('a', {
             key: item.id,
@@ -36,30 +50,13 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
                     handleNavClick(item.id);
                 }
             },
-            className: `flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-              activePage === item.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900'
+            className: `inline-flex items-center px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 border ${
+              activePage === item.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm'
             }`
           }, 
-            React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, item.label)
+            React.createElement('span', { className: "truncate" }, item.label)
           )
-        )),
-        
-        // Divider and Legal Links styled as buttons
-        React.createElement('div', { className: "my-2 border-t border-zinc-100" }),
-        
-        React.createElement('a', { 
-            href: "/terms.html", 
-            target: "_blank", 
-            rel: "noopener noreferrer", 
-            className: "flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
-        }, React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, "Ketentuan Layanan")),
-        
-        React.createElement('a', { 
-            href: "/privacy.html", 
-            target: "_blank", 
-            rel: "noopener noreferrer", 
-            className: "flex items-center px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-zinc-600 hover:bg-zinc-100/80 hover:text-zinc-900" 
-        }, React.createElement('span', { className: "truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-2" }, "Kebijakan Privasi"))
+        ))
       )
     )
   );

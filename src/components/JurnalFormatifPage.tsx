@@ -365,16 +365,6 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
     handleOpenModal,
   } = useJurnalFormatifPageLogic(props);
 
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const filteredStudents = React.useMemo(() => {
-    if (!searchQuery.trim()) return students;
-    const q = searchQuery.toLowerCase();
-    return students.filter((student: any) => 
-      student.namaLengkap?.toLowerCase().includes(q)
-    );
-  }, [students, searchQuery]);
-
   return (
     <div className="flex flex-col gap-6 space-y-0 pt-4 sm:pt-8 animate-fade-in">
       {selectedStudent && (
@@ -403,55 +393,26 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
         />
       ) : (
         <div className="space-y-4">
-          {/* Quick Filter & Stats Section */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between bg-zinc-50 border border-zinc-200/60 p-3 rounded-xl">
-            <div className="relative w-full sm:max-w-xs">
-              <input
-                type="text"
-                value={searchQuery}
-                aria-label="Cari nama siswa"
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama siswa..."
-                className="w-full pl-9 pr-3 py-2 bg-white border border-zinc-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-            </div>
-            <div className="text-xs text-zinc-500 self-center">
-              Menampilkan <span className="font-semibold text-zinc-800">{filteredStudents.length}</span> dari <span className="font-semibold text-zinc-800">{students.length}</span> siswa — Semester: {currentSemester}
-            </div>
-          </div>
-
           {/* Table container */}
           <div className="bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-12rem)] sm:max-h-[calc(100dvh-10rem)] overflow-hidden">
             <div className="flex-1 overflow-auto">
               <table className="w-full text-sm text-left text-zinc-500 border-separate border-spacing-0">
                 <thead className="text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30">
                   <tr>
-                    <th scope="col" className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 sticky left-0 top-0 z-40 bg-zinc-100 text-center  border-b border-zinc-200/60">No</th>
-                    <th scope="col" className="px-6 py-3 min-w-[250px] border-b border-zinc-200/60 sticky left-[50px] top-0 z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nama Siswa</th>
+                    <th scope="col" className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 sticky top-0 left-0 z-40 bg-zinc-100 text-center  border-b border-zinc-200/60">No</th>
+                    <th scope="col" className="px-6 py-3 min-w-[250px] border-b border-zinc-200/60 sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Nama Siswa</th>
                     <th scope="col" className="px-6 py-3 text-center border-b border-zinc-200/60">Jumlah Catatan</th>
                     <th scope="col" className="px-6 py-3 text-center border-b border-zinc-200/60">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStudents.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="text-center py-12 text-zinc-400 bg-white">
-                        Siswa dengan nama pencarian "{searchQuery}" tidak ditemukan.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStudents.map((student: any, index: number) => {
+                  {students.map((student: any, index: number) => {
                       const studentNotes = (formativeJournal[student.id] || []).filter((n: any) => (n.semester || 'Ganjil') === currentSemester);
                       const noteCount = studentNotes.length;
                       return (
                         <tr key={student.id} className="bg-white hover:bg-[#fafafa] transition-colors">
                           <td className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white">{index + 1}</td>
-                          <td className="px-6 py-4 font-medium text-zinc-900 border-b border-zinc-200/60 sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{student.namaLengkap}</td>
+                          <td className="px-6 py-4 font-medium text-zinc-900 border-b border-zinc-200/60 lg:sticky lg:left-[50px] lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">{student.namaLengkap}</td>
                           <td className="px-6 py-4 text-center border-b border-zinc-200/60"> 
                             <span className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium ${noteCount > 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-zinc-100 text-zinc-500'}`}>
                               {noteCount} Catatan
@@ -468,8 +429,7 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
                           </td>
                         </tr>
                       );
-                    })
-                  )}
+                  })}
                 </tbody>
               </table>
             </div>
