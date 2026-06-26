@@ -114,7 +114,6 @@ export const useDashboardLogic = ({
 
     currentStudents.forEach((student) => {
       const studentGrade = currentGrades.find((g) => g.studentId === student.id);
-      if (!studentGrade) return;
 
       const studentReligion = String(student.agama || '').trim().toLowerCase();
 
@@ -206,9 +205,9 @@ export const useDashboardLogic = ({
       const val = key === 'nama_wali_kelas' ? getContextualValue(settings, 'nama_wali_kelas') : settings[key];
       return val && val.trim() !== '';
     }).length;
-    const settingsPercentage = Math.round((filledSettingsFields / settingsFields.length) * 100);
+    const settingsPercentage = Math.floor((filledSettingsFields / settingsFields.length) * 100);
 
-    if (settingsPercentage === 100) {
+    if (filledSettingsFields === settingsFields.length) {
       results.push({
         category: 'Pengaturan',
         title: 'Informasi Dasar',
@@ -277,9 +276,9 @@ export const useDashboardLogic = ({
       0
     );
     const studentDataPercentage =
-      totalStudentDataFields > 0 ? Math.round((filledStudentDataFields / totalStudentDataFields) * 100) : 100;
+      totalStudentDataFields > 0 ? Math.floor((filledStudentDataFields / totalStudentDataFields) * 100) : 100;
 
-    if (studentDataPercentage === 100) {
+    if (filledStudentDataFields === totalStudentDataFields) {
       results.push({
         category: 'Data Siswa',
         title: 'Data Siswa',
@@ -340,12 +339,12 @@ export const useDashboardLogic = ({
 
     const gradesPercentage =
       totalRequiredGrades > 0
-        ? Math.round((totalFilledGrades / totalRequiredGrades) * 100)
+        ? Math.floor((totalFilledGrades / totalRequiredGrades) * 100)
         : totalStudents > 0
         ? 0
         : 100;
 
-    if (gradesPercentage === 100) {
+    if (totalFilledGrades === totalRequiredGrades && totalRequiredGrades > 0) {
       results.push({
         category: 'Data Nilai',
         title: 'Data Nilai',
@@ -354,6 +353,16 @@ export const useDashboardLogic = ({
         actionText: 'Lihat Data Nilai',
         onActionClick: () => setActivePage('DATA_NILAI'),
         percentage: 100,
+      });
+    } else if (totalRequiredGrades === 0) {
+      results.push({
+        category: 'Data Nilai',
+        title: 'Data Nilai',
+        status: 'bad',
+        message: 'Belum ada mata pelajaran yang aktif.',
+        actionText: 'Pilih Mata Pelajaran',
+        onActionClick: () => setActivePage('PENGATURAN'),
+        percentage: 0,
       });
     } else {
       const missingCount = totalRequiredGrades - totalFilledGrades;
@@ -376,8 +385,8 @@ export const useDashboardLogic = ({
       const studentCoData = cocurricData[s.id];
       return studentCoData && Object.values(studentCoData[coDimensionField] || {}).some((r) => r);
     }).length;
-    const coPercentage = Math.round((studentsWithCo / totalStudents) * 100);
-    if (coPercentage === 100) {
+    const coPercentage = Math.floor((studentsWithCo / totalStudents) * 100);
+    if (studentsWithCo === totalStudents) {
       results.push({
         category: 'Data Lainnya',
         title: 'Kokurikuler',
@@ -408,8 +417,8 @@ export const useDashboardLogic = ({
           se.assignedActivities?.some((activity: any) => activity !== null)
       )
     ).length;
-    const extraPercentage = Math.round((studentsWithExtra / totalStudents) * 100);
-    if (extraPercentage === 100) {
+    const extraPercentage = Math.floor((studentsWithExtra / totalStudents) * 100);
+    if (studentsWithExtra === totalStudents) {
       results.push({
         category: 'Data Lainnya',
         title: 'Ekstrakurikuler',
@@ -440,8 +449,8 @@ export const useDashboardLogic = ({
           (a.sakit !== null || a.izin !== null || a.alpa !== null)
       )
     ).length;
-    const attendancePercentage = Math.round((studentsWithAttendance / totalStudents) * 100);
-    if (attendancePercentage === 100) {
+    const attendancePercentage = Math.floor((studentsWithAttendance / totalStudents) * 100);
+    if (studentsWithAttendance === totalStudents) {
       results.push({
         category: 'Data Lainnya',
         title: 'Data Absensi',
@@ -470,8 +479,8 @@ export const useDashboardLogic = ({
         const noteKey = getNoteKey(s.id);
         return data[noteKey] && data[noteKey].trim() !== '';
       }).length;
-      const percentage = Math.round((completed / totalStudents) * 100);
-      if (percentage === 100) {
+      const percentage = Math.floor((completed / totalStudents) * 100);
+      if (completed === totalStudents) {
         results.push({
           category: 'Data Lainnya',
           title: titleName,
