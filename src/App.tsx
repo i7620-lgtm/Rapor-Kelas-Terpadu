@@ -177,7 +177,7 @@ const App = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div className="flex-1 flex overflow-hidden lg:flex-row flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Navigation
           activePage={activePage}
           setActivePage={handleNavigate}

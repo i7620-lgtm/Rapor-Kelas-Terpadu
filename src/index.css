@@ -29,6 +29,17 @@ input, textarea, [contenteditable="true"] {
 .animate-fade-in-down {
   animation: fadeInDown 0.5s ease-out forwards;
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* Tooltip styles for Learning Objectives */
 .tp-header {
   /* position: relative; No longer needed */
