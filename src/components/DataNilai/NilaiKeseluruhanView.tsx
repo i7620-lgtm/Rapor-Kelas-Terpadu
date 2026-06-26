@@ -95,47 +95,51 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
       };
 
       let hasFailingGrade = false;
-      if (!isNaN(predicateCValue)) {
-        const studentReligionLower = String(student.agama || "")
-          .trim()
-          .toLowerCase();
+      let hasMissingGrade = false;
+      
+      const studentReligionLower = String(student.agama || "")
+        .trim()
+        .toLowerCase();
 
-        const relevantSubjectsForCheck = activeSubjects.filter((subject) => {
-          const subjectFullNameLower = subject.fullName.toLowerCase();
+      const relevantSubjectsForCheck = activeSubjects.filter((subject) => {
+        const subjectFullNameLower = subject.fullName.toLowerCase();
 
-          // Handle Kepercayaan explicitly
-          if (
-            subject.id === "PAKTTMYME" ||
-            subjectFullNameLower.includes("kepercayaan terhadap tuhan")
-          ) {
-            return studentReligionLower === "kepercayaan";
+        // Handle Kepercayaan explicitly
+        if (
+          subject.id === "PAKTTMYME" ||
+          subjectFullNameLower.includes("kepercayaan terhadap tuhan")
+        ) {
+          return studentReligionLower === "kepercayaan";
+        }
+
+        if (subjectFullNameLower.startsWith("pendidikan agama")) {
+          if (!studentReligionLower) return false;
+
+          const religionMatch = subjectFullNameLower.match(/\(([^)]+)\)/);
+          if (religionMatch) {
+            return (
+              religionMatch[1].trim().toLowerCase() === studentReligionLower
+            );
           }
+          return false;
+        }
+        return true;
+      });
 
-          if (subjectFullNameLower.startsWith("pendidikan agama")) {
-            if (!studentReligionLower) return false;
-
-            const religionMatch = subjectFullNameLower.match(/\(([^)]+)\)/);
-            if (religionMatch) {
-              return (
-                religionMatch[1].trim().toLowerCase() === studentReligionLower
-              );
-            }
-            return false;
-          }
-          return true;
-        });
-
-        for (const subject of relevantSubjectsForCheck) {
-          const grade = studentGrades.finalGrades?.[subject.id];
-          if (
-            grade === undefined ||
-            grade === null ||
-            grade === "" ||
-            (typeof grade === "number" && grade < predicateCValue)
-          ) {
-            hasFailingGrade = true;
-            break;
-          }
+      for (const subject of relevantSubjectsForCheck) {
+        const grade = studentGrades.finalGrades?.[subject.id];
+        if (
+          grade === undefined ||
+          grade === null ||
+          grade === ""
+        ) {
+          hasMissingGrade = true;
+        } else if (
+          !isNaN(predicateCValue) &&
+          typeof grade === "number" &&
+          grade < predicateCValue
+        ) {
+          hasFailingGrade = true;
         }
       }
 
@@ -194,6 +198,7 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
         total,
         average: subjectCount > 0 ? (total / subjectCount).toFixed(2) : "0.00",
         hasFailingGrade,
+        hasMissingGrade,
       };
     });
 
