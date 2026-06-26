@@ -25,7 +25,7 @@ export const KeseluruhanTableRow = React.memo(({
         id: `keseluruhan-cell-${rowIndex}-0`,
         tabIndex: -1,
         className:
-          "p-2 text-center font-medium sticky z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border cursor-default select-none",
+          `p-2 text-center font-medium sticky z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border cursor-default select-none ${data.hasMissingGrade ? "bg-red-100 text-red-700 font-bold" : "bg-white text-slate-900"}`,
         style: {
           left: 0,
           width: "60px",
@@ -47,7 +47,7 @@ export const KeseluruhanTableRow = React.memo(({
       {
         id: `keseluruhan-cell-${rowIndex}-1`,
         tabIndex: -1,
-        className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 lg:sticky lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasFailingGrade ? "text-red-600 font-bold" : "text-slate-900"} cursor-default select-none`,
+        className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 lg:sticky lg:z-20 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${data.hasMissingGrade ? "bg-red-100 text-red-700 font-bold" : data.hasFailingGrade ? "bg-white text-red-600 font-bold" : "bg-white text-slate-900"} cursor-default select-none`,
         style: {
           left: "60px",
           ...getSelectionStyle(rowIndex, 1).selectionStyle,
@@ -73,7 +73,9 @@ export const KeseluruhanTableRow = React.memo(({
       const stats = subjectStats[subject.id];
       let highlightClass = "bg-slate-100 border-slate-200 text-slate-700";
       let highlightStyle = {};
-      if (
+      if (grade === undefined || grade === null || grade === "") {
+        highlightClass = "bg-red-100 border-red-300 text-red-600 font-extrabold shadow-inner shadow-red-200/50 ring-1 ring-red-400";
+      } else if (
         stats &&
         stats.hasMultipleValues &&
         grade !== undefined &&
