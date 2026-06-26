@@ -45,7 +45,9 @@ const CatatanWaliKelasPage = (props: any) => {
     students.length === 0
       ? React.createElement(EmptyState, {
           title: "Belum ada data siswa",
-          description: "Catatan wali kelas tidak dapat dikelola karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+          description: "Catatan wali kelas tidak dapat dikelola karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu.",
+          primaryActionLabel: "Isi Data Siswa",
+          onPrimaryAction: () => props.setActivePage && props.setActivePage('DATA_SISWA')
         })
       : React.createElement(
           "div",

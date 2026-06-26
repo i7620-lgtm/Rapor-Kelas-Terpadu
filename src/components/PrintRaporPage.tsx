@@ -8,9 +8,10 @@ import { usePrintRaporPageLogic } from './PrintRapor/usePrintRaporPageLogic';
 
 interface PrintRaporPageProps {
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+  setActivePage?: (page: string) => void;
 }
 
-const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast }) => {
+const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePage }) => {
   const {
     settings,
     grades,
@@ -36,6 +37,8 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast }) => {
         <EmptyState
           title="Belum ada data siswa"
           description="Cetak rapor tidak dapat dilakukan karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+          primaryActionLabel="Isi Data Siswa"
+          onPrimaryAction={() => setActivePage && setActivePage('DATA_SISWA')}
         />
       </div>
     );
@@ -47,6 +50,8 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast }) => {
         <EmptyState
           title="Menunggu Data Nilai"
           description="Semua data nilai siswa saat ini kosong. Rapor tidak akan memiliki nilai numerik yang terisi. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya."
+          primaryActionLabel="Isi Data Nilai"
+          onPrimaryAction={() => setActivePage && setActivePage('DATA_NILAI')}
         />
       </div>
     );

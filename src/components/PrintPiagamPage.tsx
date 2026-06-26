@@ -602,7 +602,7 @@ const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions 
     );
 };
 
-const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grades: propGrades, subjects: propSubjects, onUpdatePiagamLayout, showToast }) => {
+const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grades: propGrades, subjects: propSubjects, onUpdatePiagamLayout, showToast, setActivePage }) => {
     const storeSettings = useSettingsStore((state) => state.settings);
     const storeSubjects = useSettingsStore((state) => state.subjects);
     const storeStudents = useStudentsStore((state) => state.students);
@@ -891,7 +891,9 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
             React.createElement('div', { className: "p-6" },
                 React.createElement(EmptyState, {
                     title: "Belum ada data siswa",
-                    description: "Piagam tidak dapat dicetak karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+                    description: "Piagam tidak dapat dicetak karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu.",
+                    primaryActionLabel: "Isi Data Siswa",
+                    onPrimaryAction: () => setActivePage && setActivePage('DATA_SISWA')
                 })
             )
         );
@@ -902,7 +904,9 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
             React.createElement('div', { className: "p-6" },
                 React.createElement(EmptyState, {
                     title: "Menunggu Data Nilai",
-                    description: "Semua data nilai siswa saat ini kosong. Piagam prestasi bergantung pada peringkat nilai. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya."
+                    description: "Semua data nilai siswa saat ini kosong. Piagam prestasi bergantung pada peringkat nilai. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya.",
+                    primaryActionLabel: "Isi Data Nilai",
+                    onPrimaryAction: () => setActivePage && setActivePage('DATA_NILAI')
                 })
             )
         );

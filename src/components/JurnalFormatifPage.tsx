@@ -390,6 +390,8 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
         <EmptyState
           title="Belum ada data siswa"
           description="Jurnal Formatif tidak dapat dibuat karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+          primaryActionLabel="Isi Data Siswa"
+          onPrimaryAction={() => props.setActivePage && props.setActivePage('DATA_SISWA')}
         />
       ) : (
         <div className="space-y-4">

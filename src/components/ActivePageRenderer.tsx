@@ -48,12 +48,14 @@ const ActivePageRenderer = ({
     return React.createElement(DataNilaiPage, {
       activeTab: activeNilaiTab,
       onTabChange: setActiveNilaiTab,
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "DATA_KOKURIKULER") {
     return React.createElement(DataKokurikulerPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
@@ -67,42 +69,49 @@ const ActivePageRenderer = ({
 
   if (activePage === "DATA_ABSENSI") {
     return React.createElement(DataAbsensiPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "CATATAN_WALI_KELAS") {
     return React.createElement(CatatanWaliKelasPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "DATA_EKSTRAKURIKULER") {
     return React.createElement(DataEkstrakurikulerPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "PRINT_RAPOR") {
     return React.createElement(PrintRaporPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "PRINT_PIAGAM") {
     return React.createElement(PrintPiagamPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "PRINT_LEGER") {
     return React.createElement(PrintLegerPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }
 
   if (activePage === "JURNAL_FORMATIF") {
     return React.createElement(JurnalFormatifPage, {
+      setActivePage: handleNavigate,
       showToast,
     });
   }

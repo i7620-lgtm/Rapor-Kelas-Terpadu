@@ -22,6 +22,7 @@ interface PrintLegerPageProps {
   grades?: any;
   subjects?: any;
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+  setActivePage?: (page: string) => void;
 }
 
 const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
@@ -174,6 +175,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
         <EmptyState
           title="Belum ada data siswa"
           description="Leger tidak dapat dicetak karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+          primaryActionLabel="Isi Data Siswa"
+          onPrimaryAction={() => props.setActivePage && props.setActivePage('DATA_SISWA')}
         />
       </div>
     );
@@ -185,6 +188,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
         <EmptyState
           title="Menunggu Data Nilai"
           description="Semua data nilai siswa saat ini kosong. Leger nilai belum dapat dikalkulasikan. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya."
+          primaryActionLabel="Isi Data Nilai"
+          onPrimaryAction={() => props.setActivePage && props.setActivePage('DATA_NILAI')}
         />
       </div>
     );
