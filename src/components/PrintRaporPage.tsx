@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ReportPagesForStudent } from './PrintRapor/ReportPagesForStudent';
 import { PrintControlPanel } from './PrintRapor/PrintControlPanel';
 import { EmptyState } from './EmptyState';
 import { ExportProgressModal } from './ExportProgressModal';
 import { ErrorBoundary } from './ErrorBoundary';
 import { usePrintRaporPageLogic } from './PrintRapor/usePrintRaporPageLogic';
+import { useDashboardLogic } from './Dashboard/useDashboardLogic';
+import { IncompleteDataModal } from './IncompleteDataModal';
 
 interface PrintRaporPageProps {
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
@@ -30,6 +32,30 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     studentsToRender,
     pageStyle,
   } = usePrintRaporPageLogic({ showToast });
+
+  const { completenessChecks } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+  
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
+
+  const incompleteItems = completenessChecks.filter(check => check.status === 'bad');
+
+  const onPrintRequest = (action: () => void) => {
+    if (incompleteItems.length > 0) {
+      setPendingPrintAction(() => action);
+      setShowIncompleteModal(true);
+    } else {
+      action();
+    }
+  };
+
+  const handleContinuePrint = () => {
+    setShowIncompleteModal(false);
+    if (pendingPrintAction) {
+      pendingPrintAction();
+      setPendingPrintAction(null);
+    }
+  };
 
   if (students.length === 0) {
     return (
@@ -64,10 +90,17 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
           students={students}
           isMobileDevice={isMobileDevice}
           isFaseA={isFaseA}
-          handleDownloadPDF={handleDownloadPDF}
-          handlePrint={handlePrint}
+          handleDownloadPDF={() => onPrintRequest(handleDownloadPDF)}
+          handlePrint={() => onPrintRequest(handlePrint)}
         />
       </div>
+
+      <IncompleteDataModal
+        isOpen={showIncompleteModal}
+        onClose={() => setShowIncompleteModal(false)}
+        onContinue={handleContinuePrint}
+        incompleteChecks={incompleteItems}
+      />
 
       <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8 animate-fade-in">
         {studentsToRender.map((student) => {

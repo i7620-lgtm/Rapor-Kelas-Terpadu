@@ -11,6 +11,8 @@ import { EmptyState } from './EmptyState';
 import { ExportProgressModal } from './ExportProgressModal';
 import { getFontEmbedCSS } from '../utils/pdfFonts';
 import { DefaultPiagamBackground } from './PrintPiagam/DefaultPiagamBackground';
+import { useDashboardLogic } from './Dashboard/useDashboardLogic';
+import { IncompleteDataModal } from './IncompleteDataModal';
 
 const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -620,6 +622,29 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
         setSettings((s) => ({ ...s, [layoutField]: newLayout }));
     });
 
+    const { completenessChecks } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+    const incompleteItems = completenessChecks.filter(check => check.status === 'bad' && check.category !== 'Data Lainnya');
+
+    const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+    const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
+
+    const onPrintRequest = (action: () => void) => {
+        if (incompleteItems.length > 0) {
+            setPendingPrintAction(() => action);
+            setShowIncompleteModal(true);
+        } else {
+            action();
+        }
+    };
+
+    const handleContinuePrint = () => {
+        setShowIncompleteModal(false);
+        if (pendingPrintAction) {
+            pendingPrintAction();
+            setPendingPrintAction(null);
+        }
+    };
+
     const [paperSize, setPaperSize] = useState('A4');
     const [selectedFilter, setSelectedFilter] = useState('all'); // 'all', 'top3', 'top10'
     const [isPrinting, setIsPrinting] = useState(false);
@@ -937,8 +962,8 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
                         ),
                         React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
                         isMobileDevice ?
-                            React.createElement('button', { onClick: handleDownloadPDF, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
-                            React.createElement('button', { onClick: handlePrint, disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
+                            React.createElement('button', { onClick: () => onPrintRequest(handleDownloadPDF), disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                            React.createElement('button', { onClick: () => onPrintRequest(handlePrint), disabled: isPrinting, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
                     )
                 ),
                 React.createElement('div', { className: "border-t pt-4 mt-4" },
@@ -955,6 +980,12 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
                     )
                 )
             ),
+            React.createElement(IncompleteDataModal, {
+                isOpen: showIncompleteModal,
+                onClose: () => setShowIncompleteModal(false),
+                onContinue: handleContinuePrint,
+                incompleteChecks: incompleteItems
+            }),
             React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
                 studentsToRender.length > 0 ? studentsToRender.map(student => {
                     const studentData = studentRankings.get(student.id);

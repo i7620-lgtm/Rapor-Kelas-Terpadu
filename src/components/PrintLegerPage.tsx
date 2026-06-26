@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { EmptyState } from './EmptyState';
 import { ExportProgressModal } from './ExportProgressModal';
 import { LegerReportHeader } from './PrintLeger/LegerReportHeader';
 import { LegerHeader } from './PrintLeger/LegerHeader';
 import { LegerFooter } from './PrintLeger/LegerFooter';
 import { usePrintLegerPageLogic } from './PrintLeger/usePrintLegerPageLogic';
+import { useDashboardLogic } from './Dashboard/useDashboardLogic';
+import { IncompleteDataModal } from './IncompleteDataModal';
 
 const PAPER_SIZES: Record<string, { width: string; height: string }> = {
   A4: { width: '21cm', height: '29.7cm' },
@@ -52,6 +54,29 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     handlePrint,
     pageStyle,
   } = usePrintLegerPageLogic(props);
+
+  const { completenessChecks } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) });
+  const incompleteItems = completenessChecks.filter(check => check.status === 'bad' && check.category !== 'Data Lainnya');
+
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
+
+  const onPrintRequest = (action: () => void) => {
+    if (incompleteItems.length > 0) {
+      setPendingPrintAction(() => action);
+      setShowIncompleteModal(true);
+    } else {
+      action();
+    }
+  };
+
+  const handleContinuePrint = () => {
+    setShowIncompleteModal(false);
+    if (pendingPrintAction) {
+      pendingPrintAction();
+      setPendingPrintAction(null);
+    }
+  };
 
   const tableHeader = useMemo(() => (
     <thead className={isCompact ? 'text-[6pt]' : 'text-[6.5pt]'}>
@@ -213,11 +238,11 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                 </select>
               </div>
               {isMobileDevice ? (
-                <button onClick={handleDownloadPDF} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <button onClick={() => onPrintRequest(handleDownloadPDF)} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
                   {isPrinting ? 'Mempersiapkan...' : 'Unduh PDF'}
                 </button>
               ) : (
-                <button onClick={handlePrint} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <button onClick={() => onPrintRequest(handlePrint)} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
                   {isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)'}
                 </button>
               )}
@@ -237,6 +262,14 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
             </div>
           </div>
         </div>
+
+        <IncompleteDataModal
+          isOpen={showIncompleteModal}
+          onClose={() => setShowIncompleteModal(false)}
+          onContinue={handleContinuePrint}
+          incompleteChecks={incompleteItems}
+        />
+
         <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8">
           {students.length > 0 && (
             <div 
