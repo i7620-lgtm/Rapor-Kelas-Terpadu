@@ -34,7 +34,7 @@ export const SiswaTableRow = React.memo(({
             <td 
                 id={`cell-${rowIndex}--1`}
                 tabIndex={-1}
-                className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white relative cursor-default select-none"
+                className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white cursor-default select-none"
                 style={getSelectionStyle(rowIndex, -1).selectionStyle}
                 onMouseDown={(e) => {
                     if (e.button !== 0) return;
