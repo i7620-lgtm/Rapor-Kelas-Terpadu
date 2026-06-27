@@ -313,6 +313,8 @@ const DataKokurikulerPage = (props: any) => {
                               "relative px-3 py-2 border-b border-zinc-200/60 text-center align-middle transition-colors",
                             style: selectionStyle,
                             onMouseDown: (e) => {
+                              const target = e.target as HTMLElement;
+                              if (target && target.tagName === "INPUT") return;
                               if (e.button !== 0) return;
                               if (e.shiftKey) e.preventDefault();
                               handleMouseDownCell(e, index, dimIndex);
@@ -332,13 +334,15 @@ const DataKokurikulerPage = (props: any) => {
                               ),
                             onPaste: (e) => handlePaste(e, student.id, dim.id),
                             onFocus: () => handleFocusCell(index, dimIndex),
-                            style: {
-                              pointerEvents: "none",
+                            onMouseDown: (e) => {
+                              if (e.button !== 0) return;
+                              // Don't stop propagation, but let grid selection know if needed.
+                              // Since we return early in td's onMouseDown for INPUT, it's fine.
                             },
                             className: `block w-11 mx-auto px-1 py-1 text-center text-sm uppercase rounded-md transition-all ${
                               showTransparentInput
-                                ? "bg-transparent border-transparent shadow-none border focus:outline-none"
-                                : `bg-white shadow-sm border focus:ring-zinc-900 focus:border-zinc-900 ${
+                                ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 relative z-10 font-bold"
+                                : `bg-white shadow-sm border focus:ring-zinc-900 focus:border-zinc-900 relative z-10 ${
                                     isValidRating
                                       ? "border-green-500 ring-1 ring-green-500"
                                       : rating && !isValidRating
