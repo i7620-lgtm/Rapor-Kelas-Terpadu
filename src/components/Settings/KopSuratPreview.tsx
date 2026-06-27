@@ -12,7 +12,7 @@ export const KopSuratPreview: React.FC<KopSuratPreviewProps> = ({ settings }) =>
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (e) {
+        } catch (_e) {
             rawLayout = null;
         }
     }

@@ -17,7 +17,7 @@ interface KopSuratEditorModalProps {
 export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({ 
     isOpen, 
     onClose, 
-    settings, 
+    _settings, 
     onSaveLayout 
 }) => {
     const [elements, setElements] = useState<any[]>([]);
@@ -41,7 +41,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
             if (typeof rawLayout === 'string') {
                 try {
                     rawLayout = JSON.parse(rawLayout);
-                } catch (e) {
+                } catch (_e) {
                     rawLayout = null;
                 }
             }
