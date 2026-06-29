@@ -36,13 +36,7 @@ const DataKokurikulerPage = (props: any) => {
       React.createElement(
         "p",
         { className: "mt-1 text-zinc-600" },
-        "Isi tema kegiatan dan berikan penilaian capaian kokurikuler siswa yang berfokus pada perkembangan dimensi profil lulusan.",
-        React.createElement("br", null),
-        React.createElement(
-          "span",
-          { className: "text-sm text-zinc-900" },
-          "💡 Tips: Anda dapat menyalin nilai (BB, MB, BSH, SB) dari Excel dan menempelkannya (paste) ke tabel di bawah.",
-        ),
+        "Isi tema kegiatan dan berikan penilaian capaian kokurikuler siswa yang berfokus pada perkembangan dimensi profil lulusan."
       ),
     ),
 

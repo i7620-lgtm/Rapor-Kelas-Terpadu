@@ -141,11 +141,7 @@ const DataSiswaPage = (props) => {
                 React.createElement('div', null,
                     React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Siswa"),
                     React.createElement('p', { className: "mt-1 text-zinc-600" },
-                        "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis.",
-                        React.createElement('br', null),
-                        React.createElement('span', { className: "text-sm text-zinc-900" }, "💡 Tips: Anda dapat menyalin data dari Excel (blok sel) dan menempelkannya (paste) langsung ke tabel di bawah."),
-                        React.createElement('br', null),
-                        React.createElement('span', { className: "text-sm text-zinc-900" }, "💡 Tips: Anda dapat mengupload foto seluruh siswa sekaligus dengan menamai masing-masing foto sesuai dengan nomor absen siswa (contoh: 1.jpg, 2.png, dst).")
+                        "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis."
                     )
                 ),
                 React.createElement('div', { className: "flex gap-2" },

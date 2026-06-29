@@ -30,13 +30,7 @@ const DataAbsensiPage = (props: any) => {
       React.createElement(
         "p",
         { className: "mt-1 text-zinc-600" },
-        "Catat jumlah ketidakhadiran siswa selama satu semester. Kosongkan kolom jika tidak ada ketidakhadiran.",
-        React.createElement("br", null),
-        React.createElement(
-          "span",
-          { className: "text-sm text-zinc-900" },
-          "💡 Tips: Anda dapat copy-paste data dari Excel ke kolom Sakit, Izin, atau Alpa.",
-        ),
+        "Catat jumlah ketidakhadiran siswa selama satu semester. Kosongkan kolom jika tidak ada ketidakhadiran."
       ),
     ),
     students.length === 0

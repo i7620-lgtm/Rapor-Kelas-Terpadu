@@ -34,13 +34,7 @@ const DataEkstrakurikulerPage = (props: any) => {
       React.createElement(
         "p",
         { className: "mt-1 text-slate-600" },
-        "Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa.",
-        React.createElement("br", null),
-        React.createElement(
-          "span",
-          { className: "text-sm text-indigo-600" },
-          "💡 Tips: Anda dapat copy-paste deskripsi dari Excel ke kolom Deskripsi.",
-        ),
+        "Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa."
       ),
     ),
 

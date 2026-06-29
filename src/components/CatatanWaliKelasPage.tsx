@@ -32,13 +32,7 @@ const CatatanWaliKelasPage = (props: any) => {
       React.createElement(
         "p",
         { className: "mt-1 text-zinc-600" },
-        "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester.",
-        React.createElement("br", null),
-        React.createElement(
-          "span",
-          { className: "text-sm text-zinc-900" },
-          "💡 Tips: Anda dapat copy-paste catatan dari Excel/Word ke kolom Catatan.",
-        ),
+        "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester."
       ),
     ),
 

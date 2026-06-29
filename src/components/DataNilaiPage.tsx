@@ -177,13 +177,7 @@ const DataNilaiPage = ({
       React.createElement(
         "p",
         { className: "mt-1 text-slate-600" },
-        "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.",
-        React.createElement("br", null),
-        React.createElement(
-          "span",
-          { className: "text-sm text-indigo-600" },
-          "💡 Tips: Anda dapat copy-paste nilai dari Excel ke kolom-kolom nilai mata pelajaran, serta menyeleksi/memblok grid pada 'Nilai Keseluruhan' untuk disalin (copy) kembali ke Excel.",
-        ),
+        "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor."
       ),
     ),
 

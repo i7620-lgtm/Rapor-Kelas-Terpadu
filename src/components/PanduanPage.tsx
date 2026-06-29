@@ -392,6 +392,48 @@ const PanduanPage = ({ setActivePage }) => {
                     )
                 )
             )
+        },
+        {
+            title: "10. Tips Penggunaan (Fitur Canggih)",
+            mockup: (
+                React.createElement('div', { className: "w-full h-full bg-white rounded-lg shadow-sm border border-slate-200 p-4 flex flex-col items-center justify-center gap-4 relative overflow-hidden" },
+                    React.createElement('div', { className: "p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-start gap-3 w-full max-w-sm" },
+                        React.createElement('div', { className: "bg-white p-1.5 rounded-lg border border-indigo-100 text-indigo-600 shadow-sm" },
+                            React.createElement('svg', { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" }))
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: "text-xs font-bold text-slate-800" }, "Copy-Paste Excel"),
+                            React.createElement('div', { className: "text-[10px] text-slate-600 mt-0.5 leading-relaxed" }, "Blok data di Excel lalu paste langsung ke tabel aplikasi.")
+                        )
+                    ),
+                    React.createElement('div', { className: "p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-start gap-3 w-full max-w-sm relative" },
+                        React.createElement('div', { className: "bg-white p-1.5 rounded-lg border border-indigo-100 text-indigo-600 shadow-sm" },
+                            React.createElement('svg', { className: "w-5 h-5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, React.createElement('path', { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" }))
+                        ),
+                        React.createElement('div', null,
+                            React.createElement('div', { className: "text-xs font-bold text-slate-800" }, "Upload Foto Sekaligus"),
+                            React.createElement('div', { className: "text-[10px] text-slate-600 mt-0.5 leading-relaxed" }, "Beri nama file foto 1.jpg, 2.jpg dst sesuai urutan absen.")
+                        ),
+                        React.createElement(Pointer, { className: "-top-3 -right-2 scale-75", text: "Fitur Cepat" })
+                    )
+                )
+            ),
+            content: (
+                React.createElement(React.Fragment, null,
+                    React.createElement('p', { className: "mb-2 font-medium" }, "Tingkatkan produktivitas Anda dengan fitur canggih berikut:"),
+                    React.createElement('ul', { className: "list-disc pl-5 space-y-3 text-zinc-600" },
+                        React.createElement('li', null, 
+                            React.createElement('strong', { className: "text-zinc-800" }, "Copy-Paste dari Excel/Word:"), " Anda dapat menyalin data (copy) dari aplikasi spreadsheet dan menempelkannya (paste) ke berbagai tabel di aplikasi ini, seperti Data Siswa, Data Nilai, Data Kokurikuler, Data Ekstrakurikuler, Data Absensi, dan Catatan Wali Kelas. Pastikan urutan baris sesuai."
+                        ),
+                        React.createElement('li', null, 
+                            React.createElement('strong', { className: "text-zinc-800" }, "Blok Tabel Nilai:"), " Pada halaman 'Data Nilai - Nilai Keseluruhan', Anda dapat menyeleksi (memblok) beberapa sel sekaligus dengan mouse untuk menyalin data kembali ke Excel (Ctrl+C)."
+                        ),
+                        React.createElement('li', null, 
+                            React.createElement('strong', { className: "text-zinc-800" }, "Upload Foto Siswa Massal:"), " Di halaman 'Data Siswa', Anda dapat mengupload foto semua siswa secara bersamaan. Caranya: ubah nama file foto menjadi nomor absen siswa (contoh: 1.jpg, 2.png, dst), lalu klik tombol 'Upload Foto' dan pilih semua foto tersebut."
+                        )
+                    )
+                )
+            )
         }
     ];
 
