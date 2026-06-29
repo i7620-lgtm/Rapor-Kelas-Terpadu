@@ -33,12 +33,7 @@ export const NilaiTableToolbar = ({
         },
         "Atur Lingkup Materi & TP",
       ),
-    ),
-    React.createElement(
-      "p",
-      { id: "tips-salin-nilai", className: "text-sm text-slate-500" },
-      "Tips: Salin data dari Excel dan tempel (paste) ke dalam tabel. Perubahan disimpan otomatis.",
-    ),
+    )
   );
 };
 

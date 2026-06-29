@@ -15,7 +15,7 @@ interface NilaiTableGradingCellProps {
   onCommit: (newValue: any) => void;
   onPaste?: (e: React.ClipboardEvent) => void;
   onFocus: () => void;
-  onMouseDown: (e: React.MouseEvent) => void;
+  onMouseDown?: (e: React.MouseEvent) => void;
   showTransparentInput: boolean;
   className?: string;
 }
@@ -47,7 +47,7 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
         onMouseDown={(e) => {
           if (e.shiftKey) {
             e.preventDefault();
-            onMouseDown(e);
+            if (onMouseDown) onMouseDown(e);
           }
         }}
         className={`w-full p-2 text-sm border rounded-md transition-all relative z-10 ${
@@ -83,7 +83,7 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
       onFocus={onFocus}
       onMouseDown={(e) => {
         if (e.button !== 0) return;
-        onMouseDown(e);
+        if (onMouseDown) onMouseDown(e);
       }}
       showTransparentInput={showTransparentInput}
       className={className}

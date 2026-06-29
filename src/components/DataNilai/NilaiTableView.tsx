@@ -133,7 +133,34 @@ export const NilaiTableView = (props) => {
                   gradeNumber,
                 })
             ),
-            React.createElement('tbody', null,
+            React.createElement('tbody', {
+                onMouseDown: (e) => {
+                  if (e.button !== 0) return;
+                  const td = (e.target as HTMLElement).closest('td');
+                  if (!td || !td.id) return;
+                  const targetTagName = (e.target as HTMLElement).tagName;
+                  if (targetTagName === 'INPUT' || targetTagName === 'TEXTAREA' || targetTagName === 'SELECT') return;
+                  
+                  const match = td.id.match(/^nilai-cell-(\d+)-(.+)$/);
+                  if (match) {
+                    const rowIndex = parseInt(match[1], 10);
+                    const colIdxStr = match[2];
+                    const colIdx = isNaN(Number(colIdxStr)) ? colIdxStr : Number(colIdxStr);
+                    handleMouseDownCell(e, rowIndex, colIdx, "nilai-cell");
+                  }
+                },
+                onMouseOver: (e) => {
+                  const td = (e.target as HTMLElement).closest('td');
+                  if (!td || !td.id) return;
+                  const match = td.id.match(/^nilai-cell-(\d+)-(.+)$/);
+                  if (match) {
+                    const rowIndex = parseInt(match[1], 10);
+                    const colIdxStr = match[2];
+                    const colIdx = isNaN(Number(colIdxStr)) ? colIdxStr : Number(colIdxStr);
+                    handleMouseEnterCell(rowIndex, colIdx);
+                  }
+                }
+              },
                 relevantStudents.map((student, index) => 
                     React.createElement(NilaiTableRow, {
                       key: student.id,

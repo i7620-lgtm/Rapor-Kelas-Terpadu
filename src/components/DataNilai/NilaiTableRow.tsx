@@ -123,11 +123,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           maxWidth: "50px",
           ...getSelectionStyle(index, -2).selectionStyle,
         }}
-        onMouseDown={(e) => {
-          if (e.button !== 0) return;
-          handleMouseDownCell(e, index, -2, "nilai-cell");
-        }}
-        onMouseEnter={() => handleMouseEnterCell(index, -2)}
+        
+        
       >
         {index + 1}
       </td>
@@ -141,11 +138,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           left: "50px",
           ...getSelectionStyle(index, -1).selectionStyle,
         }}
-        onMouseDown={(e) => {
-          if (e.button !== 0) return;
-          handleMouseDownCell(e, index, -1, "nilai-cell");
-        }}
-        onMouseEnter={() => handleMouseEnterCell(index, -1)}
+        
+        
       >
         {student.namaLengkap}
       </td>
@@ -160,13 +154,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
             key={`${student.id}-${h.slmId}-${h.tpIndex}`}
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target && (target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
-              if (e.button !== 0) return;
-              handleMouseDownCell(e, index, colIdx, "nilai-cell");
-            }}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
+            
+            
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -177,7 +166,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "tp", h.slmId, h.tpIndex)}
               onPaste={(e) => handlePaste(e, student.id, `tp|${h.slmId}|${h.tpIndex}`)}
               onFocus={() => handleFocusCell(index, colIdx)}
-              onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+              
               showTransparentInput={showTrans}
               className="w-full p-2 text-center"
             />
@@ -195,13 +184,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target && (target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
-              if (e.button !== 0) return;
-              handleMouseDownCell(e, index, colIdx, "nilai-cell");
-            }}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
+            
+            
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -212,7 +196,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts1")}
               onPaste={(e) => handlePaste(e, student.id, "sts1")}
               onFocus={() => handleFocusCell(index, colIdx)}
-              onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+              
               showTransparentInput={showTrans}
               className="w-full p-2 text-center border rounded-md"
             />
@@ -229,13 +213,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target && (target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
-              if (e.button !== 0) return;
-              handleMouseDownCell(e, index, colIdx, "nilai-cell");
-            }}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
+            
+            
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -246,7 +225,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts2")}
               onPaste={(e) => handlePaste(e, student.id, "sts2")}
               onFocus={() => handleFocusCell(index, colIdx)}
-              onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+              
               showTransparentInput={showTrans}
               className="w-full p-2 text-center border rounded-md"
             />
@@ -264,13 +243,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target && (target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
-              if (e.button !== 0) return;
-              handleMouseDownCell(e, index, colIdx, "nilai-cell");
-            }}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
+            
+            
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -281,7 +255,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas1")}
               onPaste={(e) => handlePaste(e, student.id, "sas1")}
               onFocus={() => handleFocusCell(index, colIdx)}
-              onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+              
               showTransparentInput={showTrans}
               className="w-full p-2 text-center border rounded-md"
             />
@@ -298,13 +272,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            onMouseDown={(e) => {
-              const target = e.target as HTMLElement;
-              if (target && (target.tagName === "SELECT" || target.tagName === "TEXTAREA" || target.tagName === "INPUT")) return;
-              if (e.button !== 0) return;
-              handleMouseDownCell(e, index, colIdx, "nilai-cell");
-            }}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
+            
+            
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -315,7 +284,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas2")}
               onPaste={(e) => handlePaste(e, student.id, "sas2")}
               onFocus={() => handleFocusCell(index, colIdx)}
-              onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+              
               showTransparentInput={showTrans}
               className="w-full p-2 text-center border rounded-md"
             />
