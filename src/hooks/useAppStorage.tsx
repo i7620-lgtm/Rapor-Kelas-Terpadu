@@ -147,7 +147,8 @@ export const useAppStorage = () => {
           setIsDataLoaded(true);
 
           try {
-            const response = await fetch("/presets.json");
+            const baseUrl = import.meta.env.BASE_URL;
+            const response = await fetch(`${baseUrl}presets.json`);
             if (response.ok) {
               const presetsData = await response.json();
               const currentExtracurriculars = useSettingsStore.getState().extracurriculars || [];
@@ -164,7 +165,8 @@ export const useAppStorage = () => {
           const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas);
           if (activeGradeNumber && activeGradeNumber >= 1 && activeGradeNumber <= 6) {
             try {
-              const tpRes = await fetch(`/tp${activeGradeNumber}.json`);
+              const baseUrl = import.meta.env.BASE_URL;
+              const tpRes = await fetch(`${baseUrl}tp${activeGradeNumber}.json`);
               if (tpRes.ok) {
                 const tpData = await tpRes.json();
                 if (tpData) {

@@ -25,7 +25,8 @@ export const useClassChangeCascade = () => {
     }
     
     try {
-      const response = await fetch(`/tp${gradeNumber}.json`);
+      const baseUrl = import.meta.env.BASE_URL;
+      const response = await fetch(`${baseUrl}tp${gradeNumber}.json`);
       if (response.ok) {
         const data = await response.json();
         setPredefinedCurriculum(data);
