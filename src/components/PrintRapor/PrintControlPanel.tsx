@@ -151,7 +151,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
                 <input
                   type="checkbox"
                   name="all"
-                  checked={allSelected}
+                  checked={allSelected === true || allSelected === 'true'}
                   onChange={handlePageSelectionChange}
                   className="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
                 />
@@ -162,7 +162,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
                   <input
                     type="checkbox"
                     name={page.key}
-                    checked={(selectedPages as any)[page.key] || false}
+                    checked={(selectedPages as any)[page.key] === true || (selectedPages as any)[page.key] === 'true'}
                     onChange={handlePageSelectionChange}
                     className="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
                   />
@@ -177,7 +177,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={printOptions.showPrincipalSignature}
+                  checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'}
                   onChange={() => handlePrintOptionChange('showPrincipalSignature')}
                   className="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
                 />
@@ -186,7 +186,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={printOptions.showTeacherSignature}
+                  checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'}
                   onChange={() => handlePrintOptionChange('showTeacherSignature')}
                   className="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
                 />
@@ -202,7 +202,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
                   <input
                     type="checkbox"
                     name="hideGrades"
-                    checked={hideGradesForFaseA}
+                    checked={hideGradesForFaseA === true || hideGradesForFaseA === 'true'}
                     onChange={(e) => setHideGradesForFaseA(e.target.checked)}
                     className="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-pointer"
                   />

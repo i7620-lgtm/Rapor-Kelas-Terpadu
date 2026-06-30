@@ -14,7 +14,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ settings }) => {
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (e) {
+        } catch (_e) {
             rawLayout = null;
         }
     }
