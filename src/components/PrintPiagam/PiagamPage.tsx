@@ -7,8 +7,16 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
     const currentSemester = settings?.semester || 'Ganjil';
     const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
     
-    const layout = settings[layoutField] && settings[layoutField].length > 0
-        ? settings[layoutField]
+    let rawLayout = settings[layoutField];
+    if (typeof rawLayout === 'string') {
+        try {
+            rawLayout = JSON.parse(rawLayout);
+        } catch (_e) {
+            rawLayout = null;
+        }
+    }
+    const layout = Array.isArray(rawLayout) && rawLayout.length > 0
+        ? rawLayout
         : generateInitialPiagamLayout(settings);
 
     // Calculate rank string and dynamic dimensions

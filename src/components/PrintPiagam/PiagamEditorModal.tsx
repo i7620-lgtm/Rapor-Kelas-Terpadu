@@ -12,8 +12,16 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
         if (isOpen) {
             const currentSemester = settings?.semester || 'Ganjil';
             const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
-            const layoutToLoad = settings[layoutField] && settings[layoutField].length > 0
-                ? JSON.parse(JSON.stringify(settings[layoutField]))
+            let rawLayout = settings[layoutField];
+            if (typeof rawLayout === 'string') {
+                try {
+                    rawLayout = JSON.parse(rawLayout);
+                } catch (_e) {
+                    rawLayout = null;
+                }
+            }
+            const layoutToLoad = Array.isArray(rawLayout) && rawLayout.length > 0
+                ? JSON.parse(JSON.stringify(rawLayout))
                 : generateInitialPiagamLayout(settings);
             setElements(layoutToLoad);
             setSelectedElementId(null);
