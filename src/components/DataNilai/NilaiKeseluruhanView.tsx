@@ -9,6 +9,7 @@ import { KeseluruhanTableRow } from "./KeseluruhanTableRow";
 export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: propPredikats, settings, showToast }) => {
   const predikats = propPredikats || settings?.predikats;
   const [sortBy, setSortBy] = useState("no");
+  const [showIncompleteHighlight, setShowIncompleteHighlight] = useState(true);
   const [showMaxHighlight, setShowMaxHighlight] = useState(true);
   const [showMinHighlight, setShowMinHighlight] = useState(true);
   const activeSubjects = useMemo(
@@ -338,6 +339,8 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
         "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
     },
     React.createElement(HighlightControls, {
+      showIncompleteHighlight,
+      setShowIncompleteHighlight,
       showMaxHighlight,
       setShowMaxHighlight,
       showMinHighlight,
@@ -374,6 +377,7 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
               handleMouseEnterCell,
               handleFocusCell,
               subjectStats,
+              showIncompleteHighlight,
               showMaxHighlight,
               showMinHighlight,
             })

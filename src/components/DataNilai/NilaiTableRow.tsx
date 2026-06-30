@@ -61,8 +61,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
     activeSlmIds,
     tpHeaders,
     getSelectionStyle,
-    _handleMouseDownCell,
-    _handleMouseEnterCell,
+    handleMouseDownCell,
+    handleMouseEnterCell,
     handleSingleGradeChange,
     handleFocusCell,
     handlePaste,
@@ -123,8 +123,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           maxWidth: "50px",
           ...getSelectionStyle(index, -2).selectionStyle,
         }}
-        
-        
+        onMouseDown={(e) => handleMouseDownCell(e, index, -2, "nilai-cell")}
+        onMouseEnter={() => handleMouseEnterCell(index, -2)}
       >
         {index + 1}
       </td>
@@ -138,8 +138,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           left: "50px",
           ...getSelectionStyle(index, -1).selectionStyle,
         }}
-        
-        
+        onMouseDown={(e) => handleMouseDownCell(e, index, -1, "nilai-cell")}
+        onMouseEnter={() => handleMouseEnterCell(index, -1)}
       >
         {student.namaLengkap}
       </td>
@@ -154,8 +154,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
             key={`${student.id}-${h.slmId}-${h.tpIndex}`}
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            
-            
+            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -184,8 +184,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            
-            
+            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -213,8 +213,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            
-            
+            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -243,8 +243,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            
-            
+            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
@@ -272,8 +272,8 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
           <td
             className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
             style={style}
-            
-            
+            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
+            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
           >
             <NilaiTableGradingCell
               id={`nilai-cell-${index}-${colIdx}`}
