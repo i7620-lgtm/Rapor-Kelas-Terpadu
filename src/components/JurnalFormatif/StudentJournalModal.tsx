@@ -88,7 +88,7 @@ export const StudentJournalModal: React.FC<StudentJournalModalProps> = ({
               <h3 className="text-xl font-bold text-zinc-800">Jurnal Formatif Siswa</h3>
               <p className="text-sm text-zinc-500">{student.namaLengkap}</p>
             </div>
-            <button onClick={handleAddNew} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">+ Tambah Catatan Baru</button>
+            <button type="button" onClick={handleAddNew} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition-colors">+ Tambah Catatan Baru</button>
           </div>
           <div className="p-6 overflow-y-auto bg-zinc-50">
             {notes && notes.length > 0 ? (
@@ -114,8 +114,8 @@ export const StudentJournalModal: React.FC<StudentJournalModalProps> = ({
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={() => handleEdit(note)} className="text-xs font-medium text-zinc-900 hover:bg-zinc-100 px-2 py-1 rounded transition-colors">Edit</button>
-                          <button onClick={() => handleDelete(note.id)} className="text-xs font-medium text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors">Hapus</button>
+                          <button type="button" onClick={() => handleEdit(note)} className="text-xs font-medium text-zinc-900 hover:bg-zinc-100 px-2 py-1 rounded transition-colors">Edit</button>
+                          <button type="button" onClick={() => handleDelete(note.id)} className="text-xs font-medium text-red-600 hover:bg-red-50 px-2 py-1 rounded transition-colors">Hapus</button>
                         </div>
                       </div>
                       <div className="text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-zinc-200">{note.note}</div>
@@ -140,7 +140,7 @@ export const StudentJournalModal: React.FC<StudentJournalModalProps> = ({
             )}
           </div>
           <div className="flex justify-end p-4 border-t bg-white rounded-b-lg">
-            <button onClick={onClose} className="px-4 py-2 text-sm bg-zinc-100 text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-200 font-medium transition-colors">Tutup</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-zinc-100 text-zinc-700 border border-zinc-300 rounded-lg hover:bg-zinc-200 font-medium transition-colors">Tutup</button>
           </div>
         </div>
       </div>
@@ -234,6 +234,7 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
                           </td>
                           <td className="px-6 py-4 text-center border-b border-zinc-200/60">
                             <button
+                              type="button"
                               id={`look-btn-${student.id}`}
                               onClick={() => handleOpenModal(student)}
                               className="text-indigo-600 hover:text-indigo-800 font-medium px-3 py-1 rounded hover:bg-indigo-50 transition-colors"

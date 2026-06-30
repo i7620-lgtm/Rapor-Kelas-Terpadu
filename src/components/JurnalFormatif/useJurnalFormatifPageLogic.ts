@@ -36,7 +36,7 @@ export const useJurnalFormatifPageLogic = (props: any) => {
       if (!next[sid]) next[sid] = [];
       const idx = next[sid].findIndex((n: any) => n.id === data.id);
       if (idx > -1) next[sid][idx] = data;
-      else next[sid].push({ ...data, id: Date.now() });
+      else next[sid].push({ ...data, id: Date.now().toString() });
       return next;
     });
   });
