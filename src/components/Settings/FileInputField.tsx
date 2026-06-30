@@ -21,8 +21,16 @@ export const FileInputField: React.FC<FileInputFieldProps> = ({
     containerClassName 
 }) => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        onChange(e);
-        onSave();
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                onChange({ target: { name: id, value: base64String, type: 'file_upload' } });
+                onSave();
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleRemove = () => {
@@ -37,8 +45,8 @@ export const FileInputField: React.FC<FileInputFieldProps> = ({
         ),
         React.createElement('div', { className: "mt-1 flex flex-col gap-2 p-2 border-2 border-slate-300 border-dashed rounded-md flex-grow" },
             React.createElement('div', { className: "flex items-center gap-4 flex-grow" },
-                imagePreview ? (
-                    React.createElement('img', { src: imagePreview, alt: "Logo preview", className: "w-16 h-16 object-contain rounded-md bg-slate-100" })
+                imagePreview && !imagePreview.includes('fakepath') ? (
+                    React.createElement('img', { src: imagePreview, alt: "Preview", className: `${id.includes('ttd') ? 'w-32' : 'w-16'} h-16 object-contain rounded-md bg-transparent` })
                 ) : (
                     React.createElement('div', { className: "w-16 h-16 bg-slate-100 rounded-md flex items-center justify-center text-slate-400 text-xs text-center" }, "Pratinjau")
                 ),

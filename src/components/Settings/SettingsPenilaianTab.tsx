@@ -1,26 +1,33 @@
 import React from 'react';
 import { QualitativeGradingTable } from './QualitativeGradingTable';
+import { FormField } from './FormField';
 
 interface SettingsPenilaianTabProps {
     settings: any;
     onSettingsChange: (e: any) => void;
     handleGradeMethodChange: (e: any) => void;
     displayMode: string;
-    _localClassName: string;
-    _handleLocalClassNameChange: (e: any) => void;
-    _commitClassNameChange: () => void;
-    _handleClassNameKeyDown: (e: any) => void;
+    localClassName?: string;
+    handleLocalClassNameChange?: (e: any) => void;
+    commitClassNameChange?: () => void;
+    handleClassNameKeyDown?: (e: any) => void;
+    resolvedOnSave: () => void;
+    handleKeyDown: (e: any) => void;
+    subjects: any[];
 }
 
 export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
-    _settings,
+    settings,
     onSettingsChange,
     handleGradeMethodChange,
     displayMode,
-    _localClassName,
-    _handleLocalClassNameChange,
-    _commitClassNameChange,
-    _handleClassNameKeyDown
+    localClassName: _localClassName,
+    handleLocalClassNameChange: _handleLocalClassNameChange,
+    commitClassNameChange: _commitClassNameChange,
+    handleClassNameKeyDown: _handleClassNameKeyDown,
+    resolvedOnSave,
+    handleKeyDown,
+    subjects
 }) => {
     return (
         <section className="animate-fade-in space-y-12" id="section-penilaian">
@@ -125,7 +132,7 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                                             <td className="px-4 py-3 sm:px-6 sm:py-4">
                                                                 <select
                                                                     value={settings.gradeCalculation?.[sub.id]?.method || 'rata-rata'}
-                                                                    onChange={(_e) => handleGradeMethodChange(sub.id, e.target.value)}
+                                                                    onChange={(e) => handleGradeMethodChange(sub.id, e.target.value)}
                                                                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5 min-w-[200px] outline-none"
                                                                 >
                                                                     <option value="rata-rata">Rata-rata (Standar)</option>
@@ -153,8 +160,8 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     className="sr-only peer"
-                                                    checked={settings.enableAutoRegression || false}
-                                                    onChange={(_e) => onSettingsChange({ target: { name: 'enableAutoRegression', value: e.target.checked, type: 'checkbox' } })}
+                                                    checked={settings.enableAutoRegression === true || settings.enableAutoRegression === 'true' || settings.enableAutoRegression === "true"}
+                                                    onChange={(e) => onSettingsChange({ target: { name: 'enableAutoRegression', value: e.target.checked, type: 'checkbox', checked: e.target.checked } })}
                                                 />
                                                 <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
                                             </label>
@@ -170,8 +177,8 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     className="sr-only peer"
-                                                    checked={settings.enableExitWarning || false}
-                                                    onChange={(_e) => onSettingsChange({ target: { name: 'enableExitWarning', value: e.target.checked, type: 'checkbox' } })}
+                                                    checked={settings.enableExitWarning === true || settings.enableExitWarning === 'true'}
+                                                    onChange={(e) => onSettingsChange({ target: { name: 'enableExitWarning', value: e.target.checked, type: 'checkbox', checked: e.target.checked } })}
                                                 />
                                                 <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
                                             </label>

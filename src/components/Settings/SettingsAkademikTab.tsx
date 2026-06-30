@@ -1,7 +1,7 @@
 import React from 'react';
 import { FormField } from './FormField';
 import { FileInputField } from './FileInputField';
-import { getTanggalRaporKey, getTanggalRaporValue } from '../../constants';
+import { getTanggalRaporKey, getTanggalRaporValue, getContextualKey, getContextualValue } from '../../constants';
 
 interface SettingsAkademikTabProps {
     settings: any;
@@ -10,6 +10,10 @@ interface SettingsAkademikTabProps {
     handleKeyDown: (e: any) => void;
     getStatus: (value: any) => any;
     handleMakeTransparent: (id: string) => void;
+    localClassName: string;
+    handleLocalClassNameChange: (e: any) => void;
+    commitClassNameChange: () => void;
+    handleClassNameKeyDown: (e: any) => void;
 }
 
 export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
@@ -18,7 +22,11 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
     resolvedOnSave,
     handleKeyDown,
     getStatus,
-    handleMakeTransparent
+    handleMakeTransparent,
+    localClassName,
+    handleLocalClassNameChange,
+    commitClassNameChange,
+    handleClassNameKeyDown
 }) => {
     return (
         <section className="animate-fade-in space-y-8" id="section-akademik">

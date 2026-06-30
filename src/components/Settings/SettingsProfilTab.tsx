@@ -1,6 +1,7 @@
 import React from 'react';
 import { FormField } from './FormField';
 import { FileInputField } from './FileInputField';
+import { KopSuratPreview } from './KopSuratPreview';
 
 interface SettingsProfilTabProps {
     settings: any;
@@ -9,6 +10,7 @@ interface SettingsProfilTabProps {
     handleKeyDown: (e: any) => void;
     getStatus: (value: any) => any;
     setIsEditorOpen: (val: boolean) => void;
+    handleMakeTransparent: (id: string) => void;
 }
 
 export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
@@ -17,7 +19,8 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
     resolvedOnSave,
     handleKeyDown,
     getStatus,
-    setIsEditorOpen
+    setIsEditorOpen,
+    handleMakeTransparent
 }) => {
     return (
         <section className="animate-fade-in space-y-6" id="section-profil">

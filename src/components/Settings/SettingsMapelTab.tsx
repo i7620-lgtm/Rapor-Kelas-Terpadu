@@ -8,14 +8,16 @@ interface SettingsMapelTabProps {
     setSubjects: (subjects: any[]) => void;
     extracurriculars: any[];
     setExtracurriculars: (extracurriculars: any[]) => void;
+    showToast?: (msg: string, type: 'success' | 'error' | 'info') => void;
 }
 
 export const SettingsMapelTab: React.FC<SettingsMapelTabProps> = ({
-    _settings,
+    settings: _settings,
     subjects,
     setSubjects,
     extracurriculars,
-    setExtracurriculars
+    setExtracurriculars,
+    showToast = () => {}
 }) => {
     return (
         <section className="animate-fade-in space-y-12" id="section-mapel">

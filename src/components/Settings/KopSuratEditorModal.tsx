@@ -17,7 +17,7 @@ interface KopSuratEditorModalProps {
 export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({ 
     isOpen, 
     onClose, 
-    _settings, 
+    settings, 
     onSaveLayout 
 }) => {
     const [elements, setElements] = useState<any[]>([]);
