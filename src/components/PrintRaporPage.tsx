@@ -13,9 +13,9 @@ interface PrintRaporPageProps {
   setActivePage?: (page: string) => void;
 }
 
-const PrintRaporPage: React.FC<PrintRaporPageProps> = ({  setActivePage }) => {
+const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePage }) => {
   const {
-    _settings,
+    settings,
     grades,
     students,
     paperSize,

@@ -252,11 +252,11 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <p className="text-sm font-medium text-slate-700 mb-0">Opsi Tanda Tangan:</p>
               <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" checked={printOptions.showPrincipalSignature} onChange={() => handlePrintOptionChange('showPrincipalSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                <input type="checkbox" checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'} onChange={() => handlePrintOptionChange('showPrincipalSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
                 <span className="text-sm">TTD Kepala Sekolah</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" checked={printOptions.showTeacherSignature} onChange={() => handlePrintOptionChange('showTeacherSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                <input type="checkbox" checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'} onChange={() => handlePrintOptionChange('showTeacherSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
                 <span className="text-sm">TTD Wali Kelas</span>
               </label>
             </div>

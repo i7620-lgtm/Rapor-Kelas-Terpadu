@@ -100,11 +100,9 @@ const DataSiswaPage = (props) => {
                 
                 try {
                     const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
-                    setLocalStudents(prev => {
-                        const newStudents = prev.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
-                        onBulkSaveStudents(newStudents);
-                        return newStudents;
-                    });
+                    const newStudents = localStudents.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
+                    setLocalStudents(newStudents);
+                    onBulkSaveStudents(newStudents);
                     if (props.showToast) props.showToast("Foto berhasil diunggah", "success");
                 } catch {
                     if (props.showToast) props.showToast("Gagal memproses foto", "error");

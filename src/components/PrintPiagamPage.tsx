@@ -380,11 +380,11 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
                     React.createElement('div', { className: "flex flex-wrap items-center gap-x-6 gap-y-2" },
                         React.createElement('p', { className: "text-sm font-medium text-slate-700 mb-0" }, "Opsi Tanda Tangan:"),
                         React.createElement('label', { className: "flex items-center space-x-2" },
-                            React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature, onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true', onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                             React.createElement('span', { className: "text-sm" }, "TTD Kepala Sekolah")
                         ),
                         React.createElement('label', { className: "flex items-center space-x-2" },
-                            React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature, onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true', onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
                             React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
                         )
                     )

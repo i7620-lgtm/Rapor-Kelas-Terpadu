@@ -116,6 +116,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 handleKeyDown={handleKeyDown}
                                 getStatus={getStatus}
                                 setIsEditorOpen={setIsEditorOpen}
+                                handleMakeTransparent={handleMakeTransparent}
                             />
                         )}
                         {activeTab === 'akademik' && (
@@ -126,6 +127,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 handleKeyDown={handleKeyDown}
                                 getStatus={getStatus}
                                 handleMakeTransparent={handleMakeTransparent}
+                                localClassName={localClassName}
+                                handleLocalClassNameChange={handleLocalClassNameChange}
+                                commitClassNameChange={commitClassNameChange}
+                                handleClassNameKeyDown={handleClassNameKeyDown}
                             />
                         )}
                         {activeTab === 'mapel' && (
@@ -147,6 +152,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 handleLocalClassNameChange={handleLocalClassNameChange}
                                 commitClassNameChange={commitClassNameChange}
                                 handleClassNameKeyDown={handleClassNameKeyDown}
+                                resolvedOnSave={resolvedOnSave}
+                                handleKeyDown={handleKeyDown}
+                                subjects={subjects}
                             />
                         )}
                     </div>
