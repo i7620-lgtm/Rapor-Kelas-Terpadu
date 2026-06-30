@@ -8,7 +8,7 @@ import { SummativeTableRow } from "./SummativeTableRow";
 
 import { useSummativeModalLogic } from './useSummativeModalLogic';
 export const SummativeModal = (props) => {
-  const { isOpen, onClose, _settings, subject, showToast } = props;
+  const { isOpen, onClose, settings, subject, showToast: _showToast } = props;
   
   if (!isOpen) return null;
 
@@ -201,7 +201,7 @@ return React.createElement(
                     index,
                     studentGrade,
                     currentObjectives,
-                    _settings,
+                    settings,
                     subject,
                     isSLM,
                     item,
