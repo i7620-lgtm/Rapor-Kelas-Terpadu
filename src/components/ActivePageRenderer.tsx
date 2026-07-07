@@ -25,9 +25,9 @@ const ActivePageRenderer = ({
   if (activePage === "DASHBOARD") {
     return React.createElement(Dashboard, {
       setActivePage: handleNavigate,
-      onNavigateToNilai: (id) => {
+      onNavigateToNilai: (id, target) => {
         setActiveNilaiTab(id);
-        handleNavigate("DATA_NILAI");
+        handleNavigate("DATA_NILAI", target);
       },
     });
   }

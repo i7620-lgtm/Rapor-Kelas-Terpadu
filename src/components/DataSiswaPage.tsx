@@ -206,7 +206,7 @@ const DataSiswaPage = (props) => {
                             ),
                             React.createElement('tbody', null,
                                 localStudents.map((student, rowIndex) => 
-                                    React.createElement('tr', { key: student.id, className: "bg-white hover:bg-[#fafafa]" },
+                                    React.createElement('tr', { key: student.id, id: student.id, className: "bg-white hover:bg-[#fafafa]" },
                                         React.createElement(SiswaTableRow, {
                                             student: student,
                                             rowIndex: rowIndex,

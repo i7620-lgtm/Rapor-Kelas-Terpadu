@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { EmptyState } from './EmptyState';
 import { ExportProgressModal } from './ExportProgressModal';
 import { LegerReportHeader } from './PrintLeger/LegerReportHeader';
 import { LegerHeader } from './PrintLeger/LegerHeader';
 import { LegerFooter } from './PrintLeger/LegerFooter';
+import { LegerTable } from './PrintLeger/LegerTable';
 import { usePrintLegerPageLogic } from './PrintLeger/usePrintLegerPageLogic';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { IncompleteDataModal } from './IncompleteDataModal';
@@ -55,8 +56,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     pageStyle,
   } = usePrintLegerPageLogic(props);
 
-  const { completenessChecks } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) });
-  const incompleteItems = completenessChecks.filter(check => check.status === 'bad' && check.category !== 'Data Lainnya');
+  const { completenessChecks } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
+  const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad' && check.category !== 'Data Lainnya');
 
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
@@ -77,122 +78,6 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
       setPendingPrintAction(null);
     }
   };
-
-  const tableHeader = useMemo(() => (
-    <thead className={isCompact ? 'text-[6pt]' : 'text-[6.5pt]'}>
-      <tr className="text-center font-bold">
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>NO</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>NAMA MURID</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>NISN</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>NIS</td>
-        <td colSpan={displaySubjects.length} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0.5' : 'px-1 py-0.5'}`}>NILAI MATA PELAJARAN</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>JML</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>RATA-RATA</td>
-        <td rowSpan={2} className={`border border-black align-middle ${isCompact ? 'px-0.5 py-0' : 'px-1 py-0'}`}>RANK</td>
-      </tr>
-      <tr className="text-center font-bold">
-        {displaySubjects.map((subject: any) => (
-          <td key={subject.id} className="border border-black" style={{ height: isCompact ? '1.75rem' : '2.45rem' }}>
-            <div className="h-full flex items-center justify-center">
-              <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '6.5pt' : '7pt' }}>
-                {subject.label}
-              </div>
-            </div>
-          </td>
-        ))}
-      </tr>
-    </thead>
-  ), [displaySubjects, isCompact]);
-  
-  const getRankColor = (rank: number) => {
-    if (rank === 1) return 'bg-yellow-200';
-    if (rank === 2) return 'bg-slate-300';
-    if (rank === 3) return 'bg-orange-200';
-    if (rank >= 4 && rank <= 10) return 'bg-indigo-100';
-    return '';
-  };
-
-  const renderTable = (rows: any[]) => (
-    <table className={`w-full border-collapse border border-black font-times ${isCompact ? 'text-[7.5pt]' : 'text-[8pt]'}`} style={{ tableLayout: 'fixed' }}>
-      <colgroup>
-        <col style={{ width: '3%' }} />
-        <col style={{ width: '25%' }} />
-        <col style={{ width: '9%' }} />
-        <col style={{ width: '4.5%' }} />
-        {displaySubjects.map((_: any, i: number) => <col key={i} style={{ width: `${(100 - 3 - 25 - 9 - 4.5 - 4.5 - 5.5 - 6.5) / displaySubjects.length}%` }} />)}
-        <col style={{ width: '4.5%' }} />
-        <col style={{ width: '5.5%' }} />
-        <col style={{ width: '6.5%' }} />
-      </colgroup>
-      {tableHeader}
-      <tbody className="leading-snug">
-        {rows.map((student, index) => {
-          const rowColor = getRankColor(student.rank);
-          
-          return (
-            <tr key={student.no} className={rowColor ? `${rowColor} border-black` : ''}>
-              <td className="border border-black px-1 text-center">{student.no}</td>
-              <td 
-                ref={el => { nameCellRefs.current[index] = el; }}
-                className="border border-black px-2 whitespace-nowrap overflow-hidden"
-                style={nameFontSize ? { fontSize: `${nameFontSize}pt`, lineHeight: 1.2 } : {}}
-              >
-                {student.namaLengkap}
-              </td>
-              <td className="border border-black px-1 text-center">{student.nisn}</td>
-              <td className="border border-black px-1 text-center">{student.nis}</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{student.grades[subject.id] ?? ''}</td>
-              ))}
-              <td className="border border-black px-1 text-center font-bold">{student.total}</td>
-              <td className="border border-black px-1 text-center font-bold">{student.average}</td>
-              <td className="border border-black px-1 text-center font-bold">{student.rank}</td>
-            </tr>
-          );
-        })}
-        {statistics && (
-          <>
-            <tr className="bg-slate-50 font-bold">
-              <td colSpan={4} className="border border-black px-2 text-right">Nilai Tertinggi</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{statistics.subjects[subject.id].max}</td>
-              ))}
-              <td className="border border-black px-1 text-center">{statistics.total.max}</td>
-              <td className="border border-black px-1 bg-slate-100" />
-              <td className="border border-black px-1 bg-white" />
-            </tr>
-            <tr className="bg-slate-50 font-bold">
-              <td colSpan={4} className="border border-black px-2 text-right">Nilai Terendah</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{statistics.subjects[subject.id].min}</td>
-              ))}
-              <td className="border border-black px-1 text-center">{statistics.total.min}</td>
-              <td className="border border-black px-1 bg-slate-100" />
-              <td className="border border-black px-1 bg-white" />
-            </tr>
-            <tr className="bg-slate-50 font-bold">
-              <td colSpan={4} className="border border-black px-2 text-right">Total Nilai</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{statistics.subjects[subject.id].sum}</td>
-              ))}
-              <td className="border border-black px-1 text-center">{statistics.total.sum}</td>
-              <td className="border border-black px-1 bg-slate-100" />
-              <td className="border border-black px-1 bg-white" />
-            </tr>
-            <tr className="bg-slate-50 font-bold">
-              <td colSpan={4} className="border border-black px-2 text-right">Rata-rata Nilai</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{statistics.subjects[subject.id].avg}</td>
-              ))}
-              <td className="border border-black px-1 bg-slate-100" />
-              <td className="border border-black px-1 bg-slate-100" />
-              <td className="border border-black px-1 bg-white" />
-            </tr>
-          </>
-        )}
-      </tbody>
-    </table>
-  );
 
   if (students.length === 0) {
     return (
@@ -224,39 +109,68 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     <>
       <div className="pt-4 sm:pt-8">
         <div ref={cmRef} style={{ height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 }} />
+        
         <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-800">Cetak Leger</h2>
               <p className="mt-1 text-sm text-slate-600">Pratinjau leger nilai akhir siswa.</p>
             </div>
+            
             <div className="flex items-end gap-4 mt-4 md:mt-0">
               <div>
                 <label htmlFor="paperSizeSelector" className="block text-sm font-medium text-slate-700 mb-1">Ukuran Kertas</label>
-                <select id="paperSizeSelector" value={paperSize} onChange={(e) => setPaperSize(e.target.value)} className="w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm">
-                  {Object.keys(PAPER_SIZES).map(key => <option key={key} value={key}>{`${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`}</option>)}
+                <select 
+                  id="paperSizeSelector" 
+                  value={paperSize} 
+                  onChange={(e) => setPaperSize(e.target.value)} 
+                  className="w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm"
+                >
+                  {Object.keys(PAPER_SIZES).map(key => (
+                    <option key={key} value={key}>{`${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`}</option>
+                  ))}
                 </select>
               </div>
+              
               {isMobileDevice ? (
-                <button onClick={() => onPrintRequest(handleDownloadPDF)} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <button 
+                  onClick={() => onPrintRequest(handleDownloadPDF)} 
+                  disabled={isPrinting} 
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                >
                   {isPrinting ? 'Mempersiapkan...' : 'Unduh PDF'}
                 </button>
               ) : (
-                <button onClick={() => onPrintRequest(handlePrint)} disabled={isPrinting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
+                <button 
+                  onClick={() => onPrintRequest(handlePrint)} 
+                  disabled={isPrinting} 
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                >
                   {isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)'}
                 </button>
               )}
             </div>
           </div>
+          
           <div className="border-t pt-4 mt-4">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <p className="text-sm font-medium text-slate-700 mb-0">Opsi Tanda Tangan:</p>
               <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'} onChange={() => handlePrintOptionChange('showPrincipalSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'} 
+                  onChange={() => handlePrintOptionChange('showPrincipalSignature')} 
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded" 
+                />
                 <span className="text-sm">TTD Kepala Sekolah</span>
               </label>
               <label className="flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'} onChange={() => handlePrintOptionChange('showTeacherSignature')} className="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
+                <input 
+                  type="checkbox" 
+                  checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'} 
+                  onChange={() => handlePrintOptionChange('showTeacherSignature')} 
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded" 
+                />
                 <span className="text-sm">TTD Wali Kelas</span>
               </label>
             </div>
@@ -278,6 +192,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
               style={{ ...pageStyle, visibility: isMeasuring ? 'hidden' : 'visible' }}
             >
               <LegerReportHeader settings={settings} />
+              
               <div 
                 ref={contentRef}
                 className="absolute flex flex-col"
@@ -288,14 +203,24 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                 }}
               >
                 <LegerHeader settings={settings} isCompact={isCompact} />
-                <div>
-                   {renderTable(processedData)}
+                
+                <div> 
+                  <LegerTable 
+                    students={processedData} 
+                    displaySubjects={displaySubjects} 
+                    statistics={statistics} 
+                    isCompact={isCompact} 
+                    nameFontSize={nameFontSize} 
+                    nameCellRefs={nameCellRefs} 
+                  />
                 </div>
+                
                 <LegerFooter settings={settings} isCompact={isCompact} printOptions={printOptions} />
               </div>
             </div>
           )}
         </div>
+
         <ExportProgressModal 
           isOpen={exportProgress !== null}
           current={exportProgress?.current || 0}

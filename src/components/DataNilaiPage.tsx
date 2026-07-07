@@ -1,28 +1,5 @@
-import React, {
-  useMemo,
-} from "react";
+import React, { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-
-import {
-  getGradeNumber,
-  getNumericValue,
-  getQualitativeCode,
-  splitRowIntoColumns,
-  capitalize,
-  lowercaseFirst,
-  generateSubjectDescription,
-} from "../utils/nilaiHelpers";
-
-// Re-export helpers for backward compatibility
-export {
-  getGradeNumber,
-  getNumericValue,
-  getQualitativeCode,
-  splitRowIntoColumns,
-  capitalize,
-  lowercaseFirst,
-  generateSubjectDescription,
-};
 
 import { NilaiCardView } from "./DataNilai/NilaiCardView";
 import { NilaiTableView } from "./DataNilai/NilaiTableView";
@@ -33,11 +10,7 @@ import { useStudentsStore } from "../stores/useStudentsStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
 import { EmptyState } from "./EmptyState";
 
-const DataNilaiPage = ({
-  activeTab = "keseluruhan",
-  onTabChange,
-  ...props
-}) => {
+const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any) => {
   const { storeSubjects, storeSettings } = useSettingsStore(
     useShallow((state) => ({
       storeSubjects: state.subjects,
@@ -60,11 +33,11 @@ const DataNilaiPage = ({
   const learningObjectives = props.learningObjectives || storeLearningObjectives;
   const predefinedCurriculum = props.predefinedCurriculum || storePredefinedCurriculum;
 
-  const onUpdatePredikats = props.onUpdatePredikats || ((p) => {
+  const onUpdatePredikats = props.onUpdatePredikats || ((p: any) => {
     useSettingsStore.getState().setSettings((s: any) => ({ ...s, predikats: p }));
   });
 
-  const onUpdateGradeCalculation = props.onUpdateGradeCalculation || ((sid, conf) => {
+  const onUpdateGradeCalculation = props.onUpdateGradeCalculation || ((sid: any, conf: any) => {
     useSettingsStore.getState().setSettings((s: any) => ({
       ...s,
       gradeCalculation: {
@@ -74,7 +47,7 @@ const DataNilaiPage = ({
     }));
   });
 
-  const onUpdateSlmVisibility = props.onUpdateSlmVisibility || ((sid, vis) => {
+  const onUpdateSlmVisibility = props.onUpdateSlmVisibility || ((sid: any, vis: any) => {
     useSettingsStore.getState().setSettings((s: any) => ({
       ...s,
       slmVisibility: {
@@ -84,22 +57,22 @@ const DataNilaiPage = ({
     }));
   });
 
-  const onUpdateDisplayMode = props.onUpdateDisplayMode || ((mode) => {
+  const onUpdateDisplayMode = props.onUpdateDisplayMode || ((mode: any) => {
     useSettingsStore.getState().setSettings((s: any) => ({
       ...s,
       nilaiDisplayMode: mode,
     }));
   });
 
-  const onBulkAddSlm = props.onBulkAddSlm || ((subId, slm) => {
+  const onBulkAddSlm = props.onBulkAddSlm || ((subId: any, slm: any) => {
     useNilaiStore.getState().bulkAddSlm(subId, slm);
   });
 
-  const onBulkUpdateGrades = props.onBulkUpdateGrades || ((u) => {
+  const onBulkUpdateGrades = props.onBulkUpdateGrades || ((u: any) => {
     useNilaiStore.getState().bulkUpdateGrades(u, settings, learningObjectives, predefinedCurriculum, subjects);
   });
 
-  const onUpdateLearningObjectives = props.onUpdateLearningObjectives || ((u) => {
+  const onUpdateLearningObjectives = props.onUpdateLearningObjectives || ((u: any) => {
       useCurriculumStore.getState().setLearningObjectives(u);
   });
 
@@ -120,19 +93,11 @@ const DataNilaiPage = ({
     onUpdateLearningObjectives
   };
 
-  const activeSubjects = useMemo(
-    () => subjects.filter((s) => s.active),
-    [subjects],
-  );
-  const selectedSubject = useMemo(
-    () => activeSubjects.find((s) => s.id === activeTab),
-    [activeTab, activeSubjects],
-  );
+  const activeSubjects = useMemo(() => subjects.filter((s: any) => s.active), [subjects]);
+  const selectedSubject = useMemo(() => activeSubjects.find((s: any) => s.id === activeTab), [activeTab, activeSubjects]);
 
-  const inactiveButtonClass =
-    "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
-  const activeButtonClass =
-    "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-md";
+  const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
+  const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-md";
 
   const renderSubjectView = () => {
     if (!selectedSubject) return null;
@@ -141,96 +106,57 @@ const DataNilaiPage = ({
 
     switch (displayMode) {
       case "kuantitatif saja":
-        return React.createElement(NilaiTableView, {
-          ...mergedProps,
-          subject: selectedSubject,
-          key: selectedSubject.id,
-          mode: "kuantitatif",
-        });
+        return <NilaiTableView {...mergedProps} subject={selectedSubject} key={selectedSubject.id} mode="kuantitatif" />;
       case "kualitatif saja":
-        return React.createElement(NilaiTableView, {
-          ...mergedProps,
-          subject: selectedSubject,
-          key: selectedSubject.id,
-          mode: "kualitatif",
-        });
+        return <NilaiTableView {...mergedProps} subject={selectedSubject} key={selectedSubject.id} mode="kualitatif" />;
       default:
-        return React.createElement(NilaiCardView, {
-          ...mergedProps,
-          subject: selectedSubject,
-          key: selectedSubject.id,
-        });
+        return <NilaiCardView {...mergedProps} subject={selectedSubject} key={selectedSubject.id} />;
     }
   };
 
-  return React.createElement(
-    "div",
-    { className: "flex flex-col gap-4 pt-4 sm:pt-8" },
-    React.createElement(
-      "div",
-      { className: "flex-shrink-0" },
-      React.createElement(
-        "h2",
-        { className: "text-3xl font-bold text-slate-800" },
-        "Data Nilai",
-      ),
-      React.createElement(
-        "p",
-        { className: "mt-1 text-slate-600" },
-        "Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor."
-      ),
-    ),
+  return (
+    <div className="flex flex-col gap-4 pt-4 sm:pt-8">
+      <div className="flex-shrink-0">
+        <h2 className="text-3xl font-bold text-slate-800">Data Nilai</h2>
+        <p className="mt-1 text-slate-600">Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.</p>
+      </div>
 
-    students.length === 0
-      ? React.createElement(EmptyState, {
-          title: "Belum ada data siswa",
-          description: "Data nilai tidak dapat dikelola karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu.",
-          primaryActionLabel: "Isi Data Siswa",
-          onPrimaryAction: () => props.setActivePage && props.setActivePage('DATA_SISWA')
-        })
-      : React.createElement(
-          "div",
-          { className: "flex flex-col" },
-          React.createElement(
-            "div",
-            {
-              className:
-                "flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4 flex-shrink-0",
-            },
-            React.createElement(
-              "button",
-              {
-                onClick: () => onTabChange("keseluruhan"),
-                className:
-                  activeTab === "keseluruhan"
-                    ? activeButtonClass
-                    : inactiveButtonClass,
-              },
-              "Nilai Keseluruhan",
-            ),
-            activeSubjects.map((subject) =>
-              React.createElement(
-                "button",
-                {
-                  key: subject.id,
-                  onClick: () => onTabChange(subject.id),
-                  className:
-                    activeTab === subject.id
-                      ? activeButtonClass
-                      : inactiveButtonClass,
-                },
-                subject.label,
-              ),
-            ),
-          ),
-          React.createElement(
-            "div",
-            { className: "pt-4" },
-            activeTab === "keseluruhan"
-              ? React.createElement(NilaiKeseluruhanView, mergedProps)
-              : renderSubjectView(),
-          ),
-        ),
+      {students.length === 0 ? (
+        <EmptyState
+          title="Belum ada data siswa"
+          description="Data nilai tidak dapat dikelola karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
+          primaryActionLabel="Isi Data Siswa"
+          onPrimaryAction={() => props.setActivePage && props.setActivePage('DATA_SISWA')}
+        />
+      ) : (
+        <div className="flex flex-col">
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4 flex-shrink-0">
+            <button
+              onClick={() => onTabChange("keseluruhan")}
+              className={activeTab === "keseluruhan" ? activeButtonClass : inactiveButtonClass}
+            >
+              Nilai Keseluruhan
+            </button>
+            {activeSubjects.map((subject: any) => (
+              <button
+                key={subject.id}
+                onClick={() => onTabChange(subject.id)}
+                className={activeTab === subject.id ? activeButtonClass : inactiveButtonClass}
+              >
+                {subject.label}
+              </button>
+            ))}
+          </div>
+          <div className="pt-4">
+            {activeTab === "keseluruhan" ? (
+              <NilaiKeseluruhanView {...mergedProps} />
+            ) : (
+              renderSubjectView()
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

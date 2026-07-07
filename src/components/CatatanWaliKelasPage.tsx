@@ -129,7 +129,7 @@ const CatatanWaliKelasPage = (props: any) => {
                   return React.createElement(
                     "tr",
                     {
-                      key: student.id,
+                      key: student.id, id: student.id,
                       className: "bg-white hover:bg-[#fafafa] align-top",
                     },
                     React.createElement(
