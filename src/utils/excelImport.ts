@@ -191,7 +191,10 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                             news[key] = key === 'appLock' ? { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' } : [];
                         }
                     } else if (key in news) {
-                        if (typeof initialSettings[key] === 'boolean') {
+                        const imageKeys = ['logoSistem', 'ttdKepsek', 'ttdKepsek_Genap', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
+                        if (imageKeys.includes(key) && assetMap[key]) {
+                            // Do not overwrite valid image keys from Aset Gambar with potentially truncated Pengaturan sheet values.
+                        } else if (typeof initialSettings[key] === 'boolean') {
                             news[key] = r[1] === 'true' || r[1] === true;
                         } else {
                             news[key] = r[1] !== undefined ? r[1] : ''; 
