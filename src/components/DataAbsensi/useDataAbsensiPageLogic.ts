@@ -5,7 +5,7 @@ import { useStudentsStore } from "../../stores/useStudentsStore";
 import { useAttendanceStore } from "../../stores/useAttendanceStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 
-export const parsePastedData = (pasteData: string) => {
+const parsePastedData = (pasteData: string) => {
   if (!pasteData || typeof pasteData !== "string") {
     return { isHorizontal: false, grid: [] };
   }
