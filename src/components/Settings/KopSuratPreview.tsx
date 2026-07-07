@@ -1,5 +1,5 @@
 import React from 'react';
-import { generateInitialLayout } from '../TransliterationUtil';
+import { generateInitialLayout } from '../../utils/TransliterationUtil';
 
 interface KopSuratPreviewProps {
     settings: any;
@@ -12,7 +12,7 @@ export const KopSuratPreview: React.FC<KopSuratPreviewProps> = ({ settings }) =>
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (_e) {
+        } catch {
             rawLayout = null;
         }
     }

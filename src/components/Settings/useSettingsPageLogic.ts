@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { removeImageBackground } from '../TransliterationUtil';
+import { removeImageBackground } from '../../utils/TransliterationUtil';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useClassChangeCascade } from '../../hooks/useClassChangeCascade';
 

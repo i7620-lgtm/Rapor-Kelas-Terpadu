@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { transliterate } from '../TransliterationUtil';
+import { transliterate } from '../../utils/TransliterationUtil';
 
 interface TransliterationModalProps {
     isOpen: boolean;
