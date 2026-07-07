@@ -106,6 +106,19 @@ export const sanitizeFormativeJournal = (fj, semester) => {
 };
 
 export const sanitizeSettings = (settings, _semester) => {
+    const imageKeys = ['logoSistem', 'ttdKepsek', 'ttdKepsek_Genap', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
+    
+    if (settings) {
+        imageKeys.forEach(key => {
+            if (settings[key] === "null" || settings[key] === "undefined" || settings[key] === "") {
+                settings[key] = null;
+            } else if (typeof settings[key] === 'string' && settings[key].length === 32767) {
+                // Truncated by Excel cell limit
+                settings[key] = null;
+            }
+        });
+    }
+
     return settings;
 };
 
