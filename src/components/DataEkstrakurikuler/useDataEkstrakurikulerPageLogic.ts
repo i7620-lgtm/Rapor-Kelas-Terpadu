@@ -7,7 +7,7 @@ import { useExtracurricularStore } from "../../stores/useExtracurricularStore";
 
 export const MAX_EXTRA_FIELDS = 5;
 
-export const defaultDescriptions: { [key: string]: string } = {
+const defaultDescriptions: { [key: string]: string } = {
   CATUR: "menunjukkan kemampuan berpikir strategis yang baik.",
   IPA: "sangat antusias dan aktif dalam setiap percobaan.",
   KARATE: "menunjukkan disiplin dan motivasi yang tinggi dalam latihan.",
