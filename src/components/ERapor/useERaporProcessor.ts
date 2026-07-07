@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { getGradeNumber } from '../DataNilaiPage';
+import { getGradeNumber } from '../../utils/nilaiHelpers';
 
 interface Subject {
   id: string;
