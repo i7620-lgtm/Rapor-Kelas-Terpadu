@@ -43,7 +43,7 @@ const App = () => {
         if (el && mainRef.current) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      }, 100);
+      }, 300);
     } else if (mainRef.current) {
       mainRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }

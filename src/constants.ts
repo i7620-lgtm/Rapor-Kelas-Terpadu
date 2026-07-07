@@ -42,15 +42,6 @@ export const initialSettings = {
   enableAutoRegression: false,
 };
 
-export const initialStudents = [];
-export const initialGrades = [];
-export const initialNotes = {};
-export const initialCocurricularData = {};
-export const initialAttendance = [];
-export const initialStudentExtracurriculars = [];
-export const initialFormativeJournal = {};
-export const initialLearningObjectives = {};
-
 export const NAV_ITEMS = [
   { id: 'DASHBOARD', label: 'Dashboard' },
   { id: 'PANDUAN', label: 'Cara Penggunaan' },
