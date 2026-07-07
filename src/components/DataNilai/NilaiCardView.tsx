@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React from "react";
 import { GradeSettingsModal } from "./GradeSettingsModal";
-import { 
-  getGradeNumber
-} from "../../utils/nilaiHelpers";
+import { ManageSlmModal } from "./ManageSlmModal";
+import { SummativeModal } from "./SummativeModal";
+import { useNilaiCardViewLogic } from "./useNilaiCardViewLogic";
+import { AssessmentCard } from "./AssessmentCard";
 
 export const NilaiCardView = (props) => {
   const {
@@ -20,206 +21,24 @@ export const NilaiCardView = (props) => {
     predefinedCurriculum,
   } = props;
 
-  const [isSummativeModalOpen, setIsSummativeModalOpen] = useState(false);
-  const [modalData, setModalData] = useState(null);
-  const [isManageSlmModalOpen, setIsManageSlmModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-  const gradeNumber = useMemo(
-    () => getGradeNumber(settings.nama_kelas),
-    [settings.nama_kelas],
-  );
-
-  const objectivesForSubject = useMemo(() => {
-    const gradeKey = `Kelas ${gradeNumber}`;
-    const curriculumKey = subject.curriculumKey || subject.fullName;
-    return (
-      (learningObjectives &&
-        learningObjectives[gradeKey] &&
-        learningObjectives[gradeKey][curriculumKey]) ||
-      []
-    );
-  }, [
-    learningObjectives,
+  const {
+    isSummativeModalOpen,
+    setIsSummativeModalOpen,
+    modalData,
+    isManageSlmModalOpen,
+    setIsManageSlmModalOpen,
+    isSettingsModalOpen,
+    setIsSettingsModalOpen,
+    allSlms,
     gradeNumber,
-    subject.curriculumKey,
-    subject.fullName,
-  ]);
-
-  const predefinedSlms = useMemo(() => {
-    if (!predefinedCurriculum) return [];
-    const curriculumKey = subject.curriculumKey || subject.fullName;
-    return predefinedCurriculum[curriculumKey] || [];
-  }, [predefinedCurriculum, subject]);
-
-  const allSlms = useMemo(() => {
-    const slmMap = new Map();
-
-    predefinedSlms.forEach((pSlm, index) => {
-      const slmId = `slm_predefined_${subject.id}_${index}`;
-      slmMap.set(slmId, {
-        id: slmId,
-        name: pSlm.slm,
-        tps: pSlm.tp.map((tpText) => ({ text: tpText, isEdited: false })),
-      });
-    });
-
-    const userObjectivesBySlm = objectivesForSubject.reduce((acc, tp) => {
-      if (!acc[tp.slmId]) acc[tp.slmId] = [];
-      acc[tp.slmId].push({ text: tp.text, isEdited: tp.isEdited === true });
-      return acc;
-    }, {});
-
-    Object.entries(userObjectivesBySlm).forEach(([slmId, tps]) => {
-      if (slmMap.has(slmId)) {
-        const existingSlm = slmMap.get(slmId);
-        slmMap.set(slmId, { ...existingSlm, tps });
-      } else {
-        const slmNameFromGrades =
-          grades.length > 0
-            ? (grades[0].detailedGrades?.[subject.id]?.slm || []).find(
-                (s) => s.id === slmId,
-              )?.name
-            : null;
-        slmMap.set(slmId, {
-          id: slmId,
-          name: slmNameFromGrades || "Lingkup Materi Kustom",
-          tps,
-        });
-      }
-    });
-
-    grades.forEach((grade) => {
-      (grade.detailedGrades?.[subject.id]?.slm || []).forEach((gradeSlm) => {
-        if (gradeSlm && gradeSlm.id) {
-          if (!slmMap.has(gradeSlm.id)) {
-            slmMap.set(gradeSlm.id, {
-              id: gradeSlm.id,
-              name: gradeSlm.name || "Lingkup Materi Lama",
-              tps: (gradeSlm.scores || []).map(() => ({
-                text: "TP dari data lama",
-                isEdited: true,
-              })),
-            });
-          } else {
-            const existingSlm = slmMap.get(gradeSlm.id);
-            if (gradeSlm.name && gradeSlm.name !== existingSlm.name) {
-              slmMap.set(gradeSlm.id, { ...existingSlm, name: gradeSlm.name });
-            }
-          }
-        }
-      });
-    });
-
-    return Array.from(slmMap.values());
-  }, [objectivesForSubject, grades, subject.id, predefinedSlms]);
-
-  const handleOpenModal = (type, item) => {
-    setModalData({ type, item });
-    setIsSummativeModalOpen(true);
-  };
+    handleOpenModal,
+    getCompletionStatus,
+  } = useNilaiCardViewLogic(props);
 
   const handleSaveSlmSettings = (newActiveIds) => {
     if (onUpdateSlmVisibility) {
       onUpdateSlmVisibility(subject.id, newActiveIds);
     }
-  };
-
-  const getCompletionStatus = useCallback(
-    (type, item) => {
-      const totalStudents = students.length;
-      if (totalStudents === 0) return { filled: 0, total: 0, percentage: 0 };
-
-      let filledCount = 0;
-      if (type === "slm") {
-        grades.forEach((grade) => {
-          const slm = grade.detailedGrades?.[subject.id]?.slm?.find(
-            (s) => s.id === item.id,
-          );
-          if (
-            slm &&
-            slm.scores &&
-            slm.scores.some((s) => s !== null && s !== undefined && s !== "")
-          ) {
-            filledCount++;
-          }
-        });
-      } else {
-        // sts or sas
-        grades.forEach((grade) => {
-          const score = grade.detailedGrades?.[subject.id]?.[type];
-          if (score !== null && score !== undefined && score !== "") {
-            filledCount++;
-          }
-        });
-      }
-
-      return {
-        filled: filledCount,
-        total: totalStudents,
-        percentage:
-          totalStudents > 0
-            ? Math.round((filledCount / totalStudents) * 100)
-            : 0,
-      };
-    },
-    [students, grades, subject.id],
-  );
-
-  const AssessmentCard = ({ title, type, item }) => {
-    const { filled, total, percentage } = getCompletionStatus(type, item);
-    let statusColor = "bg-slate-200";
-    if (percentage > 0) statusColor = "bg-yellow-400";
-    if (percentage === 100) statusColor = "bg-green-500";
-
-    return React.createElement(
-      "div",
-      {
-        className:
-          "bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-lg hover:border-indigo-400 transition-all cursor-pointer flex flex-col justify-between",
-        onClick: () => handleOpenModal(type, item),
-      },
-      React.createElement(
-        "div",
-        { className: "p-4" },
-        React.createElement(
-          "h4",
-          { className: "font-bold text-slate-800" },
-          title,
-        ),
-        type === "slm" &&
-          React.createElement(
-            "p",
-            { className: "text-xs text-slate-500 mt-1" },
-            `${item.tps?.length || 0} Tujuan Pembelajaran`,
-          ),
-      ),
-      React.createElement(
-        "div",
-        { className: "p-4 bg-slate-50 rounded-b-lg border-t" },
-        React.createElement(
-          "div",
-          {
-            className:
-              "flex justify-between items-center text-xs text-slate-600 mb-1",
-          },
-          React.createElement("span", null, "Kelengkapan Nilai"),
-          React.createElement(
-            "span",
-            { className: "font-semibold" },
-            `${filled}/${total}`,
-          ),
-        ),
-        React.createElement(
-          "div",
-          { className: "w-full bg-slate-200 rounded-full h-2" },
-          React.createElement("div", {
-            className: `h-2 rounded-full ${statusColor}`,
-            style: { width: `${percentage}%` },
-          }),
-        ),
-      ),
-    );
   };
 
   return React.createElement(
@@ -338,6 +157,8 @@ export const NilaiCardView = (props) => {
                     title: slm.name,
                     type: "slm",
                     item: slm,
+                    getCompletionStatus,
+                    handleOpenModal,
                   }),
                 ),
               )
@@ -368,18 +189,24 @@ export const NilaiCardView = (props) => {
               title: "Sumatif Tengah Semester I (Ganjil)",
               type: "sts1",
               item: {},
+              getCompletionStatus,
+              handleOpenModal,
             }),
           settings.semester === "Genap" &&
             React.createElement(AssessmentCard, {
               title: "Sumatif Tengah Semester II (Genap)",
               type: "sts2",
               item: {},
+              getCompletionStatus,
+              handleOpenModal,
             }),
           (!settings.semester || settings.semester === "Ganjil") &&
             React.createElement(AssessmentCard, {
               title: "Sumatif Akhir Semester I (Ganjil)",
               type: "sas1",
               item: {},
+              getCompletionStatus,
+              handleOpenModal,
             }),
           settings.semester === "Genap" &&
             React.createElement(AssessmentCard, {
@@ -387,6 +214,8 @@ export const NilaiCardView = (props) => {
                 gradeNumber === 6 ? "US" : "Sumatif Akhir Semester II (Genap)",
               type: "sas2",
               item: {},
+              getCompletionStatus,
+              handleOpenModal,
             }),
         ),
       ),

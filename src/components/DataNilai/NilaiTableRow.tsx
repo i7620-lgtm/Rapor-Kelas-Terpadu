@@ -3,6 +3,7 @@ import { NilaiTableGradingCell } from "./NilaiTableGradingCell";
 import { NilaiTableCapaianCell } from "./NilaiTableCapaianCell";
 import { generateSubjectDescription } from "../../utils/nilaiHelpers";
 import { useNilaiStore } from "../../stores/useNilaiStore";
+import { StsSasCells } from "./NilaiTableRowParts";
 
 interface NilaiTableRowProps {
   student: {
@@ -110,7 +111,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
   }
 
   return (
-    <tr className="border-b hover:bg-slate-50 group">
+    <tr id={student.id} className="border-b hover:bg-slate-50 group">
       {/* 1. Row Index Number */}
       <td
         id={`nilai-cell-${index}--2`}
@@ -174,124 +175,20 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
         );
       })}
 
-      {/* 4. Render STS Cell */}
-      {(!settings.semester || settings.semester === "Ganjil") && (() => {
-        const colIdx = tpHeaders.length;
-        const { selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
-        const cellValue = detailedGrade?.["sts1"] ?? null;
-
-        return (
-          <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
-            style={style}
-            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
-          >
-            <NilaiTableGradingCell
-              id={`nilai-cell-${index}-${colIdx}`}
-              value={cellValue}
-              mode={mode}
-              settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sts1")}
-              onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts1")}
-              onPaste={(e) => handlePaste(e, student.id, "sts1")}
-              onFocus={() => handleFocusCell(index, colIdx)}
-              
-              showTransparentInput={showTrans}
-              className="w-full p-2 text-center border rounded-md"
-            />
-          </td>
-        );
-      })()}
-
-      {settings.semester === "Genap" && (() => {
-        const colIdx = tpHeaders.length;
-        const { selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
-        const cellValue = detailedGrade?.["sts2"] ?? null;
-
-        return (
-          <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
-            style={style}
-            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
-          >
-            <NilaiTableGradingCell
-              id={`nilai-cell-${index}-${colIdx}`}
-              value={cellValue}
-              mode={mode}
-              settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sts2")}
-              onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts2")}
-              onPaste={(e) => handlePaste(e, student.id, "sts2")}
-              onFocus={() => handleFocusCell(index, colIdx)}
-              
-              showTransparentInput={showTrans}
-              className="w-full p-2 text-center border rounded-md"
-            />
-          </td>
-        );
-      })()}
-
-      {/* 5. Render SAS Cell */}
-      {(!settings.semester || settings.semester === "Ganjil") && (() => {
-        const colIdx = tpHeaders.length + 1;
-        const { selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
-        const cellValue = detailedGrade?.["sas1"] ?? null;
-
-        return (
-          <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
-            style={style}
-            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
-          >
-            <NilaiTableGradingCell
-              id={`nilai-cell-${index}-${colIdx}`}
-              value={cellValue}
-              mode={mode}
-              settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sas1")}
-              onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas1")}
-              onPaste={(e) => handlePaste(e, student.id, "sas1")}
-              onFocus={() => handleFocusCell(index, colIdx)}
-              
-              showTransparentInput={showTrans}
-              className="w-full p-2 text-center border rounded-md"
-            />
-          </td>
-        );
-      })()}
-
-      {settings.semester === "Genap" && (() => {
-        const colIdx = tpHeaders.length + 1;
-        const { selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
-        const cellValue = detailedGrade?.["sas2"] ?? null;
-
-        return (
-          <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
-            style={style}
-            onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
-            onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
-          >
-            <NilaiTableGradingCell
-              id={`nilai-cell-${index}-${colIdx}`}
-              value={cellValue}
-              mode={mode}
-              settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sas2")}
-              onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas2")}
-              onPaste={(e) => handlePaste(e, student.id, "sas2")}
-              onFocus={() => handleFocusCell(index, colIdx)}
-              
-              showTransparentInput={showTrans}
-              className="w-full p-2 text-center border rounded-md"
-            />
-          </td>
-        );
-      })()}
-
+      <StsSasCells
+        student={student}
+        index={index}
+        detailedGrade={detailedGrade}
+        mode={mode}
+        settings={settings}
+        tpHeadersLength={tpHeaders.length}
+        getSelectionStyle={getSelectionStyle}
+        handleMouseDownCell={handleMouseDownCell}
+        handleMouseEnterCell={handleMouseEnterCell}
+        handleSingleGradeChange={handleSingleGradeChange}
+        handlePaste={handlePaste}
+        handleFocusCell={handleFocusCell}
+      />
       {/* 6. Nilai Akhir */}
       <td className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold align-top pt-3 select-none">
         {total}

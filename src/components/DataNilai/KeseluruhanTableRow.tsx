@@ -19,7 +19,7 @@ export const KeseluruhanTableRow = React.memo(({
 
   return React.createElement(
     "tr",
-    { key: data.id, className: "bg-white hover:bg-slate-50" },
+    { key: data.id, id: data.id, className: "bg-white hover:bg-slate-50" },
     React.createElement(
       "td",
       {

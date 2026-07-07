@@ -1,4 +1,5 @@
 import React from "react";
+import { StsSasHeaders } from "./NilaiTableRowParts";
 
 interface SlmHeader {
   id: string;
@@ -125,162 +126,16 @@ export const NilaiTableMainHeaderRow: React.FC<NilaiTableMainHeaderRowProps> = (
         );
       })}
 
-      {/* 4. Column STS */}
-      {(!settings.semester || settings.semester === "Ganjil") && (
-        <th
-          rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
-          style={getSelectionStyle(-1, tpHeaders.length).selectionStyle}
-          onMouseDown={(e) => {
-            if (e.button !== 0) return;
-            if (e.shiftKey) e.preventDefault();
-            handleMouseDownCell(e, -1, tpHeaders.length, "nilai-cell");
-          }}
-          onMouseEnter={() => handleMouseEnterCell(-1, tpHeaders.length)}
-        >
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span>STS I</span>
-            {settings.enableAutoRegression && (
-              <button
-                onClick={() => handleAutoRegressionNonTP("sts1")}
-                title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        </th>
-      )}
-      {settings.semester === "Genap" && (
-        <th
-          rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
-          style={getSelectionStyle(-1, tpHeaders.length).selectionStyle}
-          onMouseDown={(e) => {
-            if (e.button !== 0) return;
-            if (e.shiftKey) e.preventDefault();
-            handleMouseDownCell(e, -1, tpHeaders.length, "nilai-cell");
-          }}
-          onMouseEnter={() => handleMouseEnterCell(-1, tpHeaders.length)}
-        >
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span>STS II</span>
-            {settings.enableAutoRegression && (
-              <button
-                onClick={() => handleAutoRegressionNonTP("sts2")}
-                title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        </th>
-      )}
-
-      {/* 5. Column SAS */}
-      {(!settings.semester || settings.semester === "Ganjil") && (
-        <th
-          rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
-          style={getSelectionStyle(-1, tpHeaders.length + 1).selectionStyle}
-          onMouseDown={(e) => {
-            if (e.button !== 0) return;
-            if (e.shiftKey) e.preventDefault();
-            handleMouseDownCell(e, -1, tpHeaders.length + 1, "nilai-cell");
-          }}
-          onMouseEnter={() => handleMouseEnterCell(-1, tpHeaders.length + 1)}
-        >
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span>SAS I</span>
-            {settings.enableAutoRegression && (
-              <button
-                onClick={() => handleAutoRegressionNonTP("sas1")}
-                title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        </th>
-      )}
-      {settings.semester === "Genap" && (
-        <th
-          rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
-          style={getSelectionStyle(-1, tpHeaders.length + 1).selectionStyle}
-          onMouseDown={(e) => {
-            if (e.button !== 0) return;
-            if (e.shiftKey) e.preventDefault();
-            handleMouseDownCell(e, -1, tpHeaders.length + 1, "nilai-cell");
-          }}
-          onMouseEnter={() => handleMouseEnterCell(-1, tpHeaders.length + 1)}
-        >
-          <div className="flex flex-col items-center justify-center gap-1">
-            <span>{gradeNumber === 6 ? "US" : "SAS II"}</span>
-            {settings.enableAutoRegression && (
-              <button
-                onClick={() => handleAutoRegressionNonTP("sas2")}
-                title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </button>
-            )}
-          </div>
-        </th>
-      )}
-
+      <StsSasHeaders
+        settings={settings}
+        tpHeadersLength={tpHeaders.length}
+        headerRowSpan={headerRowSpan}
+        getSelectionStyle={getSelectionStyle}
+        handleMouseDownCell={handleMouseDownCell}
+        handleMouseEnterCell={handleMouseEnterCell}
+        handleAutoRegressionNonTP={handleAutoRegressionNonTP}
+        gradeNumber={gradeNumber}
+      />
       {/* 6. Nilai Akhir */}
       <th
         rowSpan={headerRowSpan}
