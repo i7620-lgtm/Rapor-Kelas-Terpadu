@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import { defaultSubjects, initialSettings, COCURRICULAR_DIMENSIONS } from '../constants';
 import { getGradeNumber } from './nilaiHelpers';
 import { calculateFinalGrade } from './gradeCalculations';
+import { sanitizeGrades, sanitizeNotes, sanitizeAttendance, sanitizeStudentExtracurriculars, sanitizeCocurricularData, sanitizeLearningObjectives, sanitizeFormativeJournal, sanitizeSettings } from "./excelSanitize";
 
 export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         if (typeof XLSX === 'undefined') throw new Error('SheetJS not loaded');
