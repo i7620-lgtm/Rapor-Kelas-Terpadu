@@ -11,7 +11,7 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (_e) {
+        } catch {
             rawLayout = null;
         }
     }
@@ -180,7 +180,7 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                                     const sigHeight = 70;
                                     // Assuming xPos is center of text box
                                     const sigX = xPos - (sigWidth / 2);
-                                    const sigY = currentEl.y - 65; // Approx height above name
+                                    const sigY = currentEl.y - 78; // Centered between label and name
                                     elementsToRender.push(
                                         <image key='sig_head' href={settings.ttd_kepala_sekolah} x={sigX} y={sigY} width={sigWidth} height={sigHeight} preserveAspectRatio="xMidYMid meet" />
                                     );
@@ -190,7 +190,7 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                                     const sigWidth = 100;
                                     const sigHeight = 60;
                                     const sigX = xPos - (sigWidth / 2);
-                                    const sigY = currentEl.y - 55;
+                                    const sigY = currentEl.y - 75; // Centered between label and name
                                     elementsToRender.push(
                                         <image key='sig_teacher' href={settings.ttd_wali_kelas} x={sigX} y={sigY} width={sigWidth} height={sigHeight} preserveAspectRatio="xMidYMid meet" />
                                     );

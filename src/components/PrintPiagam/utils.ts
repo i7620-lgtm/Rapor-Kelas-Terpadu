@@ -1,4 +1,4 @@
-import { generateInitialLayout } from '../TransliterationUtil';
+import { generateInitialLayout } from '../../utils/TransliterationUtil';
 
 export const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -44,7 +44,7 @@ export const generateInitialPiagamLayout = (settings: any) => {
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (_e) {
+        } catch {
             rawLayout = null;
         }
     }

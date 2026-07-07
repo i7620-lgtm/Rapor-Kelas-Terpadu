@@ -16,7 +16,7 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
             if (typeof rawLayout === 'string') {
                 try {
                     rawLayout = JSON.parse(rawLayout);
-                } catch (_e) {
+                } catch {
                     rawLayout = null;
                 }
             }
