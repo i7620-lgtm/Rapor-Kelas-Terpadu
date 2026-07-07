@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export interface ToastItem {
+interface ToastItem {
   message: string;
   type: "success" | "error" | "info" | "warning";
 }

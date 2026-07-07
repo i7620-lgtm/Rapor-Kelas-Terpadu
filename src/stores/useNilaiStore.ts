@@ -5,7 +5,7 @@ import { calculateFinalGrade } from "../utils/gradeCalculations";
 import { getGradeNumber } from "../utils/nilaiHelpers";
 import { createCustomPersistStorage } from './customPersistStorage';
 
-export interface GradeItem {
+interface GradeItem {
   studentId: string;
   detailedGrades?: any;
   finalGrades?: any;

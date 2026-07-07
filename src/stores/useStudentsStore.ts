@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createCustomPersistStorage } from './customPersistStorage';
 
-export interface Student {
+interface Student {
   id: string;
   namaLengkap: string;
   [key: string]: any;

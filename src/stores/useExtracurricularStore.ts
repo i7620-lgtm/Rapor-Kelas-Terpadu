@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createCustomPersistStorage } from './customPersistStorage';
 
-export interface StudentExtracurricularItem {
+interface StudentExtracurricularItem {
   studentId: string;
   semester: string;
   assignedActivities: (string | null)[];
