@@ -1,4 +1,4 @@
-import { getGradeNumber } from '../DataNilaiPage';
+import { getGradeNumber } from '../../utils/nilaiHelpers';
 
 export const HEADER_HEIGHT_CM = 6.0;
 export const PAGE_TOP_MARGIN_CM = 1.5;
@@ -28,7 +28,7 @@ export const capitalize = (s: string): string => {
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 };
 
-export const lowercaseFirst = (s: string): string => {
+const lowercaseFirst = (s: string): string => {
     if (typeof s !== 'string' || !s) return '';
     const trimmed = s.trim().replace(/[.,;]$/, '');
     return trimmed.charAt(0).toLowerCase() + trimmed.slice(1);

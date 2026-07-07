@@ -1,5 +1,5 @@
 import React from 'react';
-import { getGradeNumber } from '../DataNilaiPage';
+import { getGradeNumber } from '../../utils/nilaiHelpers';
 import { getPhase, getDynamicStyle } from './raporUtils';
 import { EditableDescription } from './EditableDescription';
 

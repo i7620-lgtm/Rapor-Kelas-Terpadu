@@ -1,5 +1,5 @@
 import React from 'react';
-import { generateInitialLayout } from '../TransliterationUtil';
+import { generateInitialLayout } from '../../utils/TransliterationUtil';
 import { PAGE_TOP_MARGIN_CM, PAGE_LEFT_RIGHT_MARGIN_CM } from './raporUtils';
 
 interface ReportHeaderProps {
@@ -14,7 +14,7 @@ export const ReportHeader: React.FC<ReportHeaderProps> = ({ settings }) => {
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
-        } catch (_e) {
+        } catch {
             rawLayout = null;
         }
     }
