@@ -164,7 +164,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
 };
 
 const Navigation = (props: any) => {
-    if (props.isMobileDevice) {
+    if (props.isMobile) {
         return <MobileNav {...props} isMobileMenuOpen={props.isMobileMenuOpen} setIsMobileMenuOpen={props.setIsMobileMenuOpen} />;
     }
     return <DesktopNav {...props} />;
