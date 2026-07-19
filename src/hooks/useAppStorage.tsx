@@ -147,8 +147,9 @@ export const useAppStorage = () => {
           setIsDataLoaded(true);
 
           try {
-            const baseUrl = import.meta.env.BASE_URL;
-            const response = await fetch(`${baseUrl}presets.json`);
+            const baseUrl = import.meta.env.BASE_URL || '/';
+            const presetsUrl = baseUrl.endsWith('/') ? `${baseUrl}presets.json` : `${baseUrl}/presets.json`;
+            const response = await fetch(presetsUrl);
             if (response.ok) {
               const presetsData = await response.json();
               const currentExtracurriculars = useSettingsStore.getState().extracurriculars || [];
@@ -165,13 +166,16 @@ export const useAppStorage = () => {
           const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas);
           if (activeGradeNumber && activeGradeNumber >= 1 && activeGradeNumber <= 6) {
             try {
-              const baseUrl = import.meta.env.BASE_URL;
-              const tpRes = await fetch(`${baseUrl}tp${activeGradeNumber}.json`);
+              const baseUrl = import.meta.env.BASE_URL || '/';
+              const tpUrl = baseUrl.endsWith('/') ? `${baseUrl}tp${activeGradeNumber}.json` : `${baseUrl}/tp${activeGradeNumber}.json`;
+              const tpRes = await fetch(tpUrl);
               if (tpRes.ok) {
                 const tpData = await tpRes.json();
                 if (tpData) {
                   useCurriculumStore.getState().setPredefinedCurriculum(tpData);
                 }
+              } else {
+                console.error(`Failed to load TP preset on startup for Grade ${activeGradeNumber}: HTTP ${tpRes.status}`);
               }
             } catch (tpErr) {
               console.error(`Failed to load TP preset on startup for Grade ${activeGradeNumber}`, tpErr);
