@@ -56,14 +56,25 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     pageStyle,
   } = usePrintLegerPageLogic(props);
 
-  const { completenessChecks } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
+  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
   const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad' && check.category !== 'Data Lainnya');
+
+  const belowKkmItems = (academicAlerts || [])
+    .filter((alert: any) => alert.status === 'attention')
+    .map((alert: any) => ({
+      title: alert.title,
+      message: alert.description,
+      actionText: alert.actionText || 'Lihat Nilai',
+      onActionClick: alert.onActionClick
+    }));
+
+  const combinedIncompleteItems = [...incompleteItems, ...belowKkmItems];
 
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
 
   const onPrintRequest = (action: () => void) => {
-    if (incompleteItems.length > 0) {
+    if (combinedIncompleteItems.length > 0) {
       setPendingPrintAction(() => action);
       setShowIncompleteModal(true);
     } else {
@@ -181,7 +192,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
           isOpen={showIncompleteModal}
           onClose={() => setShowIncompleteModal(false)}
           onContinue={handleContinuePrint}
-          incompleteChecks={incompleteItems}
+          incompleteChecks={combinedIncompleteItems}
         />
 
         <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8">

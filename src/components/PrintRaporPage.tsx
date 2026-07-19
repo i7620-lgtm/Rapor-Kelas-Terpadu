@@ -33,15 +33,26 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     pageStyle,
   } = usePrintRaporPageLogic({ showToast });
 
-  const { completenessChecks } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
   
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
 
   const incompleteItems = completenessChecks.filter(check => check.status === 'bad');
+  
+  const belowKkmItems = (academicAlerts || [])
+    .filter((alert: any) => alert.status === 'attention')
+    .map((alert: any) => ({
+      title: alert.title,
+      message: alert.description,
+      actionText: alert.actionText || 'Lihat Nilai',
+      onActionClick: alert.onActionClick
+    }));
+
+  const combinedIncompleteItems = [...incompleteItems, ...belowKkmItems];
 
   const onPrintRequest = (action: () => void) => {
-    if (incompleteItems.length > 0) {
+    if (combinedIncompleteItems.length > 0) {
       setPendingPrintAction(() => action);
       setShowIncompleteModal(true);
     } else {
@@ -99,7 +110,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
         isOpen={showIncompleteModal}
         onClose={() => setShowIncompleteModal(false)}
         onContinue={handleContinuePrint}
-        incompleteChecks={incompleteItems}
+        incompleteChecks={combinedIncompleteItems}
       />
 
       <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8 animate-fade-in">
