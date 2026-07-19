@@ -2,6 +2,8 @@ import { useNilaiTableActionsLogic } from "./useNilaiTableActionsLogic";
 import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
 import { useAllSlms } from "./useAllSlms";
+import { useNilaiStore } from "../../stores/useNilaiStore";
+import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
   getGradeNumber,
   getNumericValue,
@@ -375,7 +377,8 @@ export const useNilaiTableViewLogic = (props) => {
     slmId = null,
     tpIndex = null,
   ) => {
-    const studentGrade = grades.find((g) => g.studentId === studentId);
+    const currentGrades = useNilaiStore.getState().grades;
+    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
     const detailedGrade = JSON.parse(
       JSON.stringify(
         studentGrade?.detailedGrades?.[subject.id] || {
@@ -424,7 +427,8 @@ export const useNilaiTableViewLogic = (props) => {
   };
 
   const handleDescriptionChange = (studentId, type, value) => {
-    const studentGrade = grades.find((g) => g.studentId === studentId);
+    const currentGrades = useNilaiStore.getState().grades;
+    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
     const detailedGrade = JSON.parse(
       JSON.stringify(
         studentGrade?.detailedGrades?.[subject.id] || {
@@ -490,7 +494,11 @@ export const useNilaiTableViewLogic = (props) => {
     if (value !== "" && (isNaN(numValue) || numValue < 0 || numValue > 100))
       return;
 
-    const newWeights = JSON.parse(JSON.stringify(weights));
+    const currentSettings = useSettingsStore.getState().settings;
+    const currentCalcConfig = currentSettings.gradeCalculation?.[subject.id] || { method: "rata-rata" };
+    const currentWeights = currentCalcConfig.weights || {};
+
+    const newWeights = JSON.parse(JSON.stringify(currentWeights));
 
     if (weightType === "TP" && slmId !== null && tpIndex !== null) {
       if (!newWeights.TP) newWeights.TP = {};
