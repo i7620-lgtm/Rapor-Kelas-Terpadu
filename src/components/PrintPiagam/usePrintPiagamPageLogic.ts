@@ -16,14 +16,25 @@ export const usePrintPiagamPageLogic = ({
 }) => {
     const handleUpdateLayout = onUpdatePiagamLayout;
 
-    const { completenessChecks } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+    const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
     const incompleteItems = completenessChecks.filter(check => check.status === 'bad' && check.category !== 'Data Lainnya');
+
+    const belowKkmItems = (academicAlerts || [])
+        .filter((alert: any) => alert.status === 'attention')
+        .map((alert: any) => ({
+            title: alert.title,
+            message: alert.description,
+            actionText: alert.actionText || 'Lihat Nilai',
+            onActionClick: alert.onActionClick
+        }));
+
+    const combinedIncompleteItems = [...incompleteItems, ...belowKkmItems];
 
     const [showIncompleteModal, setShowIncompleteModal] = useState(false);
     const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
 
     const onPrintRequest = (action: () => void) => {
-        if (incompleteItems.length > 0) {
+        if (combinedIncompleteItems.length > 0) {
             setPendingPrintAction(() => action);
             setShowIncompleteModal(true);
         } else {
@@ -310,7 +321,7 @@ export const usePrintPiagamPageLogic = ({
         showIncompleteModal,
         setShowIncompleteModal,
         handleContinuePrint,
-        incompleteItems,
+        incompleteItems: combinedIncompleteItems,
         paperSize,
         setPaperSize,
         selectedFilter,

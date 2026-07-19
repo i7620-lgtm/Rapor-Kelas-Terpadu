@@ -16,13 +16,26 @@ export const IncompleteDataModal: React.FC<IncompleteDataModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const hasKkmWarning = incompleteChecks.some(check => 
+    (check.message && check.message.includes('KKM')) || 
+    (check.description && check.description.includes('KKM'))
+  );
+
+  const modalTitle = hasKkmWarning 
+    ? "Perhatian: Data Belum Lengkap / Nilai di Bawah KKM" 
+    : "Perhatian: Data Belum Lengkap";
+
+  const modalDescription = hasKkmWarning
+    ? "Terdapat data yang belum lengkap atau siswa dengan nilai di bawah KKM sebelum Anda melanjutkan proses pencetakan. Apakah Anda yakin ingin melanjutkan cetak?"
+    : "Terdapat data yang belum lengkap sebelum Anda melanjutkan proses pencetakan. Apakah Anda yakin ingin melanjutkan cetak dengan data yang belum lengkap?";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 bg-amber-50/50">
           <div className="flex items-center gap-3 text-amber-600">
             <AlertTriangle className="w-6 h-6" />
-            <h2 className="text-xl font-bold text-slate-800">Perhatian: Data Belum Lengkap</h2>
+            <h2 className="text-xl font-bold text-slate-800">{modalTitle}</h2>
           </div>
           <button
             onClick={onClose}
@@ -34,7 +47,7 @@ export const IncompleteDataModal: React.FC<IncompleteDataModalProps> = ({
         
         <div className="p-4 sm:p-6 overflow-y-auto">
           <p className="text-slate-600 mb-4">
-            Terdapat data yang belum lengkap sebelum Anda melanjutkan proses pencetakan. Apakah Anda yakin ingin melanjutkan cetak dengan data yang belum lengkap?
+            {modalDescription}
           </p>
 
           <div className="space-y-3">
@@ -42,7 +55,7 @@ export const IncompleteDataModal: React.FC<IncompleteDataModalProps> = ({
               <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4">
                 <div>
                   <h3 className="font-semibold text-slate-800 text-sm">{check.title}</h3>
-                  <p className="text-slate-600 text-xs mt-1 leading-relaxed">{check.message}</p>
+                  <p className="text-slate-600 text-xs mt-1 leading-relaxed">{check.message || check.description}</p>
                 </div>
                 <button
                   onClick={() => {
