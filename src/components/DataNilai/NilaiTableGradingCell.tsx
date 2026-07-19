@@ -78,6 +78,7 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
       min={0}
       max={100}
       value={numericValue}
+      onChange={onChange}
       onCommit={onCommit}
       onPaste={onPaste}
       onFocus={onFocus}
