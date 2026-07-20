@@ -96,8 +96,8 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
   const activeSubjects = useMemo(() => subjects.filter((s: any) => s.active), [subjects]);
   const selectedSubject = useMemo(() => activeSubjects.find((s: any) => s.id === activeTab), [activeTab, activeSubjects]);
 
-  const inactiveButtonClass = "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
-  const activeButtonClass = "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-md";
+  const inactiveButtonClass = "px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
+  const activeButtonClass = "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm";
 
   const renderSubjectView = () => {
     if (!selectedSubject) return null;
@@ -115,10 +115,12 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
   };
 
   return (
-    <div className="flex flex-col gap-4 pt-4 sm:pt-8">
-      <div className="flex-shrink-0">
-        <h2 className="text-3xl font-bold text-slate-800">Data Nilai</h2>
-        <p className="mt-1 text-slate-600">Kelola nilai sumatif siswa per mata pelajaran untuk perhitungan nilai rapor.</p>
+    <div className="flex flex-col gap-2 pt-2 sm:pt-4">
+      <div className="flex flex-wrap justify-between items-end gap-2 flex-shrink-0">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Data Nilai</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Kelola nilai sumatif per mata pelajaran.</p>
+        </div>
       </div>
 
       {students.length === 0 ? (
@@ -130,12 +132,12 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
         />
       ) : (
         <div className="flex flex-col">
-          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-4 flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2 flex-shrink-0">
             <button
               onClick={() => onTabChange("keseluruhan")}
               className={activeTab === "keseluruhan" ? activeButtonClass : inactiveButtonClass}
             >
-              Nilai Keseluruhan
+              Keseluruhan
             </button>
             {activeSubjects.map((subject: any) => (
               <button
