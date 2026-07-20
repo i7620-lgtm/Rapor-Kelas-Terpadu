@@ -11,7 +11,6 @@ interface NilaiTableGradingCellProps {
     qualitativeGradingMap?: any;
     predikats?: { c?: number; [key: string]: any };
   };
-  onChange: (newValue: string) => void;
   onCommit: (newValue: any) => void;
   onPaste?: (e: React.ClipboardEvent) => void;
   onFocus: () => void;
@@ -25,7 +24,6 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
   value,
   mode,
   settings,
-  onChange,
   onCommit,
   onPaste,
   onFocus,
@@ -42,7 +40,7 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
       <select
         id={id}
         value={qualitativeCode}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onCommit(e.target.value)}
         onFocus={onFocus}
         onMouseDown={(e) => {
           if (e.shiftKey) {
@@ -78,7 +76,6 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
       min={0}
       max={100}
       value={numericValue}
-      onChange={onChange}
       onCommit={onCommit}
       onPaste={onPaste}
       onFocus={onFocus}
