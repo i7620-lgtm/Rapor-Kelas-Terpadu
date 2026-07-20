@@ -13,30 +13,30 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
 
   return (
     <header className="w-full bg-white border-b border-zinc-200 shadow-sm flex flex-col print-hidden flex-shrink-0 z-50 sticky top-0">
-      <div className="flex items-center justify-between px-6 h-16">
+      <div className="flex items-center justify-between px-4 h-12">
         <div className="flex items-center">
-            <h1 className="text-2xl font-extrabold text-indigo-600 tracking-tight">RKT</h1>
-            <span className="mx-4 text-zinc-300">/</span>
-            <h2 className="text-xl font-medium text-zinc-700">{currentPageName}</h2>
+            <h1 className="text-xl font-extrabold text-indigo-600 tracking-tight">RKT</h1>
+            <span className="mx-3 text-zinc-300">/</span>
+            <h2 className="text-base font-medium text-zinc-700">{currentPageName}</h2>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 hidden sm:flex">
             <a 
                 href="/terms.html" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
+                className="text-xs font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
             >Ketentuan Layanan</a>
             <span className="text-zinc-300">•</span>
             <a 
                 href="/privacy.html" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
+                className="text-xs font-medium text-zinc-500 hover:text-zinc-800 transition-colors" 
             >Kebijakan Privasi</a>
         </div>
       </div>
       <div className="border-t border-zinc-100"></div>
-      <nav className="flex-1 px-6 py-3 overflow-x-auto whitespace-nowrap scrollbar-hide flex gap-3 items-center no-scrollbar">
+      <nav className="flex-1 px-4 py-2 overflow-x-auto whitespace-nowrap scrollbar-hide flex gap-2 items-center no-scrollbar">
         {allNavItems.map((item: any) => (
           <a
             key={item.id}
@@ -49,8 +49,8 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
                     handleNavClick(item.id);
                 }
             }}
-            className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 border ${
-              activePage === item.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm'
+            className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200 border ${
+              activePage === item.id ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900 shadow-sm'
             }`}
           >
             <span className="truncate">{item.label}</span>
@@ -77,7 +77,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
     return (
         <div className="print-hidden sticky top-0 z-50 bg-white border-b border-zinc-200 shadow-sm">
             <header 
-                className="h-16 flex items-center justify-between px-4 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 select-none transition-colors duration-150"
+                className="h-12 flex items-center justify-between px-4 cursor-pointer hover:bg-zinc-50 active:bg-zinc-100 select-none transition-colors duration-150"
                 onClick={() => {
                     setIsMobileMenuOpen(!isMobileMenuOpen);
                 }}
@@ -85,7 +85,7 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                 <div className="flex items-center">
                     <h1 className="text-lg font-bold text-indigo-600 tracking-tight">RKT</h1>
                     <span className="mx-2 text-zinc-300">/</span>
-                    <h2 className="text-lg font-medium text-zinc-700">{currentPageName}</h2>
+                    <h2 className="text-base font-medium text-zinc-700">{currentPageName}</h2>
                 </div>
                 <div className="p-2 relative z-50 text-zinc-600">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,11 +100,11 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
             {isMobileMenuOpen && (
                 <>
                     <div 
-                        className="fixed top-16 inset-x-0 bottom-0 bg-black/30 backdrop-blur-sm z-40"
+                        className="fixed top-12 inset-x-0 bottom-0 bg-black/30 backdrop-blur-sm z-40"
                         onClick={() => setIsMobileMenuOpen(false)}
                     ></div>
                     <div
-                        className={`absolute top-16 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
+                        className={`absolute top-12 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
                             isMobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
                         }`}
                     >
