@@ -163,7 +163,6 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "tp", h.slmId, h.tpIndex)}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "tp", h.slmId, h.tpIndex)}
               onPaste={(e) => handlePaste(e, student.id, `tp|${h.slmId}|${h.tpIndex}`)}
               onFocus={() => handleFocusCell(index, colIdx)}
