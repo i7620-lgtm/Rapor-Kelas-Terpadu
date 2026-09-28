@@ -7,6 +7,7 @@ interface LegerTableProps {
   isCompact: boolean;
   nameFontSize?: string;
   nameCellRefs: React.MutableRefObject<(HTMLTableCellElement | null)[]>;
+  kkm?: number;
 }
 
 export const LegerTable: React.FC<LegerTableProps> = ({
@@ -16,6 +17,7 @@ export const LegerTable: React.FC<LegerTableProps> = ({
   isCompact,
   nameFontSize,
   nameCellRefs,
+  kkm,
 }) => {
   const getRankColor = (rank: number) => {
     if (rank === 1) return 'bg-yellow-200';
@@ -80,9 +82,27 @@ export const LegerTable: React.FC<LegerTableProps> = ({
               </td>
               <td className="border border-black px-1 text-center">{student.nisn}</td>
               <td className="border border-black px-1 text-center">{student.nis}</td>
-              {displaySubjects.map((subject: any) => (
-                <td key={subject.id} className="border border-black px-1 text-center">{student.grades[subject.id] ?? ''}</td>
-              ))}
+              {displaySubjects.map((subject: any) => {
+                const grade = student.grades[subject.id];
+                const isMissing = grade === undefined || grade === null || grade === '';
+                const numGrade = typeof grade === 'number' ? grade : parseFloat(grade);
+                const isBelowKkm = !isMissing && !isNaN(numGrade) && kkm != null && !isNaN(kkm) && numGrade < kkm;
+
+                return (
+                  <td 
+                    key={subject.id} 
+                    className={`border border-black px-1 text-center ${
+                      isMissing 
+                        ? 'text-red-600 font-bold bg-red-50/60' 
+                        : isBelowKkm 
+                          ? 'text-red-600 font-bold bg-rose-50/70' 
+                          : ''
+                    }`}
+                  >
+                    {isMissing ? '-' : grade}
+                  </td>
+                );
+              })}
               <td className="border border-black px-1 text-center font-bold">{student.total}</td>
               <td className="border border-black px-1 text-center font-bold">{student.average}</td>
               <td className="border border-black px-1 text-center font-bold">{student.rank}</td>
