@@ -121,7 +121,113 @@ input, textarea, [contenteditable="true"] {
   border-bottom: 1.5pt solid black !important;
 }
 
+/* =========================================================
+   DARK MODE COMPREHENSIVE APPLICATION THEME
+   ========================================================= */
+html.dark body {
+  background-color: #0b1120;
+  color: #f1f5f9;
+}
+
+/* Dark mode overrides for UI elements (outside print area) */
+html.dark .bg-white:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #1e293b !important;
+  color: #f8fafc;
+}
+
+html.dark .bg-slate-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-slate-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #1e293b !important;
+}
+
+html.dark .bg-zinc-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-zinc-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #1e293b !important;
+}
+
+html.dark .border-slate-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-zinc-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-slate-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-zinc-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  border-color: #334155 !important;
+}
+
+html.dark .text-slate-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-slate-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-zinc-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-zinc-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-zinc-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-zinc-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-zinc-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #94a3b8 !important;
+}
+
+html.dark input:not(#print-area input, .report-page input, .leger-page input, .piagam-page input),
+html.dark select:not(#print-area select, .report-page select, .leger-page select, .piagam-page select),
+html.dark textarea:not(#print-area textarea, .report-page textarea, .leger-page textarea, .piagam-page textarea) {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* =========================================================
+   IMMUNITY FOR PRINTED DOCUMENTS (RAPOR, PIAGAM, LEGER)
+   Font scale and dark mode MUST NOT affect print output!
+   ========================================================= */
+#print-area,
+#print-area *,
+.report-page,
+.report-page *,
+.leger-page,
+.leger-page *,
+.piagam-page,
+.piagam-page *,
+.print-area-wrapper,
+.print-area-wrapper * {
+  color-scheme: light !important;
+}
+
+#print-area,
+.report-page,
+.leger-page,
+.piagam-page,
+.print-area-wrapper {
+  font-size: 16px !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
 @media print {
+  html, body {
+    font-size: 16px !important;
+    background-color: #fff !important;
+    color: #000 !important;
+    color-scheme: light !important;
+  }
+
   /* Aturan @page akan diinjeksikan secara dinamis oleh React */
   body {
       -webkit-print-color-adjust: exact;

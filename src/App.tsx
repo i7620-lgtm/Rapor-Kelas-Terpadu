@@ -175,7 +175,7 @@ const App = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navigation
@@ -189,7 +189,7 @@ const App = () => {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           currentPageName={NAV_ITEMS.find((i) => i.id === activePage)?.label || "Dashboard"}
         />
-        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-4 pb-4 sm:px-8 sm:pb-8 pt-0">
+        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-3 sm:px-6 sm:pb-6 pt-0">
           {isLoading ? (
             "Memuat..."
           ) : (
