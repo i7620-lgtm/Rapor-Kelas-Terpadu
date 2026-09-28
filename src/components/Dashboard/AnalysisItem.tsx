@@ -32,7 +32,7 @@ export const AnalysisItem: React.FC<AnalysisItemProps> = ({
   return (
     <div
       onClick={onActionClick || undefined}
-      className={`bg-white p-4 rounded-lg shadow-sm border-l-4 ${
+      className={`bg-white p-3 sm:p-3.5 rounded-lg shadow-sm border-l-4 ${
         statusClasses[status]
       } flex flex-col justify-between overflow-hidden ${
         onActionClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''
@@ -41,12 +41,12 @@ export const AnalysisItem: React.FC<AnalysisItemProps> = ({
       <div className="overflow-hidden">
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-slate-800 truncate" title={title}>
+            <h4 className="font-semibold text-slate-800 text-xs sm:text-sm truncate" title={title}>
               {title}
             </h4>
             {missingItems && missingItems.length > 0 ? (
-              <div className="flex flex-wrap gap-2 mt-2">
-                <span className="text-sm text-slate-500 my-auto">Belum lengkap:</span>
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                <span className="text-xs text-slate-500 my-auto">Belum lengkap:</span>
                 {missingItems.map((item, idx) => (
                   <button
                     key={idx}
@@ -54,20 +54,20 @@ export const AnalysisItem: React.FC<AnalysisItemProps> = ({
                       e.stopPropagation();
                       item.onClick();
                     }}
-                    className="text-xs font-semibold px-2 py-1 bg-yellow-200 text-yellow-800 rounded-md hover:bg-yellow-300 transition-colors shadow-sm"
+                    className="text-[11px] font-semibold px-2 py-0.5 bg-yellow-200 text-yellow-800 rounded hover:bg-yellow-300 transition-colors shadow-sm"
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500 mt-1 line-clamp-2" title={description}>
+              <p className="text-xs text-slate-500 mt-0.5 line-clamp-2" title={description}>
                 {description}
               </p>
             )}
           </div>
           <span
-            className={`ml-4 flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full ${statusClasses[status]}`}
+            className={`ml-3 flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${statusClasses[status]}`}
           >
             {statusText[status]}
           </span>
@@ -79,7 +79,7 @@ export const AnalysisItem: React.FC<AnalysisItemProps> = ({
             e.stopPropagation();
             onActionClick();
           }}
-          className="mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end truncate max-w-full"
+          className="mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-800 text-right self-end truncate max-w-full"
         >
           {actionText} →
         </button>

@@ -26,18 +26,18 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       onClick={onActionClick}
-      className={`bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col justify-between overflow-hidden ${
+      className={`bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col justify-between overflow-hidden ${
         onActionClick ? 'cursor-pointer hover:border-indigo-300 transition-colors' : ''
       }`}
     >
       <div className="overflow-hidden">
-        <h3 className="text-lg font-semibold text-slate-700 truncate" title={title}>
+        <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate" title={title}>
           {title}
         </h3>
-        <p className="mt-4 text-3xl sm:text-4xl font-bold text-slate-900 truncate" title={value}>
+        <p className="mt-1 text-2xl font-bold text-slate-900 tracking-tight truncate" title={value}>
           {value}
         </p>
-        <p className="mt-2 text-sm text-slate-500 line-clamp-2" title={description}>
+        <p className="mt-1 text-xs text-slate-500 line-clamp-2" title={description}>
           {description}
         </p>
       </div>
@@ -47,7 +47,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             e.stopPropagation();
             onActionClick();
           }}
-          className={`mt-4 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors text-left truncate w-fit ${buttonColorClass}`}
+          className={`mt-3 px-2.5 py-1 text-xs font-medium rounded-md transition-colors text-left truncate w-fit ${buttonColorClass}`}
         >
           {displayActionText} →
         </button>

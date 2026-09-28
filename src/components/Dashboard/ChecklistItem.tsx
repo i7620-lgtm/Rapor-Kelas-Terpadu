@@ -30,23 +30,23 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({
   return (
     <div
       onClick={onActionClick}
-      className={`flex items-start p-4 border rounded-xl bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer`}
+      className={`flex items-start p-3 border rounded-xl bg-white shadow-sm hover:border-indigo-300 transition-colors cursor-pointer`}
     >
-      <div className="flex-shrink-0 mt-1">
+      <div className="flex-shrink-0 mt-0.5">
         <StatusIcon status={status} />
       </div>
-      <div className="ml-4 flex-1 min-w-0">
+      <div className="ml-3 flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-sm font-semibold text-slate-800 truncate" title={title}>
+          <h4 className="text-xs sm:text-sm font-semibold text-slate-800 truncate" title={title}>
             {title}
           </h4>
           {percentage !== undefined && (
-            <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${percentageColorClass}`}>
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${percentageColorClass}`}>
               {percentage}%
             </span>
           )}
         </div>
-        <p className="text-sm text-slate-500 mt-1 line-clamp-2" title={description}>
+        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2" title={description}>
           {description}
         </p>
         <button
@@ -54,7 +54,7 @@ export const ChecklistItem: React.FC<ChecklistItemProps> = ({
             e.stopPropagation();
             onActionClick();
           }}
-          className={`mt-3 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors w-fit ${buttonColorClass}`}
+          className={`mt-2 px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors w-fit ${buttonColorClass}`}
         >
           {displayActionText} →
         </button>
