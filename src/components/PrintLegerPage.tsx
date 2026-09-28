@@ -8,6 +8,7 @@ import { LegerTable } from './PrintLeger/LegerTable';
 import { usePrintLegerPageLogic } from './PrintLeger/usePrintLegerPageLogic';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { IncompleteDataModal } from './IncompleteDataModal';
+import { AlertTriangle } from 'lucide-react';
 
 const PAPER_SIZES: Record<string, { width: string; height: string }> = {
   A4: { width: '21cm', height: '29.7cm' },
@@ -57,7 +58,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
   } = usePrintLegerPageLogic(props);
 
   const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
-  const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad' && check.category !== 'Data Lainnya');
+  const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad');
 
   const belowKkmItems = (academicAlerts || [])
     .filter((alert: any) => alert.status === 'attention')
@@ -120,6 +121,30 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     <>
       <div className="pt-4 sm:pt-8">
         <div ref={cmRef} style={{ height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 }} />
+
+        {combinedIncompleteItems.length > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-amber-800 print-hidden shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold">Perhatian: </span>
+                {incompleteItems.length > 0 && (
+                  <span>{incompleteItems.length} data belum lengkap. </span>
+                )}
+                {belowKkmItems.length > 0 && (
+                  <span>{belowKkmItems.length} siswa memiliki nilai di bawah KKM. </span>
+                )}
+                <span className="text-amber-700">Periksa rincian sebelum mencetak leger.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowIncompleteModal(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-sm transition-colors"
+            >
+              Lihat Rincian
+            </button>
+          </div>
+        )}
         
         <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
@@ -222,7 +247,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                     statistics={statistics} 
                     isCompact={isCompact} 
                     nameFontSize={nameFontSize} 
-                    nameCellRefs={nameCellRefs} 
+                    nameCellRefs={nameCellRefs}
+                    kkm={parseInt(settings?.predikats?.c || '70', 10)}
                   />
                 </div>
                 
