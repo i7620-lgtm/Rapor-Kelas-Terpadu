@@ -33,7 +33,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                                     {/* Kolom 1: Periode Akademik */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-2">Periode Akademik</h3>
+                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Periode Akademik</h3>
                                         <FormField 
                                             label="Nama Kelas" 
                                             id="nama_kelas" 
@@ -87,7 +87,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
 
                                     {/* Kolom 2: Kepala Sekolah dan Guru */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-2">Kepala Sekolah dan Guru</h3>
+                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Kepala Sekolah dan Guru</h3>
                                         <FormField 
                                             label="Nama Kepala Sekolah" 
                                             id={getContextualKey(settings, 'nama_kepala_sekolah')} 
@@ -203,7 +203,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                                     {/* Kolom 3: Tanda Tangan */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-xl font-bold text-slate-800 border-b pb-2 mb-2">Tanda Tangan</h3>
+                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Tanda Tangan</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
                                             <FileInputField 
                                                 label="Tanda Tangan Kepala Sekolah" 

@@ -30,9 +30,9 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
     subjects
 }) => {
     return (
-        <section className="animate-fade-in space-y-12" id="section-penilaian">
+        <section className="animate-fade-in space-y-8" id="section-penilaian">
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-800 border-b pb-3 mb-6">
+                                    <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-4">
                                         Tampilan Input Nilai, Rentang Nilai, Penilaian Kualitatif, dan Cara Pengolahan Nilai Akhir Mapel
                                     </h3>
                                 
@@ -147,8 +147,8 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                         </div>
                                     </div>
 
-                                    <div className="animate-fade-in mt-12 pt-8 border-t border-slate-200 mb-2">
-                                        <h3 className="text-lg font-bold text-slate-800 mb-4 pb-2">Preferensi Sistem</h3>
+                                    <div className="animate-fade-in mt-8 pt-6 border-t border-slate-200 mb-2">
+                                        <h3 className="text-base font-bold text-slate-800 mb-3 pb-2">Preferensi Sistem</h3>
                                         <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
                                             <div>
                                                 <h4 className="text-sm font-medium text-slate-900">Olah Nilai Otomatis</h4>

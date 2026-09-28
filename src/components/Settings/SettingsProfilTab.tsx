@@ -24,12 +24,12 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
 }) => {
     return (
         <section className="animate-fade-in space-y-6" id="section-profil">
-                                <div className="flex justify-between items-center border-b pb-3 mb-6">
-                                    <h3 className="text-xl font-bold text-slate-800">Profil Sekolah</h3>
+                                <div className="flex justify-between items-center border-b pb-2 mb-4">
+                                    <h3 className="text-base font-bold text-slate-800">Profil Sekolah</h3>
                                     <button
                                         id="btn-design-kop"
                                         onClick={() => setIsEditorOpen(true)}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition"
+                                        className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition"
                                     >
                                         Desain Kop Surat
                                     </button>
