@@ -97,7 +97,7 @@ export const ReportPagesForStudent: React.FC<ReportPagesForStudentProps> = ({
                     top: `${HEADER_HEIGHT_CM}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `calc(${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm + 20px)`, fontSize: '10.5pt'
                 } },
                     React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent, onUpdateSettings, ref: studentInfoRef, compactLevel }),
-                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel }),
+                    React.createElement(AcademicTable, { subjectsToRender: reportSubjects, ref: tableBodyRef, headerRef: tableHeaderRef, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel, kkm: parseInt(settings?.predikats?.c || '70', 10) }),
                     React.createElement(ReportFooterContent, { 
                         student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                         rank: rank, rankingOption: rankingOption,
@@ -162,7 +162,7 @@ export const ReportPagesForStudent: React.FC<ReportPagesForStudentProps> = ({
                         top: `${contentTopCm}cm`, left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`, bottom: `calc(${REPORT_CONTENT_BOTTOM_OFFSET_CM}cm + 20px)`, fontSize: '10.5pt',
                     }},
                         isFirstAcademicPage && React.createElement(ReportStudentInfo, { student, settings, onUpdateStudent, onUpdateSettings, compactLevel }),
-                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel }),
+                        hasAcademicItems && React.createElement(AcademicTable, { subjectsToRender: academicItemsInChunk, startingIndex: startingIndex, hideGradesForFaseA: hideGradesForFaseA, studentId: student.id, onUpdateDescription, compactLevel, kkm: parseInt(settings?.predikats?.c || '70', 10) }),
                         React.createElement(ReportFooterContent, { 
                             student, settings, attendance, notes: notesForMeasurement, studentExtracurriculars, extracurriculars, cocurricularData,
                             rank: rank, rankingOption: rankingOption,
