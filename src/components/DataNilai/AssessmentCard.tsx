@@ -14,25 +14,25 @@ export const AssessmentCard = ({ title, type, item, getCompletionStatus, handleO
     },
     React.createElement(
       "div",
-      { className: "p-4" },
+      { className: "p-3 sm:p-3.5" },
       React.createElement(
         "h4",
-        { className: "font-bold text-slate-800" },
+        { className: "text-sm font-bold text-slate-800" },
         title,
       ),
       type === "slm" &&
         React.createElement(
           "p",
-          { className: "text-xs text-slate-500 mt-1" },
+          { className: "text-xs text-slate-500 mt-0.5" },
           `${item.tps?.length || 0} Tujuan Pembelajaran`,
         ),
     ),
     React.createElement(
       "div",
-      { className: "p-4 bg-slate-50 rounded-b-lg border-t" },
+      { className: "p-3 sm:p-3.5 bg-slate-50 rounded-b-lg border-t" },
       React.createElement(
         "div",
-        { className: "flex justify-between items-center text-sm mb-2" },
+        { className: "flex justify-between items-center text-xs mb-1.5" },
         React.createElement(
           "span",
           { className: "text-slate-600" },
