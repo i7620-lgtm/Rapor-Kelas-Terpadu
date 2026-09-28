@@ -49,7 +49,7 @@ export const CocurricularSection = ({
 }: any) => (
     <div ref={cocurricularRef} className={paddingClass} style={{ fontSize: fontSizeClass, border: '1.5pt solid black' }}>
         <div className="font-bold mb-1">Kokurikuler</div>
-        <div className="min-h-[1.5rem]">
+        <div className="min-h-[24px]">
             <EditableDescription
                 value={cocurricularDescription}
                 onSave={(val) => onUpdateCocurricularManual(studentId, val)}

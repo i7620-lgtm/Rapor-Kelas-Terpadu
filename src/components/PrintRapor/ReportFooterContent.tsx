@@ -174,7 +174,7 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
     const attRowPadding = compactLevel === 2 ? 'py-0.5' : compactLevel === 1 ? 'py-1' : 'py-1';
     const attendanceW = compactLevel === 2 ? '4.9cm' : compactLevel === 1 ? '5.3cm' : '5.6cm';
     const attendanceLabelW = compactLevel === 2 ? '2.3cm' : compactLevel === 1 ? '2.5cm' : '2.7cm';
-    const notesMinHeight = compactLevel === 2 ? '1.5rem' : compactLevel === 1 ? '2.2rem' : '3rem';
+    const notesMinHeight = compactLevel === 2 ? '24px' : compactLevel === 1 ? '35px' : '48px';
 
     const sigFontSizeClass = '10pt';
     const sigWrapperHeight = 'h-16';
