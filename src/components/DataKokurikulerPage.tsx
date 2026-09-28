@@ -28,17 +28,17 @@ const DataKokurikulerPage = (props: any) => {
   } = useDataKokurikulerPageLogic(props);
 
   return (
-    <div className="flex flex-col gap-4 pt-4 sm:pt-8">
+    <div className="flex flex-col gap-3 pt-2 sm:pt-4">
       <div className="flex-shrink-0">
-        <h2 className="text-3xl font-bold text-zinc-800">Data Kokurikuler</h2>
-        <p className="mt-1 text-zinc-600">
+        <h2 className="text-xl font-bold text-zinc-800 tracking-tight">Data Kokurikuler</h2>
+        <p className="mt-0.5 text-xs text-zinc-500">
           Isi tema kegiatan dan berikan penilaian capaian kokurikuler siswa yang berfokus pada perkembangan dimensi profil lulusan.
         </p>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-zinc-200/60 flex-shrink-0">
-        <h3 className="text-xl font-bold text-zinc-800">Tema Kegiatan</h3>
-        <p className="mt-1 text-sm text-zinc-600 mb-4">
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-zinc-200/60 flex-shrink-0">
+        <h3 className="text-sm font-semibold text-zinc-800">Tema Kegiatan</h3>
+        <p className="mt-0.5 text-xs text-zinc-500 mb-2">
           Masukkan nama tema kegiatan kokurikuler yang dilaksanakan pada semester ini. Tema ini akan muncul pada deskripsi di rapor.
         </p>
         <input
@@ -47,7 +47,7 @@ const DataKokurikulerPage = (props: any) => {
           value={currentSemester === "Genap" ? (settings.cocurricular_theme_Genap || "") : (settings.cocurricular_theme || "")}
           onChange={onSettingsChange}
           placeholder="Contoh: Kearifan Lokal"
-          className="w-full max-w-lg px-3 py-2 bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900"
+          className="w-full max-w-lg px-3 py-1.5 text-xs sm:text-sm bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900"
         />
       </div>
 

@@ -79,10 +79,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {confirmationModal.children}
             </ConfirmationModal>
 
-            <div className="space-y-6 pt-4 sm:pt-8" id="settings-page-root">
+            <div className="space-y-4 pt-2 sm:pt-4" id="settings-page-root">
                 <div className="text-left" id="settings-header">
-                    <h2 className="text-3xl font-bold text-slate-800" id="settings-title">Pengaturan</h2>
-                    <p className="mt-2 text-slate-600" id="settings-desc">
+                    <h2 className="text-xl font-bold text-slate-800 tracking-tight" id="settings-title">Pengaturan</h2>
+                    <p className="mt-0.5 text-xs text-slate-500" id="settings-desc">
                         Kelola informasi sekolah, periode akademik, dan data penting lainnya. Perubahan disimpan secara otomatis.
                     </p>
                 </div>
@@ -94,7 +94,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                 key={tab.id}
                                 id={`tab-${tab.id}`}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                                className={`whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
                                     activeTab === tab.id 
                                         ? 'border-indigo-500 text-indigo-600'
                                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -106,7 +106,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     </nav>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm md:shadow-md border border-slate-200 text-left" id="settings-content-card">
+                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 text-left" id="settings-content-card">
                     <div className="space-y-12">
                         {activeTab === 'profil' && (
                             <SettingsProfilTab

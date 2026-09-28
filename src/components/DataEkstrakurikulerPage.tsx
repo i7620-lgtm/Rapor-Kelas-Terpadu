@@ -21,10 +21,10 @@ const DataEkstrakurikulerPage = (props: any) => {
   } = useDataEkstrakurikulerPageLogic(props);
 
   return (
-    <div className="flex flex-col gap-4 pt-4 sm:pt-8">
+    <div className="flex flex-col gap-3 pt-2 sm:pt-4">
       <div className="flex-shrink-0">
-        <h2 className="text-3xl font-bold text-slate-800">Data Ekstrakurikuler</h2>
-        <p className="mt-1 text-slate-600">Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa.</p>
+        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Data Ekstrakurikuler</h2>
+        <p className="mt-0.5 text-xs text-slate-500">Kelola kegiatan ekstrakurikuler yang diikuti oleh siswa.</p>
       </div>
 
       {students.length === 0 ? (

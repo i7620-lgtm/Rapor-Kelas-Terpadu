@@ -135,22 +135,22 @@ const DataSiswaPage = (props) => {
             }),
             
             // Fixed Header Section
-            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 flex-shrink-0 pt-0 pb-2 sm:pb-4" },
+            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0 pt-0 pb-1 sm:pb-2" },
                 React.createElement('div', null,
-                    React.createElement('h2', { className: "text-3xl font-bold text-zinc-800" }, "Data Siswa"),
-                    React.createElement('p', { className: "mt-1 text-zinc-600" },
+                    React.createElement('h2', { className: "text-xl font-bold text-zinc-800 tracking-tight" }, "Data Siswa"),
+                    React.createElement('p', { className: "mt-0.5 text-xs text-zinc-500" },
                         "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis."
                     )
                 ),
                 React.createElement('div', { className: "flex gap-2" },
                     React.createElement('label', { 
-                        className: "cursor-pointer px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl shadow-sm hover:bg-indigo-100 flex items-center justify-center text-center" 
+                        className: "cursor-pointer px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 flex items-center justify-center text-center" 
                     }, "Upload Foto",
                         React.createElement('input', { type: "file", multiple: true, accept: "image/*", className: "hidden", onChange: handleBulkPhotoUpload })
                     ),
                     React.createElement('button', { 
                         onClick: handleAddNew, 
-                        className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-xl shadow-sm hover:bg-indigo-700" 
+                        className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700" 
                     }, "+ Tambah Siswa Baru")
                 )
             ),

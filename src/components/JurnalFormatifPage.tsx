@@ -48,9 +48,9 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
           predefinedCurriculum={predefinedCurriculum}
         />
       )}
-      <div className="flex-shrink-0">
-        <h2 className="text-3xl font-bold text-zinc-800">Jurnal Formatif</h2>
-        <p className="mt-1 text-zinc-600">Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.</p>
+      <div className="flex-shrink-0 pt-2 sm:pt-4">
+        <h2 className="text-xl font-bold text-zinc-800 tracking-tight">Jurnal Formatif</h2>
+        <p className="mt-0.5 text-xs text-zinc-500">Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.</p>
       </div>
       {students.length === 0 ? (
         <EmptyState

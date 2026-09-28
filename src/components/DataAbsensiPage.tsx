@@ -17,10 +17,10 @@ const DataAbsensiPage = (props: any) => {
   } = useDataAbsensiPageLogic(props);
 
   return (
-    <div className="flex flex-col gap-4 pt-4 sm:pt-8">
+    <div className="flex flex-col gap-3 pt-2 sm:pt-4">
       <div className="flex-shrink-0">
-        <h2 className="text-3xl font-bold text-zinc-800">Data Absensi</h2>
-        <p className="mt-1 text-zinc-600">
+        <h2 className="text-xl font-bold text-zinc-800 tracking-tight">Data Absensi</h2>
+        <p className="mt-0.5 text-xs text-zinc-500">
           Catat jumlah ketidakhadiran siswa selama satu semester. Kosongkan kolom jika tidak ada ketidakhadiran.
         </p>
       </div>
