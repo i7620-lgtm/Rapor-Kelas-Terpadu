@@ -21,8 +21,8 @@ export const LegerTable: React.FC<LegerTableProps> = ({
 }) => {
   const getRankColor = (rank: number) => {
     if (rank === 1) return 'bg-yellow-200';
-    if (rank === 2) return 'bg-slate-300';
-    if (rank === 3) return 'bg-orange-200';
+    if (rank === 2) return 'bg-orange-200';
+    if (rank === 3) return 'bg-orange-300';
     if (rank >= 4 && rank <= 10) return 'bg-indigo-100';
     return '';
   };
@@ -41,7 +41,7 @@ export const LegerTable: React.FC<LegerTableProps> = ({
       </tr>
       <tr className="text-center font-bold">
         {displaySubjects.map((subject: any) => (
-          <td key={subject.id} className="border border-black" style={{ height: isCompact ? '1.75rem' : '2.45rem' }}>
+          <td key={subject.id} className="border border-black" style={{ height: isCompact ? '28px' : '39px' }}>
             <div className="h-full flex items-center justify-center">
               <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', whiteSpace: 'nowrap', fontSize: isCompact ? '6.5pt' : '7pt' }}>
                 {subject.label}
