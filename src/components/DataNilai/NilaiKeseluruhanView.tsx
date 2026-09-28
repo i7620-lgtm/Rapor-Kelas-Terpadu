@@ -11,6 +11,8 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
     setSortBy,
     showIncompleteHighlight,
     setShowIncompleteHighlight,
+    showBelowKkmHighlight,
+    setShowBelowKkmHighlight,
     showMaxHighlight,
     setShowMaxHighlight,
     showMinHighlight,
@@ -33,6 +35,8 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
     React.createElement(HighlightControls, {
       showIncompleteHighlight,
       setShowIncompleteHighlight,
+      showBelowKkmHighlight,
+      setShowBelowKkmHighlight,
       showMaxHighlight,
       setShowMaxHighlight,
       showMinHighlight,
@@ -70,6 +74,7 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
               handleFocusCell,
               subjectStats,
               showIncompleteHighlight,
+              showBelowKkmHighlight,
               showMaxHighlight,
               showMinHighlight,
             })
