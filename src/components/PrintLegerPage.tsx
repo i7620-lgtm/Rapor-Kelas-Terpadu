@@ -8,6 +8,7 @@ import { LegerTable } from './PrintLeger/LegerTable';
 import { usePrintLegerPageLogic } from './PrintLeger/usePrintLegerPageLogic';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { IncompleteDataModal } from './IncompleteDataModal';
+import { AlertTriangle } from 'lucide-react';
 
 const PAPER_SIZES: Record<string, { width: string; height: string }> = {
   A4: { width: '21cm', height: '29.7cm' },
@@ -57,7 +58,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
   } = usePrintLegerPageLogic(props);
 
   const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
-  const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad' && check.category !== 'Data Lainnya');
+  const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad');
 
   const belowKkmItems = (academicAlerts || [])
     .filter((alert: any) => alert.status === 'attention')
@@ -120,22 +121,46 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     <>
       <div className="pt-4 sm:pt-8">
         <div ref={cmRef} style={{ height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 }} />
+
+        {combinedIncompleteItems.length > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-amber-800 print-hidden shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold">Perhatian: </span>
+                {incompleteItems.length > 0 && (
+                  <span>{incompleteItems.length} data belum lengkap. </span>
+                )}
+                {belowKkmItems.length > 0 && (
+                  <span>{belowKkmItems.length} siswa memiliki nilai di bawah KKM. </span>
+                )}
+                <span className="text-amber-700">Periksa rincian sebelum mencetak leger.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowIncompleteModal(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-sm transition-colors"
+            >
+              Lihat Rincian
+            </button>
+          </div>
+        )}
         
-        <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6 print-hidden">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between">
+        <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 mb-4 print-hidden">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Cetak Leger</h2>
-              <p className="mt-1 text-sm text-slate-600">Pratinjau leger nilai akhir siswa.</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Cetak Leger</h2>
+              <p className="mt-0.5 text-xs text-slate-500">Pratinjau leger nilai akhir siswa.</p>
             </div>
             
-            <div className="flex items-end gap-4 mt-4 md:mt-0">
+            <div className="flex items-end gap-3 mt-2 md:mt-0">
               <div>
-                <label htmlFor="paperSizeSelector" className="block text-sm font-medium text-slate-700 mb-1">Ukuran Kertas</label>
+                <label htmlFor="paperSizeSelector" className="block text-xs font-medium text-slate-700 mb-1">Ukuran Kertas</label>
                 <select 
                   id="paperSizeSelector" 
                   value={paperSize} 
                   onChange={(e) => setPaperSize(e.target.value)} 
-                  className="w-full sm:w-48 p-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm"
+                  className="w-full sm:w-44 py-1.5 px-2.5 text-xs bg-white border border-slate-300 rounded-md shadow-sm"
                 >
                   {Object.keys(PAPER_SIZES).map(key => (
                     <option key={key} value={key}>{`${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`}</option>
@@ -147,7 +172,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                 <button 
                   onClick={() => onPrintRequest(handleDownloadPDF)} 
                   disabled={isPrinting} 
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isPrinting ? 'Mempersiapkan...' : 'Unduh PDF'}
                 </button>
@@ -155,7 +180,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                 <button 
                   onClick={() => onPrintRequest(handlePrint)} 
                   disabled={isPrinting} 
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isPrinting ? 'Mempersiapkan...' : 'Cetak Leger (Print)'}
                 </button>
@@ -163,10 +188,10 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
             </div>
           </div>
           
-          <div className="border-t pt-4 mt-4">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <p className="text-sm font-medium text-slate-700 mb-0">Opsi Tanda Tangan:</p>
-              <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="border-t pt-3 mt-3">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs">
+              <p className="text-xs font-medium text-slate-700 mb-0">Opsi Tanda Tangan:</p>
+              <label className="flex items-center space-x-1.5 cursor-pointer">
                 <input 
                   type="checkbox" 
                   checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'} 
@@ -222,7 +247,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                     statistics={statistics} 
                     isCompact={isCompact} 
                     nameFontSize={nameFontSize} 
-                    nameCellRefs={nameCellRefs} 
+                    nameCellRefs={nameCellRefs}
+                    kkm={parseInt(settings?.predikats?.c || '70', 10)}
                   />
                 </div>
                 

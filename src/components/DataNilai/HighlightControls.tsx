@@ -3,6 +3,8 @@ import React from "react";
 export const HighlightControls = ({
   showIncompleteHighlight,
   setShowIncompleteHighlight,
+  showBelowKkmHighlight,
+  setShowBelowKkmHighlight,
   showMaxHighlight,
   setShowMaxHighlight,
   showMinHighlight,
@@ -14,7 +16,7 @@ export const HighlightControls = ({
     "div",
     {
       className:
-        "p-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0 flex-wrap gap-2",
+        "px-4 py-2 border-b border-slate-200 flex justify-between items-center flex-shrink-0 flex-wrap gap-2",
     },
     React.createElement(
       "div",
@@ -38,6 +40,28 @@ export const HighlightControls = ({
           style: showIncompleteHighlight ? { backgroundColor: "#ef4444" } : { backgroundColor: "#cbd5e1" }
         }),
         React.createElement("span", null, "Nilai Tidak Lengkap")
+      ),
+      React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (setShowBelowKkmHighlight) {
+              setShowBelowKkmHighlight(!showBelowKkmHighlight);
+            }
+          },
+          className: "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+          style: showBelowKkmHighlight
+            ? { backgroundColor: "#fff1f2", borderColor: "#fecdd3", color: "#e11d48" }
+            : { backgroundColor: "#f8fafc", borderColor: "#e2e8f0", color: "#94a3b8" }
+        },
+        React.createElement("span", {
+          className: "w-2.5 h-2.5 rounded-full inline-block shadow-sm",
+          style: showBelowKkmHighlight ? { backgroundColor: "#f43f5e" } : { backgroundColor: "#cbd5e1" }
+        }),
+        React.createElement("span", null, "Nilai di Bawah KKM")
       ),
       React.createElement(
         "button",

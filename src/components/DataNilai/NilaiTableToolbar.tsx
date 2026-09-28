@@ -8,7 +8,7 @@ export const NilaiTableToolbar = ({
     "div",
     {
       className:
-        "p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
+        "px-4 py-2 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2",
     },
     React.createElement(
       "div",

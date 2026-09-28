@@ -23,15 +23,15 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
   const { waliKelasName, stats, academicAlerts, completenessChecks } = useDashboardLogic(props);
 
   return (
-    <div className="flex flex-col gap-6 pt-4 sm:pt-8 animate-fade-in pb-20">
+    <div className="flex flex-col gap-4 pt-2 sm:pt-4 animate-fade-in pb-12">
       <div>
-        <h2 className="text-3xl font-bold text-slate-800">Ringkasan Eksekutif</h2>
-        <p className="mt-2 text-slate-600">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Ringkasan Eksekutif</h2>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
           Selamat datang, <span className="font-semibold text-indigo-700">{waliKelasName}</span>! Berikut adalah ikhtisar terkini mengenai progres kelas Anda.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat: any, index: number) => (
           <StatCard
             key={index}
@@ -40,23 +40,23 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
         ))}
       </div>
 
-      <div className="flex flex-col gap-6 mt-4">
-        <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-slate-800">Kelengkapan Data Rapor</h3>
-            <span className="text-sm font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
+      <div className="flex flex-col gap-4 mt-1">
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold text-slate-800">Kelengkapan Data Rapor</h3>
+            <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full">
               {completenessChecks.filter((c: any) => c.percentage === 100).length} / {completenessChecks.length} Selesai
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
             {completenessChecks.map((check: any, index: number) => (
               <ChecklistItem key={index} {...check} />
             ))}
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-slate-800">Analisis Data</h3>
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold text-slate-800">Analisis Data</h3>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
             {academicAlerts.length === 0 ? (

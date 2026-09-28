@@ -1,4 +1,6 @@
 
+import { COCURRICULAR_DIMENSIONS } from "../../constants";
+
 export const useDashboardAlerts = (settings: any, subjects: any[], students: any[], grades: any[], cocurricularData: any, studentExtracurriculars: any[], attendance: any[], notes: any[], setActivePage: any, onNavigateToNilai: any) => {
   
     const items: any[] = [];
@@ -105,6 +107,27 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
           status: 'attention',
           actionText: 'Lihat Nilai',
           onActionClick: () => (onNavigateToNilai && failingSubjects[0]) ? onNavigateToNilai(failingSubjects[0].id, student.id) : setActivePage('DATA_NILAI', student.id),
+        });
+      }
+
+      const failingCoDimensions: string[] = [];
+      const studentRatings = studentCoData?.[coDimensionField];
+      if (studentRatings && typeof studentRatings === 'object') {
+        Object.entries(studentRatings).forEach(([dimId, rating]) => {
+          if (rating === 'BB') {
+            const dimObj = COCURRICULAR_DIMENSIONS.find((d: any) => d.id === dimId);
+            failingCoDimensions.push(dimObj ? dimObj.label : dimId);
+          }
+        });
+      }
+
+      if (failingCoDimensions.length > 0) {
+        items.push({
+          title: student.namaLengkap,
+          description: `Nilai Kokurikuler di bawah KKM (BB / Belum Berkembang): ${failingCoDimensions.join(', ')}`,
+          status: 'attention',
+          actionText: 'Lihat Kokurikuler',
+          onActionClick: () => setActivePage('DATA_KOKURIKULER', student.id),
         });
       }
 

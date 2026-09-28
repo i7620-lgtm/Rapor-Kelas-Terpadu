@@ -33,7 +33,6 @@ export const StsSasCells = ({
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sts1")}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts1")}
               onPaste={(e) => handlePaste(e, student.id, "sts1")}
               onFocus={() => handleFocusCell(index, colIdx)}
@@ -59,7 +58,6 @@ export const StsSasCells = ({
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sts2")}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sts2")}
               onPaste={(e) => handlePaste(e, student.id, "sts2")}
               onFocus={() => handleFocusCell(index, colIdx)}
@@ -86,7 +84,6 @@ export const StsSasCells = ({
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sas1")}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas1")}
               onPaste={(e) => handlePaste(e, student.id, "sas1")}
               onFocus={() => handleFocusCell(index, colIdx)}
@@ -112,7 +109,6 @@ export const StsSasCells = ({
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "sas2")}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "sas2")}
               onPaste={(e) => handlePaste(e, student.id, "sas2")}
               onFocus={() => handleFocusCell(index, colIdx)}

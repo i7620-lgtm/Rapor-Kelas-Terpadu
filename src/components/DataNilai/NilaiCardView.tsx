@@ -134,7 +134,7 @@ export const NilaiCardView = (props) => {
           "h3",
           {
             className:
-              "text-lg font-semibold text-slate-700 mb-3 border-b pb-2",
+              "text-sm font-semibold text-slate-700 mb-2 border-b pb-1.5",
           },
           "Sumatif Lingkup Materi (SLM)",
         ),
@@ -177,7 +177,7 @@ export const NilaiCardView = (props) => {
           "h3",
           {
             className:
-              "text-lg font-semibold text-slate-700 mb-3 border-b pb-2",
+              "text-sm font-semibold text-slate-700 mb-2 border-b pb-1.5",
           },
           "Sumatif Tengah & Akhir Semester",
         ),

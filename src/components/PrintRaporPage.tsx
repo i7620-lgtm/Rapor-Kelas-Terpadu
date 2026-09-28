@@ -7,6 +7,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import { usePrintRaporPageLogic } from './PrintRapor/usePrintRaporPageLogic';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { IncompleteDataModal } from './IncompleteDataModal';
+import { AlertTriangle } from 'lucide-react';
 
 interface PrintRaporPageProps {
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
@@ -97,6 +98,30 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
   return (
     <>
       <div className="pt-4 sm:pt-8">
+        {combinedIncompleteItems.length > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-amber-800 print-hidden shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold">Perhatian: </span>
+                {incompleteItems.length > 0 && (
+                  <span>{incompleteItems.length} data belum lengkap. </span>
+                )}
+                {belowKkmItems.length > 0 && (
+                  <span>{belowKkmItems.length} siswa memiliki nilai di bawah KKM. </span>
+                )}
+                <span className="text-amber-700">Periksa rincian sebelum mencetak rapor.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowIncompleteModal(true)}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-sm transition-colors"
+            >
+              Lihat Rincian
+            </button>
+          </div>
+        )}
+
         <PrintControlPanel
           students={students}
           isMobileDevice={isMobileDevice}

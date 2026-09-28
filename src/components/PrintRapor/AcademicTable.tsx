@@ -9,6 +9,7 @@ interface AcademicTableProps {
     studentId: string;
     onUpdateDescription: (studentId: string, subjectId: string, type: 'highest' | 'lowest', val: string, currentDesc: any) => void;
     compactLevel?: number;
+    kkm?: number;
 }
 
 export const AcademicTable = React.forwardRef<HTMLTableSectionElement, AcademicTableProps>(({ 
@@ -18,7 +19,8 @@ export const AcademicTable = React.forwardRef<HTMLTableSectionElement, AcademicT
     hideGradesForFaseA, 
     studentId, 
     onUpdateDescription, 
-    compactLevel = 0 
+    compactLevel = 0,
+    kkm
 }, ref) => {
     const tableStyle = { 
         fontSize: compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt', 
@@ -49,12 +51,25 @@ export const AcademicTable = React.forwardRef<HTMLTableSectionElement, AcademicT
             )
         ),
         React.createElement('tbody', { ref: ref as any },
-            subjectsToRender.map((item, index) => (
-                React.createElement('tr', { key: item.id, id: `row-${studentId}-${item.id}` },
+            subjectsToRender.map((item, index) => {
+                const isMissing = item.grade === undefined || item.grade === null || item.grade === '';
+                const numGrade = typeof item.grade === 'number' ? item.grade : parseFloat(item.grade);
+                const isBelowKkm = !isMissing && !isNaN(numGrade) && kkm != null && !isNaN(kkm) && numGrade < kkm;
+
+                return React.createElement('tr', { key: item.id, id: `row-${studentId}-${item.id}` },
                     React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1.5pt solid black' } }, startingIndex + index),
                     React.createElement('td', { className: `px-1 ${pyClass} align-top`, style: { border: '1.5pt solid black' } }, item.name),
                     !hideGradesForFaseA && (
-                        React.createElement('td', { className: `px-1 ${pyClass} text-center align-top`, style: { border: '1.5pt solid black' } }, item.grade ?? '')
+                        React.createElement('td', { 
+                            className: `px-1 ${pyClass} text-center align-top ${
+                                isMissing 
+                                    ? 'text-red-500 font-bold bg-red-50/40 print:text-black print:bg-transparent' 
+                                    : isBelowKkm 
+                                      ? 'text-red-600 font-bold bg-rose-50/50 print:text-black print:bg-transparent' 
+                                      : ''
+                            }`, 
+                            style: { border: '1.5pt solid black' } 
+                        }, item.grade ?? '-')
                     ),
                     React.createElement('td', { className: `px-1 ${pyClass} align-top leading-tight`, style: { border: '1.5pt solid black' } },
                         React.createElement(EditableDescription, { 
@@ -69,12 +84,11 @@ export const AcademicTable = React.forwardRef<HTMLTableSectionElement, AcademicT
                                 value: item.description.lowest, 
                                 onSave: (val) => onUpdateDescription && onUpdateDescription(studentId, item.id, 'lowest', val, item.description),
                                 placeholder: "Klik untuk edit deskripsi capaian terendah (opsional)...",
-                                multiline: true
                             })
                         )
                     )
-                )
-            ))
+                );
+            })
         )
     );
 });

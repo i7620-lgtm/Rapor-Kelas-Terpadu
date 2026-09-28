@@ -103,10 +103,18 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
   };
 
   let total = "-";
+  let isFinalBelowKkm = false;
+  let isFinalMissing = true;
+  const kkmVal = parseInt(settings?.predikats?.c, 10);
   if (detailedGrade) {
     const finalVal = studentGrade?.finalGrades?.[subject.id];
-    if (finalVal !== null && finalVal !== undefined) {
+    if (finalVal !== null && finalVal !== undefined && String(finalVal).trim() !== "") {
       total = String(finalVal);
+      isFinalMissing = false;
+      const numFinal = typeof finalVal === "number" ? finalVal : parseFloat(finalVal);
+      if (!isNaN(numFinal) && !isNaN(kkmVal) && numFinal < kkmVal) {
+        isFinalBelowKkm = true;
+      }
     }
   }
 
@@ -116,7 +124,13 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
       <td
         id={`nilai-cell-${index}--2`}
         tabIndex={-1}
-        className="p-2 text-center border-b border-r border-slate-200 sticky z-20 bg-white group-hover:bg-slate-50  align-top box-border select-none cursor-default"
+        className={`p-2 text-center border-b border-r border-slate-200 sticky z-20 align-top box-border select-none cursor-default ${
+          isFinalMissing
+            ? "bg-red-50/60 text-red-700 font-bold"
+            : isFinalBelowKkm
+              ? "bg-rose-50/60 text-red-600 font-bold"
+              : "bg-white group-hover:bg-slate-50"
+        }`}
         style={{
           left: 0,
           width: "50px",
@@ -134,7 +148,13 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
       <td
         id={`nilai-cell-${index}--1`}
         tabIndex={-1}
-        className="p-2 border-b border-r border-slate-200 align-top lg:sticky lg:z-20 bg-white group-hover:bg-slate-50 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default"
+        className={`p-2 border-b border-r border-slate-200 align-top lg:sticky lg:z-20 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none cursor-default ${
+          isFinalMissing
+            ? "bg-red-50/60 text-red-700 font-medium"
+            : isFinalBelowKkm
+              ? "bg-rose-50/60 text-red-600 font-medium"
+              : "bg-white group-hover:bg-slate-50"
+        }`}
         style={{
           left: "50px",
           ...getSelectionStyle(index, -1).selectionStyle,
@@ -163,7 +183,6 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               value={cellValue}
               mode={mode}
               settings={settings}
-              onChange={(newVal) => handleSingleGradeChange(student.id, newVal, "tp", h.slmId, h.tpIndex)}
               onCommit={(newVal) => handleSingleGradeChange(student.id, newVal, "tp", h.slmId, h.tpIndex)}
               onPaste={(e) => handlePaste(e, student.id, `tp|${h.slmId}|${h.tpIndex}`)}
               onFocus={() => handleFocusCell(index, colIdx)}
@@ -190,8 +209,16 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
         handleFocusCell={handleFocusCell}
       />
       {/* 6. Nilai Akhir */}
-      <td className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold align-top pt-3 select-none">
-        {total}
+      <td className={`p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold align-top pt-3 select-none ${
+        isFinalMissing
+          ? "text-red-500 bg-red-50/30"
+          : isFinalBelowKkm
+            ? "text-red-600 bg-rose-50/50"
+            : "text-slate-800"
+      }`}>
+        <span className={isFinalBelowKkm ? "px-1.5 py-0.5 rounded border border-red-300 bg-rose-100/70 inline-block font-extrabold text-red-600" : isFinalMissing ? "text-red-400 font-bold" : ""}>
+          {total}
+        </span>
       </td>
 
       {/* 7. Capaian Kompetensi */}

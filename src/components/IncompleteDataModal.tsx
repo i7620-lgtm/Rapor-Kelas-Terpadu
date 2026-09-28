@@ -30,23 +30,23 @@ export const IncompleteDataModal: React.FC<IncompleteDataModalProps> = ({
     : "Terdapat data yang belum lengkap sebelum Anda melanjutkan proses pencetakan. Apakah Anda yakin ingin melanjutkan cetak dengan data yang belum lengkap?";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 bg-amber-50/50">
-          <div className="flex items-center gap-3 text-amber-600">
-            <AlertTriangle className="w-6 h-6" />
-            <h2 className="text-xl font-bold text-slate-800">{modalTitle}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-slate-100 bg-amber-50/50">
+          <div className="flex items-center gap-2.5 text-amber-600">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-800">{modalTitle}</h2>
           </div>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 transition-colors rounded-full p-1 hover:bg-slate-100"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
         
-        <div className="p-4 sm:p-6 overflow-y-auto">
-          <p className="text-slate-600 mb-4">
+        <div className="p-3.5 sm:p-4 overflow-y-auto">
+          <p className="text-xs sm:text-sm text-slate-600 mb-3">
             {modalDescription}
           </p>
 

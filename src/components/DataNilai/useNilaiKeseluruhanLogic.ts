@@ -12,6 +12,7 @@ export const useNilaiKeseluruhanLogic = ({
   const predikats = propPredikats || settings?.predikats;
   const [sortBy, setSortBy] = useState("no");
   const [showIncompleteHighlight, setShowIncompleteHighlight] = useState(true);
+  const [showBelowKkmHighlight, setShowBelowKkmHighlight] = useState(true);
   const [showMaxHighlight, setShowMaxHighlight] = useState(true);
   const [showMinHighlight, setShowMinHighlight] = useState(true);
   const activeSubjects = useMemo(
@@ -340,6 +341,8 @@ export const useNilaiKeseluruhanLogic = ({
     setSortBy,
     showIncompleteHighlight,
     setShowIncompleteHighlight,
+    showBelowKkmHighlight,
+    setShowBelowKkmHighlight,
     showMaxHighlight,
     setShowMaxHighlight,
     showMinHighlight,
