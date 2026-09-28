@@ -28,6 +28,33 @@ export const useDataKokurikulerPageLogic = (props: any) => {
   const currentSemester = settings?.semester || "Ganjil";
   const dimensionField = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
 
+  const [showIncompleteHighlight, setShowIncompleteHighlight] = React.useState(true);
+  const [showBelowKkmHighlight, setShowBelowKkmHighlight] = React.useState(true);
+
+  const stats = React.useMemo(() => {
+    let incompleteCount = 0;
+    let belowKkmCount = 0;
+    let filledCount = 0;
+    const totalCells = students.length * COCURRICULAR_DIMENSIONS.length;
+
+    students.forEach((student: any) => {
+      const studentRatings = cocurricularData[student.id]?.[dimensionField] || {};
+      COCURRICULAR_DIMENSIONS.forEach((dim) => {
+        const val = studentRatings[dim.id];
+        if (val === "BB") {
+          belowKkmCount++;
+          filledCount++;
+        } else if (val && val !== "-" && val !== "") {
+          filledCount++;
+        } else {
+          incompleteCount++;
+        }
+      });
+    });
+
+    return { incompleteCount, belowKkmCount, filledCount, totalCells };
+  }, [students, cocurricularData, dimensionField]);
+
   const {
     isSelecting,
     setIsSelecting,
@@ -231,5 +258,10 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     handlePaste,
     handleSetAllRatings,
     onSettingsChange,
+    showIncompleteHighlight,
+    setShowIncompleteHighlight,
+    showBelowKkmHighlight,
+    setShowBelowKkmHighlight,
+    stats,
   };
 };
