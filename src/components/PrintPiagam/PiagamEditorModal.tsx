@@ -95,8 +95,8 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
     const selectedElement = elements.find(el => el.id === selectedElementId);
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={handleDeselect}>
-            <div className="bg-slate-100 rounded-lg shadow-xl w-full max-w-7xl h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4" onClick={handleDeselect}>
+            <div className="bg-slate-100 rounded-lg shadow-xl w-full max-w-7xl h-[95vh] h-[95dvh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-4 border-b bg-white rounded-t-lg">
                     <h2 className="text-xl font-bold text-slate-800">Editor Visual Tata Letak Piagam</h2>
                     <div>
@@ -104,7 +104,7 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
                         <button onClick={() => { onSaveLayout(elements); onClose(); }} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Simpan Desain</button>
                     </div>
                 </div>
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                     <main className="flex-1 p-4 overflow-auto bg-slate-200 flex justify-center items-start">
                         <div className="bg-white shadow-lg relative" style={{ width: '29.7cm', height: '21cm' }}>
                             <div
@@ -159,7 +159,7 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
                             </div>
                         </div>
                     </main>
-                    <div className="w-72 bg-white p-4 border-l overflow-y-auto">
+                    <div className="w-full md:w-72 bg-white p-4 border-t md:border-t-0 md:border-l overflow-y-auto max-h-[35vh] md:max-h-none flex-shrink-0 shadow-sm">
                         <h3 className="font-semibold mb-2">Alat</h3>
                         <button onClick={addElement} className="w-full text-left p-2 rounded hover:bg-slate-100 mb-4">Tambah Teks</button>
                          {selectedElement ? (
