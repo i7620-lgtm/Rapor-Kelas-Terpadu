@@ -65,7 +65,7 @@ const DataSiswaPage = (props) => {
 
         const isNameField = fieldDef.key === "namaLengkap";
         const wrapperProps = {
-            className: `px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none ${isNameField ? 'lg:sticky lg:left-[50px] lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''} group-hover:bg-zinc-50`,
+            className: `px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none ${isNameField ? 'sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''} group-hover:bg-zinc-50`,
             style: { ...selectionStyle },
             onMouseDown: (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL' || e.target.tagName === 'IMG') return;
@@ -179,7 +179,7 @@ const DataSiswaPage = (props) => {
                                     }, "No"),
                                     React.createElement('th', { 
                                         scope: "col", 
-                                        className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-default select-none",
+                                        className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px] sticky top-0 left-[50px] z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-default select-none",
                                         style: getSelectionStyle(-1, 0).selectionStyle,
                                         onMouseDown: (e) => {
                                             if (e.button !== 0) return;
