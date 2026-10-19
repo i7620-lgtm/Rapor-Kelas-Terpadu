@@ -57,7 +57,7 @@ const DataAbsensiPage = (props: any) => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 border-b border-zinc-200/60 min-w-[200px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
+                    className="px-6 py-3 border-b border-zinc-200/60 min-w-[200px] sticky top-0 left-[50px] z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
                     style={getSelectionStyle(-1, -1).selectionStyle}
                     onMouseDown={(e: any) => {
                       if (e.button !== 0) return;
@@ -120,7 +120,7 @@ const DataAbsensiPage = (props: any) => {
                         id={`cell-${index}--1`}
                         tabIndex={-1}
                         scope="row"
-                        className="px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60 lg:sticky lg:left-[50px] lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-[#fafafa]"
+                        className="px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60 sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-[#fafafa]"
                         style={getSelectionStyle(index, -1).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;

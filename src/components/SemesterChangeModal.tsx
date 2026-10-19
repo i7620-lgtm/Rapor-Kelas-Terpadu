@@ -130,11 +130,11 @@ const SemesterChangeModal = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm overflow-y-auto"
             onClick={onClose}
         >
             <div 
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col my-8 animate-in fade-in zoom-in-95 duration-200" 
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col my-auto max-h-[90vh] max-h-[90dvh] overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}

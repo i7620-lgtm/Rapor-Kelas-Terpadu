@@ -31,7 +31,7 @@ export const IncompleteDataModal: React.FC<IncompleteDataModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] max-h-[90dvh]">
         <div className="flex items-center justify-between p-3.5 sm:p-4 border-b border-slate-100 bg-amber-50/50">
           <div className="flex items-center gap-2.5 text-amber-600">
             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
