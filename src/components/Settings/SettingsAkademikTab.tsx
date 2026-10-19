@@ -79,6 +79,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             id={getTanggalRaporKey(settings)} 
                                             placeholder="e.g. Jakarta, 22 Juni 2024" 
                                             value={getTanggalRaporValue(settings) || ""}  
+                                            status={getStatus(getTanggalRaporValue(settings))}
                                             onChange={onSettingsChange} 
                                             onBlur={resolvedOnSave} 
                                             onKeyDown={handleKeyDown}
@@ -98,7 +99,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             onKeyDown={handleKeyDown} 
                                         />
                                         <div className="w-full text-left">
-                                            <label htmlFor="nip_kepala_sekolah" className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Kepsek</label>
+                                            <label htmlFor={getContextualKey(settings, 'nip_kepala_sekolah')} className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Kepsek</label>
                                             <div className="flex gap-2 w-full">
                                                 <div className="w-24 flex-shrink-0">
                                                     <select 
@@ -153,7 +154,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             onKeyDown={handleKeyDown} 
                                         />
                                         <div className="w-full text-left">
-                                            <label htmlFor="nip_wali_kelas" className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Wali Kelas</label>
+                                            <label htmlFor={getContextualKey(settings, 'nip_wali_kelas')} className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Wali Kelas</label>
                                             <div className="flex gap-2 w-full">
                                                 <div className="w-24 flex-shrink-0">
                                                     <select 
