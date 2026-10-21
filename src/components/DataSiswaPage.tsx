@@ -5,7 +5,7 @@ import { EmptyState } from './EmptyState';
 import { BulkAddRowModal } from './DataSiswa/BulkAddRowModal';
 import { SiswaTableRow } from './DataSiswa/SiswaTableRow';
 import { useDataSiswaPageLogic } from './DataSiswa/useDataSiswaPageLogic';
-import { processAndCropImage3x4 } from '../utils/imageDB';
+import { processImageWithWorker } from '../workers/workerManager';
 
 const DataSiswaPage = (props) => {
     const logic = useDataSiswaPageLogic(props);
@@ -65,7 +65,7 @@ const DataSiswaPage = (props) => {
 
         const isNameField = fieldDef.key === "namaLengkap";
         const wrapperProps = {
-            className: `px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none ${isNameField ? 'sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''} group-hover:bg-zinc-50`,
+            className: `px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none ${isNameField ? 'lg:sticky lg:left-[50px] z-10 lg:z-20 bg-white shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] min-w-[200px] max-w-[300px]' : ''} group-hover:bg-slate-50 group-focus-within:bg-slate-50`,
             style: { ...selectionStyle },
             onMouseDown: (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL' || e.target.tagName === 'IMG') return;
@@ -99,7 +99,7 @@ const DataSiswaPage = (props) => {
                 }
                 
                 try {
-                    const base64Data = await processAndCropImage3x4(file, 354, 472, 0.9);
+                    const base64Data = await processImageWithWorker(file, 354, 472, 0.9);
                     const newStudents = localStudents.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
                     setLocalStudents(newStudents);
                     onBulkSaveStudents(newStudents);
@@ -169,7 +169,7 @@ const DataSiswaPage = (props) => {
                                 React.createElement('tr', null,
                                     React.createElement('th', { 
                                         scope: "col", 
-                                        className: "w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 text-center border-b border-zinc-200/60 sticky top-0 left-0 z-40 bg-zinc-100 cursor-default select-none",
+                                        className: "w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 text-center border-b border-zinc-200/60 sticky top-0 left-0 z-40 bg-zinc-100 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none",
                                         style: getSelectionStyle(-1, -1).selectionStyle,
                                         onMouseDown: (e) => {
                                             if (e.button !== 0) return;
@@ -179,7 +179,7 @@ const DataSiswaPage = (props) => {
                                     }, "No"),
                                     React.createElement('th', { 
                                         scope: "col", 
-                                        className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[250px] sticky top-0 left-[50px] z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] cursor-default select-none",
+                                        className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[200px] max-w-[300px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] cursor-default select-none",
                                         style: getSelectionStyle(-1, 0).selectionStyle,
                                         onMouseDown: (e) => {
                                             if (e.button !== 0) return;
@@ -206,7 +206,7 @@ const DataSiswaPage = (props) => {
                             ),
                             React.createElement('tbody', null,
                                 localStudents.map((student, rowIndex) => 
-                                    React.createElement('tr', { key: student.id, id: student.id, className: "bg-white hover:bg-[#fafafa]" },
+                                    React.createElement('tr', { key: student.id, id: student.id, className: "bg-white hover:bg-slate-50 focus-within:bg-slate-50 group" },
                                         React.createElement(SiswaTableRow, {
                                             student: student,
                                             rowIndex: rowIndex,

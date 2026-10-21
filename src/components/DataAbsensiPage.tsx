@@ -45,7 +45,7 @@ const DataAbsensiPage = (props: any) => {
                 <tr>
                   <th
                     scope="col"
-                    className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 text-center sticky left-0 top-0 z-40 bg-zinc-100  border-b border-zinc-200/60 relative cursor-default select-none"
+                    className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 text-center sticky left-0 top-0 z-40 bg-zinc-100 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-zinc-200/60 relative cursor-default select-none"
                     style={getSelectionStyle(-1, -2).selectionStyle}
                     onMouseDown={(e: any) => {
                       if (e.button !== 0) return;
@@ -57,7 +57,7 @@ const DataAbsensiPage = (props: any) => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 border-b border-zinc-200/60 min-w-[200px] sticky top-0 left-[50px] z-40 bg-zinc-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
+                    className="px-4 py-3 border-b border-zinc-200/60 min-w-[200px] max-w-[300px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] relative cursor-default select-none"
                     style={getSelectionStyle(-1, -1).selectionStyle}
                     onMouseDown={(e: any) => {
                       if (e.button !== 0) return;
@@ -102,11 +102,11 @@ const DataAbsensiPage = (props: any) => {
                   const total = (studentAtt.sakit ?? 0) + (studentAtt.izin ?? 0) + (studentAtt.alpa ?? 0);
                   
                   return (
-                    <tr key={student.id} id={student.id} className="bg-white hover:bg-[#fafafa]">
+                    <tr key={student.id} id={student.id} className="bg-white hover:bg-slate-50 focus-within:bg-slate-50 group">
                       <td
                         id={`cell-${index}--2`}
                         tabIndex={-1}
-                        className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-4 text-center sticky left-0 z-20 bg-white  border-b border-zinc-200/60 relative cursor-default select-none"
+                        className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-4 text-center sticky left-0 z-20 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-zinc-200/60 relative cursor-default select-none"
                         style={getSelectionStyle(index, -2).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -120,7 +120,7 @@ const DataAbsensiPage = (props: any) => {
                         id={`cell-${index}--1`}
                         tabIndex={-1}
                         scope="row"
-                        className="px-6 py-4 font-medium text-zinc-900 whitespace-nowrap border-b border-zinc-200/60 sticky left-[50px] z-20 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-[#fafafa]"
+                        className="px-4 py-4 font-medium text-zinc-900 border-b border-zinc-200/60 min-w-[200px] max-w-[300px] break-words lg:sticky lg:left-[50px] z-10 lg:z-20 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] relative cursor-default select-none"
                         style={getSelectionStyle(index, -1).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -136,7 +136,7 @@ const DataAbsensiPage = (props: any) => {
                         return (
                           <td
                             key={field}
-                            className="px-4 py-2 text-center border-b border-zinc-200/60 relative cursor-default select-none"
+                            className="px-4 py-2 text-center border-b border-zinc-200/60 relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
                             style={selectionStyle}
                             onMouseDown={(e: any) => {
                               if (e.target.tagName === "INPUT") return;
@@ -171,7 +171,7 @@ const DataAbsensiPage = (props: any) => {
                               onPaste={(e) => handlePaste(e, student.id, field)}
                               className={`w-20 p-2 text-center rounded-lg transition-all relative z-10 ${
                                 showTransparentInput
-                                  ? "bg-transparent border-transparent shadow-none focus:outline-none focus:ring-0"
+                                  ? "bg-white border-transparent shadow-none focus:outline-none focus:ring-0"
                                   : `bg-white border shadow-sm focus:ring-zinc-900 focus:border-zinc-900 ${
                                       studentAtt[field as keyof typeof studentAtt] !== null &&
                                       studentAtt[field as keyof typeof studentAtt] !== undefined &&
@@ -194,7 +194,7 @@ const DataAbsensiPage = (props: any) => {
                       <td
                         id={`cell-${index}-3`}
                         tabIndex={-1}
-                        className="px-6 py-4 text-center font-semibold text-zinc-800 border-b border-zinc-200/60 relative cursor-default select-none"
+                        className="px-6 py-4 text-center font-semibold text-zinc-800 border-b border-zinc-200/60 relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
                         style={getSelectionStyle(index, 3).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
