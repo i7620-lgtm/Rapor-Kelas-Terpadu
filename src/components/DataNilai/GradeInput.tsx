@@ -81,12 +81,12 @@ export const GradeInput = React.memo(({
     readOnly: readOnly,
     className: `${className} transition-all border ${
       showTransparentInput
-        ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0 relative z-10 font-bold"
+        ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0 relative z-10 font-bold"
         : !isFilled
-          ? "border-red-500 ring-1 ring-red-500"
+          ? "border-red-500 ring-1 ring-red-500 bg-white"
           : isBelowKkm
             ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-            : "border-green-500 ring-1 ring-green-500"
+            : "border-green-500 ring-1 ring-green-500 bg-white"
     }`,
   });
 }, (prev, next) => {

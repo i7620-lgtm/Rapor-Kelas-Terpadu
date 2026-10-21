@@ -58,11 +58,11 @@ export const SummativeTableRow = React.memo(({
   }
 
   return (
-    <tr key={student.id} className="border-b hover:bg-slate-50">
+    <tr key={student.id} className="border-b hover:bg-slate-50 focus-within:bg-slate-50 group">
       <td
         id={`cell-${index}--2`}
         tabIndex={-1}
-        className="p-2 text-center sticky z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default"
+        className="p-2 text-center sticky z-10 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none align-top border-r box-border select-none cursor-default"
         style={{
           left: 0,
           width: "50px",
@@ -82,9 +82,11 @@ export const SummativeTableRow = React.memo(({
       <td
         id={`cell-${index}--1`}
         tabIndex={-1}
-        className="p-2 font-medium lg:sticky lg:z-10 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] align-top border-r box-border select-none cursor-default"
+        className="p-2 font-medium static lg:sticky lg:left-[50px] lg:z-10 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] align-top border-r box-border select-none cursor-default w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal"
         style={{
-          left: "50px",
+          width: "260px",
+          minWidth: "200px",
+          maxWidth: "300px",
           ...getSelectionStyle(index, -1).selectionStyle,
         }}
         onMouseDown={(e) => {

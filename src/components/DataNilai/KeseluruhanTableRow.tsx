@@ -20,21 +20,21 @@ export const KeseluruhanTableRow = React.memo(({
   const isStudentMissing = data.hasMissingGrade && showIncompleteHighlight;
   const isStudentFailing = data.hasFailingGrade && showBelowKkmHighlight;
   const studentHighlightClass = isStudentMissing
-    ? "bg-red-100 text-red-700 font-bold"
+    ? "bg-amber-100 text-amber-900 font-bold"
     : isStudentFailing
-      ? "bg-rose-50 text-red-600 font-bold"
-      : "bg-white text-slate-900";
+      ? "bg-rose-100 text-red-700 font-bold"
+      : "bg-white text-slate-900 group-hover:bg-slate-50 group-focus-within:bg-slate-50";
 
   return React.createElement(
     "tr",
-    { key: data.id, id: data.id, className: "bg-white hover:bg-slate-50" },
+    { key: data.id, id: data.id, className: "bg-white hover:bg-slate-50 focus-within:bg-slate-50 group" },
     React.createElement(
       "td",
       {
         id: `keseluruhan-cell-${rowIndex}-0`,
         tabIndex: -1,
         className:
-          `p-2 text-center font-medium sticky z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border cursor-default select-none ${studentHighlightClass}`,
+          `p-2 text-center font-medium sticky z-20 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-r border-slate-200 box-border cursor-default select-none ${studentHighlightClass}`,
         style: {
           left: 0,
           width: "60px",
@@ -56,9 +56,11 @@ export const KeseluruhanTableRow = React.memo(({
       {
         id: `keseluruhan-cell-${rowIndex}-1`,
         tabIndex: -1,
-        className: `p-2 font-medium whitespace-nowrap border-b border-r border-slate-200 sticky z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border ${studentHighlightClass} cursor-default select-none`,
+        className: `p-2 font-medium w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal border-b border-r border-slate-200 static lg:sticky lg:left-[60px] lg:z-20 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border ${studentHighlightClass} cursor-default select-none`,
         style: {
-          left: "60px",
+          width: "260px",
+          minWidth: "200px",
+          maxWidth: "300px",
           ...getSelectionStyle(rowIndex, 1).selectionStyle,
         },
         onMouseDown: (e) => {
@@ -123,7 +125,7 @@ export const KeseluruhanTableRow = React.memo(({
           id: `keseluruhan-cell-${rowIndex}-${colIndex}`,
           tabIndex: -1,
           className:
-            "px-2 py-1 border-b border-slate-200 text-center cursor-default select-none",
+            "px-2 py-1 border-b border-slate-200 text-center cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
           style: selectionStyle,
           onMouseDown: (e) => {
             if (e.button !== 0) return;
@@ -150,7 +152,7 @@ export const KeseluruhanTableRow = React.memo(({
         id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length}`,
         tabIndex: -1,
         className:
-          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none",
+          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
         style: getSelectionStyle(rowIndex, 2 + displaySubjects.length)
           .selectionStyle,
         onMouseDown: (e) => {
@@ -174,7 +176,7 @@ export const KeseluruhanTableRow = React.memo(({
         id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length + 1}`,
         tabIndex: -1,
         className:
-          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none",
+          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
         style: getSelectionStyle(rowIndex, 2 + displaySubjects.length + 1)
           .selectionStyle,
         onMouseDown: (e) => {
