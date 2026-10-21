@@ -34,7 +34,7 @@ export const SiswaTableRow = React.memo(({
             <td 
                 id={`cell-${rowIndex}--1`}
                 tabIndex={-1}
-                className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white cursor-default select-none"
+                className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none"
                 style={getSelectionStyle(rowIndex, -1).selectionStyle}
                 onMouseDown={(e) => {
                     if (e.button !== 0) return;
@@ -74,7 +74,7 @@ export const SiswaTableRow = React.memo(({
                 return React.cloneElement(cell as React.ReactElement, { key: field.key });
             })}
             {/* Action Column -> Skipped grid selection as it's not a data field */}
-            <td className="px-4 py-2 text-center border-b border-zinc-200/60">
+            <td className="px-4 py-2 text-center border-b border-zinc-200/60 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50">
                 <button
                     onClick={() => handleDelete(student.id)}
                     className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 transition-colors"
