@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { parseExcelBlob, exportToExcelBlob } from "../utils/excel";
+import { parseExcelBlob } from "../utils/excel";
+import { exportExcelWithWorker } from "../workers/workerManager";
 import { validateAndSanitizeImportedData } from "../utils/excelValidator";
 import { IMAGE_KEYS, getImageDimensions, processAndCompressImage, saveImageToDB, dataURLToBlob } from "../utils/imageDB";
 import { getDynamicRKTFileName } from "../utils/helpers";
@@ -114,8 +115,19 @@ export const useExcelManager = ({
   }, [parseExcelBlob, predefinedCurriculum, setIsLoading, showToast, applyImportedData]);
 
   const handleExportAll = useCallback(async () => {
+    const handleBeforeUnload = (evt: BeforeUnloadEvent) => {
+      evt.preventDefault();
+      evt.returnValue = 'Proses pembuatan file Excel sedang berlangsung. Yakin ingin meninggalkan halaman?';
+      return evt.returnValue;
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
     try {
-      const blob = await exportToExcelBlob({
+      showToast("Menyiapkan file Excel di latar belakang...", "info");
+      const blob = await exportExcelWithWorker({
         settings,
         students,
         grades,
@@ -137,9 +149,13 @@ export const useExcelManager = ({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       showToast("Data berhasil diekspor!", "success");
-    } catch (e) {
+    } catch (e: any) {
       console.error("Export error", e);
-      showToast(`Gagal mengekspor: ${e.message}`, "error");
+      showToast(`Gagal mengekspor: ${e?.message || 'Terjadi kesalahan'}`, "error");
+    } finally {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      }
     }
   }, [
     settings,
