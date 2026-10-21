@@ -14,7 +14,7 @@ export const KeseluruhanTableHeader = ({ sortBy, displaySubjects }) => {
         "th",
         {
           className:
-            "p-2 text-center sticky top-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b border-r border-slate-200 box-border select-none",
+            "p-2 text-center sticky top-0 z-40 bg-slate-100 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-r border-slate-200 box-border select-none",
           style: {
             left: 0,
             top: 0,
@@ -29,8 +29,13 @@ export const KeseluruhanTableHeader = ({ sortBy, displaySubjects }) => {
         "th",
         {
           className:
-            "p-2 min-w-[200px] max-w-[300px] border-b border-r border-slate-200 sticky top-0 z-40 bg-slate-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] box-border select-none",
-          style: { left: "60px", top: 0 },
+            "p-2 w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal border-b border-r border-slate-200 sticky top-0 z-30 lg:z-40 lg:left-[60px] bg-slate-100 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border select-none",
+          style: {
+            top: 0,
+            width: "260px",
+            minWidth: "200px",
+            maxWidth: "300px",
+          },
         },
         "Nama Siswa",
       ),

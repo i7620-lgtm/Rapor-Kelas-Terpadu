@@ -30,7 +30,16 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
   } = usePrintStore();
 
   const printAreaRef = useRef<HTMLDivElement | null>(null);
+  const isMountedRef = useRef(true);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number; statusText: string } | null>(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      document.getElementById('print-page-style')?.remove();
+    };
+  }, []);
 
   const gradeNumber = useMemo(() => getGradeNumber(settings.nama_kelas), [settings.nama_kelas]);
   const isFaseA = useMemo(() => gradeNumber === 1 || gradeNumber === 2, [gradeNumber]);
@@ -108,6 +117,16 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
     setIsPrinting(true);
     showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
 
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Proses pembuatan PDF sedang berlangsung. Yakin ingin meninggalkan halaman?';
+      return e.returnValue;
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', handleBeforeUnload);
+    }
+
     try {
       if (printAreaRef.current) {
         const pages = Array.from(
@@ -182,11 +201,18 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
           node.style.top = originalTop;
           node.style.zIndex = originalZIndex;
 
+          if (!isMountedRef.current) {
+            console.log('PDF generation aborted: component unmounted');
+            return;
+          }
+
           if (i > 0) {
             pdf.addPage();
           }
           pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
         }
+
+        if (!isMountedRef.current) return;
 
         setExportProgress({
           current: pages.length,
@@ -201,14 +227,23 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
         }
 
         pdf.save(fileName);
-        showToast('PDF berhasil diunduh.', 'success');
+        if (isMountedRef.current) {
+          showToast('PDF berhasil diunduh.', 'success');
+        }
       }
     } catch (error) {
       console.error('PDF generation error:', error);
-      showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+      if (isMountedRef.current) {
+        showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+      }
     } finally {
-      setIsPrinting(false);
-      setExportProgress(null);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      }
+      if (isMountedRef.current) {
+        setIsPrinting(false);
+        setExportProgress(null);
+      }
     }
   };
 

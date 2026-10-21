@@ -8,6 +8,7 @@ import { usePrintRaporPageLogic } from './PrintRapor/usePrintRaporPageLogic';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { IncompleteDataModal } from './IncompleteDataModal';
 import { AlertTriangle } from 'lucide-react';
+import { useProgressiveRender } from './PrintRapor/useProgressiveRender';
 
 interface PrintRaporPageProps {
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
@@ -20,6 +21,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     grades,
     students,
     paperSize,
+    selectedStudentId,
     rankingOption,
     selectedPages,
     
@@ -33,6 +35,19 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     studentsToRender,
     pageStyle,
   } = usePrintRaporPageLogic({ showToast });
+
+  const isAllStudents = selectedStudentId === 'all';
+  const {
+    renderedItems: progressiveStudents,
+    renderedCount,
+    totalCount,
+    isBatchComplete,
+    flushAll,
+  } = useProgressiveRender({
+    items: studentsToRender,
+    batchSize: 3,
+    enabled: isAllStudents,
+  });
 
   const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
   
@@ -52,7 +67,12 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
 
   const combinedIncompleteItems = [...incompleteItems, ...belowKkmItems];
 
-  const onPrintRequest = (action: () => void) => {
+  const onPrintRequest = async (action: () => void) => {
+    if (!isBatchComplete && isAllStudents) {
+      flushAll();
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    }
+
     if (combinedIncompleteItems.length > 0) {
       setPendingPrintAction(() => action);
       setShowIncompleteModal(true);
@@ -139,7 +159,14 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
       />
 
       <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8 animate-fade-in">
-        {studentsToRender.map((student) => {
+        {!isBatchComplete && isAllStudents && (
+          <div className="w-full max-w-xl mx-auto py-2.5 px-4 bg-indigo-50/90 dark:bg-slate-900/90 border border-indigo-200 dark:border-indigo-800 rounded-xl text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2.5 print-hidden">
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping shrink-0" />
+            <span>Menyiapkan pratinjau ({renderedCount} dari {totalCount} siswa)...</span>
+          </div>
+        )}
+
+        {(isAllStudents ? progressiveStudents : studentsToRender).map((student) => {
           const rank = studentRanks.get(student.id)?.rank;
           return (
             <ErrorBoundary

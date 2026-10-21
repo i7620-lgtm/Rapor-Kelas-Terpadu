@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { studentFieldDefinitions } from '../../constants';
-import { processAndCropImage3x4 } from '../../utils/imageDB';
+import { processImageWithWorker } from '../../workers/workerManager';
 import { getClipboardText } from '../../utils/clipboard';
 import { useGridSelection } from '../../hooks/useGridSelection';
 import { useStudentsStore } from '../../stores/useStudentsStore';
@@ -67,6 +67,14 @@ export const useDataSiswaPageLogic = (props) => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [localStudents, setLocalStudents] = useState(students || []);
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     useEffect(() => {
         setLocalStudents(students || []);
@@ -172,39 +180,58 @@ export const useDataSiswaPageLogic = (props) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
         
-        showToast(`Memproses ${files.length} foto...`, "info");
+        showToast(`Memproses ${files.length} foto di latar belakang...`, "info");
+
+        const handleBeforeUnload = (evt: BeforeUnloadEvent) => {
+            evt.preventDefault();
+            evt.returnValue = 'Proses pengolahan foto sedang berjalan. Yakin ingin meninggalkan halaman?';
+            return evt.returnValue;
+        };
+
+        if (files.length > 2 && typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        }
         
         let newStudents = [...localStudents];
         let processedCount = 0;
         
-        for (const file of files) {
-            if (!file.type.startsWith('image/')) continue;
-            
-            const match = file.name.match(/\d+/);
-            if (match) {
-                const number = parseInt(match[0], 10);
-                if (number > 0 && number <= newStudents.length) {
-                    try {
-                        const base64Data = await processAndCropImage3x4(file as File, 354, 472, 0.9);
-                        newStudents[number - 1] = { ...newStudents[number - 1], foto: base64Data };
-                        processedCount++;
-                    } catch (error) {
-                        console.error(`Failed to process photo ${file.name}`, error);
+        try {
+            for (const file of files) {
+                if (!isMountedRef.current) break;
+                if (!(file as File).type.startsWith('image/')) continue;
+                
+                const match = (file as File).name.match(/\d+/);
+                if (match) {
+                    const number = parseInt(match[0], 10);
+                    if (number > 0 && number <= newStudents.length) {
+                        try {
+                            const base64Data = await processImageWithWorker(file as File, 354, 472, 0.9);
+                            if (!isMountedRef.current) break;
+                            newStudents[number - 1] = { ...newStudents[number - 1], foto: base64Data };
+                            processedCount++;
+                        } catch (error) {
+                            console.error(`Failed to process photo ${(file as File).name}`, error);
+                        }
                     }
                 }
             }
+            
+            if (isMountedRef.current) {
+                setLocalStudents(newStudents);
+                onBulkSaveStudents(newStudents);
+                
+                if (processedCount > 0) {
+                    showToast(`Berhasil memproses ${processedCount} foto siswa.`, "success");
+                } else {
+                    showToast("Tidak ada foto yang terpeta ke nomor absen. Pastikan nama file mengandung nomor absen.", "error");
+                }
+            }
+        } finally {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            }
+            if (e.target) e.target.value = '';
         }
-        
-        setLocalStudents(newStudents);
-        onBulkSaveStudents(newStudents);
-        
-        if (processedCount > 0) {
-            showToast(`Berhasil memproses ${processedCount} foto siswa.`, "success");
-        } else {
-            showToast("Tidak ada foto yang terpeta ke nomor absen. Pastikan nama file mengandung nomor absen.", "error");
-        }
-        
-        e.target.value = '';
     };
 
     const handleAddNew = () => {

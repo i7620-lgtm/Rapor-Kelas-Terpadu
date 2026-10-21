@@ -23,7 +23,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sts1"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
+            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -48,7 +48,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sts2"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
+            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -74,7 +74,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sas1"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
+            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -99,7 +99,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sas2"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none"
+            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}

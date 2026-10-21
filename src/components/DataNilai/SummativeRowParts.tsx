@@ -35,7 +35,7 @@ export const SummativeRowScoreCells = ({
       return (
         <React.Fragment key={key}>
           <td
-            className="px-2 py-1 text-center relative cursor-default select-none"
+            className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={styleQnt}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -75,19 +75,19 @@ export const SummativeRowScoreCells = ({
               readOnly={active === "ql"}
               className={`w-full p-2 text-center border rounded-md relative z-10 transition-all ${
                 showTransQnt
-                  ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                  ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                   : active === "qnt"
                   ? numericValue !== ""
                     ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
                       ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                      : "border-green-500 ring-1 ring-green-500"
-                    : "border-red-500 ring-1 ring-red-500"
+                      : "border-green-500 ring-1 ring-green-500 bg-white"
+                    : "border-red-500 ring-1 ring-red-500 bg-white"
                   : "border-slate-300 bg-slate-50"
               }`}
             />
           </td>
           <td
-            className="px-2 py-1 text-center relative cursor-default select-none"
+            className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
             style={styleQl}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -110,13 +110,13 @@ export const SummativeRowScoreCells = ({
               }}
               className={`w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
                 showTransQl
-                  ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                  ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                   : active === "ql"
                   ? qualitativeValue !== ""
                     ? qualitativeValue === "BB"
                       ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                      : "border-green-500 ring-1 ring-green-500"
-                    : "border-red-500 ring-1 ring-red-500"
+                      : "border-green-500 ring-1 ring-green-500 bg-white"
+                    : "border-red-500 ring-1 ring-red-500 bg-white"
                   : "border-slate-300 bg-slate-50"
               }`}
             >
@@ -144,7 +144,7 @@ export const SummativeRowScoreCells = ({
     return (
       <React.Fragment>
         <td
-          className="px-2 py-1 text-center relative cursor-default select-none"
+          className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
           style={styleQnt}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
@@ -174,19 +174,19 @@ export const SummativeRowScoreCells = ({
             readOnly={active === "ql"}
             className={`w-full p-2 text-center border rounded-md relative z-10 transition-all ${
               showTransQnt
-                ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                 : active === "qnt"
                 ? numericValue !== ""
                   ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
                     ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                    : "border-green-500 ring-1 ring-green-500"
-                  : "border-red-500 ring-1 ring-red-500"
+                    : "border-green-500 ring-1 ring-green-500 bg-white"
+                  : "border-red-500 ring-1 ring-red-500 bg-white"
                 : "border-slate-300 bg-slate-50"
             }`}
           />
         </td>
         <td
-          className="px-2 py-1 text-center relative cursor-default select-none"
+          className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
           style={styleQl}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
@@ -209,13 +209,13 @@ export const SummativeRowScoreCells = ({
             }}
             className={`w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
               showTransQl
-                ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                 : active === "ql"
                 ? qualitativeValue !== ""
                   ? qualitativeValue === "BB"
                     ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                    : "border-green-500 ring-1 ring-green-500"
-                  : "border-red-500 ring-1 ring-red-500"
+                    : "border-green-500 ring-1 ring-green-500 bg-white"
+                  : "border-red-500 ring-1 ring-red-500 bg-white"
                 : "border-slate-300 bg-slate-50"
             }`}
           >

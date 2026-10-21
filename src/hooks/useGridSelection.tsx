@@ -247,7 +247,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
           c <= bounds.maxC;
 
         if (isCellSelected) {
-          selectionStyle.backgroundColor = "rgba(79, 70, 229, 0.12)"; // indigo transparent
+          selectionStyle.backgroundColor = "#e0e7ff"; // solid pastel indigo 100% opaque
           if (r === bounds.minR) {
             boxShadows.push("inset 0 2px 0 0 #4f46e5");
             isTopmost = true;
@@ -270,12 +270,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
         selectionStyle.boxShadow = boxShadows.join(", ");
       }
 
-      let isSelectionStartCell =
-        selectionStart && r === selectionStart.r && c === selectionStart.c;
-      let isMultiSelect =
-        bounds && (bounds.maxR > bounds.minR || bounds.maxC > bounds.minC);
-      let showTransparentInput =
-        isCellSelected && isMultiSelect && !isSelectionStartCell;
+      const showTransparentInput = false;
 
       return {
         isCellSelected,

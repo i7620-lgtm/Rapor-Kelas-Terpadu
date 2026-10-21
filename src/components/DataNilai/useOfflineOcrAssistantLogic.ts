@@ -19,6 +19,23 @@ export function useOfflineOcrAssistantLogic(
     const [isFullOcrRunning, setIsFullOcrRunning] = useState(false);
 
     const imageRef = useRef<HTMLImageElement>(null);
+    const isMountedRef = useRef(true);
+    const activeWorkerRef = useRef<any>(null);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+            if (activeWorkerRef.current) {
+                try {
+                    activeWorkerRef.current.terminate();
+                } catch (e) {
+                    console.warn("Failed to terminate OCR worker on unmount:", e);
+                }
+                activeWorkerRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -104,19 +121,30 @@ export function useOfflineOcrAssistantLogic(
             
             canvas.toBlob(async (blob) => {
                 if (!blob) {
-                    setIsAnalyzingCrop(false);
+                    if (isMountedRef.current) setIsAnalyzingCrop(false);
                     return;
                 }
+                let worker: any = null;
                 try {
                     const origin = window.location.origin;
-                    const worker = await Tesseract.createWorker('ind+eng', 1, {
+                    worker = await Tesseract.createWorker('ind+eng', 1, {
                         workerPath: `${origin}/tesseract/worker.min.js`,
                         corePath: `${origin}/tesseract/tesseract-core.wasm.js`,
                         langPath: `${origin}/tesseract`,
                         workerBlobURL: false,
                     });
+                    if (!isMountedRef.current) {
+                        await worker.terminate();
+                        return;
+                    }
+                    activeWorkerRef.current = worker;
                     const ret = await worker.recognize(blob);
                     await worker.terminate();
+                    worker = null;
+                    activeWorkerRef.current = null;
+
+                    if (!isMountedRef.current) return;
+
                     const text = (ret.data.text || "")
                         .replace(/[|❑■●○•♦❖✿/_\\°©®()[\]{}]/g, '')
                         .replace(/\s+/g, ' ')
@@ -134,16 +162,26 @@ export function useOfflineOcrAssistantLogic(
                         }
                     }
                 } catch (err) {
+                    if (worker) {
+                        try { await worker.terminate(); } catch { /* ignore */ }
+                    }
+                    activeWorkerRef.current = null;
                     console.error("Local Cropped OCR error:", err);
-                    showToast("Terjadi kesalahan pengolahan gambar offline.", "error");
+                    if (isMountedRef.current) {
+                        showToast("Terjadi kesalahan pengolahan gambar offline.", "error");
+                    }
                 } finally {
-                    setIsAnalyzingCrop(false);
+                    if (isMountedRef.current) {
+                        setIsAnalyzingCrop(false);
+                    }
                 }
             }, "image/jpeg", 0.95);
         } catch (cropErr) {
             console.error(cropErr);
-            setIsAnalyzingCrop(false);
-            showToast("Gagal memotong area gambar.", "error");
+            if (isMountedRef.current) {
+                setIsAnalyzingCrop(false);
+                showToast("Gagal memotong area gambar.", "error");
+            }
         }
     };
 
@@ -197,16 +235,27 @@ export function useOfflineOcrAssistantLogic(
             }
             
             canvas.toBlob(async (blob) => {
+                let worker: any = null;
                 try {
                     const origin = window.location.origin;
-                    const worker = await Tesseract.createWorker('ind+eng', 1, {
+                    worker = await Tesseract.createWorker('ind+eng', 1, {
                         workerPath: `${origin}/tesseract/worker.min.js`,
                         corePath: `${origin}/tesseract/tesseract-core.wasm.js`,
                         langPath: `${origin}/tesseract`,
                         workerBlobURL: false,
                     });
+                    if (!isMountedRef.current) {
+                        await worker.terminate();
+                        return;
+                    }
+                    activeWorkerRef.current = worker;
                     const ret = await worker.recognize(blob || canvas);
                     await worker.terminate();
+                    worker = null;
+                    activeWorkerRef.current = null;
+
+                    if (!isMountedRef.current) return;
+
                     const text = ret.data.text || "";
                     const rawLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
                     const cleanedLines = rawLines.map(line => {
@@ -218,16 +267,26 @@ export function useOfflineOcrAssistantLogic(
                     setLocalLines(cleanedLines);
                     showToast("Selesai memindai! Potongan kalimat teks berhasil diekstrak.", "success");
                 } catch (err) {
+                    if (worker) {
+                        try { await worker.terminate(); } catch { /* ignore */ }
+                    }
+                    activeWorkerRef.current = null;
                     console.error("Full scan error:", err);
-                    showToast("Gagal memindai gambar otomatis.", "error");
+                    if (isMountedRef.current) {
+                        showToast("Gagal memindai gambar otomatis.", "error");
+                    }
                 } finally {
-                    setIsFullOcrRunning(false);
+                    if (isMountedRef.current) {
+                        setIsFullOcrRunning(false);
+                    }
                 }
             }, "image/jpeg", 0.95);
         } catch (err) {
             console.error(err);
-            showToast("Gagal memproses gambar untuk scan otomatis.", "error");
-            setIsFullOcrRunning(false);
+            if (isMountedRef.current) {
+                showToast("Gagal memproses gambar untuk scan otomatis.", "error");
+                setIsFullOcrRunning(false);
+            }
         }
     };
 
