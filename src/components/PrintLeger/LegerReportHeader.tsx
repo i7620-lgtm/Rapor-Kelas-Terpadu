@@ -1,24 +1,12 @@
 import React from 'react';
-import { generateInitialLayout } from '../../utils/TransliterationUtil';
+import { resolveKopLayout } from '../../utils/TransliterationUtil';
 
 const PAGE_TOP_MARGIN_CM = 1.5;
 const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
 
 export const LegerReportHeader = ({ settings }) => {
     const currentSemester = settings?.semester || 'Ganjil';
-    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
-
-    let rawLayout = settings[layoutField];
-    if (typeof rawLayout === 'string') {
-        try {
-            rawLayout = JSON.parse(rawLayout);
-        } catch {
-            rawLayout = null;
-        }
-    }
-    const layout = Array.isArray(rawLayout) && rawLayout.length > 0
-        ? rawLayout
-        : generateInitialLayout(settings);
+    const layout = resolveKopLayout(settings, currentSemester);
 
     return (
         <div
