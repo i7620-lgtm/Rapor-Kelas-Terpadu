@@ -98,8 +98,8 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
             React.createElement('div', { className: "bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 mb-4 print-hidden" },
                  React.createElement('div', { className: "flex flex-wrap items-start justify-between gap-3" },
                     React.createElement('div', null,
-                        React.createElement('h2', { className: "text-base sm:text-lg font-bold text-slate-800 tracking-tight" }, "Cetak Piagam Penghargaan"),
-                        React.createElement('p', { className: "mt-0.5 text-xs text-slate-500" }, "Buat dan cetak piagam untuk siswa berprestasi.")
+                        React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Cetak Piagam Penghargaan"),
+                        React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" }, "Buat dan cetak piagam untuk siswa berprestasi.")
                     ),
                     React.createElement('div', { className: "flex flex-wrap items-end gap-3" },
                         React.createElement('div', null,

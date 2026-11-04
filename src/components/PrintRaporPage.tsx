@@ -117,7 +117,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
 
   return (
     <>
-      <div className="pt-4 sm:pt-8">
+      <div className="flex flex-col">
         {combinedIncompleteItems.length > 0 && (
           <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-amber-800 print-hidden shadow-sm">
             <div className="flex items-center gap-2.5">

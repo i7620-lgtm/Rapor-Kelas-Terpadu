@@ -20,18 +20,18 @@ const CatatanWaliKelasPage = (props: any) => {
 
   return React.createElement(
     "div",
-    { className: "flex flex-col gap-3 pt-2 sm:pt-4" },
+    { className: "flex flex-col gap-3" },
     React.createElement(
       "div",
       { className: "flex-shrink-0" },
       React.createElement(
         "h2",
-        { className: "text-xl font-bold text-zinc-800 tracking-tight" },
+        { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" },
         "Catatan Wali Kelas",
       ),
       React.createElement(
         "p",
-        { className: "mt-0.5 text-xs text-zinc-500" },
+        { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" },
         "Berikan catatan atau umpan balik mengenai perkembangan siswa selama satu semester."
       ),
     ),

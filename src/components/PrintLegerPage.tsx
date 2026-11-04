@@ -119,7 +119,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
 
   return (
     <>
-      <div className="pt-4 sm:pt-8">
+      <div className="flex flex-col">
         <div ref={cmRef} style={{ height: '1cm', position: 'absolute', visibility: 'hidden', zIndex: -1 }} />
 
         {combinedIncompleteItems.length > 0 && (
@@ -149,8 +149,8 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
         <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 mb-4 print-hidden">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Cetak Leger</h2>
-              <p className="mt-0.5 text-xs text-slate-500">Pratinjau leger nilai akhir siswa.</p>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Cetak Leger</h2>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Pratinjau leger nilai akhir siswa.</p>
             </div>
             
             <div className="flex items-end gap-3 mt-2 md:mt-0">

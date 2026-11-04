@@ -79,10 +79,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 {confirmationModal.children}
             </ConfirmationModal>
 
-            <div className="space-y-4 pt-2 sm:pt-4" id="settings-page-root">
+            <div className="space-y-4" id="settings-page-root">
                 <div className="text-left" id="settings-header">
-                    <h2 className="text-xl font-bold text-slate-800 tracking-tight" id="settings-title">Pengaturan</h2>
-                    <p className="mt-0.5 text-xs text-slate-500" id="settings-desc">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" id="settings-title">Pengaturan</h2>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400" id="settings-desc">
                         Kelola informasi sekolah, periode akademik, dan data penting lainnya. Perubahan disimpan secara otomatis.
                     </p>
                 </div>

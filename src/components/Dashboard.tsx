@@ -23,11 +23,11 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
   const { waliKelasName, stats, academicAlerts, completenessChecks } = useDashboardLogic(props);
 
   return (
-    <div className="flex flex-col gap-4 pt-2 sm:pt-4 animate-fade-in pb-12">
+    <div className="flex flex-col gap-4 animate-fade-in pb-12">
       <div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Ringkasan Eksekutif</h2>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">
-          Selamat datang, <span className="font-semibold text-indigo-700">{waliKelasName}</span>! Berikut adalah ikhtisar terkini mengenai progres kelas Anda.
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Ringkasan Eksekutif</h2>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Selamat datang, <span className="font-semibold text-indigo-700 dark:text-indigo-400">{waliKelasName}</span>! Berikut adalah ikhtisar terkini mengenai progres kelas Anda.
         </p>
       </div>
 
