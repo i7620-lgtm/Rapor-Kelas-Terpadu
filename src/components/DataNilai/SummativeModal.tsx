@@ -45,7 +45,8 @@ export const SummativeModal = (props) => {
     headerRowSpan,
     handleTpSelectionModalClose,
     predefinedCurriculum,
-    availableTPsForSelection
+    availableTPsForSelection,
+    gradeNumber
   } = logic;
 
 return React.createElement(
@@ -58,6 +59,7 @@ return React.createElement(
       subject: subject,
       availableTPs: availableTPsForSelection,
       isLoading: !predefinedCurriculum,
+      currentGrade: gradeNumber,
     }),
     React.createElement(
       "div",

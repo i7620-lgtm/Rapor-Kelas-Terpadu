@@ -561,6 +561,7 @@ export const useSummativeModalLogic = (props) => {
     headerRowSpan,
     handleTpSelectionModalClose,
     predefinedCurriculum,
-    availableTPsForSelection
+    availableTPsForSelection,
+    gradeNumber
   };
 };
