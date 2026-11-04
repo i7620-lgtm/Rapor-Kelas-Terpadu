@@ -1,0 +1,218 @@
+{
+  "Pendidikan Pancasila": [
+    {
+      "slm": "Bab 1: Menjiwai Pancasila dalam Kehidupan Berbangsa",
+      "tp": [
+        "Menganalisis kedudukan Pancasila sebagai ideologi terbuka dan sumber segala sumber hukum",
+        "Mengkritisi penerapan nilai-nilai Pancasila dalam kebijakan publik dan dinamika global",
+        "Menggagas proyek kewarganegaraan untuk memperkokoh kohesi sosial masyarakat"
+      ]
+    },
+    {
+      "slm": "Bab 2: Demokrasi Berdasarkan UUD NRI Tahun 1945",
+      "tp": [
+        "Menganalisis sistem peradilan dan penegakan hukum di Indonesia",
+        "Mengevaluasi kasus pelanggaran hak asasi manusia dan pengingkaran kewajiban warga negara",
+        "Mendorong budaya sadar hukum dan integritas anti-korupsi di kalangan pemuda"
+      ]
+    }
+  ],
+  "Bahasa Indonesia": [
+    {
+      "slm": "Bab 1: Mengenalkan dan Mempromosikan Produk Pangan Lokal",
+      "tp": [
+        "Mengevaluasi akurasi fakta dan data dalam teks eksplanasi dan argumentasi ilmiah",
+        "Mengembangkan gagasan kritis orisinal dalam esai bertema pembangunan berkelanjutan",
+        "Menyusun dokumen formal dan portofolio kebahasaan dengan kaidah EYD terbaru"
+      ]
+    },
+    {
+      "slm": "Bab 2: Menyajikan Berita Inovasi yang Menghibur",
+      "tp": [
+        "Menganalisis struktur retorika teks anekdot dan sindiran sosial konstruktif",
+        "Menulis teks anekdot bermakna filosofis yang mencerminkan realitas sosial",
+        "Mementaskan monolog atau stand-up comedy edukatif dengan etika komunikasi luhur"
+      ]
+    },
+    {
+      "slm": "Bab 3: Menggali Nilai Kearifan Lokal Lewat Cerita Pendek",
+      "tp": [
+        "Membandingkan nilai moral, budaya, dan estetika antara karya klasik dan kontemporer",
+        "Mengadaptasi naskah sastra klasik ke dalam cerpen berlatar kekinian",
+        "Menerbitkan antologi karya sastra siswa melalui media cetak atau digital"
+      ]
+    }
+  ],
+  "Matematika": [
+    {
+      "slm": "Bab 1: Komposisi Fungsi dan Fungsi Invers",
+      "tp": [
+        "Menerapkan sifat eksponen dan logaritma dalam pemodelan peluruhan dan pertumbuhan",
+        "Menyelesaikan persamaan dan pertidaksamaan eksponensial dalam sains dan keuangan",
+        "Menalar fenomena bunga majemuk dan anuitas pinjaman perbankan"
+      ]
+    },
+    {
+      "slm": "Bab 2: Lingkaran dan Persamaan Garis Singgung",
+      "tp": [
+        "Menemukan pola rumus suku ke-n dan jumlah suku deret tak hingga",
+        "Menganalisis persoalan investasi, amortisasi, dan cicilan finansial",
+        "Menerapkan konsep limit dan gradien kurva dalam optimasi sistem industri"
+      ]
+    },
+    {
+      "slm": "Bab 3: Statistika Inferensial dan Analisis Regresi",
+      "tp": [
+        "Menerapkan perbandingan trigonometri sinus, kosinus, tangen dalam navigasi dan fisika",
+        "Menggunakan aturan sinus dan kosinus untuk memecahkan masalah triangulasi geospasial",
+        "Menganalisis kurva trigonometri dalam pemodelan gelombang elektromagnetik"
+      ]
+    },
+    {
+      "slm": "Bab 4: Teori Peluang Majemuk",
+      "tp": [
+        "Menghitung permutasi, kombinasi, dan kaidah pencacahan aturan perkalian",
+        "Menentukan peluang kejadian majemuk saling lepas dan bersyarat",
+        "Mengambil keputusan rasional berbasis analisis probabilitas risiko"
+      ]
+    }
+  ],
+  "Bahasa Inggris": [
+    {
+      "slm": "Unit 1: Sustainable Living and Digital Economy",
+      "tp": [
+        "Identify descriptive details and arguments in spoken and written texts about achievements",
+        "Produce an analytical exposition essay supporting clean energy and sustainable lifestyles",
+        "Conduct professional debates using persuasive evidence and nuanced vocabulary"
+      ]
+    },
+    {
+      "slm": "Unit 2: Financial Literacy in the Cyber Age",
+      "tp": [
+        "Critique aesthetic expressions and social messages in modern artistic works",
+        "Deliver an engaging presentation regarding digital wallet security and financial planning",
+        "Draft academic abstracts and synthesis reports following international standards"
+      ]
+    }
+  ],
+  "Fisika": [
+    {
+      "slm": "Bab 1: Kinematika dan Dinamika Rotasi",
+      "tp": [
+        "Melakukan pengukuran besaran fisika dengan jangka sorong, mikrometer sekrup, dan neraca analitik",
+        "Menganalisis torsi, momen inersia, dan hukum kekekalan momentum sudut",
+        "Merancang instalasi kelistrikan efisien dan aman untuk kebutuhan rumah tangga"
+      ]
+    },
+    {
+      "slm": "Bab 2: Termodinamika dan Efisiensi Mesin Kalor",
+      "tp": [
+        "Menganalisis prinsip kerja panel surya, turbin angin, dan sel bahan bakar hidrogen",
+        "Menerapkan hukum termodinamika pada siklus pendingin dan mesin pembakaran ramah lingkungan",
+        "Menjelaskan dualisme gelombang-partikel dan pemanfaatannya dalam teknologi semikonduktor"
+      ]
+    }
+  ],
+  "Kimia": [
+    {
+      "slm": "Bab 1: Stoikiometri dan Termokimia",
+      "tp": [
+        "Menerapkan 12 prinsip kimia hijau dalam sintesis bahan ramah lingkungan",
+        "Menghitung entalpi reaksi dan efisiensi pembakaran bahan bakar hidrokarbon",
+        "Menganalisis pH larutan penyangga darah dan sistem perairan alami"
+      ]
+    },
+    {
+      "slm": "Bab 2: Laju Reaksi dan Kesetimbangan Kimia",
+      "tp": [
+        "Menyetarakan persamaan reaksi kimia dan menghitung massa zat reaktan-produk",
+        "Menganalisis faktor suhu dan katalis dalam optimalisasi laju reaksi industri",
+        "Merancang baterai ramah lingkungan dan proteksi katodik logam dari perkaratan"
+      ]
+    }
+  ],
+  "Biologi": [
+    {
+      "slm": "Bab 1: Struktur Sel dan Transpor Membran",
+      "tp": [
+        "Menganalisis tingkatan keanekaragaman gen, jenis, dan ekosistem di Indonesia",
+        "Menjelaskan mekanisme difusi, osmosis, dan transpor aktif pada membran sel",
+        "Membedakan reaksi respirasi aerob, fermentasi, dan fotosintesis kloroplas"
+      ]
+    },
+    {
+      "slm": "Bab 2: Sistem Fisiologi Manusia dan Homeostasis",
+      "tp": [
+        "Menjelaskan daur litik-lisogenik virus dan mekanisme vaksinasi mRNA",
+        "Menganalisis integrasi sistem peredaran darah, pernapasan, dan ekskresi tubuh",
+        "Mengevaluasi aplikasi CRISPR, kloning, dan tanaman transgenik dalam etika biosains"
+      ]
+    }
+  ],
+  "Ekonomi": [
+    {
+      "slm": "Bab 1: Pendapatan Nasional dan Kesenjangan Ekonomi",
+      "tp": [
+        "Menganalisis kelangkaan, biaya peluang (opportunity cost), dan alokasi sumber daya",
+        "Menghitung PDB, PNB, dan pendapatan per kapita untuk evaluasi makroekonomi",
+        "Menyusun jurnal umum, buku besar, dan neraca saldo siklus akuntansi jasa dan dagang"
+      ]
+    },
+    {
+      "slm": "Bab 2: Kebijakan Moneter, Fiskal, dan Pengendalian Inflasi",
+      "tp": [
+        "Menganalisis instrumen investasi saham, obligasi, dan reksadana dengan mitigasi risiko",
+        "Mengevaluasi instrumen suku bunga BI-Rate dan subsidi APBN dalam stabilitas harga",
+        "Menganalisis neraca pembayaran, kurs valuta asing, dan proteksi industri nasional"
+      ]
+    }
+  ],
+  "Informatika": [
+    {
+      "slm": "Bab 1: Rekayasa Perangkat Lunak dan Basis Data (SQL)",
+      "tp": [
+        "Menganalisis efisiensi algoritma sorting dan searching menggunakan notasi Big-O",
+        "Merancang skema relasi database (ERD) dan mengeksekusi query SQL transaksi",
+        "Melatih model AI sederhana menggunakan Python untuk computer vision dan NLP"
+      ]
+    },
+    {
+      "slm": "Bab 2: Keamanan Siber (Cybersecurity) dan Kriptografi",
+      "tp": [
+        "Mengembangkan web app interaktif menggunakan HTML, CSS, JavaScript, dan REST API",
+        "Mengidentifikasi kerentanan web (SQL injection, XSS) serta menerapkan enkripsi kunci publik",
+        "Mendeploy aplikasi microservices pada arsitektur cloud serverless"
+      ]
+    }
+  ],
+  "Koding dan Kecerdasan Artifisial": [
+    {
+      "slm": "Bab 1: Fundamental Machine Learning dan Etika Algoritma",
+      "tp": [
+        "Memahami arsitektur neural networks dan pipeline data sains modern",
+        "Menganalisis bias data dan tata kelola privasi pada sistem kecerdasan artifisial",
+        "Membangun prototipe agen cerdas untuk otomasi proses bisnis sekolah"
+      ]
+    }
+  ],
+  "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
+    {
+      "slm": "Bab 1: Taktik Permainan Beregu dan Manajemen Pertandingan",
+      "tp": [
+        "Menganalisis strategi menyerang dan bertahan pada cabang olahraga beregu",
+        "Menyelenggarakan turnamen olahraga sekolah dengan sistem gugur atau setengah kompetisi",
+        "Menjunjung tinggi sportivitas, disiplin waktu, dan kepemimpinan tim"
+      ]
+    }
+  ],
+  "Muatan Lokal (Bahasa Bali)": [
+    {
+      "slm": "Bab 1: Pidarta lan Dharma Wacana Mabasa Bali",
+      "tp": [
+        "Menyusun dan membawakan pidarta basa Bali bertema moralitas dan kepemimpinan",
+        "Mengaplikasikan wewangsan kruna dan pasang aksara Bali kruna tiron secara tepat",
+        "Mengkaji filosofi Tri Hita Karana dalam karya sastra dan kearifan lokal Bali"
+      ]
+    }
+  ]
+}
