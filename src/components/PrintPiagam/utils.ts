@@ -1,4 +1,4 @@
-import { generateInitialLayout } from '../../utils/TransliterationUtil';
+import { resolveKopLayout } from '../../utils/TransliterationUtil';
 
 export const PAPER_SIZES = {
     A4: { width: '29.7cm', height: '21cm' },
@@ -36,21 +36,8 @@ export const getTextWidth = (text: string, font: string) => {
 };
 
 export const generateInitialPiagamLayout = (settings: any) => {
-    // Generate the base layout first, which now has dynamically correct Y positions.
     const currentSemester = settings?.semester || 'Ganjil';
-    const kopLayoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
-    
-    let rawLayout = settings[kopLayoutField];
-    if (typeof rawLayout === 'string') {
-        try {
-            rawLayout = JSON.parse(rawLayout);
-        } catch {
-            rawLayout = null;
-        }
-    }
-    const kopLayout = Array.isArray(rawLayout) && rawLayout.length > 0 
-        ? JSON.parse(JSON.stringify(rawLayout)) 
-        : generateInitialLayout(settings);
+    const kopLayout = resolveKopLayout(settings, currentSemester);
     
     const yOffset = 50;
     const xOffset = (PIAGAM_WIDTH - 800) / 2;

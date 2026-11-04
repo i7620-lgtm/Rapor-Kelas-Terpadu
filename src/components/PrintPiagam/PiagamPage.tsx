@@ -98,7 +98,14 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
             <div style={{ position: 'absolute', top: '0.5cm', left: '0.5cm', right: '0.5cm', bottom: '0.5cm' }}>
                 <svg width="100%" height="100%" viewBox={PIAGAM_VIEWBOX} preserveAspectRatio="xMidYMid meet">
                     {!settings.piagam_background && <DefaultPiagamBackground PIAGAM_WIDTH={PIAGAM_WIDTH} PIAGAM_HEIGHT={PIAGAM_HEIGHT} />}
-                    {layout.map((el: any) => {
+                    {layout
+                        .filter((el: any) => {
+                            if (settings?.show_aksara_bali === false) {
+                                if (el.id?.includes('aksara_') || el.fontFamily === 'Noto Sans Balinese') return false;
+                            }
+                            return true;
+                        })
+                        .map((el: any) => {
                         let currentEl = { ...el };
                         
                         // Dynamic Rank Box
