@@ -26,13 +26,42 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
         <section className="animate-fade-in space-y-6" id="section-profil">
                                 <div className="flex justify-between items-center border-b pb-2 mb-4">
                                     <h3 className="text-base font-bold text-slate-800">Profil Sekolah</h3>
-                                    <button
-                                        id="btn-design-kop"
-                                        onClick={() => setIsEditorOpen(true)}
-                                        className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition"
-                                    >
-                                        Desain Kop Surat
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            id="btn-toggle-aksara-bali"
+                                            onClick={() => {
+                                                const newValue = settings.show_aksara_bali === false ? true : false;
+                                                onSettingsChange({ target: { name: 'show_aksara_bali', value: newValue } });
+                                                setTimeout(() => resolvedOnSave && resolvedOnSave(), 50);
+                                            }}
+                                            title="Klik untuk mengaktifkan atau menonaktifkan tampilan Aksara Bali pada kop surat"
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shadow-sm ${
+                                                settings.show_aksara_bali !== false
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                                                    : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`w-2 h-2 rounded-full ${
+                                                    settings.show_aksara_bali !== false
+                                                        ? 'bg-emerald-500 animate-pulse'
+                                                        : 'bg-slate-400 dark:bg-slate-500'
+                                                }`}
+                                            />
+                                            <span>
+                                                Aksara Bali: {settings.show_aksara_bali !== false ? 'Aktif' : 'Nonaktif'}
+                                            </span>
+                                        </button>
+
+                                        <button
+                                            id="btn-design-kop"
+                                            onClick={() => setIsEditorOpen(true)}
+                                            className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition"
+                                        >
+                                            Desain Kop Surat
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
