@@ -4,10 +4,10 @@ const PanduanPage = ({ setActivePage }) => {
     const sections = getSections(setActivePage);
 
     return (
-        React.createElement('div', { className: "flex flex-col h-full gap-4 w-full pb-10 pt-2 sm:pt-4" },
+        React.createElement('div', { className: "flex flex-col h-full gap-4 w-full pb-10" },
             React.createElement('div', { className: "flex-shrink-0" },
-                React.createElement('h2', { className: "text-xl font-bold text-zinc-800 tracking-tight" }, "Panduan Penggunaan"),
-                React.createElement('p', { className: "mt-0.5 text-xs text-zinc-500" }, "Pelajari cara menggunakan aplikasi Rapor Kurikulum Merdeka ini dari awal hingga akhir.")
+                React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Panduan Penggunaan"),
+                React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" }, "Pelajari cara menggunakan aplikasi Rapor Kurikulum Merdeka ini dari awal hingga akhir.")
             ),
 
             React.createElement('div', { className: "space-y-4 mt-2" },

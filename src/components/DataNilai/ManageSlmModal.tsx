@@ -50,6 +50,7 @@ return React.createElement(
       subject: subject,
       availableTPs: availableTPsForSelection,
       isLoading: !predefinedCurriculum,
+      currentGrade: props.gradeNumber,
     }),
     React.createElement(OfflineOcrAssistantModal, {
       isOpen: isOfflineOcrModalOpen,

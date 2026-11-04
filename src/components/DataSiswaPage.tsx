@@ -135,10 +135,10 @@ const DataSiswaPage = (props) => {
             }),
             
             // Fixed Header Section
-            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0 pt-0 pb-1 sm:pb-2" },
+            React.createElement('div', { className: "flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0 mb-1 sm:mb-2" },
                 React.createElement('div', null,
-                    React.createElement('h2', { className: "text-xl font-bold text-zinc-800 tracking-tight" }, "Data Siswa"),
-                    React.createElement('p', { className: "mt-0.5 text-xs text-zinc-500" },
+                    React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Data Siswa"),
+                    React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" },
                         "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis."
                     )
                 ),

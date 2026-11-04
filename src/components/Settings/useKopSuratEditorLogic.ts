@@ -3,7 +3,7 @@ import {
     transliterate, 
     generatePemdaText, 
     expandAndCapitalizeSchoolName, 
-    generateInitialLayout 
+    resolveKopLayout
 } from '../../utils/TransliterationUtil';
 
 export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLayout: (elements: any[]) => void, onClose: () => void) {
@@ -22,19 +22,7 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
     useEffect(() => {
         if (isOpen) {
             const currentSemester = settings?.semester || 'Ganjil';
-            const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
-
-            let rawLayout = settings[layoutField];
-            if (typeof rawLayout === 'string') {
-                try {
-                    rawLayout = JSON.parse(rawLayout);
-                } catch {
-                    rawLayout = null;
-                }
-            }
-            const layoutToLoad = Array.isArray(rawLayout) && rawLayout.length > 0 
-                ? JSON.parse(JSON.stringify(rawLayout))
-                : generateInitialLayout(settings);
+            const layoutToLoad = resolveKopLayout(settings, currentSemester);
     
             const pemdaText = generatePemdaText(settings.kota_kabupaten, settings.provinsi);
             const dinasDetailText = (settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();
@@ -67,8 +55,12 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
                 }
                 return el;
             });
+
+            const filteredLayout = settings?.show_aksara_bali === false
+                ? syncedLayout.filter((el: any) => !el.id?.startsWith('aksara_') && el.fontFamily !== 'Noto Sans Balinese')
+                : syncedLayout;
     
-            setElements(syncedLayout);
+            setElements(filteredLayout);
             setSelectedElementId(null);
         }
     }, [isOpen, settings]);

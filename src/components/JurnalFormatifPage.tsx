@@ -32,7 +32,7 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
   } = useJurnalFormatifPageLogic(props);
 
   return (
-    <div className="flex flex-col gap-6 space-y-0 pt-4 sm:pt-8 animate-fade-in">
+    <div className="flex flex-col gap-4 animate-fade-in">
       {selectedStudent && (
         <StudentJournalModal 
           isOpen={isModalOpen} 
@@ -48,9 +48,9 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
           predefinedCurriculum={predefinedCurriculum}
         />
       )}
-      <div className="flex-shrink-0 pt-2 sm:pt-4">
-        <h2 className="text-xl font-bold text-zinc-800 tracking-tight">Jurnal Formatif</h2>
-        <p className="mt-0.5 text-xs text-zinc-500">Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.</p>
+      <div className="flex-shrink-0 mb-1 sm:mb-2">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Jurnal Formatif</h2>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Catat perkembangan, observasi harian, dan asesmen formatif siswa. Catatan ini membantu dalam memantau proses belajar namun tidak mempengaruhi nilai rapor secara langsung.</p>
       </div>
       {students.length === 0 ? (
         <EmptyState

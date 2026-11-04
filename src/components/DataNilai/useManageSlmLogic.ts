@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useCurriculumStore } from "../../stores/useCurriculumStore";
 
 export const useManageSlmLogic = (props) => {
   const {
@@ -132,6 +133,8 @@ export const useManageSlmLogic = (props) => {
   const handleOpenTpSelection = (slmId) => {
     setSlmForTpSelection(slmId);
     setIsTpSelectionModalOpen(true);
+    const targetGrade = gradeNumber && gradeNumber >= 1 && gradeNumber <= 12 ? gradeNumber : 5;
+    useCurriculumStore.getState().loadPredefinedCurriculum(targetGrade).catch(() => {});
   };
 
   const handleApplyTpSelection = (selectedTexts) => {

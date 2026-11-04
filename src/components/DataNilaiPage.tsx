@@ -115,11 +115,11 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
   };
 
   return (
-    <div className="flex flex-col gap-2 pt-2 sm:pt-4">
-      <div className="flex flex-wrap justify-between items-end gap-2 flex-shrink-0">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0 mb-1 sm:mb-2">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Data Nilai</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Kelola nilai sumatif per mata pelajaran.</p>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Data Nilai</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Kelola nilai sumatif per mata pelajaran.</p>
         </div>
       </div>
 

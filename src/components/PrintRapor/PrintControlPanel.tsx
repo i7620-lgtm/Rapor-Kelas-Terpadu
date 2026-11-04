@@ -67,8 +67,8 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
     <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 mb-4 print-hidden space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">Cetak Rapor</h2>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Cetak Rapor</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.
           </p>
         </div>

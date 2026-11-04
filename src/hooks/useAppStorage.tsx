@@ -163,20 +163,10 @@ export const useAppStorage = () => {
 
           // Cascade load active grade level curriculum templates to avoid empty state on startup
           const currentSettings = useSettingsStore.getState().settings;
-          const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas);
-          if (activeGradeNumber && activeGradeNumber >= 1 && activeGradeNumber <= 6) {
+          const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 5;
+          if (activeGradeNumber >= 1 && activeGradeNumber <= 12) {
             try {
-              const baseUrl = import.meta.env.BASE_URL || '/';
-              const tpUrl = baseUrl.endsWith('/') ? `${baseUrl}tp${activeGradeNumber}.json` : `${baseUrl}/tp${activeGradeNumber}.json`;
-              const tpRes = await fetch(tpUrl);
-              if (tpRes.ok) {
-                const tpData = await tpRes.json();
-                if (tpData) {
-                  useCurriculumStore.getState().setPredefinedCurriculum(tpData);
-                }
-              } else {
-                console.error(`Failed to load TP preset on startup for Grade ${activeGradeNumber}: HTTP ${tpRes.status}`);
-              }
+              await useCurriculumStore.getState().loadPredefinedCurriculum(activeGradeNumber);
             } catch (tpErr) {
               console.error(`Failed to load TP preset on startup for Grade ${activeGradeNumber}`, tpErr);
             }

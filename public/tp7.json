@@ -1,0 +1,354 @@
+{
+  "Pendidikan Pancasila": [
+    {
+      "slm": "Bab 1: Sejarah Kelahiran Pancasila",
+      "tp": [
+        "Menganalisis kronologis kelahiran dan perumusan Pancasila sebagai dasar negara",
+        "Menunjukkan komitmen kebangsaan para pendiri negara dalam perumusan dasar negara",
+        "Menghargai keberagaman pandangan dalam musyawarah pembentukan ideologi bangsa"
+      ]
+    },
+    {
+      "slm": "Bab 2: Norma dan UUD NRI Tahun 1945",
+      "tp": [
+        "Mengidentifikasi macam-macam norma dalam kehidupan bermasyarakat",
+        "Menerapkan perilaku patuh terhadap aturan hukum dan norma sosial",
+        "Menganalisis peranan UUD NRI Tahun 1945 sebagai hukum tertinggi"
+      ]
+    },
+    {
+      "slm": "Bab 3: Kesatuan Indonesia dan Karakteristik Daerah",
+      "tp": [
+        "Memahami pentingnya persatuan dan kesatuan bangsa dalam wadah NKRI",
+        "Menghargai keunikan dan potensi daerah masing-masing dalam kerangka nasional",
+        "Berpartisipasi aktif dalam kegiatan gotong royong dan toleransi antarwarga"
+      ]
+    },
+    {
+      "slm": "Bab 4: Kebinekaan Indonesia",
+      "tp": [
+        "Menjelaskan makna Bhinneka Tunggal Ika dalam kehidupan multikultural",
+        "Mengembangkan sikap empati dan anti-diskriminasi di lingkungan sekolah dan masyarakat",
+        "Mempromosikan pelestarian budaya lokal dan nasional di era digital"
+      ]
+    }
+  ],
+  "Bahasa Indonesia": [
+    {
+      "slm": "Bab 1: Jelajah Nusantara (Teks Deskripsi)",
+      "tp": [
+        "Mengidentifikasi informasi dan gagasan utama dalam teks deskriptif",
+        "Menganalisis struktur dan ciri kebahasaan teks deskripsi dengan kritis",
+        "Menulis teks deskripsi yang menarik dan santun tentang objek wisata atau budaya daerah"
+      ]
+    },
+    {
+      "slm": "Bab 2: Berkelana di Alam Fantasi (Teks Cerita Fantasi)",
+      "tp": [
+        "Menemukan alur, tokoh, dan pesan moral dalam cerita naratif imajinatif",
+        "Menceritakan kembali isi cerita secara lisan dengan ekspresi dan intonasi yang memikat",
+        "Menggubah cerita fantasi kreatif berbasis kekayaan dongeng Nusantara"
+      ]
+    },
+    {
+      "slm": "Bab 3: Hal yang Baik bagi Tubuh (Teks Prosedur)",
+      "tp": [
+        "Memahami langkah-langkah kerja dan instruksi teknis dalam teks prosedur",
+        "Menilai akurasi dan kelogisan urutan petunjuk pelaksanaan",
+        "Menyusun teks prosedur yang praktis dan aplikatif untuk kegiatan sehari-hari"
+      ]
+    },
+    {
+      "slm": "Bab 4: Membuka Gerbang Dunia (Teks Berita)",
+      "tp": [
+        "Memilah fakta dan opini dalam berbagai media informasi digital",
+        "Menelaah unsur 5W+1H (Adiksimba) dalam teks berita aktual",
+        "Menulis berita peristiwa aktual sekolah dengan bahasa jurnalistik yang objektif"
+      ]
+    }
+  ],
+  "Matematika": [
+    {
+      "slm": "Bab 1: Bilangan Bulat dan Bilangan Rasional",
+      "tp": [
+        "Memahami konsep dan operasi hitung bilangan bulat, pecahan, dan desimal",
+        "Menyelesaikan masalah kontekstual yang berkaitan dengan aritmetika rasional",
+        "Menerapkan konsep bilangan berpangkat dalam estimasi ilmiah"
+      ]
+    },
+    {
+      "slm": "Bab 2: Aljabar dan Persamaan Linier Satu Variabel",
+      "tp": [
+        "Menyederhanakan bentuk aljabar menggunakan operasi penjumlahan dan perkalian",
+        "Memodelkan permasalahan nyata ke dalam persamaan linier satu variabel",
+        "Menentukan nilai variabel yang memenuhi model matematika kontekstual"
+      ]
+    },
+    {
+      "slm": "Bab 3: Perbandingan dan Aritmetika Sosial",
+      "tp": [
+        "Menghitung perbandingan senilai dan berbalik nilai dalam kehidupan nyata",
+        "Menganalisis untung, rugi, diskon, bruto, tara, dan neto dalam transaksi jual beli",
+        "Menerapkan perhitungan bunga tunggal dan pajak secara teliti"
+      ]
+    },
+    {
+      "slm": "Bab 4: Garis, Sudut, dan Geometri Bidang",
+      "tp": [
+        "Menentukan hubungan antarsudut yang terbentuk oleh dua garis sejajar yang dipotong garis lain",
+        "Menghitung keliling dan luas bangun datar segi empat dan segitiga",
+        "Menyelesaikan permasalahan geometri lingkungan sekitar dengan penalaran spasial"
+      ]
+    },
+    {
+      "slm": "Bab 5: Penyajian Data dan Statistika Dasar",
+      "tp": [
+        "Mengumpulkan, mengorganisasi, dan menyajikan data dalam bentuk tabel dan diagram",
+        "Menganalisis mean, median, dan modus untuk penarikan kesimpulan",
+        "Mengevaluasi interpretasi data media secara kritis"
+      ]
+    }
+  ],
+  "Ilmu Pengetahuan Alam": [
+    {
+      "slm": "Bab 1: Hakikat Ilmu Sains dan Metode Ilmiah",
+      "tp": [
+        "Mengenal cabang sains, alat laboratorium, dan keselamatan kerja laboratorium",
+        "Merancang dan melakukan penyelidikan ilmiah menggunakan variabel terkontrol",
+        "Mengolah data pengukuran serta menarik kesimpulan berdasarkan bukti ilmiah"
+      ]
+    },
+    {
+      "slm": "Bab 2: Zat, Wujud, dan Perubahannya",
+      "tp": [
+        "Menjelaskan perbedaan wujud zat berdasarkan teori partikel materi",
+        "Membedakan perubahan fisika dan perubahan kimia dalam fenomena alam",
+        "Menghitung massa jenis benda melalui eksperimen langsung"
+      ]
+    },
+    {
+      "slm": "Bab 3: Suhu, Kalor, dan Pemuaian",
+      "tp": [
+        "Mengukur suhu menggunakan termometer dan mengonversi skala suhu",
+        "Menganalisis pengaruh kalor terhadap perubahan wujud dan suhu benda",
+        "Memahami mekanisme perpindahan kalor (konduksi, konveksi, radiasi) dalam kehidupan"
+      ]
+    },
+    {
+      "slm": "Bab 4: Gerak Lurus dan Gaya",
+      "tp": [
+        "Membedakan jarak, perpindahan, kelajuan, dan kecepatan benda bergerak",
+        "Menerapkan Hukum Newton tentang gerak dalam kehidupan sehari-hari",
+        "Menganalisis gaya gesek, gaya gravitasi, dan gaya apung secara kualitatif"
+      ]
+    },
+    {
+      "slm": "Bab 5: Ekologi dan Keanekaragaman Hayati Indonesia",
+      "tp": [
+        "Menganalisis interaksi komponen biotik dan abiotik dalam ekosistem",
+        "Membuat jaring-jaring makanan dan piramida ekologi",
+        "Merancang solusi penanganan pencemaran lingkungan dan konservasi keanekaragaman hayati"
+      ]
+    }
+  ],
+  "Ilmu Pengetahuan Sosial": [
+    {
+      "slm": "Bab 1: Keluarga Awal Kehidupan dan Ruang Geografis",
+      "tp": [
+        "Memahami keberadaan diri dan keluarga dalam konteks ruang dan waktu",
+        "Membaca peta dan orientasi keruangan wilayah Indonesia",
+        "Menjelaskan interaksi antarruang dan dampaknya terhadap kegiatan sosial ekonomi"
+      ]
+    },
+    {
+      "slm": "Bab 2: Keberagaman Lingkungan Sekitar dan Praaksara",
+      "tp": [
+        "Menganalisis corak kehidupan masyarakat masa praaksara di kepulauan Indonesia",
+        "Memahami interaksi sosial asosiatif dan disosiatif di lingkungan sekolah",
+        "Menghargai peninggalan budaya dan tradisi kearifan lokal"
+      ]
+    },
+    {
+      "slm": "Bab 3: Potensi Ekonomi Lingkungan dan Kelangkaan",
+      "tp": [
+        "Menjelaskan konsep kebutuhan, kelangkaan, dan skala prioritas konsumsi",
+        "Menganalisis peran pelaku ekonomi (rumah tangga, perusahaan, pemerintah)",
+        "Mengembangkan literasi keuangan sederhana dan kebiasaan menabung"
+      ]
+    },
+    {
+      "slm": "Bab 4: Pemberdayaan Masyarakat dan Komunitas Lokal",
+      "tp": [
+        "Mengidentifikasi bentuk keragaman sosial budaya di Indonesia",
+        "Menganalisis peran komunitas lokal dalam pembangunan berkelanjutan",
+        "Merancang aksi nyata pemberdayaan lingkungan sosial di sekitar tempat tinggal"
+      ]
+    }
+  ],
+  "Bahasa Inggris": [
+    {
+      "slm": "Chapter 1: About Me (Greetings and Self-Introduction)",
+      "tp": [
+        "Introduce oneself and others politely using simple personal details",
+        "Use expressions of greetings, leave-taking, thanking, and apologizing accurately",
+        "Write a short and clear personal profile for classroom social interactions"
+      ]
+    },
+    {
+      "slm": "Chapter 2: Culinary and Daily Habits",
+      "tp": [
+        "Identify ingredients, cooking steps, and dietary habits in procedural descriptions",
+        "Express food preferences, likes, and dislikes appropriately",
+        "Create a simple procedural recipe text with accurate imperative verbs"
+      ]
+    },
+    {
+      "slm": "Chapter 3: Home Sweet Home (Rooms and Household Objects)",
+      "tp": [
+        "Describe rooms, household furniture, and locations using prepositions of place",
+        "Give directions and explain spatial layouts inside buildings",
+        "Compose a short descriptive text about favorite personal spaces"
+      ]
+    },
+    {
+      "slm": "Chapter 4: My School Activities and Timetables",
+      "tp": [
+        "Talk about school subjects, weekly schedules, and classroom duties",
+        "Express opinions and ask questions about school activities fluently",
+        "Write a weekly schedule and reflective study journal in English"
+      ]
+    }
+  ],
+  "Pendidikan Jasmani, Olahraga, dan Kesehatan": [
+    {
+      "slm": "Bab 1: Permainan Bola Besar (Sepak Bola, Bola Voli, Bola Basket)",
+      "tp": [
+        "Mempraktikkan variasi gerak spesifik passing, dribbling, dan shooting",
+        "Menerapkan taktik dan strategi bermain beregu secara sportif",
+        "Menunjukkan sikap kerja sama, saling menghargai, dan menerima kekalahan"
+      ]
+    },
+    {
+      "slm": "Bab 2: Permainan Bola Kecil (Bulu Tangkis dan Kasti/Rounders)",
+      "tp": [
+        "Menguasai gerak dasar servis, pukulan lob, dan smes dalam bulu tangkis",
+        "Memahami aturan pertandingan dan peraturan perwasitan sederhana",
+        "Meningkatkan kelincahan, ketepatan, dan konsentrasi gerak motorik"
+      ]
+    },
+    {
+      "slm": "Bab 3: Kebugaran Jasmani dan Pola Hidup Sehat",
+      "tp": [
+        "Melakukan pengukuran tingkat kebugaran jasmani (daya tahan, kekuatan, kelenturan)",
+        "Menyusun program latihan kebugaran jasmani mandiri yang teratur",
+        "Memahami gizi seimbang dan bahaya rokok, narkoba, serta pergaulan bebas"
+      ]
+    }
+  ],
+  "Informatika": [
+    {
+      "slm": "Bab 1: Berpikir Komputasional (Computational Thinking)",
+      "tp": [
+        "Menerapkan dekomposisi, pengenalan pola, abstraksi, dan algoritma pada pemecahan masalah",
+        "Menyelesaikan teka-teki logika komputasi bertingkat secara sistematis",
+        "Merancang alur logika program sederhana menggunakan pseudocode dan flowchart"
+      ]
+    },
+    {
+      "slm": "Bab 2: Teknologi Informasi dan Komunikasi (TIK)",
+      "tp": [
+        "Memanfaatkan aplikasi pengolah kata, angka, dan presentasi secara kolaboratif",
+        "Mengelola manajemen file dan folder di cloud storage dengan aman",
+        "Menerapkan teknik pencarian informasi yang kredibel menggunakan mesin peramban"
+      ]
+    },
+    {
+      "slm": "Bab 3: Sistem Komputer dan Jaringan Internet",
+      "tp": [
+        "Menjelaskan interaksi antara perangkat keras (hardware), lunak (software), dan pengguna (brainware)",
+        "Memahami cara kerja jaringan lokal (LAN) dan internet serta enkripsi data dasar",
+        "Menjaga keamanan data pribadi dari ancaman phishing dan malware"
+      ]
+    },
+    {
+      "slm": "Bab 4: Algoritma dan Pemrograman Blok (Visual Programming)",
+      "tp": [
+        "Membuat program animasi atau game interaktif menggunakan pemrograman visual (Scratch/Blockly)",
+        "Menggunakan variabel, percabangan (if-else), dan perulangan (looping)",
+        "Melakukan debugging dan pengujian program komputer secara mandiri"
+      ]
+    }
+  ],
+  "Seni Budaya (Seni Rupa)": [
+    {
+      "slm": "Bab 1: Menggambar Ragam Hias dan Bentuk Geometris",
+      "tp": [
+        "Menganalisis unsur seni rupa (titik, garis, bidang, warna, tekstur) pada karya seni",
+        "Membuat motif ragam hias fauna, flora, atau geometris Nusantara",
+        "Menghargai kekayaan visual warisan budaya tradisional Indonesia"
+      ]
+    },
+    {
+      "slm": "Bab 2: Mendesain Tipografi dan Logo Sederhana",
+      "tp": [
+        "Mengeksplorasi gaya huruf dan keterbacaan tipografi untuk pesan visual",
+        "Merancang logo atau simbol identitas kelompok dengan komposisi estetis",
+        "Mempresentasikan konsep karya seni rupa secara komunikatif"
+      ]
+    }
+  ],
+  "Koding dan Kecerdasan Artifisial": [
+    {
+      "slm": "Bab 1: Pengantar Logika Coding dan Kecerdasan Artifisial",
+      "tp": [
+        "Memahami prinsip dasar algoritma otomasi dan kecerdasan artifisial dalam kehidupan",
+        "Mengenal konsep machine learning sederhana (klasifikasi gambar dan teks)",
+        "Menilai dampak positif dan etika penggunaan AI bagi dunia pendidikan"
+      ]
+    },
+    {
+      "slm": "Bab 2: Proyek Pemrograman Aplikasi Sederhana",
+      "tp": [
+        "Merancang solusi masalah lingkungan sekolah melalui aplikasi berbasis blok",
+        "Mengintegrasikan sensor suara atau kamera dalam program coding interaktif",
+        "Mendemonstrasikan hasil karya aplikasi inovatif di depan kelas"
+      ]
+    }
+  ],
+  "Muatan Lokal (Bahasa Bali)": [
+    {
+      "slm": "Bab 1: Mabebaosan Mabasa Bali (Percakapan dan Tata Krama)",
+      "tp": [
+        "Menerapkan anggah-ungguh basa Bali dalam percakapan sehari-hari",
+        "Membedakan kosakata basa alus, basa andap, dan basa kasar dengan tepat",
+        "Mempraktikkan dialog sopan santun kepada guru dan sesama teman"
+      ]
+    },
+    {
+      "slm": "Bab 2: Kasusastran Bali lan Pasang Aksara Bali",
+      "tp": [
+        "Menganalisis pesan moral dalam gending rare dan satua Bali",
+        "Membaca dan menulis teks sederhana menggunakan aksara Bali secara benar",
+        "Melestarikan sastra dan seni budaya Bali di lingkungan sekolah"
+      ]
+    }
+  ],
+  "Pendidikan Agama dan Budi Pekerti (Islam)": [
+    {
+      "slm": "Bab 1: Meraih Kedamaian dengan Menghafal Al-Qur'an dan Hadis",
+      "tp": [
+        "Membaca ayat Al-Qur'an pilihan dengan tajwid yang fasih dan benar",
+        "Memahami kandungan ayat tentang menuntut ilmu, toleransi, dan keikhlasan",
+        "Menerapkan pesan luhur Al-Qur'an dalam pergaulan sehari-hari"
+      ]
+    },
+    {
+      "slm": "Bab 2: Meneladani Sifat Mulia Rasulullah dan Sahabat",
+      "tp": [
+        "Menganalisis sejarah perjuangan dakwah Nabi Muhammad SAW di Madinah",
+        "Meneladani sifat jujur, amanah, fathanah, dan tabligh",
+        "Membangun akhlak terpuji terhadap orang tua, guru, dan sesama manusia"
+      ]
+    }
+  ]
+}
