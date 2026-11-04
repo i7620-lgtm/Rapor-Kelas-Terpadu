@@ -19,27 +19,16 @@ export const useClassChangeCascade = () => {
    * Fetches the predefined curriculum SLM and TP from public JSON presets based on grade level
    */
   const fetchAndLoadPredefinedCurriculum = useCallback(async (gradeNumber: number) => {
-    if (!gradeNumber || gradeNumber < 1 || gradeNumber > 6) {
+    if (!gradeNumber || gradeNumber < 1 || gradeNumber > 12) {
       setPredefinedCurriculum(null);
       return null;
     }
     
     try {
-      const baseUrl = import.meta.env.BASE_URL || '/';
-      const tpUrl = baseUrl.endsWith('/') ? `${baseUrl}tp${gradeNumber}.json` : `${baseUrl}/tp${gradeNumber}.json`;
-      const response = await fetch(tpUrl);
-      if (response.ok) {
-        const data = await response.json();
-        setPredefinedCurriculum(data);
-        return data;
-      } else {
-        console.error(`Failed to fetch TP preset for Grade ${gradeNumber}: status ${response.status}`);
-        setPredefinedCurriculum(null);
-        return null;
-      }
+      const data = await useCurriculumStore.getState().loadPredefinedCurriculum(gradeNumber);
+      return data;
     } catch (e) {
       console.error(`Error fetching TP preset for Grade ${gradeNumber}`, e);
-      setPredefinedCurriculum(null);
       return null;
     }
   }, [setPredefinedCurriculum]);
