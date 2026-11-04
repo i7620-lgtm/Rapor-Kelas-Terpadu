@@ -291,7 +291,8 @@ export function expandAndCapitalizeSchoolName(name) {
     return processedName.toUpperCase();
 }
 
-export const generateInitialLayout = (appSettings) => {
+export const generateInitialLayout = (appSettings: any) => {
+    const showAksara = appSettings?.show_aksara_bali !== false;
     const pemdaText = generatePemdaText(appSettings.kota_kabupaten, appSettings.provinsi);
     const dinasDetailText = (appSettings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA").toUpperCase();
     const sekolahText = expandAndCapitalizeSchoolName(appSettings.nama_sekolah || "SEKOLAH DASAR NEGERI 2 PADANGSAMBIAN");
@@ -305,56 +306,134 @@ export const generateInitialLayout = (appSettings) => {
         appSettings.faksimile ? `Faksimile: ${appSettings.faksimile}` : null,
     ].filter(Boolean).join(' | ');
 
-    const contentElements = [];
-    let currentY = 13; // Start Y position for the first text line's baseline
+    const contentElements: any[] = [];
 
-    // Add elements sequentially, updating currentY after each one
-    contentElements.push({ id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
-    currentY += 22; // Space for next line
+    if (showAksara) {
+        // Layout dengan Aksara Bali (Tradisional 8 baris teks + kontak)
+        let currentY = 13;
 
-    contentElements.push({ id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
-    currentY += 22;
+        contentElements.push({ id: 'aksara_dinas_text', type: 'text', content: transliterate(pemdaText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
+        currentY += 22;
 
-    contentElements.push({ id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
-    currentY += 22;
+        contentElements.push({ id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
+        currentY += 22;
 
-    contentElements.push({ id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
-    currentY += 22;
+        contentElements.push({ id: 'aksara_dinas_detail_text', type: 'text', content: transliterate(dinasDetailText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 13, fontFamily: 'Noto Sans Balinese' });
+        currentY += 22;
 
-    contentElements.push({ id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' });
-    currentY += 27; // Larger font requires more space
+        contentElements.push({ id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 14 });
+        currentY += 22;
 
-    contentElements.push({ id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 });
-    currentY += 22;
+        contentElements.push({ id: 'aksara_sekolah_text', type: 'text', content: transliterate(sekolahText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 17, fontFamily: 'Noto Sans Balinese' });
+        currentY += 27;
 
-    contentElements.push({ id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' });
-    currentY += 18; // Increased from 13 to provide space for Balinese script hangers
+        contentElements.push({ id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 18 });
+        currentY += 22;
 
-    contentElements.push({ id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
-    currentY += 13;
+        contentElements.push({ id: 'aksara_alamat_telp_text', type: 'text', content: transliterate(alamatTelpText), x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10, fontFamily: 'Noto Sans Balinese' });
+        currentY += 18;
 
-    if (contactLine2) {
-        contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
-        currentY += 13; // Add space even after the last element for line calculation
+        contentElements.push({ id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+        currentY += 13;
+
+        if (contactLine2) {
+            contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 10 });
+            currentY += 13;
+        }
+
+        const logoY = 50;
+        const logoHeight = 85;
+        contentElements.push(
+            { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: logoY, width: 85, height: logoHeight },
+            { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: logoY, width: 85, height: logoHeight }
+        );
+
+        const textBlockBottom = currentY;
+        const logoBlockBottom = logoY + logoHeight;
+        const contentBottomY = Math.max(textBlockBottom, logoBlockBottom);
+
+        const lineBuffer = 5;
+        const lineElement = { id: 'line_1', type: 'line', content: '', x: 10, y: contentBottomY + lineBuffer, width: 780, height: 3 };
+
+        return [...contentElements, lineElement];
+    } else {
+        // Layout Tanpa Aksara Bali (Nasional Formal Proporsional Terpusat Vertikal)
+        // Penyesuaian ukuran font Latin meningkat secukupnya dan logo sejajar rapi
+        let currentY = contactLine2 ? 36 : 40;
+
+        contentElements.push({ id: 'latin_dinas_text', type: 'text', content: pemdaText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 15.5 });
+        currentY += 23;
+
+        contentElements.push({ id: 'latin_dinas_detail_text', type: 'text', content: dinasDetailText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 15.5 });
+        currentY += 27;
+
+        contentElements.push({ id: 'latin_sekolah_text', type: 'text', content: sekolahText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'bold', fontSize: 21 });
+        currentY += 24;
+
+        contentElements.push({ id: 'latin_alamat_telp_text', type: 'text', content: alamatTelpText, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 11.5 });
+        currentY += 16;
+
+        if (contactLine2) {
+            contentElements.push({ id: 'latin_kontak_lainnya_text', type: 'text', content: contactLine2, x: 120, y: currentY, width: 560, textAlign: 'center', fontWeight: 'normal', fontSize: 11 });
+            currentY += 16;
+        }
+
+        const logoY = 36;
+        const logoHeight = 88;
+        contentElements.push(
+            { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: logoY, width: 88, height: logoHeight },
+            { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 692, y: logoY, width: 88, height: logoHeight }
+        );
+
+        const textBlockBottom = currentY;
+        const logoBlockBottom = logoY + logoHeight;
+        const contentBottomY = Math.max(textBlockBottom, logoBlockBottom);
+
+        const lineBuffer = 8;
+        const lineElement = { id: 'line_1', type: 'line', content: '', x: 10, y: contentBottomY + lineBuffer, width: 780, height: 3.5 };
+
+        return [...contentElements, lineElement];
     }
-    
-    // Add logos with fixed Y, but use their bottom for line calculation
-    const logoY = 50;
-    const logoHeight = 85;
-    contentElements.push(
-        { id: 'logo_dinas_img', type: 'image', content: 'logo_dinas', x: 20, y: logoY, width: 85, height: logoHeight },
-        { id: 'logo_sekolah_img', type: 'image', content: 'logo_sekolah', x: 695, y: logoY, width: 85, height: logoHeight }
-    );
+};
 
-    // The line should be below the lowest of the text block or logos
-    const textBlockBottom = currentY; // currentY is now the baseline for the *next* element
-    const logoBlockBottom = logoY + logoHeight;
-    const contentBottomY = Math.max(textBlockBottom, logoBlockBottom);
+/**
+ * Resolves the appropriate kop layout according to semester and aksara Bali status.
+ */
+export const resolveKopLayout = (settings: any, currentSemester: string = 'Ganjil'): any[] => {
+    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+    const showAksara = settings?.show_aksara_bali !== false;
 
-    const lineBuffer = 5;
-    const lineElement = { id: 'line_1', type: 'line', content: '', x: 10, y: contentBottomY + lineBuffer, width: 780, height: 3 };
+    let rawLayout = settings ? settings[layoutField] : null;
+    if (typeof rawLayout === 'string') {
+        try {
+            rawLayout = JSON.parse(rawLayout);
+        } catch {
+            rawLayout = null;
+        }
+    }
 
-    return [...contentElements, lineElement];
+    if (!Array.isArray(rawLayout) || rawLayout.length === 0) {
+        return generateInitialLayout(settings);
+    }
+
+    if (!showAksara) {
+        // Filter out aksara elements
+        const filtered = rawLayout.filter((el: any) => 
+            !el.id?.startsWith('aksara_') && 
+            !el.id?.startsWith('kop_aksara_') && 
+            el.fontFamily !== 'Noto Sans Balinese'
+        );
+        // If the user hasn't heavily customized and the layout was standard, return the centered layout
+        const hasCustomPositioning = rawLayout.some((el: any) => 
+            el.id === 'latin_dinas_text' && el.y !== 35 && el.y !== 40 && el.y !== 36
+        );
+        if (!hasCustomPositioning) {
+            return generateInitialLayout(settings);
+        }
+        return filtered;
+    }
+
+    return rawLayout;
 };
 
 /**

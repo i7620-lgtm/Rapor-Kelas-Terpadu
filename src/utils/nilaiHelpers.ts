@@ -1,24 +1,32 @@
 import { QUALITATIVE_DESCRIPTORS } from "../constants";
 
-export const getGradeNumber = (str) => {
+export const getGradeNumber = (str: any): number | null => {
   if (!str) return null;
   const trimmedStr = String(str).trim();
 
   // Priority 1: Check for any Arabic numeral within the string.
   const arabicMatch = trimmedStr.match(/\d+/);
   if (arabicMatch) {
-    return parseInt(arabicMatch[0], 10);
+    const num = parseInt(arabicMatch[0], 10);
+    if (num >= 1 && num <= 12) return num;
   }
 
-  // Priority 2: Check for Roman numerals at the beginning of the string.
-  // The order of checks is important.
+  // Priority 2: Check for Roman numerals (from longest to shortest to prevent prefix collision)
   const upperStr = trimmedStr.toUpperCase();
-  if (upperStr.startsWith("VI")) return 6;
-  if (upperStr.startsWith("V")) return 5;
-  if (upperStr.startsWith("IV")) return 4;
-  if (upperStr.startsWith("III")) return 3;
-  if (upperStr.startsWith("II")) return 2;
-  if (upperStr.startsWith("I")) return 1;
+  const cleanStr = upperStr.replace(/^KELAS\s*/i, "").trim();
+
+  if (cleanStr.startsWith("XII") || upperStr.includes("XII")) return 12;
+  if (cleanStr.startsWith("XI") || upperStr.includes("XI")) return 11;
+  if (cleanStr.startsWith("X") || upperStr.includes(" X") || upperStr.endsWith(" X") || upperStr === "X") return 10;
+  if (cleanStr.startsWith("IX") || upperStr.includes("IX")) return 9;
+  if (cleanStr.startsWith("VIII") || upperStr.includes("VIII")) return 8;
+  if (cleanStr.startsWith("VII") || upperStr.includes("VII")) return 7;
+  if (cleanStr.startsWith("VI") || upperStr.includes("VI")) return 6;
+  if (cleanStr.startsWith("V") || upperStr.includes(" V") || upperStr.endsWith(" V") || upperStr === "V") return 5;
+  if (cleanStr.startsWith("IV") || upperStr.includes("IV")) return 4;
+  if (cleanStr.startsWith("III") || upperStr.includes("III")) return 3;
+  if (cleanStr.startsWith("II") || upperStr.includes("II")) return 2;
+  if (cleanStr.startsWith("I") || upperStr.includes(" I") || upperStr.endsWith(" I") || upperStr === "I") return 1;
 
   return null;
 };
