@@ -189,7 +189,7 @@ const App = () => {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           currentPageName={NAV_ITEMS.find((i) => i.id === activePage)?.label || "Dashboard"}
         />
-        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-3 sm:px-6 sm:pb-6 pt-0">
+        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-3 sm:px-6 sm:pb-6 pt-4 sm:pt-4">
           {isLoading ? (
             "Memuat..."
           ) : (

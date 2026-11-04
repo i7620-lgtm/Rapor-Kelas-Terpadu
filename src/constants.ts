@@ -37,6 +37,7 @@ export const initialSettings = {
   slmVisibility: {}, 
   kop_layout: [],
   piagam_layout: [],
+  show_aksara_bali: true,
   nilaiDisplayMode: 'kuantitatif saja', 
   enableExitWarning: false,
   enableAutoRegression: false,
