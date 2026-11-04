@@ -1,5 +1,5 @@
 import React from 'react';
-import { generateInitialLayout } from '../../utils/TransliterationUtil';
+import { resolveKopLayout } from '../../utils/TransliterationUtil';
 import { PAGE_TOP_MARGIN_CM, PAGE_LEFT_RIGHT_MARGIN_CM } from './raporUtils';
 
 interface ReportHeaderProps {
@@ -8,19 +8,7 @@ interface ReportHeaderProps {
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ settings }) => {
     const currentSemester = settings?.semester || 'Ganjil';
-    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
-
-    let rawLayout = settings[layoutField];
-    if (typeof rawLayout === 'string') {
-        try {
-            rawLayout = JSON.parse(rawLayout);
-        } catch {
-            rawLayout = null;
-        }
-    }
-    const layout = Array.isArray(rawLayout) && rawLayout.length > 0
-        ? rawLayout
-        : generateInitialLayout(settings);
+    const layout = resolveKopLayout(settings, currentSemester);
 
     return (
         React.createElement('div', {
