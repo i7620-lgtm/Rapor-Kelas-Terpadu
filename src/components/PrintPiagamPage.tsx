@@ -68,7 +68,11 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
 
     if (students.length === 0) {
         return (
-            React.createElement('div', { className: "p-6" },
+            React.createElement('div', { className: "space-y-4" },
+                React.createElement('div', { className: "text-left" },
+                    React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Cetak Piagam Penghargaan"),
+                    React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" }, "Buat dan cetak piagam untuk siswa berprestasi.")
+                ),
                 React.createElement(EmptyState, {
                     title: "Belum ada data siswa",
                     description: "Piagam tidak dapat dicetak karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu.",
@@ -81,7 +85,11 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
 
     if (grades.length === 0) {
         return (
-            React.createElement('div', { className: "p-6" },
+            React.createElement('div', { className: "space-y-4" },
+                React.createElement('div', { className: "text-left" },
+                    React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Cetak Piagam Penghargaan"),
+                    React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" }, "Buat dan cetak piagam untuk siswa berprestasi.")
+                ),
                 React.createElement(EmptyState, {
                     title: "Menunggu Data Nilai",
                     description: "Semua data nilai siswa saat ini kosong. Piagam prestasi bergantung pada peringkat nilai. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya.",
@@ -95,42 +103,42 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
     return (
         React.createElement(React.Fragment, null,
             React.createElement(PiagamEditorModal, { isOpen: isEditorOpen, onClose: () => setIsEditorOpen(false), settings: settings, onSaveLayout: handleUpdateLayout }),
-            React.createElement('div', { className: "bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 mb-4 print-hidden" },
+            React.createElement('div', { className: "bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 mb-4 print-hidden" },
                  React.createElement('div', { className: "flex flex-wrap items-start justify-between gap-3" },
                     React.createElement('div', null,
                         React.createElement('h2', { className: "text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight" }, "Cetak Piagam Penghargaan"),
                         React.createElement('p', { className: "mt-0.5 text-xs text-slate-500 dark:text-slate-400" }, "Buat dan cetak piagam untuk siswa berprestasi.")
                     ),
-                    React.createElement('div', { className: "flex flex-wrap items-end gap-3" },
-                        React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'filterSelector', className: "block text-xs font-medium text-slate-700 mb-1" }, 'Tampilkan Peringkat'),
-                            React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-56 py-1.5 px-2.5 text-xs bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
+                    React.createElement('div', { className: "flex flex-wrap items-end gap-3 w-full lg:w-auto" },
+                        React.createElement('div', { className: "w-full sm:w-auto" },
+                            React.createElement('label', { htmlFor: 'filterSelector', className: "block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1" }, 'Tampilkan Peringkat'),
+                            React.createElement('select', { id: "filterSelector", value: selectedFilter, onChange: (e) => setSelectedFilter(e.target.value), className: "w-full sm:w-56 py-1.5 px-2.5 min-h-[44px] lg:min-h-0 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
                                 React.createElement('option', { value: "all" }, "Cetak Semua Peringkat"),
                                 React.createElement('option', { value: "top3" }, "Cetak Peringkat 1-3"),
                                 React.createElement('option', { value: "top10" }, "Cetak Peringkat 1-10")
                             )
                         ),
-                        React.createElement('div', null,
-                            React.createElement('label', { htmlFor: 'paperSizeSelector', className: "block text-xs font-medium text-slate-700 mb-1" }, 'Ukuran Kertas'),
-                            React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-44 py-1.5 px-2.5 text-xs bg-white border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500" },
+                        React.createElement('div', { className: "w-full sm:w-auto" },
+                            React.createElement('label', { htmlFor: 'paperSizeSelector', className: "block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1" }, 'Ukuran Kertas'),
+                            React.createElement('select', { id: "paperSizeSelector", value: paperSize, onChange: (e) => setPaperSize(e.target.value), className: "w-full sm:w-44 py-1.5 px-2.5 min-h-[44px] lg:min-h-0 text-xs bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 tabular-nums" },
                                 Object.keys(PAPER_SIZES).map(key => React.createElement('option', { key: key, value: key }, `${key} (${PAPER_SIZES[key].width} x ${PAPER_SIZES[key].height})`)))
                         ),
-                        React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200" }, "Desain Tata Letak Piagam"),
+                        React.createElement('button', { onClick: () => setIsEditorOpen(true), className: "w-full sm:w-auto px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-medium text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/60 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/70 whitespace-nowrap shrink-0" }, "Desain Tata Letak Piagam"),
                         isMobileDevice ?
-                            React.createElement('button', { onClick: () => onPrintRequest(handleDownloadPDF), disabled: isPrinting, className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
-                            React.createElement('button', { onClick: () => onPrintRequest(handlePrint), disabled: isPrinting, className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
+                            React.createElement('button', { onClick: () => onPrintRequest(handleDownloadPDF), disabled: isPrinting, className: "w-full sm:w-auto px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap shrink-0" }, isPrinting ? 'Mempersiapkan...' : 'Unduh PDF') :
+                            React.createElement('button', { onClick: () => onPrintRequest(handlePrint), disabled: isPrinting, className: "w-full sm:w-auto px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-medium text-white bg-indigo-600 rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap shrink-0" }, isPrinting ? 'Mempersiapkan...' : 'Cetak Piagam')
                     )
                 ),
-                React.createElement('div', { className: "border-t pt-3 mt-3" },
-                    React.createElement('div', { className: "flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs" },
-                        React.createElement('p', { className: "text-xs font-medium text-slate-700 mb-0" }, "Opsi Tanda Tangan:"),
-                        React.createElement('label', { className: "flex items-center space-x-1.5 cursor-pointer" },
-                            React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true', onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-3.5 w-3.5 text-indigo-600 border-gray-300 rounded" }),
-                            React.createElement('span', { className: "text-xs text-slate-700" }, "TTD Kepala Sekolah")
+                React.createElement('div', { className: "border-t border-slate-200 dark:border-slate-700 pt-3 mt-3" },
+                    React.createElement('div', { className: "flex flex-wrap items-center gap-x-5 gap-y-1" },
+                        React.createElement('p', { className: "text-xs font-semibold text-slate-700 dark:text-slate-300 mb-0" }, "Opsi Tanda Tangan:"),
+                        React.createElement('label', { className: "flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0" },
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true', onChange: () => handlePrintOptionChange('showPrincipalSignature'), className: "h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer" }),
+                            React.createElement('span', { className: "text-xs sm:text-sm text-slate-700 dark:text-slate-200" }, "TTD Kepala Sekolah")
                         ),
-                        React.createElement('label', { className: "flex items-center space-x-2" },
-                            React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true', onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-gray-300 rounded" }),
-                            React.createElement('span', { className: "text-sm" }, "TTD Wali Kelas")
+                        React.createElement('label', { className: "flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0" },
+                            React.createElement('input', { type: "checkbox", checked: printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true', onChange: () => handlePrintOptionChange('showTeacherSignature'), className: "h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer" }),
+                            React.createElement('span', { className: "text-xs sm:text-sm text-slate-700 dark:text-slate-200" }, "TTD Wali Kelas")
                         )
                     )
                 )
@@ -141,7 +149,7 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
                 onContinue: handleContinuePrint,
                 incompleteChecks: incompleteItems
             }),
-            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "flex flex-col items-center space-y-8" },
+            React.createElement('div', { id: "print-area", ref: printAreaRef, className: "w-full overflow-x-auto pb-4 flex flex-col items-start md:items-center space-y-8" },
                 studentsToRender.length > 0 ? studentsToRender.map(student => {
                     const studentData = studentRankings.get(student.id);
                     return React.createElement(PiagamPage, { 
@@ -153,7 +161,7 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
                         average: studentData?.average,
                         printOptions: printOptions
                     });
-                }) : React.createElement('p', {className: "text-center text-slate-500 py-10"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak sesuai filter yang dipilih.")
+                }) : React.createElement('p', {className: "text-center text-slate-500 dark:text-slate-400 py-10 w-full"}, "Tidak ada siswa yang memiliki peringkat untuk dicetak sesuai filter yang dipilih.")
             ),
             React.createElement(ExportProgressModal, {
                 isOpen: exportProgress !== null,

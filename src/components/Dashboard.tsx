@@ -41,10 +41,10 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
       </div>
 
       <div className="flex flex-col gap-4 mt-1">
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold text-slate-800">Kelengkapan Data Rapor</h3>
-            <span className="text-xs font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+          <div className="flex justify-between items-center gap-2 mb-3">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Kelengkapan Data Rapor</h3>
+            <span className="text-xs font-semibold tabular-nums px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-full flex-shrink-0">
               {completenessChecks.filter((c: any) => c.percentage === 100).length} / {completenessChecks.length} Selesai
             </span>
           </div>
@@ -54,13 +54,13 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
             ))}
           </div>
         </div>
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold text-slate-800">Analisis Data</h3>
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Analisis Data</h3>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto max-h-[500px] pr-2 custom-scrollbar">
             {academicAlerts.length === 0 ? (
-              <div className="text-center text-slate-500 py-8 border-2 border-dashed border-slate-200 rounded-lg lg:col-span-full">
+              <div className="text-center text-slate-500 dark:text-slate-400 py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg lg:col-span-full">
                 Tidak ada peringatan atau saran saat ini. Semuanya berjalan baik.
               </div>
             ) : (

@@ -130,64 +130,64 @@ const SemesterChangeModal = ({
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-2 sm:p-4 backdrop-blur-sm overflow-y-auto"
             onClick={onClose}
         >
             <div 
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-100 flex flex-col my-auto max-h-[90vh] max-h-[90dvh] overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-200 dark:border-slate-800 flex flex-col my-auto max-h-[92dvh] sm:max-h-[90dvh] overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-start gap-4">
-                    <div className="p-3 bg-amber-50 rounded-xl text-amber-600 flex-shrink-0">
+                <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-start gap-3 sm:gap-4">
+                    <div className="p-2.5 sm:p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl text-amber-600 dark:text-amber-400 flex-shrink-0">
                         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
                     <div>
-                        <h3 className="text-lg md:text-xl font-bold text-slate-900">Konfirmasi Perubahan Semester</h3>
-                        <p className="text-sm text-slate-500 mt-1">
+                        <h3 className="text-base sm:text-lg md:text-xl font-bold text-slate-900 dark:text-slate-100">Konfirmasi Perubahan Semester</h3>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                             Anda akan mengubah periode aktif dari{' '}
-                            <span className="font-semibold text-indigo-600">Semester {currentSemester || 'Ganjil'}</span>
+                            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Semester {currentSemester || 'Ganjil'}</span>
                             {' menjadi '}
-                            <span className="font-semibold text-emerald-600">Semester {pendingSemester || 'Genap'}</span>
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Semester {pendingSemester || 'Genap'}</span>
                             .
                         </p>
                     </div>
                 </div>
 
                 {/* Info / Warning */}
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 text-xs md:text-sm text-slate-600 space-y-2">
-                    <p className="font-medium text-slate-800">
+                <div className="px-4 sm:px-6 py-3 sm:py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs md:text-sm text-slate-600 dark:text-slate-300 space-y-1.5">
+                    <p className="font-medium text-slate-800 dark:text-slate-100">
                         Bagaimana aplikasi menyesuaikan data Anda?
                     </p>
-                    <ul className="list-disc pl-5 space-y-1 text-slate-500">
+                    <ul className="list-disc pl-5 space-y-1 text-slate-500 dark:text-slate-400">
                         <li>
-                            <strong className="text-slate-700">Dicentang (Pertahankan): </strong>
+                            <strong className="text-slate-700 dark:text-slate-200">Dicentang (Pertahankan): </strong>
                             Data tetap disimpan dan akan disaring otomatis agar menampilkan data yang sesuai dengan semester aktif yang baru. Sisa data tersimpan aman.
                         </li>
                         <li>
-                            <strong className="text-slate-700">Tidak Dicentang (Hapus): </strong>
+                            <strong className="text-slate-700 dark:text-slate-200">Tidak Dicentang (Hapus): </strong>
                             Seluruh catatan data pilihan tersebut akan dihapus permanen dari browser dan localforage untuk mengurangi penggunaan memori.
                         </li>
                     </ul>
                 </div>
 
                 {/* Selection List */}
-                <div className="p-6 space-y-4 max-h-[40vh] overflow-y-auto">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Daftar File & Data Tersimpan</span>
-                        <div className="flex gap-3 text-xs">
+                <div className="p-4 sm:p-6 space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
+                    <div className="flex flex-wrap justify-between items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Daftar File & Data Tersimpan</span>
+                        <div className="flex items-center gap-2 text-xs">
                             <button 
                                 type="button"
                                 onClick={() => handleSelectAll(true)}
-                                className="text-indigo-600 hover:text-indigo-800 font-semibold"
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 font-semibold px-2 py-1 min-h-[36px] lg:min-h-0"
                             >Pertahankan Semua</button>
-                            <span className="text-slate-300">|</span>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
                             <button 
                                 type="button"
                                 onClick={() => handleSelectAll(false)}
-                                className="text-red-500 hover:text-red-700 font-semibold"
+                                className="text-red-500 dark:text-red-400 hover:text-red-700 font-semibold px-2 py-1 min-h-[36px] lg:min-h-0"
                             >Hapus Semua</button>
                         </div>
                     </div>
@@ -197,10 +197,10 @@ const SemesterChangeModal = ({
                             <div 
                                 key={item.key} 
                                 onClick={() => toggleSelection(item.key)}
-                                className={`flex items-center gap-4 p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                                className={`flex items-center gap-3 sm:gap-4 p-3 min-h-[44px] rounded-xl border transition-all duration-200 cursor-pointer ${
                                     isRetained 
-                                        ? 'bg-indigo-50/40 border-indigo-100 hover:bg-indigo-50/60' 
-                                        : 'bg-rose-50/20 border-slate-100 hover:bg-slate-50/80 hover:border-slate-200'
+                                        ? 'bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40' 
+                                        : 'bg-rose-50/30 dark:bg-rose-950/20 border-slate-200 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
                                 }`}
                             >
                                 {/* Checkbox */}
@@ -209,29 +209,29 @@ const SemesterChangeModal = ({
                                         type="checkbox"
                                         checked={isRetained}
                                         onChange={() => {}} // Handled by outer click
-                                        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        className="h-5 w-5 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                     />
                                 </div>
                                 {/* Label / Description */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-semibold text-slate-800">{item.label}</span>
+                                    <div className="flex flex-wrap items-center justify-between gap-1">
+                                        <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.label}</span>
                                         <span 
-                                            className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                                            className={`text-xs px-2.5 py-0.5 rounded-full font-medium tabular-nums ${
                                                 item.count > 0 
-                                                    ? 'bg-slate-100 text-slate-600' 
-                                                    : 'bg-slate-50 text-slate-300'
+                                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' 
+                                                    : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500'
                                             }`}
                                         >{item.count} {item.unit}</span>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-0.5 mt-q">{item.description}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.description}</p>
                                 </div>
                                 {/* Status Badge */}
                                 <span 
                                     className={`text-xs font-semibold px-2 py-1 rounded-lg flex-shrink-0 border ${
                                         isRetained 
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                                            : 'bg-rose-50 text-rose-700 border-rose-100'
+                                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' 
+                                            : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                                     }`}
                                 >
                                     {isRetained ? "Pertahankan" : "Hapus"}
@@ -242,16 +242,16 @@ const SemesterChangeModal = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-3 p-5 bg-slate-50 border-t border-slate-100 rounded-b-2xl">
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 rounded-b-2xl flex-shrink-0">
                     <button 
                         onClick={onClose} 
-                        className="bg-white py-2.5 px-5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all duration-200" 
+                        className="w-full sm:w-auto bg-white dark:bg-slate-800 py-2.5 px-5 min-h-[44px] lg:min-h-0 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all duration-200" 
                     >
                         Batal
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="py-2.5 px-6 rounded-xl shadow-lg border border-transparent text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transform hover:-translate-y-px transition-all duration-200"
+                        className="w-full sm:w-auto py-2.5 px-6 min-h-[44px] lg:min-h-0 rounded-xl shadow-lg border border-transparent text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transform hover:-translate-y-px transition-all duration-200"
                     >
                         Simpan & Terapkan
                     </button>

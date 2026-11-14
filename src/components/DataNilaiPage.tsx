@@ -96,8 +96,8 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
   const activeSubjects = useMemo(() => subjects.filter((s: any) => s.active), [subjects]);
   const selectedSubject = useMemo(() => activeSubjects.find((s: any) => s.id === activeTab), [activeTab, activeSubjects]);
 
-  const inactiveButtonClass = "px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-indigo-50 hover:text-indigo-700 transition-colors";
-  const activeButtonClass = "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm";
+  const inactiveButtonClass = "min-h-[44px] lg:min-h-0 whitespace-nowrap shrink-0 inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer";
+  const activeButtonClass = "min-h-[44px] lg:min-h-0 whitespace-nowrap shrink-0 inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg shadow-sm cursor-pointer";
 
   const renderSubjectView = () => {
     if (!selectedSubject) return null;
@@ -132,7 +132,7 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
         />
       ) : (
         <div className="flex flex-col">
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2 flex-shrink-0">
+          <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap items-center gap-1.5 border-b border-slate-200 dark:border-slate-700 pb-2 flex-shrink-0 scrollbar-hide">
             <button
               onClick={() => onTabChange("keseluruhan")}
               className={activeTab === "keseluruhan" ? activeButtonClass : inactiveButtonClass}

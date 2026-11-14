@@ -50,8 +50,8 @@ const DataSiswaPage = (props) => {
             className: `w-full px-2 py-1.5 text-sm rounded-lg transition-all relative z-10 ${
                 showTransparentInput
                   ? "bg-transparent border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
-                  : `bg-transparent border border-transparent focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:bg-zinc-100 ${
-                      !isFilled ? "bg-red-50/50 hover:bg-red-50/80" : ""
+                  : `bg-transparent border border-transparent focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                      !isFilled ? "bg-red-50/50 dark:bg-red-950/30 hover:bg-red-50/80 dark:hover:bg-red-950/50" : ""
                     }`
             }`,
             placeholder: fieldDef.placeholder || fieldDef.label,
@@ -65,7 +65,7 @@ const DataSiswaPage = (props) => {
 
         const isNameField = fieldDef.key === "namaLengkap";
         const wrapperProps = {
-            className: `px-2 py-2 border-b border-zinc-200/60 relative cursor-default select-none ${isNameField ? 'lg:sticky lg:left-[50px] z-10 lg:z-20 bg-white shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] min-w-[200px] max-w-[300px]' : ''} group-hover:bg-slate-50 group-focus-within:bg-slate-50`,
+            className: `px-2 py-2 border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none ${isNameField ? 'lg:sticky lg:left-[50px] z-10 lg:z-20 bg-white dark:bg-slate-900 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] w-[135px] min-w-[135px] max-w-[165px] sm:w-auto sm:min-w-[200px] sm:max-w-[300px]' : ''} group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70`,
             style: { ...selectionStyle },
             onMouseDown: (e) => {
                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL' || e.target.tagName === 'IMG') return;
@@ -142,34 +142,34 @@ const DataSiswaPage = (props) => {
                         "Kelola data identitas siswa di kelas ", namaKelas || '(Nama Kelas Belum Diatur)', ". Perubahan disimpan otomatis."
                     )
                 ),
-                React.createElement('div', { className: "flex gap-2" },
+                React.createElement('div', { className: "flex flex-wrap gap-2 w-full sm:w-auto" },
                     React.createElement('label', { 
-                        className: "cursor-pointer px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-100 flex items-center justify-center text-center" 
+                        className: "cursor-pointer min-h-[44px] lg:min-h-0 px-3 py-1.5 text-xs font-medium text-indigo-700 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-700 rounded-lg shadow-sm hover:bg-indigo-100 dark:hover:bg-indigo-900/60 flex items-center justify-center text-center" 
                     }, "Upload Foto",
                         React.createElement('input', { type: "file", multiple: true, accept: "image/*", className: "hidden", onChange: handleBulkPhotoUpload })
                     ),
                     React.createElement('button', { 
                         onClick: handleAddNew, 
-                        className: "px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700" 
+                        className: "min-h-[44px] lg:min-h-0 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 inline-flex items-center justify-center cursor-pointer" 
                     }, "+ Tambah Siswa Baru")
                 )
             ),
 
             // Scrollable Table Container
             React.createElement('div', { 
-                className: "bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
+                className: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-9.5rem)] overflow-hidden",
                 onMouseLeave: () => {
                     if (isSelecting) setIsSelecting(false);
                 }
             },
-                React.createElement('div', { className: "flex-1 overflow-auto select-none siswa-table-container h-[70vh]" },
+                React.createElement('div', { className: "flex-1 overflow-auto select-none siswa-table-container" },
                     localStudents.length > 0 ? (
-                        React.createElement('table', { className: "w-full text-sm text-left text-zinc-500 border-separate border-spacing-0" },
-                            React.createElement('thead', { className: "text-xs text-zinc-700 uppercase bg-zinc-100 shadow-sm z-30" },
+                        React.createElement('table', { className: "w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0" },
+                            React.createElement('thead', { className: "text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 shadow-sm z-30" },
                                 React.createElement('tr', null,
                                     React.createElement('th', { 
                                         scope: "col", 
-                                        className: "w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 text-center border-b border-zinc-200/60 sticky top-0 left-0 z-40 bg-zinc-100 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none",
+                                        className: "w-[42px] min-w-[42px] max-w-[42px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-2 py-3 text-center border-b border-slate-200 dark:border-slate-700 sticky top-0 left-0 z-40 bg-slate-100 dark:bg-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none",
                                         style: getSelectionStyle(-1, -1).selectionStyle,
                                         onMouseDown: (e) => {
                                             if (e.button !== 0) return;
@@ -179,7 +179,7 @@ const DataSiswaPage = (props) => {
                                     }, "No"),
                                     React.createElement('th', { 
                                         scope: "col", 
-                                        className: "px-4 py-3 text-left border-b border-zinc-200/60 min-w-[200px] max-w-[300px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] cursor-default select-none",
+                                        className: "px-3 sm:px-4 py-3 text-left border-b border-slate-200 dark:border-slate-700 w-[135px] min-w-[135px] max-w-[165px] sm:w-auto sm:min-w-[200px] sm:max-w-[300px] sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-slate-100 dark:bg-slate-800 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] cursor-default select-none",
                                         style: getSelectionStyle(-1, 0).selectionStyle,
                                         onMouseDown: (e) => {
                                             if (e.button !== 0) return;
@@ -192,7 +192,7 @@ const DataSiswaPage = (props) => {
                                         return React.createElement('th', { 
                                             key: field.key, 
                                             scope: "col", 
-                                            className: "px-4 py-3 border-b border-zinc-200/60 min-w-[180px] whitespace-nowrap text-center sticky top-0 bg-zinc-100 z-30 cursor-default select-none",
+                                            className: "px-3 sm:px-4 py-3 border-b border-slate-200 dark:border-slate-700 min-w-[155px] sm:min-w-[180px] whitespace-nowrap text-center sticky top-0 bg-slate-100 dark:bg-slate-800 z-30 cursor-default select-none",
                                             style: getSelectionStyle(-1, colIndex).selectionStyle,
                                             onMouseDown: (e) => {
                                                 if (e.button !== 0) return;
@@ -201,12 +201,12 @@ const DataSiswaPage = (props) => {
                                             onMouseEnter: () => handleMouseEnterCell(-1, colIndex),
                                         }, field.label);
                                     }),
-                                    React.createElement('th', { scope: "col", className: "px-4 py-3 text-center border-b border-zinc-200/60 min-w-[100px] sticky top-0 bg-zinc-100 z-30" }, "Aksi")
+                                    React.createElement('th', { scope: "col", className: "px-3 sm:px-4 py-3 text-center border-b border-slate-200 dark:border-slate-700 min-w-[80px] sm:min-w-[100px] sticky top-0 bg-slate-100 dark:bg-slate-800 z-30" }, "Aksi")
                                 )
                             ),
                             React.createElement('tbody', null,
                                 localStudents.map((student, rowIndex) => 
-                                    React.createElement('tr', { key: student.id, id: student.id, className: "bg-white hover:bg-slate-50 focus-within:bg-slate-50 group" },
+                                    React.createElement('tr', { key: student.id, id: student.id, className: "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group" },
                                         React.createElement(SiswaTableRow, {
                                             student: student,
                                             rowIndex: rowIndex,

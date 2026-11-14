@@ -55,22 +55,22 @@ const ERaporProcessorModal: React.FC<ERaporProcessorModalProps> = ({
         />
       )}
       <div
-        className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-2 sm:p-4"
         onClick={handleClose}
       >
         <div
-          className="bg-white rounded-xl shadow-xl w-full max-w-lg"
+          className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-lg border border-slate-200 dark:border-slate-800 max-h-[92dvh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-5 border-b">
-            <h3 className="text-xl font-bold text-zinc-800">Isi Format E-Rapor</h3>
-            <p className="text-sm text-zinc-500 mt-1">
+          <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800">
+            <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Isi Format E-Rapor</h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
               Unggah format Excel e-Rapor kosong untuk diisi secara otomatis.
             </p>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
             <div
-              className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-zinc-300/60 border-dashed rounded-lg cursor-pointer hover:bg-[#fafafa] transition-colors"
+              className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
               onClick={handleAreaClick}
             >
               <div className="space-y-1 text-center">
@@ -88,10 +88,10 @@ const ERaporProcessorModal: React.FC<ERaporProcessorModalProps> = ({
                     strokeLinejoin="round"
                   />
                 </svg>
-                <div className="flex text-sm text-zinc-600">
+                <div className="flex flex-wrap justify-center text-sm text-slate-600 dark:text-slate-300">
                   <label
                     htmlFor="file-upload"
-                    className="relative cursor-pointer bg-transparent rounded-lg font-medium text-zinc-900 hover:text-zinc-500 focus-within:outline-none"
+                    className="relative cursor-pointer bg-transparent rounded-lg font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 focus-within:outline-none"
                   >
                     <span>Unggah file</span>
                     <input
@@ -106,26 +106,26 @@ const ERaporProcessorModal: React.FC<ERaporProcessorModalProps> = ({
                   </label>
                   <p className="pl-1">atau seret dan lepas file di sini</p>
                 </div>
-                <p className="text-xs text-zinc-500">XLSX, XLS</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">XLSX, XLS</p>
               </div>
             </div>
             {fileName && (
-              <p className="text-sm font-medium text-zinc-700 text-center">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200 text-center">
                 File terpilih: {fileName}
               </p>
             )}
           </div>
-          <div className="flex justify-end p-4 bg-[#fafafa] rounded-b-lg">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 rounded-b-xl">
             <button
               onClick={handleClose}
-              className="bg-white py-2 px-4 border border-zinc-300/60 rounded-lg text-sm font-medium text-zinc-700 hover:bg-[#fafafa]"
+              className="w-full sm:w-auto bg-white dark:bg-slate-800 py-2 px-4 min-h-[44px] lg:min-h-0 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
               Batal
             </button>
             <button
               onClick={handleProcessFile}
               disabled={!file || isLoading}
-              className="ml-3 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
+              className="w-full sm:w-auto py-2 px-4 min-h-[44px] lg:min-h-0 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 dark:disabled:bg-indigo-900"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto" />

@@ -12,7 +12,7 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
     <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {/* Font Size Selector: A- | A | A+ */}
       <div 
-        className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/90 p-0.5 shadow-xs"
+        className="inline-flex items-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 p-0.5 shadow-xs"
         role="group"
         aria-label="Pengaturan ukuran font"
       >
@@ -22,10 +22,10 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
           title="Perkecil ukuran font (A-)"
           aria-label="Perkecil ukuran font"
           aria-pressed={fontSize === 'small'}
-          className={`px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer ${
+          className={`min-h-[38px] min-w-[34px] sm:min-h-[44px] sm:min-w-[40px] lg:min-h-0 lg:min-w-0 px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer inline-flex items-center justify-center ${
             fontSize === 'small'
               ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-900 hover:bg-white dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700'
           }`}
         >
           A-
@@ -36,10 +36,10 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
           title="Ukuran font normal (A)"
           aria-label="Ukuran font normal"
           aria-pressed={fontSize === 'normal'}
-          className={`px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer ${
+          className={`min-h-[38px] min-w-[34px] sm:min-h-[44px] sm:min-w-[40px] lg:min-h-0 lg:min-w-0 px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer inline-flex items-center justify-center ${
             fontSize === 'normal'
               ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-900 hover:bg-white dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700'
           }`}
         >
           A
@@ -50,10 +50,10 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
           title="Perbesar ukuran font (A+)"
           aria-label="Perbesar ukuran font"
           aria-pressed={fontSize === 'large'}
-          className={`px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer ${
+          className={`min-h-[38px] min-w-[34px] sm:min-h-[44px] sm:min-w-[40px] lg:min-h-0 lg:min-w-0 px-1.5 py-0.5 text-xs font-semibold rounded transition-all cursor-pointer inline-flex items-center justify-center ${
             fontSize === 'large'
               ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-zinc-600 hover:text-zinc-900 hover:bg-white dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-700'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-700'
           }`}
         >
           A+
@@ -66,7 +66,7 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
         onClick={toggleTheme}
         title={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'}
         aria-label={theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap'}
-        className="inline-flex items-center justify-center p-1.5 text-xs font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-xs cursor-pointer"
+        className="min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] lg:min-h-0 lg:min-w-0 inline-flex items-center justify-center p-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors shadow-xs cursor-pointer"
       >
         {theme === 'dark' ? (
           // Sun Icon (Switch to light)
@@ -75,7 +75,7 @@ export const AppearanceControls: React.FC<AppearanceControlsProps> = ({ compact 
           </svg>
         ) : (
           // Moon Icon (Switch to dark)
-          <svg className="w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
         )}
