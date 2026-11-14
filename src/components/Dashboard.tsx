@@ -1,4 +1,5 @@
 import React from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useDashboardLogic } from './Dashboard/useDashboardLogic';
 import { StatCard } from './Dashboard/StatCard';
 import { AnalysisItem } from './Dashboard/AnalysisItem';
@@ -17,9 +18,13 @@ interface DashboardProps {
   setActivePage?: (page: string, anchor?: string) => void;
   onNavigateToNilai?: (id: string, anchor?: string) => void;
   formativeJournal?: any;
+  isUpdateAvailable?: boolean;
+  isUpdating?: boolean;
+  onUpdateApp?: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = (props) => {
+  const { isUpdateAvailable, isUpdating, onUpdateApp } = props;
   const { waliKelasName, stats, academicAlerts, completenessChecks } = useDashboardLogic(props);
 
   return (
@@ -30,6 +35,28 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
           Selamat datang, <span className="font-semibold text-indigo-700 dark:text-indigo-400">{waliKelasName}</span>! Berikut adalah ikhtisar terkini mengenai progres kelas Anda.
         </p>
       </div>
+
+      {isUpdateAvailable && (
+        <div className="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-indigo-950 dark:text-indigo-100">
+              Pembaruan Versi Aplikasi Tersedia
+            </h3>
+            <p className="mt-0.5 text-xs text-indigo-800/90 dark:text-indigo-200/80 leading-relaxed">
+              Versi terbaru RKT sudah siap diterapkan. Data lokal Anda aman dan otomatis disimpan sebelum memuat ulang halaman.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onUpdateApp}
+            disabled={isUpdating}
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] lg:min-h-0 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-60 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
+            {isUpdating ? 'Memperbarui...' : 'Perbarui Sekarang'}
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {stats.map((stat: any, index: number) => (
