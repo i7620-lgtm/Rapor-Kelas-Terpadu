@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import localforage from "localforage";
 
 localforage.config({
@@ -21,12 +21,13 @@ import { useExcelManager } from "./hooks/useExcelManager";
 
 import Navigation from "./components/Navigation";
 import ActivePageRenderer from "./components/ActivePageRenderer";
-import ERaporProcessorModal from "./components/ERaporProcessorModal";
-import SemesterChangeModal from "./components/SemesterChangeModal";
 import Toast from "./components/Toast";
 
+const ERaporProcessorModal = lazy(() => import("./components/ERaporProcessorModal"));
+const SemesterChangeModal = lazy(() => import("./components/SemesterChangeModal"));
+
 const App = () => {
-  useServiceWorker();
+  const { isUpdateAvailable, isUpdating, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState("DASHBOARD");
   const [targetSection, setTargetSection] = useState(null);
   const mainRef = useRef(null);
@@ -202,57 +203,64 @@ const App = () => {
               activeNilaiTab={activeNilaiTab}
               setActiveNilaiTab={setActiveNilaiTab}
               showToast={showToast}
+              isUpdateAvailable={isUpdateAvailable}
+              isUpdating={isUpdating}
+              onUpdateApp={updateAssets}
             />
           )}
         </main>
       </div>
 
       {isERaporModalOpen && (
-        <ERaporProcessorModal
-          isOpen={isERaporModalOpen}
-          onClose={() => setIsERaporModalOpen(false)}
-          settings={settings}
-          students={students}
-          grades={grades}
-          attendance={attendance}
-          notes={notes}
-          studentExtracurriculars={studentExtracurriculars}
-          cocurricularData={cocurricularData}
-          subjects={subjects}
-          extracurriculars={extracurriculars}
-          learningObjectives={learningObjectives}
-          formativeJournal={formativeJournal}
-          predefinedCurriculum={predefinedCurriculum}
-          onImportSettings={setSettings}
-          onImportStudents={setStudents}
-          onImportGrades={setGrades}
-          onImportAttendance={setAttendance}
-          onImportNotes={setNotes}
-          onImportStudentExtracurriculars={setStudentExtracurriculars}
-          onImportCocurricularData={setCocurricularData}
-          onImportSubjects={setSubjects}
-          onImportExtracurriculars={setExtracurriculars}
-          onImportLearningObjectives={setLearningObjectives}
-          onImportFormativeJournal={setFormativeJournal}
-          showToast={showToast}
-        />
+        <Suspense fallback={null}>
+          <ERaporProcessorModal
+            isOpen={isERaporModalOpen}
+            onClose={() => setIsERaporModalOpen(false)}
+            settings={settings}
+            students={students}
+            grades={grades}
+            attendance={attendance}
+            notes={notes}
+            studentExtracurriculars={studentExtracurriculars}
+            cocurricularData={cocurricularData}
+            subjects={subjects}
+            extracurriculars={extracurriculars}
+            learningObjectives={learningObjectives}
+            formativeJournal={formativeJournal}
+            predefinedCurriculum={predefinedCurriculum}
+            onImportSettings={setSettings}
+            onImportStudents={setStudents}
+            onImportGrades={setGrades}
+            onImportAttendance={setAttendance}
+            onImportNotes={setNotes}
+            onImportStudentExtracurriculars={setStudentExtracurriculars}
+            onImportCocurricularData={setCocurricularData}
+            onImportSubjects={setSubjects}
+            onImportExtracurriculars={setExtracurriculars}
+            onImportLearningObjectives={setLearningObjectives}
+            onImportFormativeJournal={setFormativeJournal}
+            showToast={showToast}
+          />
+        </Suspense>
       )}
 
       {showSemesterModal && (
-        <SemesterChangeModal
-          isOpen={showSemesterModal}
-          currentSemester={settings.semester || "Ganjil"}
-          pendingSemester={pendingSemester}
-          onClose={() => setShowSemesterModal(false)}
-          students={students}
-          grades={grades}
-          attendance={attendance}
-          notes={notes}
-          cocurricularData={cocurricularData}
-          studentExtracurriculars={studentExtracurriculars}
-          formativeJournal={formativeJournal}
-          onConfirm={handleSemesterChangeConfirm}
-        />
+        <Suspense fallback={null}>
+          <SemesterChangeModal
+            isOpen={showSemesterModal}
+            currentSemester={settings.semester || "Ganjil"}
+            pendingSemester={pendingSemester}
+            onClose={() => setShowSemesterModal(false)}
+            students={students}
+            grades={grades}
+            attendance={attendance}
+            notes={notes}
+            cocurricularData={cocurricularData}
+            studentExtracurriculars={studentExtracurriculars}
+            formativeJournal={formativeJournal}
+            onConfirm={handleSemesterChangeConfirm}
+          />
+        </Suspense>
       )}
     </div>
   );
