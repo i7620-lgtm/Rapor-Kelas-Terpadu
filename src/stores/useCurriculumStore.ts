@@ -23,7 +23,7 @@ export const useCurriculumStore = create<CurriculumState>()(
     (set, get) => ({
       learningObjectives: {},
       predefinedCurriculum: null,
-      activeGradeNumber: 5,
+      activeGradeNumber: 6,
       gradeCache: {},
       isLoadingPredefined: false,
       isLoaded: false,
@@ -47,7 +47,7 @@ export const useCurriculumStore = create<CurriculumState>()(
       },
 
       loadPredefinedCurriculum: async (grade: number) => {
-        const validGrade = Math.max(1, Math.min(12, grade || 5));
+        const validGrade = Math.max(1, Math.min(12, grade || 6));
         const cache = get().gradeCache;
         if (cache[validGrade]) {
           set({
