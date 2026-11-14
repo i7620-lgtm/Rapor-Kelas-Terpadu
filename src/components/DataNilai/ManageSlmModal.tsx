@@ -22,6 +22,7 @@ export const ManageSlmModal = (props) => {
     isOfflineOcrModalOpen,
     setIsOfflineOcrModalOpen,
     offlineOcrImageSrc,
+    setOfflineOcrImageSrc,
     offlineOcrDetectedLines,
     offlineIsRunningOcr,
     availableTPsForSelection,
@@ -57,6 +58,12 @@ return React.createElement(
       onClose: () => {
         setIsOfflineOcrModalOpen(false);
         setIsProcessingOcr(false);
+        setOfflineOcrImageSrc((prev: string | null) => {
+          if (prev && prev.startsWith("blob:")) {
+            URL.revokeObjectURL(prev);
+          }
+          return null;
+        });
       },
       onApply: handleApplyOfflineOcr,
       imageSrc: offlineOcrImageSrc,

@@ -248,7 +248,12 @@ export const useManageSlmLogic = (props) => {
         }
 
         const fileUrl = URL.createObjectURL(file);
-        setOfflineOcrImageSrc(fileUrl);
+        setOfflineOcrImageSrc((prev: string | null) => {
+          if (prev && prev.startsWith("blob:")) {
+            URL.revokeObjectURL(prev);
+          }
+          return fileUrl;
+        });
         setOfflineOcrDetectedLines([]);
         setOfflineIsRunningOcr(false);
         setIsOfflineOcrModalOpen(true);
@@ -366,6 +371,7 @@ export const useManageSlmLogic = (props) => {
     isOfflineOcrModalOpen,
     setIsOfflineOcrModalOpen,
     offlineOcrImageSrc,
+    setOfflineOcrImageSrc,
     offlineOcrDetectedLines,
     offlineIsRunningOcr,
     availableTPsForSelection,
