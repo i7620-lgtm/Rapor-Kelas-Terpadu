@@ -1,6 +1,4 @@
 import { useMemo, useState, useEffect, useRef, useLayoutEffect } from 'react';
-import * as htmlToImage from 'html-to-image';
-import { jsPDF } from 'jspdf';
 import { useShallow } from 'zustand/react/shallow';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStudentsStore } from '../../stores/useStudentsStore';
@@ -320,7 +318,11 @@ export const usePrintLegerPageLogic = (props: any) => {
 
         const node = pageRef.current;
         const scaleFactor = 2;
-        const fontEmbedCSSStr = await getFontEmbedCSS();
+        const [htmlToImage, { jsPDF }, fontEmbedCSSStr] = await Promise.all([
+          import('html-to-image'),
+          import('jspdf'),
+          getFontEmbedCSS(),
+        ]);
         const imgData = await htmlToImage.toJpeg(node, {
           quality: 0.98,
           backgroundColor: '#ffffff',
