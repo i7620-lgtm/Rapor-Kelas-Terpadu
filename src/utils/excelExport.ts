@@ -107,7 +107,7 @@ export const exportToExcelBlob = async ({
 
         // 6. Nilai_<subjectId> sheets
         const activeSubjects = subjects.filter(s => s.active);
-        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || '?'}`;
+        const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || '6'}`;
         activeSubjects.forEach(subj => {
              const curriculumKey = subj.curriculumKey || subj.fullName;
              const objectives = cleanLearningObjectives?.[gradeKey]?.[curriculumKey] || [];
