@@ -83,7 +83,7 @@ return React.createElement(
             ? React.createElement("input", {
                 type: "text",
                 value: slmName,
-                onChange: (_e) => setSlmName(e.target.value),
+                onChange: (e) => setSlmName(e.target.value),
                 placeholder: "Nama Lingkup Materi",
                 className: `text-xl font-bold text-slate-800 border-b-2 outline-none flex-grow bg-transparent ${slmName && slmName.trim() !== "" ? "border-green-500" : "border-red-500"}`,
               })
@@ -154,7 +154,7 @@ return React.createElement(
                   ),
                   React.createElement(AutoSizingTextarea, {
                     value: tp.text,
-                    onChange: (_e) => handleUpdateTpText(tp.id, e.target.value),
+                    onChange: (e) => handleUpdateTpText(tp.id, e.target.value),
                     placeholder: "Deskripsi Tujuan Pembelajaran",
                     className: `flex-grow p-2 border rounded-md text-sm resize-none overflow-hidden ${tp.text && tp.text.trim() !== "" ? "border-green-500 ring-1 ring-green-500" : "border-red-500 ring-1 ring-red-500"}`,
                     rows: "1",
