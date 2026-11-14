@@ -1,6 +1,12 @@
 // Safe Web Worker client manager with automatic timeout and main-thread fallback
 import { processAndCropImage3x4 } from '../utils/imageDB';
-import { exportToExcelBlob } from '../utils/excelExport';
+
+const runExportFallback = async (payload: any): Promise<Blob> => {
+  const { exportToExcelBlob } = await import('../utils/excelExport');
+  const res = await exportToExcelBlob(payload);
+  if (!res) throw new Error('Gagal menghasilkan file Excel.');
+  return res;
+};
 
 let imageWorkerInstance: Worker | null = null;
 let excelWorkerInstance: Worker | null = null;
@@ -123,9 +129,7 @@ export async function exportExcelWithWorker(
 
   // Fallback to main thread if Worker unavailable
   if (!worker) {
-    const res = await exportToExcelBlob(payload);
-    if (!res) throw new Error('Gagal menghasilkan file Excel.');
-    return res;
+    return runExportFallback(payload);
   }
 
   const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -156,11 +160,8 @@ export async function exportExcelWithWorker(
           resolve(blob);
         } else {
           console.warn('excelWorker reported failure, falling back to main-thread:', e.data.error);
-          exportToExcelBlob(payload)
-            .then((res) => {
-              if (!res) throw new Error('Gagal menghasilkan file Excel.');
-              resolve(res);
-            })
+          runExportFallback(payload)
+            .then(resolve)
             .catch(reject);
         }
       }
@@ -183,11 +184,8 @@ export async function exportExcelWithWorker(
       } catch (err) {
         console.warn('Failed to terminate excelWorker:', err);
       }
-      exportToExcelBlob(payload)
-        .then((res) => {
-          if (!res) throw new Error('Gagal menghasilkan file Excel.');
-          resolve(res);
-        })
+      runExportFallback(payload)
+        .then(resolve)
         .catch(reject);
     }, 25000);
 
