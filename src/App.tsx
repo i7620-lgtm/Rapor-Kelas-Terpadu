@@ -189,9 +189,12 @@ const App = () => {
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           currentPageName={NAV_ITEMS.find((i) => i.id === activePage)?.label || "Dashboard"}
         />
-        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-3 sm:px-6 sm:pb-6 pt-4 sm:pt-4">
+        <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-4 sm:px-6 sm:pb-6 pt-3 sm:pt-4">
           {isLoading ? (
-            "Memuat..."
+            <div className="flex-1 flex flex-col items-center justify-center py-16 gap-3 text-slate-500 dark:text-slate-400">
+              <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm font-medium">Memuat data aplikasi...</span>
+            </div>
           ) : (
             <ActivePageRenderer
               activePage={activePage}
