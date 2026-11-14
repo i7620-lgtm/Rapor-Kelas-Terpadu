@@ -85,6 +85,26 @@ const sanitizeRestoredState = (name: string, state: any): any => {
   if (name.includes("Settings") || name.includes("settings") || name.includes("appSettingsCompound")) {
     if (!state.settings || typeof state.settings !== "object") {
       state.settings = {};
+    } else {
+      const booleanSettingKeys = [
+        "show_aksara_bali",
+        "enableExitWarning",
+        "enableAutoRegression",
+        "show_photo",
+        "show_nip_kepsek",
+        "show_nis_cover",
+        "show_nisn_cover",
+        "show_alamat_cover",
+        "show_rt_rw",
+        "use_clean_piagam_text",
+      ];
+      booleanSettingKeys.forEach((key) => {
+        if (typeof state.settings[key] === "string") {
+          const normalized = state.settings[key].trim().toLowerCase();
+          if (normalized === "true") state.settings[key] = true;
+          else if (normalized === "false") state.settings[key] = false;
+        }
+      });
     }
     if (!Array.isArray(state.subjects)) {
       state.subjects = [];
