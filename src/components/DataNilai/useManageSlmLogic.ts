@@ -133,7 +133,7 @@ export const useManageSlmLogic = (props) => {
   const handleOpenTpSelection = (slmId) => {
     setSlmForTpSelection(slmId);
     setIsTpSelectionModalOpen(true);
-    const targetGrade = gradeNumber && gradeNumber >= 1 && gradeNumber <= 12 ? gradeNumber : 5;
+    const targetGrade = gradeNumber && gradeNumber >= 1 && gradeNumber <= 12 ? gradeNumber : 6;
     useCurriculumStore.getState().loadPredefinedCurriculum(targetGrade).catch(() => {});
   };
 
@@ -263,7 +263,7 @@ export const useManageSlmLogic = (props) => {
   };
 
   const handleSaveChanges = () => {
-    const gradeKey = `Kelas ${gradeNumber}`;
+    const gradeKey = `Kelas ${gradeNumber || 6}`;
     const curriculumKey = subject.curriculumKey || subject.fullName;
 
     const allTpsForSubject = localSlms.flatMap((slm) =>
