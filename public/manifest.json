@@ -1,14 +1,36 @@
 {
+  "id": "/",
   "short_name": "RKT",
   "name": "RKT - Rapor Kelas Terpadu",
+  "description": "Aplikasi web terpadu untuk mengelola rapor kelas, data siswa, nilai, absensi, hingga cetak rapor secara offline maupun online.",
   "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
     {
       "src": "/icon.svg",
       "type": "image/svg+xml",
-      "sizes": "192x192 512x512"
+      "sizes": "any",
+      "purpose": "any"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "theme_color": "#4f46e5",
   "background_color": "#f8fafc"
