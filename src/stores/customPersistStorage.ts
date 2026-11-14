@@ -33,9 +33,15 @@ const flushQueue = async (name: string, value: any): Promise<void> => {
   }
 };
 
+export const flushAllPendingWrites = async (): Promise<void> => {
+  const entries = Object.entries(memoryCache);
+  if (entries.length === 0) return;
+  await Promise.all(entries.map(([name, value]) => flushQueue(name, value)));
+};
+
 // Global fallback listeners to flush the queue when user moves/closes the page
 if (typeof window !== "undefined") {
-  const flushAll = () => {
+  const flushAllSyncTrigger = () => {
     for (const [name, value] of Object.entries(memoryCache)) {
       if (pendingTimers[name]) {
         clearTimeout(pendingTimers[name]);
@@ -51,10 +57,10 @@ if (typeof window !== "undefined") {
       }
     }
   };
-  window.addEventListener("beforeunload", flushAll);
+  window.addEventListener("beforeunload", flushAllSyncTrigger);
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-      flushAll();
+      flushAllSyncTrigger();
     }
   });
 }
