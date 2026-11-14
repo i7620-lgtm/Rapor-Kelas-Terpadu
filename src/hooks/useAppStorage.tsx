@@ -163,7 +163,7 @@ export const useAppStorage = () => {
 
           // Cascade load active grade level curriculum templates to avoid empty state on startup
           const currentSettings = useSettingsStore.getState().settings;
-          const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 5;
+          const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 6;
           if (activeGradeNumber >= 1 && activeGradeNumber <= 12) {
             try {
               await useCurriculumStore.getState().loadPredefinedCurriculum(activeGradeNumber);
