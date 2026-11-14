@@ -105,7 +105,7 @@ const App = () => {
           const detailed = studentGrade.detailedGrades?.[subj.id];
           if (detailed) {
             const config = settings.gradeCalculation?.[subj.id] || { method: "rata-rata" };
-            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "5"}`;
+            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
             const curriculumKey = subj.curriculumKey || subj.fullName;
             const calculated = calculateFinalGrade(
               detailed, config, settings, subj.id, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum
