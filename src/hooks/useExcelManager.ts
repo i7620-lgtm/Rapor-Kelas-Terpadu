@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { parseExcelBlob } from "../utils/excel";
 import { exportExcelWithWorker } from "../workers/workerManager";
 import { validateAndSanitizeImportedData } from "../utils/excelValidator";
 import { IMAGE_KEYS, getImageDimensions, processAndCompressImage, saveImageToDB, dataURLToBlob } from "../utils/imageDB";
 import { getDynamicRKTFileName } from "../utils/helpers";
+import { flushAllPendingWrites } from "../stores/customPersistStorage";
 
 export const useExcelManager = ({
   settings,
@@ -104,6 +104,7 @@ export const useExcelManager = ({
   const importFromExcelBlob = useCallback(async (blob) => {
     setIsLoading(true);
     try {
+      const { parseExcelBlob } = await import("../utils/excelImport");
       const d = await parseExcelBlob(blob, predefinedCurriculum);
       await applyImportedData(d);
     } catch (error: any) {
@@ -112,7 +113,7 @@ export const useExcelManager = ({
     } finally {
       setIsLoading(false);
     }
-  }, [parseExcelBlob, predefinedCurriculum, setIsLoading, showToast, applyImportedData]);
+  }, [predefinedCurriculum, setIsLoading, showToast, applyImportedData]);
 
   const handleExportAll = useCallback(async () => {
     const handleBeforeUnload = (evt: BeforeUnloadEvent) => {
@@ -127,6 +128,7 @@ export const useExcelManager = ({
 
     try {
       showToast("Menyiapkan file Excel di latar belakang...", "info");
+      await flushAllPendingWrites();
       const blob = await exportExcelWithWorker({
         settings,
         students,

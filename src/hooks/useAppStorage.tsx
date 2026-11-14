@@ -134,46 +134,44 @@ export const useAppStorage = () => {
           setSubjects(newSubjects);
         }
 
-        try {
-          const storedImages = await loadAllImagesFromDB();
-          if (isMounted) {
-            setSettings((prev) => ({ ...prev, ...storedImages }));
-          }
-        } catch (imgErr) {
-          console.error("Failed to restore images on startup", imgErr);
-        }
+        const currentSettings = useSettingsStore.getState().settings;
+        const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 6;
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        const presetsUrl = baseUrl.endsWith('/') ? `${baseUrl}presets.json` : `${baseUrl}/presets.json`;
 
-        if (isMounted) {
-          setIsDataLoaded(true);
-
-          try {
-            const baseUrl = import.meta.env.BASE_URL || '/';
-            const presetsUrl = baseUrl.endsWith('/') ? `${baseUrl}presets.json` : `${baseUrl}/presets.json`;
+        const [imagesResult, presetsResult] = await Promise.allSettled([
+          loadAllImagesFromDB(),
+          (async () => {
             const response = await fetch(presetsUrl);
             if (response.ok) {
-              const presetsData = await response.json();
-              const currentExtracurriculars = useSettingsStore.getState().extracurriculars || [];
-              if (currentExtracurriculars.length === 0) {
-                setExtracurriculars(presetsData.extracurriculars || []);
-              }
+              return await response.json();
             }
-          } catch (e) {
-            console.error("Failed to load presets", e);
-          }
+            return null;
+          })(),
+          activeGradeNumber >= 1 && activeGradeNumber <= 12
+            ? useCurriculumStore.getState().loadPredefinedCurriculum(activeGradeNumber)
+            : Promise.resolve(null),
+        ]);
 
-          // Cascade load active grade level curriculum templates to avoid empty state on startup
-          const currentSettings = useSettingsStore.getState().settings;
-          const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 6;
-          if (activeGradeNumber >= 1 && activeGradeNumber <= 12) {
-            try {
-              await useCurriculumStore.getState().loadPredefinedCurriculum(activeGradeNumber);
-            } catch (tpErr) {
-              console.error(`Failed to load TP preset on startup for Grade ${activeGradeNumber}`, tpErr);
-            }
-          }
+        if (!isMounted) return;
 
-          setIsLoading(false);
+        if (imagesResult.status === "fulfilled" && imagesResult.value) {
+          setSettings((prev) => ({ ...prev, ...imagesResult.value }));
+        } else if (imagesResult.status === "rejected") {
+          console.error("Failed to restore images on startup", imagesResult.reason);
         }
+
+        if (presetsResult.status === "fulfilled" && presetsResult.value) {
+          const currentExtracurriculars = useSettingsStore.getState().extracurriculars || [];
+          if (currentExtracurriculars.length === 0) {
+            setExtracurriculars(presetsResult.value.extracurriculars || []);
+          }
+        } else if (presetsResult.status === "rejected") {
+          console.error("Failed to load presets", presetsResult.reason);
+        }
+
+        setIsDataLoaded(true);
+        setIsLoading(false);
       } catch (e) {
         console.error("Failed to setup merged settings", e);
         if (isMounted) setIsLoading(false);
