@@ -3,7 +3,7 @@ import { getGradeNumber } from './nilaiHelpers';
 // --- Sanitization helpers ---
 export const sanitizeGrades = (gradesList, semester, loList, namaKelas, subjects = []) => {
     const isGenap = semester === "Genap";
-    const gradeKey = `Kelas ${getGradeNumber(namaKelas) || '5'}`;
+    const gradeKey = `Kelas ${getGradeNumber(namaKelas) || '6'}`;
     return (gradesList || []).map(g => {
         const newDetailedGrades = {};
         if (g.detailedGrades) {
@@ -107,6 +107,18 @@ export const sanitizeFormativeJournal = (fj, semester) => {
 
 export const sanitizeSettings = (settings, _semester) => {
     const imageKeys = ['logoSistem', 'ttdKepsek', 'ttdKepsek_Genap', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
+    const booleanKeys = [
+        'show_aksara_bali',
+        'enableExitWarning',
+        'enableAutoRegression',
+        'show_photo',
+        'show_nip_kepsek',
+        'show_nis_cover',
+        'show_nisn_cover',
+        'show_alamat_cover',
+        'show_rt_rw',
+        'use_clean_piagam_text',
+    ];
     
     if (settings) {
         imageKeys.forEach(key => {
@@ -115,6 +127,14 @@ export const sanitizeSettings = (settings, _semester) => {
             } else if (typeof settings[key] === 'string' && settings[key].length === 32767) {
                 // Truncated by Excel cell limit
                 settings[key] = null;
+            }
+        });
+
+        booleanKeys.forEach(key => {
+            if (typeof settings[key] === 'string') {
+                const lower = settings[key].trim().toLowerCase();
+                if (lower === 'true') settings[key] = true;
+                else if (lower === 'false') settings[key] = false;
             }
         });
     }
