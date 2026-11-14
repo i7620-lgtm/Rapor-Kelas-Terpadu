@@ -26,7 +26,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
         handleSelectElement,
         handleDeselect,
         updateElement,
-        handleMouseDown,
+        handlePointerDown,
         addElement,
         deleteElement,
         handleSave
@@ -35,7 +35,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        React.createElement('div', { className: "fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4", onClick: handleDeselect },
+        React.createElement('div', { className: "fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-4", onClick: handleDeselect },
             React.createElement(TransliterationModal, { 
                 isOpen: transliterationModalOpen, 
                 onClose: () => setTransliterationModalOpen(false),
@@ -47,22 +47,24 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                 },
                 initialText: selectedElement?.content
             }),
-            React.createElement('div', { className: "bg-slate-100 rounded-lg shadow-xl w-full max-w-7xl h-[95vh] flex flex-col", onClick: e => e.stopPropagation() },
-                React.createElement('div', { className: "flex justify-between items-center p-4 border-b bg-white rounded-t-lg" },
-                    React.createElement('h2', { className: "text-xl font-bold text-slate-800" }, "Editor Visual Kop Surat"),
-                    React.createElement('div', null,
-                        React.createElement('button', { onClick: onClose, className: "text-slate-600 hover:text-slate-900 mr-4" }, "Batal"),
-                        React.createElement('button', { onClick: handleSave, className: "px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Simpan Desain")
+            React.createElement('div', { className: "bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl w-full max-w-7xl h-[95vh] h-[95dvh] flex flex-col overflow-hidden", onClick: e => e.stopPropagation() },
+                React.createElement('div', { className: "flex flex-wrap justify-between items-center gap-2 p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-t-xl shrink-0" },
+                    React.createElement('h2', { className: "text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100" }, "Editor Visual Kop Surat"),
+                    React.createElement('div', { className: "flex items-center gap-2" },
+                        React.createElement('button', { onClick: onClose, className: "px-3 py-1.5 min-h-[44px] lg:min-h-0 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800" }, "Batal"),
+                        React.createElement('button', { onClick: handleSave, className: "px-4 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700" }, "Simpan Desain")
                     )
                 ),
                 React.createElement('div', { className: "flex flex-col md:flex-row flex-1 overflow-hidden" },
-                    React.createElement('div', { className: "w-full md:w-48 bg-white p-4 border-b md:border-b-0 md:border-r flex flex-row md:flex-col gap-2 md:gap-4 overflow-x-auto flex-shrink-0 items-center md:items-stretch font-medium text-slate-700 text-sm" },
-                        React.createElement('h3', { className: "font-semibold hidden md:block text-slate-900" }, "Alat"),
-                        React.createElement('button', { onClick: () => addElement('text'), className: "whitespace-nowrap text-center md:text-left p-2 rounded bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200" }, "Tambah Teks"),
-                        React.createElement('button', { onClick: () => addElement('line'), className: "whitespace-nowrap text-center md:text-left p-2 rounded bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200" }, "Tambah Garis")
+                    React.createElement('div', { className: "w-full md:w-48 bg-white dark:bg-slate-900 p-3 sm:p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 flex flex-row md:flex-col gap-2 md:gap-4 overflow-x-auto flex-shrink-0 items-center md:items-stretch font-medium text-slate-700 dark:text-slate-200 text-sm" },
+                        React.createElement('h3', { className: "font-semibold hidden md:block text-slate-900 dark:text-slate-100" }, "Alat"),
+                        React.createElement('button', { onClick: () => addElement('text'), className: "whitespace-nowrap text-center md:text-left px-3 py-2 min-h-[44px] lg:min-h-0 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-700 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 shrink-0" }, "Tambah Teks"),
+                        React.createElement('button', { onClick: () => addElement('line'), className: "whitespace-nowrap text-center md:text-left px-3 py-2 min-h-[44px] lg:min-h-0 rounded-lg bg-white dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 hover:text-indigo-700 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 shrink-0" }, "Tambah Garis")
                     ),
-                    React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 flex justify-start md:justify-center items-center min-h-[250px]" },
-                        React.createElement('div', { className: "w-full min-w-[600px] max-w-[800px] bg-white shadow-lg relative", onClick: handleDeselect, style: {
+                    React.createElement('main', { className: "flex-1 p-4 overflow-auto bg-slate-200 dark:bg-slate-950 flex justify-start md:justify-center items-center min-h-[250px]" },
+                        React.createElement('div', { className: "w-full min-w-[600px] max-w-[800px] shadow-lg relative", onClick: handleDeselect, style: {
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
                             backgroundImage: `linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(to right, #f1f5f9 1px, transparent 1px)`,
                             backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
                             aspectRatio: '800 / 200'
@@ -73,8 +75,8 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                     const commonProps = {
                                         key: el.id,
                                         onClick: (e: React.MouseEvent) => handleSelectElement(el.id, e),
-                                        onMouseDown: (e: React.MouseEvent) => handleMouseDown(e, el),
-                                        style: { cursor: 'move' }
+                                        onPointerDown: (e: React.PointerEvent) => handlePointerDown(e, el),
+                                        style: { cursor: 'move', touchAction: 'none' }
                                     };
 
                                     let elementRender;
@@ -145,10 +147,10 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                            )
                         )
                     ),
-                    React.createElement('div', { className: "w-full md:w-72 bg-white p-4 border-t md:border-t-0 md:border-l overflow-y-auto flex-shrink-0 text-left text-sm" },
-                         React.createElement('h3', { className: "font-semibold mb-4 text-slate-800" }, "Properti"),
+                    React.createElement('div', { className: "w-full md:w-72 bg-white dark:bg-slate-900 p-4 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 overflow-y-auto max-h-[38vh] md:max-h-none flex-shrink-0 text-left text-sm" },
+                         React.createElement('h3', { className: "font-semibold mb-4 text-slate-800 dark:text-slate-100" }, "Properti"),
                          selectedElement ? (
-                             React.createElement('div', { className: "space-y-4 text-slate-700" },
+                             React.createElement('div', { className: "space-y-4 text-slate-700 dark:text-slate-300" },
                                 React.createElement('div', { className: 'grid grid-cols-2 gap-2' },
                                     React.createElement('div', null,
                                         React.createElement('label', { className: 'text-xs font-semibold' }, 'Posisi X'),
@@ -157,7 +159,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                             step: GRID_SIZE,
                                             value: selectedElement.x,
                                             onChange: e => updateElement(selectedElementId!, { x: parseInt(e.target.value) || 0 }),
-                                            className: 'w-full p-1 border rounded bg-white text-slate-900 border-slate-300'
+                                            className: 'w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums'
                                         })
                                     ),
                                     React.createElement('div', null,
@@ -167,7 +169,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                             step: GRID_SIZE,
                                             value: selectedElement.y,
                                             onChange: e => updateElement(selectedElementId!, { y: parseInt(e.target.value) || 0 }),
-                                            className: 'w-full p-1 border rounded bg-white text-slate-900 border-slate-300'
+                                            className: 'w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums'
                                         })
                                     )
                                 ),
@@ -175,33 +177,33 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                      React.createElement(React.Fragment, null,
                                         React.createElement('div', null,
                                             React.createElement('label', { className: "text-xs font-semibold" }, "Teks"),
-                                            React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId!, { content: e.target.value }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300", rows: 3 }),
-                                            React.createElement('button', { onClick: () => setTransliterationModalOpen(true), className: "mt-2 text-xs w-full text-indigo-700 bg-indigo-100 p-1.5 rounded hover:bg-indigo-200" },
+                                            React.createElement('textarea', { value: selectedElement.content, onChange: e => updateElement(selectedElementId!, { content: e.target.value }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600", rows: 3 }),
+                                            React.createElement('button', { onClick: () => setTransliterationModalOpen(true), className: "mt-2 text-xs w-full min-h-[44px] lg:min-h-0 text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-950/60 p-2 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 font-medium" },
                                                'Alat Tulis Aksara Bali...'
                                             )
                                         ),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId!, { fontSize: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" })),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (Width)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" })),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId!, { fontFamily: e.target.value }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" }, React.createElement('option', { value: "system-ui" }, "System UI (Latin)"), React.createElement('option', { value: "Noto Sans Balinese" }, "Noto Sans (Aksara Bali)"))),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId!, { fontWeight: e.target.value }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId!, { textAlign: e.target.value }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan")))
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Ukuran Font"), React.createElement('input', { type: "number", value: selectedElement.fontSize, onChange: e => updateElement(selectedElementId!, { fontSize: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (Width)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Jenis Font"), React.createElement('select', { value: selectedElement.fontFamily, onChange: e => updateElement(selectedElementId!, { fontFamily: e.target.value }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600" }, React.createElement('option', { value: "system-ui" }, "System UI (Latin)"), React.createElement('option', { value: "Noto Sans Balinese" }, "Noto Sans (Aksara Bali)"))),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Ketebalan"), React.createElement('select', { value: selectedElement.fontWeight, onChange: e => updateElement(selectedElementId!, { fontWeight: e.target.value }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600" }, React.createElement('option', { value: "normal" }, "Normal"), React.createElement('option', { value: "bold" }, "Tebal"))),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Perataan"), React.createElement('select', { value: selectedElement.textAlign, onChange: e => updateElement(selectedElementId!, { textAlign: e.target.value }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600" }, React.createElement('option', { value: "left" }, "Kiri"), React.createElement('option', { value: "center" }, "Tengah"), React.createElement('option', { value: "right" }, "Kanan")))
                                      )
                                 ),
                                 selectedElement.type === 'image' && (
                                      React.createElement(React.Fragment, null,
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (px)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" })),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Tinggi (px)"), React.createElement('input', { type: "number", value: selectedElement.height, onChange: e => updateElement(selectedElementId!, { height: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" }))
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (px)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Tinggi (px)"), React.createElement('input', { type: "number", value: selectedElement.height, onChange: e => updateElement(selectedElementId!, { height: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" }))
                                      )
                                 ),
                                 selectedElement.type === 'line' && (
                                     React.createElement(React.Fragment, null,
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (px)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" })),
-                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Tebal (px)"), React.createElement('input', { type: "number", value: selectedElement.height, onChange: e => updateElement(selectedElementId!, { height: parseInt(e.target.value) }), className: "w-full p-1 border rounded bg-white text-slate-900 border-slate-300" }))
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Lebar (px)"), React.createElement('input', { type: "number", value: selectedElement.width, onChange: e => updateElement(selectedElementId!, { width: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" })),
+                                        React.createElement('div', null, React.createElement('label', { className: "text-xs font-semibold" }, "Tebal (px)"), React.createElement('input', { type: "number", value: selectedElement.height, onChange: e => updateElement(selectedElementId!, { height: parseInt(e.target.value) }), className: "w-full p-1.5 border rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 tabular-nums" }))
                                     )
                                 ),
-                                 React.createElement('button', { onClick: deleteElement, className: "w-full text-left p-2 rounded text-red-600 hover:bg-red-100 font-medium" }, "Hapus Elemen")
+                                 React.createElement('button', { onClick: deleteElement, className: "w-full text-left p-2 min-h-[44px] lg:min-h-0 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 font-medium" }, "Hapus Elemen")
                              )
-                          ) : React.createElement('p', { className: "text-sm text-slate-500" }, "Pilih sebuah elemen untuk melihat propertinya.")
+                          ) : React.createElement('p', { className: "text-sm text-slate-500 dark:text-slate-400" }, "Pilih sebuah elemen untuk melihat propertinya.")
                     )
                 )
             )

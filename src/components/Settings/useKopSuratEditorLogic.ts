@@ -65,7 +65,7 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
         }
     }, [isOpen, settings]);
 
-    const handleSelectElement = (id: string, e: React.MouseEvent) => {
+    const handleSelectElement = (id: string, e: React.SyntheticEvent) => {
         e.stopPropagation();
         setSelectedElementId(id);
     };
@@ -78,9 +78,12 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
         setElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
     };
     
-    const handleMouseDown = (e: React.MouseEvent, el: any) => {
-        if (e.button !== 0) return;
+    const handlePointerDown = (e: React.PointerEvent, el: any) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (!svgRef.current) return;
+        e.stopPropagation();
+        setSelectedElementId(el.id);
+
         const svg = svgRef.current;
         const ctm = svg.getScreenCTM()?.inverse();
         if (!ctm) return;
@@ -96,7 +99,7 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
             ctm: ctm,
         };
 
-        const handleMouseMove = (moveEvent: MouseEvent) => {
+        const handlePointerMove = (moveEvent: PointerEvent) => {
             if (!dragInfo.current) return;
             moveEvent.preventDefault();
 
@@ -114,14 +117,16 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
             updateElement(dragInfo.current.elementId, { x: newX, y: newY });
         };
 
-        const handleMouseUp = () => {
+        const handlePointerUp = () => {
             dragInfo.current = null;
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+            window.removeEventListener('pointercancel', handlePointerUp);
         };
 
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('pointermove', handlePointerMove);
+        window.addEventListener('pointerup', handlePointerUp);
+        window.addEventListener('pointercancel', handlePointerUp);
     };
 
     const addElement = (type: 'text' | 'line') => {
@@ -164,7 +169,7 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
         handleSelectElement,
         handleDeselect,
         updateElement,
-        handleMouseDown,
+        handlePointerDown,
         addElement,
         deleteElement,
         handleSave

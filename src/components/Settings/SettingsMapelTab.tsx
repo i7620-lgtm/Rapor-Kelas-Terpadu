@@ -22,12 +22,12 @@ export const SettingsMapelTab: React.FC<SettingsMapelTabProps> = ({
     return (
         <section className="animate-fade-in space-y-8" id="section-mapel">
                                 <div>
-                                    <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-4">Mata Pelajaran</h3>
+                                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Mata Pelajaran</h3>
                                     <PengaturanMapel subjects={subjects} onUpdateSubjects={setSubjects} showToast={showToast} />
                                 </div>
 
                                 <div>
-                                    <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-4">Ekstrakurikuler</h3>
+                                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 mb-4">Ekstrakurikuler</h3>
                                     <PengaturanEkstra extracurriculars={extracurriculars} onUpdateExtracurriculars={setExtracurriculars} showToast={showToast} />
                                 </div>
                             </section>
