@@ -91,7 +91,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                         elementRender = (
                                             React.createElement('text', {
                                                 x: xPos,
-                                                y: el.y,
+                                                y: el.y + (el.fontSize ?? 14),
                                                 fontSize: el.fontSize,
                                                 fontWeight: el.fontWeight,
                                                 textAnchor: textAnchor,
@@ -129,7 +129,7 @@ export const KopSuratEditorModal: React.FC<KopSuratEditorModalProps> = ({
                                             isSelected && (
                                                 React.createElement('rect', {
                                                     x: el.x,
-                                                    y: el.y - (el.fontSize ?? 14),
+                                                    y: el.y,
                                                     width: el.width,
                                                     height: el.type === 'text' ? (el.fontSize ?? 14) * 1.2 : el.height,
                                                     fill: "none",
