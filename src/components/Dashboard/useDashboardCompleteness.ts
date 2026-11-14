@@ -1,7 +1,9 @@
 
+import { useMemo } from "react";
 import { getContextualValue } from "../../constants";
+
 export const useDashboardCompleteness = (settings: any, subjects: any[], students: any[], grades: any[], cocurricularData: any, studentExtracurriculars: any[], attendance: any[], notes: any[], setActivePage: any, _onNavigateToNilai: any) => {
-  
+  return useMemo(() => {
     const results: any[] = [];
     const activeSubjects = (subjects || []).filter((s) => s.active);
     const currentStudents = students || [];
@@ -315,4 +317,5 @@ export const useDashboardCompleteness = (settings: any, subjects: any[], student
     };
     checkSimpleCompletion(notes, 'notes', 'Catatan Wali Kelas', 'CATATAN_WALI_KELAS');
     return results;
+  }, [settings, subjects, students, grades, cocurricularData, studentExtracurriculars, attendance, notes, setActivePage]);
 };

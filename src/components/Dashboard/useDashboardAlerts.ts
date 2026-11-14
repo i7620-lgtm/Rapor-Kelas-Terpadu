@@ -1,8 +1,9 @@
 
+import { useMemo } from "react";
 import { COCURRICULAR_DIMENSIONS } from "../../constants";
 
 export const useDashboardAlerts = (settings: any, subjects: any[], students: any[], grades: any[], cocurricularData: any, studentExtracurriculars: any[], attendance: any[], notes: any[], setActivePage: any, onNavigateToNilai: any) => {
-  
+  return useMemo(() => {
     const items: any[] = [];
     const minGrade = parseInt(settings.predikats?.c || '70', 10);
     const activeSubjects = (subjects || []).filter((s: any) => s.active);
@@ -16,6 +17,33 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
       return items;
     }
 
+    const gradeMap = new Map<string, any>();
+    currentGrades.forEach((g: any) => {
+      if (g?.studentId) gradeMap.set(g.studentId, g);
+    });
+
+    const extraSet = new Set<string>();
+    (studentExtracurriculars || []).forEach((se: any) => {
+      if (
+        se?.studentId &&
+        (se.semester || 'Ganjil') === currentSemester &&
+        se.assignedActivities?.some((activity: any) => activity !== null)
+      ) {
+        extraSet.add(se.studentId);
+      }
+    });
+
+    const attendanceSet = new Set<string>();
+    (attendance || []).forEach((a: any) => {
+      if (
+        a?.studentId &&
+        (a.semester || 'Ganjil') === currentSemester &&
+        (a.sakit !== null || a.izin !== null || a.alpa !== null)
+      ) {
+        attendanceSet.add(a.studentId);
+      }
+    });
+
     const studentDataFieldsToCheck = [
       'namaLengkap', 'namaPanggilan', 'nis', 'nisn', 'ttl', 'jenisKelamin', 'agama',
       'asalTk', 'alamatSiswa', 'diterimaDiKelas', 'diterimaTanggal', 'namaAyah',
@@ -27,7 +55,7 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
         (field) => !student[field] || String(student[field]).trim() === ''
       );
 
-      const studentGrade = currentGrades.find((g: any) => g.studentId === student.id);
+      const studentGrade = gradeMap.get(student.id);
       const studentReligion = String(student.agama || '').trim().toLowerCase();
       const relevantSubjects = activeSubjects.filter((subject: any) => {
         const subjectName = subject.fullName.toLowerCase();
@@ -62,20 +90,8 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
 
       const studentCoData = cocurricularData?.[student.id];
       const hasCocurricular = studentCoData && Object.values(studentCoData[coDimensionField] || {}).some((r) => r);
-
-      const hasExtra = (studentExtracurriculars || []).some(
-        (se: any) =>
-          se.studentId === student.id &&
-          (se.semester || 'Ganjil') === currentSemester &&
-          se.assignedActivities?.some((activity: any) => activity !== null)
-      );
-
-      const hasAttendance = (attendance || []).some(
-        (a: any) =>
-          a.studentId === student.id &&
-          (a.semester || 'Ganjil') === currentSemester &&
-          (a.sakit !== null || a.izin !== null || a.alpa !== null)
-      );
+      const hasExtra = extraSet.has(student.id);
+      const hasAttendance = attendanceSet.has(student.id);
 
       const noteKey = getNoteKey(student.id);
       const hasNote = notes?.[noteKey] && String(notes[noteKey]).trim() !== '';
@@ -142,4 +158,5 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
       }
     });
     return items;
+  }, [settings, subjects, students, grades, cocurricularData, studentExtracurriculars, attendance, notes, setActivePage, onNavigateToNilai]);
 };
