@@ -63,9 +63,23 @@ export const validateAndSanitizeImportedData = (
   const rawSettings = rawPayload.settings || {};
   const settings: any = { ...initialSettings };
 
-  // Core scalar settings - dynamically include all initialSettings keys to avoid future out-of-sync omissions, plus explicit/legacy aliases
+  const booleanKeys = [
+    "show_aksara_bali",
+    "enableExitWarning",
+    "enableAutoRegression",
+    "show_photo",
+    "show_nip_kepsek",
+    "show_nis_cover",
+    "show_nisn_cover",
+    "show_alamat_cover",
+    "show_rt_rw",
+    "use_clean_piagam_text",
+  ];
+  const booleanKeySet = new Set(booleanKeys);
+
+  // Core scalar settings - dynamically include all non-boolean initialSettings keys to avoid future out-of-sync omissions, plus explicit/legacy aliases
   const stringKeys = [
-    ...Object.keys(initialSettings),
+    ...Object.keys(initialSettings).filter((key) => !booleanKeySet.has(key)),
     "kabupaten_kota",
     "kodepos",
     "tempat_ttd_rapor",
@@ -175,18 +189,9 @@ export const validateAndSanitizeImportedData = (
   }
 
   // Boolean settings sanitization
-  const booleanKeys = [
-    "show_photo",
-    "show_nip_kepsek",
-    "show_nis_cover",
-    "show_nisn_cover",
-    "show_alamat_cover",
-    "show_rt_rw",
-    "use_clean_piagam_text",
-  ];
   booleanKeys.forEach((key) => {
-    if (rawSettings[key] !== undefined) {
-      settings[key] = rawSettings[key] === true || String(rawSettings[key]).toLowerCase() === "true";
+    if (rawSettings[key] !== undefined && rawSettings[key] !== null && rawSettings[key] !== "") {
+      settings[key] = rawSettings[key] === true || String(rawSettings[key]).trim().toLowerCase() === "true";
     }
   });
 
