@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
 import { getGradeNumber } from '../../utils/nilaiHelpers';
 
 interface Subject {
@@ -80,7 +79,10 @@ export const useERaporProcessor = ({
 
     setIsLoading(true);
     try {
-      const data = await file.arrayBuffer();
+      const [XLSX, data] = await Promise.all([
+        import('xlsx'),
+        file.arrayBuffer(),
+      ]);
       const workbook = XLSX.read(data);
       const sheetName = workbook.SheetNames[0];
       const ws = workbook.Sheets[sheetName];
@@ -206,6 +208,7 @@ export const useERaporProcessor = ({
     if (!analysisResult) return;
     setIsLoading(true);
     try {
+      const XLSX = await import('xlsx');
       const { workbook, ws, subject, studentMap, tpMapping, fileName: currentFileName, nilaiRaporColIndex } = analysisResult;
 
       const currentSemester = settings?.semester || 'Ganjil';
