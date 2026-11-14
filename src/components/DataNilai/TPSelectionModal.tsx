@@ -53,7 +53,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
   const loadPredefinedCurriculum = useCurriculumStore((state) => state.loadPredefinedCurriculum);
 
   const [selectedGrade, setSelectedGrade] = useState<number>(() => {
-    return currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 5);
+    return currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 6);
   });
   const [selectedTPs, setSelectedTPs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +64,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
     if (isOpen) {
       setSelectedTPs([]);
       setSearchQuery("");
-      const targetGrade = currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 5);
+      const targetGrade = currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 6);
       setSelectedGrade(targetGrade);
 
       // Trigger fetch on open if curriculum isn't loaded
