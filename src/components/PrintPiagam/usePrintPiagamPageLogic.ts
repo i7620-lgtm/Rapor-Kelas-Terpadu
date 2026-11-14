@@ -1,6 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import * as htmlToImage from 'html-to-image';
-import { jsPDF } from 'jspdf';
 import { getFontEmbedCSS } from '../../utils/pdfFonts';
 import { PAPER_SIZES } from './utils';
 import { useDashboardLogic } from '../Dashboard/useDashboardLogic';
@@ -159,8 +157,11 @@ export const usePrintPiagamPageLogic = ({
                      return;
                 }
 
-                setExportProgress({ current: 0, total: pages.length, statusText: 'Mempersiapkan konversi halaman...' });
-                await new Promise(resolve => setTimeout(resolve, 500));
+                setExportProgress({ current: 0, total: pages.length, statusText: 'Mempersiapkan modul PDF & halaman...' });
+                const [[htmlToImage, { jsPDF }, fontEmbedCSSStr]] = await Promise.all([
+                    Promise.all([import('html-to-image'), import('jspdf'), getFontEmbedCSS()]),
+                    new Promise(resolve => setTimeout(resolve, 300)),
+                ]);
                 
                 const pxPerCm = 37.7952755906;
                 const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
@@ -176,8 +177,6 @@ export const usePrintPiagamPageLogic = ({
                     unit: 'cm',
                     format: [formatWidth, formatHeight]
                 });
-                
-                const fontEmbedCSSStr = await getFontEmbedCSS();
                 
                 for (let i = 0; i < pages.length; i++) {
                     setExportProgress({
