@@ -291,7 +291,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         const wsTP = findSheet(["Tujuan Pembelajaran", "Tujuan_Pembelajaran"]);
         if (wsTP) {
             const tpData = XLSX.utils.sheet_to_json(wsTP);
-            const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`;
+            const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '6'}`;
             nLO[gradeKey] = {};
             tpData.forEach(row => {
                 const subjName = getValueWithAliases(row, ['Nama Mata Pelajaran', 'Mata Pelajaran', 'ID Mata Pelajaran', 'ID MataPelajaran', 'Mata_Pelajaran', 'Mapel']);
@@ -454,7 +454,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         nGr.forEach(studentGrade => { nSub.forEach(subj => { 
             const detailed = studentGrade.detailedGrades[subj.id]; 
             if (detailed) {
-                const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '5'}`;
+                const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '6'}`;
                 const curriculumKey = subj.curriculumKey || subj.fullName;
                 studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news, subj.id, nLO, gradeKey, curriculumKey, predefinedCurriculum);
             }
