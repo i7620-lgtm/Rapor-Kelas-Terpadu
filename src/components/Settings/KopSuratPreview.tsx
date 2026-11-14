@@ -29,7 +29,7 @@ export const KopSuratPreview: React.FC<KopSuratPreviewProps> = ({ settings }) =>
                                 React.createElement('text', {
                                     key: el.id,
                                     x: xPos,
-                                    y: el.y,
+                                    y: el.y + (el.fontSize ?? 14),
                                     fontSize: el.fontSize,
                                     fontWeight: el.fontWeight,
                                     textAnchor: textAnchor,
