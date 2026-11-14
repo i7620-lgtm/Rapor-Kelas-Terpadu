@@ -82,25 +82,25 @@ export const OcrImagePreviewAndCropper = ({
       ),
       React.createElement(
         "div",
-        { className: "flex gap-1" },
+        { className: "flex gap-1 items-center" },
         React.createElement(
           "button",
           {
             onClick: () => setZoomLevel(prev => Math.max(50, prev - 25)),
-            className: "px-2 py-0.5 text-[10px] bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer",
+            className: "px-2.5 py-1 min-h-[36px] lg:min-h-0 text-xs bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer",
           },
           "Zoom Out"
         ),
         React.createElement(
           "span",
-          { className: "text-[10px] font-mono select-none px-1.5 py-0.5 text-slate-400 bg-slate-950 rounded" },
+          { className: "text-xs font-mono tabular-nums select-none px-1.5 py-0.5 text-slate-400 bg-slate-950 rounded" },
           `${zoomLevel}%`
         ),
         React.createElement(
           "button",
           {
             onClick: () => setZoomLevel(prev => Math.min(250, prev + 25)),
-            className: "px-2 py-0.5 text-[10px] bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer",
+            className: "px-2.5 py-1 min-h-[36px] lg:min-h-0 text-xs bg-slate-800 rounded hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer",
           },
           "Zoom In"
         )
@@ -117,7 +117,7 @@ export const OcrImagePreviewAndCropper = ({
           "button",
           {
             onClick: () => setCropRole("none"),
-            className: "text-[10px] text-red-400 hover:underline cursor-pointer"
+            className: "text-xs text-red-400 hover:underline cursor-pointer px-2 py-1 min-h-[36px] lg:min-h-0"
           },
           "Matikan Sorot [×]"
         )
@@ -130,7 +130,7 @@ export const OcrImagePreviewAndCropper = ({
           {
             type: "button",
             onClick: () => setCropRole("none"),
-            className: `px-2 py-1.5 text-[11px] font-medium rounded transition-all border cursor-pointer ${
+            className: `px-2 py-2 min-h-[40px] lg:min-h-0 text-[11px] font-medium rounded transition-all border cursor-pointer ${
               cropRole === "none"
                 ? "bg-slate-800 text-white border-slate-600 font-bold"
                 : "bg-slate-900 text-slate-400 border-transparent hover:text-slate-200"
@@ -146,7 +146,7 @@ export const OcrImagePreviewAndCropper = ({
               setCropRole("bab");
               showToast("Mode Sorot Bab Aktif! Seret kotak di area judul bab.", "info");
             },
-            className: `px-2 py-1.5 text-[11px] font-semibold rounded transition-all border cursor-pointer ${
+            className: `px-2 py-2 min-h-[40px] lg:min-h-0 text-[11px] font-semibold rounded transition-all border cursor-pointer ${
               cropRole === "bab"
                 ? "bg-indigo-600 text-white border-indigo-400 font-bold"
                 : "bg-slate-900 text-slate-400 border-transparent hover:text-indigo-300 hover:bg-slate-800"
@@ -162,7 +162,7 @@ export const OcrImagePreviewAndCropper = ({
               setCropRole("tp");
               showToast("Mode Sorot TP Aktif! Seret kotak di area tujuan pembelajaran.", "info");
             },
-            className: `px-2 py-1.5 text-[11px] font-semibold rounded transition-all border cursor-pointer ${
+            className: `px-2 py-2 min-h-[40px] lg:min-h-0 text-[11px] font-semibold rounded transition-all border cursor-pointer ${
               cropRole === "tp"
                 ? "bg-emerald-600 text-white border-emerald-400 font-bold"
                 : "bg-slate-900 text-slate-400 border-transparent hover:text-emerald-300 hover:bg-slate-800"
@@ -208,7 +208,8 @@ export const OcrImagePreviewAndCropper = ({
         cropRole !== "none" && React.createElement(
           "div",
           {
-            className: "absolute inset-0 cursor-crosshair bg-indigo-500/5 select-none z-10",
+            className: "absolute inset-0 cursor-crosshair bg-indigo-500/5 select-none z-10 touch-none",
+            style: { touchAction: "none" },
             onMouseDown: handleMouseDown,
             onMouseMove: handleMouseMove,
             onMouseUp: handleMouseUp,

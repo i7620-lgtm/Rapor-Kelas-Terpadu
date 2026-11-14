@@ -36,25 +36,25 @@ export const GradeSettingsModal = ({
     "div",
     {
       className:
-        "fixed inset-0 bg-black bg-opacity-60 z-[90] flex items-center justify-center p-4",
+        "fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-2 sm:p-4",
     },
     React.createElement(
       "div",
       {
         className:
-          "bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col",
+          "bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800",
       },
       React.createElement(
         "div",
-        { className: "p-5 border-b flex-shrink-0" },
+        { className: "p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex-shrink-0" },
         React.createElement(
           "h3",
-          { className: "text-xl font-bold text-slate-800" },
+          { className: "text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100" },
           "Pengaturan Nilai & Perhitungan Rapor",
         ),
         React.createElement(
           "p",
-          { className: "text-sm text-slate-500 mt-1" },
+          { className: "text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1" },
           `Pengaturan untuk mata pelajaran: ${subject.fullName}`,
         ),
       ),
@@ -67,7 +67,7 @@ export const GradeSettingsModal = ({
           React.createElement(
             "h4",
             {
-              className: "text-sm font-bold text-slate-700 mb-2 border-b pb-1",
+              className: "text-sm font-bold text-slate-700 dark:text-slate-200 mb-2 border-b border-slate-200 dark:border-slate-700 pb-1",
             },
             "Tampilan Input Nilai",
           ),
@@ -90,7 +90,7 @@ export const GradeSettingsModal = ({
                 {
                   key: mode,
                   className:
-                    "flex items-center p-2 border rounded-md cursor-pointer hover:bg-slate-100",
+                    "flex items-center p-2.5 min-h-[44px] lg:min-h-0 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors",
                 },
                 React.createElement("input", {
                   type: "radio",
@@ -98,11 +98,11 @@ export const GradeSettingsModal = ({
                   value: mode,
                   checked: localDisplayMode === mode,
                   onChange: () => setLocalDisplayMode(mode),
-                  className: "h-4 w-4 text-indigo-600",
+                  className: "h-4 w-4 text-indigo-600 shrink-0",
                 }),
                 React.createElement(
                   "span",
-                  { className: "ml-3 text-sm font-medium text-slate-700" },
+                  { className: "ml-3 text-sm font-medium text-slate-700 dark:text-slate-200" },
                   labels[mode],
                 ),
               );
@@ -115,7 +115,7 @@ export const GradeSettingsModal = ({
           React.createElement(
             "h4",
             {
-              className: "text-md font-semibold text-slate-700 mb-2",
+              className: "text-md font-semibold text-slate-700 dark:text-slate-200 mb-2",
             },
             "Rentang Nilai (Predikat)",
           ),
@@ -125,10 +125,10 @@ export const GradeSettingsModal = ({
             ["a", "b", "c", "d"].map((p) =>
               React.createElement(
                 "div",
-                { key: p, className: "flex items-center justify-between" },
+                { key: p, className: "flex items-center justify-between gap-2" },
                 React.createElement(
                   "label",
-                  { className: "font-medium text-xs text-slate-600" },
+                  { className: "font-medium text-xs text-slate-600 dark:text-slate-300" },
                   `Predikat ${p.toUpperCase()} (mulai dari)`,
                 ),
                 React.createElement("input", {
@@ -139,7 +139,7 @@ export const GradeSettingsModal = ({
                       ...prev,
                       [p]: e.target.value,
                     })),
-                  className: `w-16 p-1 border rounded text-center text-xs ${p === "d" ? "bg-slate-100" : ""}`,
+                  className: `w-16 p-1.5 border border-slate-300 dark:border-slate-700 rounded text-center text-xs tabular-nums ${p === "d" ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"}`,
                   readOnly: p === "d",
                 }),
               ),
@@ -147,7 +147,7 @@ export const GradeSettingsModal = ({
             React.createElement(
               "p",
               {
-                className: "text-left text-[10px] text-slate-400 pt-1",
+                className: "text-left text-xs text-slate-400 dark:text-slate-500 pt-1",
               },
               "Berlaku untuk semua mapel.",
             ),
@@ -160,7 +160,7 @@ export const GradeSettingsModal = ({
           React.createElement(
             "h4",
             {
-              className: "text-md font-semibold text-slate-700 mb-2",
+              className: "text-md font-semibold text-slate-700 dark:text-slate-200 mb-2",
             },
             "Cara Pengolahan Nilai Akhir Mapel",
           ),
@@ -173,7 +173,7 @@ export const GradeSettingsModal = ({
                 {
                   key: method,
                   className:
-                    "flex items-center p-2 border rounded-md cursor-pointer hover:bg-slate-100",
+                    "flex items-center p-2.5 min-h-[44px] lg:min-h-0 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors",
                 },
                 React.createElement("input", {
                   type: "radio",
@@ -181,11 +181,11 @@ export const GradeSettingsModal = ({
                   value: method,
                   checked: localMethod === method,
                   onChange: () => setLocalMethod(method),
-                  className: "h-4 w-4 text-indigo-600",
+                  className: "h-4 w-4 text-indigo-600 shrink-0",
                 }),
                 React.createElement(
                   "span",
-                  { className: "ml-3 text-sm font-medium text-slate-700" },
+                  { className: "ml-3 text-sm font-medium text-slate-700 dark:text-slate-200" },
                   method === "rata-rata"
                     ? "Opsi Rata-Rata"
                     : method === "pembobotan"
@@ -201,14 +201,14 @@ export const GradeSettingsModal = ({
         "div",
         {
           className:
-            "flex justify-end p-4 bg-slate-50 rounded-b-lg border-t flex-shrink-0",
+            "flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-900/80 rounded-b-xl border-t border-slate-200 dark:border-slate-800 flex-shrink-0",
         },
         React.createElement(
           "button",
           {
             onClick: onClose,
             className:
-              "px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50",
+              "w-full sm:w-auto px-4 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700",
           },
           "Batal",
         ),
@@ -217,7 +217,7 @@ export const GradeSettingsModal = ({
           {
             onClick: handleSave,
             className:
-              "ml-3 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700",
+              "w-full sm:w-auto px-4 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700",
           },
           "Simpan Pengaturan",
         ),

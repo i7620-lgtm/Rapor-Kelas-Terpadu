@@ -67,7 +67,7 @@ export const NilaiTableView = (props) => {
     {
       ref: tableContainerRef,
       className:
-        "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden relative",
+        "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-9.5rem)] overflow-hidden relative",
     },
     isManageSlmModalOpen &&
       React.createElement(ManageSlmModal, {
@@ -107,10 +107,10 @@ export const NilaiTableView = (props) => {
     }),
     React.createElement(
       "div",
-      { className: "flex-1 overflow-auto mapel-table-container focus:outline-none h-[70vh]" },
+      { className: "flex-1 overflow-auto mapel-table-container nilai-table-container focus:outline-none" },
       relevantStudents.length > 0 ? (
-          React.createElement('table', { className: "w-full text-sm text-left text-slate-500 border-separate border-spacing-0" },
-            React.createElement('thead', { className: "text-xs text-slate-700 uppercase bg-slate-100 shadow-sm sticky top-0 z-30" },
+          React.createElement('table', { className: "w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0" },
+            React.createElement('thead', { className: "text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 shadow-sm sticky top-0 z-30" },
                 React.createElement(NilaiTableHeader, {
                   headerRowSpan,
                   getSelectionStyle,

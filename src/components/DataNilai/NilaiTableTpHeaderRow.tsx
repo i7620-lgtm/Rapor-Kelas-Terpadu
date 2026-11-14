@@ -35,7 +35,7 @@ export const NilaiTableTpHeaderRow: React.FC<NilaiTableTpHeaderRowProps> = ({
       {tpHeaders.map((h, colIdx) => (
         <th
           key={`${h.slmId}-${h.tpIndex}`}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
+          className="p-1.5 sm:p-2 text-center border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] select-none cursor-default"
           style={getSelectionStyle(-1, colIdx).selectionStyle}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
@@ -56,10 +56,10 @@ export const NilaiTableTpHeaderRow: React.FC<NilaiTableTpHeaderRowProps> = ({
               <button
                 onClick={() => handleAutoRegression(h.slmId, h.tpIndex)}
                 title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
+                className="min-w-[32px] min-h-[32px] lg:min-w-0 lg:min-h-0 inline-flex items-center justify-center p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 lg:w-3 lg:h-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

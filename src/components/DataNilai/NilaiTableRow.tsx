@@ -119,23 +119,20 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
   }
 
   return (
-    <tr id={student.id} className="border-b hover:bg-slate-50 focus-within:bg-slate-50 group">
+    <tr id={student.id} className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group">
       {/* 1. Row Index Number */}
       <td
         id={`nilai-cell-${index}--2`}
         tabIndex={-1}
-        className={`p-2 text-center border-b border-r border-slate-200 sticky z-20 align-top box-border select-none cursor-default shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none ${
+        className={`w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] p-1.5 sm:p-2 text-center tabular-nums border-b border-r border-slate-200 dark:border-slate-700 sticky z-20 align-top box-border select-none cursor-default shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none ${
           isFinalMissing
-            ? "bg-amber-100 text-amber-900 font-bold"
+            ? "bg-amber-100 text-amber-900 font-bold dark:bg-amber-900/40 dark:text-amber-200"
             : isFinalBelowKkm
-              ? "bg-rose-100 text-red-700 font-bold"
-              : "bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+              ? "bg-rose-100 text-red-700 font-bold dark:bg-rose-900/40 dark:text-red-200"
+              : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
         }`}
         style={{
           left: 0,
-          width: "50px",
-          minWidth: "50px",
-          maxWidth: "50px",
           ...getSelectionStyle(index, -2).selectionStyle,
         }}
         onMouseDown={(e) => handleMouseDownCell(e, index, -2, "nilai-cell")}
@@ -148,17 +145,14 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
       <td
         id={`nilai-cell-${index}--1`}
         tabIndex={-1}
-        className={`p-2 border-b border-r border-slate-200 align-top static lg:sticky lg:left-[50px] lg:z-20 w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border select-none cursor-default ${
+        className={`p-1.5 sm:p-2 border-b border-r border-slate-200 dark:border-slate-700 align-top static lg:sticky lg:left-[50px] lg:z-20 w-[135px] min-w-[130px] max-w-[160px] sm:w-[200px] sm:min-w-[200px] lg:w-[260px] lg:max-w-[300px] break-words whitespace-normal shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border select-none cursor-default ${
           isFinalMissing
-            ? "bg-amber-100 text-amber-900 font-medium"
+            ? "bg-amber-100 text-amber-900 font-medium dark:bg-amber-900/40 dark:text-amber-200"
             : isFinalBelowKkm
-              ? "bg-rose-100 text-red-700 font-medium"
-              : "bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+              ? "bg-rose-100 text-red-700 font-medium dark:bg-rose-900/40 dark:text-red-200"
+              : "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
         }`}
         style={{
-          width: "260px",
-          minWidth: "200px",
-          maxWidth: "300px",
           ...getSelectionStyle(index, -1).selectionStyle,
         }}
         onMouseDown={(e) => handleMouseDownCell(e, index, -1, "nilai-cell")}
@@ -175,7 +169,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
         return (
           <td
             key={`${student.id}-${h.slmId}-${h.tpIndex}`}
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] align-top relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -190,7 +184,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
               onFocus={() => handleFocusCell(index, colIdx)}
               
               showTransparentInput={showTrans}
-              className="w-full p-2 text-center"
+              className="w-full p-2 text-center tabular-nums"
             />
           </td>
         );
@@ -211,14 +205,14 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
         handleFocusCell={handleFocusCell}
       />
       {/* 6. Nilai Akhir */}
-      <td className={`p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] text-center font-bold align-top pt-3 select-none ${
+      <td className={`p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] text-center font-bold tabular-nums align-top pt-3 select-none ${
         isFinalMissing
-          ? "text-amber-700 bg-amber-50"
+          ? "text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300"
           : isFinalBelowKkm
-            ? "text-red-600 bg-rose-50"
-            : "text-slate-800 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            ? "text-red-600 bg-rose-50 dark:bg-rose-900/30 dark:text-red-300"
+            : "text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
       }`}>
-        <span className={isFinalBelowKkm ? "px-1.5 py-0.5 rounded border border-red-300 bg-rose-100 inline-block font-extrabold text-red-600" : isFinalMissing ? "text-amber-600 font-bold" : ""}>
+        <span className={isFinalBelowKkm ? "px-1.5 py-0.5 rounded border border-red-300 dark:border-red-700 bg-rose-100 dark:bg-rose-900/50 inline-block font-extrabold text-red-600 dark:text-red-200 tabular-nums" : isFinalMissing ? "text-amber-600 dark:text-amber-300 font-bold" : "tabular-nums"}>
           {total}
         </span>
       </td>

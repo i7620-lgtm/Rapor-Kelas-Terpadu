@@ -20,26 +20,23 @@ export const KeseluruhanTableRow = React.memo(({
   const isStudentMissing = data.hasMissingGrade && showIncompleteHighlight;
   const isStudentFailing = data.hasFailingGrade && showBelowKkmHighlight;
   const studentHighlightClass = isStudentMissing
-    ? "bg-amber-100 text-amber-900 font-bold"
+    ? "bg-amber-100 text-amber-900 font-bold dark:bg-amber-900/40 dark:text-amber-200"
     : isStudentFailing
-      ? "bg-rose-100 text-red-700 font-bold"
-      : "bg-white text-slate-900 group-hover:bg-slate-50 group-focus-within:bg-slate-50";
+      ? "bg-rose-100 text-red-700 font-bold dark:bg-rose-900/40 dark:text-red-200"
+      : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70";
 
   return React.createElement(
     "tr",
-    { key: data.id, id: data.id, className: "bg-white hover:bg-slate-50 focus-within:bg-slate-50 group" },
+    { key: data.id, id: data.id, className: "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group" },
     React.createElement(
       "td",
       {
         id: `keseluruhan-cell-${rowIndex}-0`,
         tabIndex: -1,
         className:
-          `p-2 text-center font-medium sticky z-20 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-r border-slate-200 box-border cursor-default select-none ${studentHighlightClass}`,
+          `w-[42px] min-w-[42px] max-w-[42px] sm:w-[60px] sm:min-w-[60px] sm:max-w-[60px] p-1.5 sm:p-2 text-center font-medium tabular-nums sticky z-20 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none border-b border-r border-slate-200 dark:border-slate-700 box-border cursor-default select-none ${studentHighlightClass}`,
         style: {
           left: 0,
-          width: "60px",
-          minWidth: "60px",
-          maxWidth: "60px",
           ...getSelectionStyle(rowIndex, 0).selectionStyle,
         },
         onMouseDown: (e) => {
@@ -56,11 +53,8 @@ export const KeseluruhanTableRow = React.memo(({
       {
         id: `keseluruhan-cell-${rowIndex}-1`,
         tabIndex: -1,
-        className: `p-2 font-medium w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal border-b border-r border-slate-200 static lg:sticky lg:left-[60px] lg:z-20 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border ${studentHighlightClass} cursor-default select-none`,
+        className: `p-1.5 sm:p-2 font-medium w-[135px] min-w-[130px] max-w-[160px] sm:w-[200px] sm:min-w-[200px] lg:w-[260px] lg:max-w-[300px] break-words whitespace-normal border-b border-r border-slate-200 dark:border-slate-700 static lg:sticky lg:left-[60px] lg:z-20 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] box-border ${studentHighlightClass} cursor-default select-none`,
         style: {
-          width: "260px",
-          minWidth: "200px",
-          maxWidth: "300px",
           ...getSelectionStyle(rowIndex, 1).selectionStyle,
         },
         onMouseDown: (e) => {
@@ -82,14 +76,13 @@ export const KeseluruhanTableRow = React.memo(({
         grade < predicateCValue;
 
       const stats = subjectStats[subject.id];
-      let highlightClass = "bg-slate-100 border-slate-200 text-slate-700";
-      let highlightStyle = {};
+      let highlightClass = "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200";
       if (grade === undefined || grade === null || grade === "") {
         if (showIncompleteHighlight) {
-          highlightClass = "bg-red-100 border-red-300 text-red-600 font-extrabold shadow-inner shadow-red-200/50 ring-1 ring-red-400";
+          highlightClass = "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-600 dark:text-red-200 font-extrabold shadow-inner ring-1 ring-red-400";
         }
       } else if (isBelowC && showBelowKkmHighlight) {
-        highlightClass = "bg-rose-100 border-rose-300 text-rose-700 font-extrabold shadow-inner shadow-rose-200/50 ring-1 ring-rose-400";
+        highlightClass = "bg-rose-100 dark:bg-rose-900/40 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-200 font-extrabold shadow-inner ring-1 ring-rose-400";
       } else if (
         stats &&
         stats.hasMultipleValues &&
@@ -101,19 +94,9 @@ export const KeseluruhanTableRow = React.memo(({
           typeof grade === "string" ? parseFloat(grade) : grade;
         if (!isNaN(numGrade)) {
           if (numGrade === stats.maxVal && showMaxHighlight) {
-            highlightClass = "shadow-inner font-extrabold";
-            highlightStyle = {
-              backgroundColor: "#dbeafe",
-              borderColor: "#60a5fa",
-              color: "#1d4ed8",
-            };
+            highlightClass = "highlight-highest shadow-inner font-extrabold";
           } else if (numGrade === stats.minVal && showMinHighlight) {
-            highlightClass = "shadow-inner font-extrabold";
-            highlightStyle = {
-              backgroundColor: "#ffedd5",
-              borderColor: "#fb923c",
-              color: "#c2410c",
-            };
+            highlightClass = "highlight-lowest shadow-inner font-extrabold";
           }
         }
       }
@@ -125,7 +108,7 @@ export const KeseluruhanTableRow = React.memo(({
           id: `keseluruhan-cell-${rowIndex}-${colIndex}`,
           tabIndex: -1,
           className:
-            "px-2 py-1 border-b border-slate-200 text-center cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
+            "px-1.5 sm:px-2 py-1 border-b border-slate-200 dark:border-slate-700 text-center cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70",
           style: selectionStyle,
           onMouseDown: (e) => {
             if (e.button !== 0) return;
@@ -137,10 +120,9 @@ export const KeseluruhanTableRow = React.memo(({
         React.createElement(
           "div",
           {
-            className: `w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold ${highlightClass} ${
-              isBelowC ? "text-red-600 font-extrabold" : ""
+            className: `w-12 sm:w-14 mx-auto py-1.5 text-center rounded-md border text-xs font-semibold tabular-nums ${highlightClass} ${
+              isBelowC ? "text-red-600 dark:text-red-300 font-extrabold" : ""
             }`,
-            style: highlightStyle,
           },
           grade !== null && grade !== undefined && grade !== "" ? grade : "-",
         ),
@@ -152,7 +134,7 @@ export const KeseluruhanTableRow = React.memo(({
         id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length}`,
         tabIndex: -1,
         className:
-          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
+          "px-2 py-2 text-center font-semibold tabular-nums text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70",
         style: getSelectionStyle(rowIndex, 2 + displaySubjects.length)
           .selectionStyle,
         onMouseDown: (e) => {
@@ -176,7 +158,7 @@ export const KeseluruhanTableRow = React.memo(({
         id: `keseluruhan-cell-${rowIndex}-${2 + displaySubjects.length + 1}`,
         tabIndex: -1,
         className:
-          "px-2 py-2 text-center font-semibold text-slate-800 border-b border-slate-200 cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50",
+          "px-2 py-2 text-center font-semibold tabular-nums text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70",
         style: getSelectionStyle(rowIndex, 2 + displaySubjects.length + 1)
           .selectionStyle,
         onMouseDown: (e) => {

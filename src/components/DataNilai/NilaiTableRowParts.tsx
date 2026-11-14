@@ -23,7 +23,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sts1"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] align-top relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -48,7 +48,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sts2"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] align-top relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -74,7 +74,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sas1"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] align-top relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -99,7 +99,7 @@ export const StsSasCells = ({
         const cellValue = detailedGrade?.["sas2"] ?? null;
         return (
           <td
-            className="p-1 border-b border-l border-slate-200 w-20 min-w-[5rem] align-top relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="p-1 border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] align-top relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70"
             style={style}
             onMouseDown={(e) => handleMouseDownCell(e, index, colIdx, "nilai-cell")}
             onMouseEnter={() => handleMouseEnterCell(index, colIdx)}
@@ -137,7 +137,7 @@ export const StsSasHeaders = ({
       {(!settings.semester || settings.semester === "Ganjil") && (
         <th
           rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
+          className="p-1.5 sm:p-2 text-center border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] select-none cursor-default"
           style={getSelectionStyle(-1, tpHeadersLength).selectionStyle}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
@@ -152,10 +152,10 @@ export const StsSasHeaders = ({
               <button
                 onClick={() => handleAutoRegressionNonTP("sts1")}
                 title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
+                className="min-w-[32px] min-h-[32px] lg:min-w-0 lg:min-h-0 inline-flex items-center justify-center p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 lg:w-3 lg:h-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -175,7 +175,7 @@ export const StsSasHeaders = ({
       {settings.semester === "Genap" && (
         <th
           rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
+          className="p-1.5 sm:p-2 text-center border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] select-none cursor-default"
           style={getSelectionStyle(-1, tpHeadersLength).selectionStyle}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
@@ -190,10 +190,10 @@ export const StsSasHeaders = ({
               <button
                 onClick={() => handleAutoRegressionNonTP("sts2")}
                 title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
+                className="min-w-[32px] min-h-[32px] lg:min-w-0 lg:min-h-0 inline-flex items-center justify-center p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 lg:w-3 lg:h-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -214,7 +214,7 @@ export const StsSasHeaders = ({
       {(!settings.semester || settings.semester === "Ganjil") && (
         <th
           rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
+          className="p-1.5 sm:p-2 text-center border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] select-none cursor-default"
           style={getSelectionStyle(-1, tpHeadersLength + 1).selectionStyle}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
@@ -229,10 +229,10 @@ export const StsSasHeaders = ({
               <button
                 onClick={() => handleAutoRegressionNonTP("sas1")}
                 title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
+                className="min-w-[32px] min-h-[32px] lg:min-w-0 lg:min-h-0 inline-flex items-center justify-center p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 lg:w-3 lg:h-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -252,7 +252,7 @@ export const StsSasHeaders = ({
       {settings.semester === "Genap" && (
         <th
           rowSpan={headerRowSpan}
-          className="p-2 text-center border-b border-l border-slate-200 w-20 min-w-[5rem] select-none cursor-default"
+          className="p-1.5 sm:p-2 text-center border-b border-l border-slate-200 dark:border-slate-700 w-16 sm:w-20 min-w-[4rem] sm:min-w-[5rem] select-none cursor-default"
           style={getSelectionStyle(-1, tpHeadersLength + 1).selectionStyle}
           onMouseDown={(e) => {
             if (e.button !== 0) return;
@@ -267,10 +267,10 @@ export const StsSasHeaders = ({
               <button
                 onClick={() => handleAutoRegressionNonTP("sas2")}
                 title="Olah Nilai Otomatis (Regresi)"
-                className="p-1 text-indigo-600 hover:bg-indigo-100 rounded transition-colors cursor-pointer"
+                className="min-w-[32px] min-h-[32px] lg:min-w-0 lg:min-h-0 inline-flex items-center justify-center p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded transition-colors cursor-pointer"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-3.5 h-3.5 lg:w-3 lg:h-3"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

@@ -30,7 +30,7 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
     "div",
     {
       className:
-        "bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden",
+        "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-9.5rem)] overflow-hidden",
     },
     React.createElement(HighlightControls, {
       showIncompleteHighlight,
@@ -51,7 +51,7 @@ export const NilaiKeseluruhanView = ({ students, grades, subjects, predikats: pr
         "table",
         {
           className:
-            "w-full text-sm text-left text-slate-500 border-separate border-spacing-0",
+            "w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0",
         },
         React.createElement(KeseluruhanTableHeader, {
           sortBy,

@@ -23,20 +23,20 @@ export const NilaiTableCapaianCell: React.FC<NilaiTableCapaianCellProps> = React
 }) => {
   return (
     <td
-      className={`p-2 border-b border-l border-slate-200 min-w-[600px] ${
+      className={`p-2 border-b border-l border-slate-200 dark:border-slate-700 min-w-[260px] sm:min-w-[460px] lg:min-w-[600px] ${
         isCapaianPinned
-          ? "sticky right-0 bg-white group-hover:bg-slate-50 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
+          ? "sticky right-0 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 z-10 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.15)]"
           : ""
       }`}
     >
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <AutoSizingTextarea
           value={descriptions.highest}
           onChange={(e) =>
             handleDescriptionChange(studentId, "highest", e.target.value)
           }
           placeholder="Deskripsi Tinggi"
-          className={`w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-green-500 ${
+          className={`w-full sm:w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-green-500 ${
             descriptions.highest && descriptions.highest.trim() !== ""
               ? "border-green-500 ring-1 ring-green-500"
               : "border-red-500 ring-1 ring-red-500"
@@ -49,7 +49,7 @@ export const NilaiTableCapaianCell: React.FC<NilaiTableCapaianCellProps> = React
             handleDescriptionChange(studentId, "lowest", e.target.value)
           }
           placeholder="Deskripsi Rendah"
-          className={`w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-yellow-500 ${
+          className={`w-full sm:w-1/2 p-2 text-xs border rounded resize-none focus:ring-1 focus:ring-yellow-500 ${
             descriptions.lowest && descriptions.lowest.trim() !== ""
               ? "border-green-500 ring-1 ring-green-500"
               : "border-red-500 ring-1 ring-red-500"

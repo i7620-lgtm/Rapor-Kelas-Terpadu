@@ -18,7 +18,7 @@ export const SummativeTableHeader = ({
     "thead",
     {
       className:
-        "text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-[30]",
+        "text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 z-[30]",
     },
     React.createElement(
       "tr",
@@ -28,13 +28,10 @@ export const SummativeTableHeader = ({
         {
           rowSpan: headerRowSpan,
           className:
-            "p-2 text-center sticky top-0 z-20 bg-slate-100 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none align-middle border-b border-r box-border select-none cursor-default",
+            "p-1.5 sm:p-2 text-center sticky top-0 z-20 bg-slate-100 dark:bg-slate-800 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none align-middle border-b border-r border-slate-200 dark:border-slate-700 w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] box-border select-none cursor-default tabular-nums",
           style: {
             left: 0,
             top: 0,
-            width: "50px",
-            minWidth: "50px",
-            maxWidth: "50px",
             ...getSelectionStyle(-1, -2).selectionStyle,
           },
           onMouseDown: (e) => {
@@ -51,12 +48,9 @@ export const SummativeTableHeader = ({
         {
           rowSpan: headerRowSpan,
           className:
-            "p-2 align-middle border-b border-r sticky top-0 z-10 lg:z-20 lg:left-[50px] bg-slate-100 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] w-[260px] min-w-[200px] max-w-[300px] break-words whitespace-normal box-border select-none cursor-default",
+            "p-2 align-middle border-b border-r border-slate-200 dark:border-slate-700 sticky top-0 z-10 lg:z-20 lg:left-[50px] bg-slate-100 dark:bg-slate-800 shadow-none lg:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)] w-[135px] min-w-[130px] max-w-[160px] sm:w-[200px] sm:min-w-[200px] lg:w-[260px] lg:max-w-[300px] break-words whitespace-normal box-border select-none cursor-default",
           style: {
             top: 0,
-            width: "260px",
-            minWidth: "200px",
-            maxWidth: "300px",
             ...getSelectionStyle(-1, -1).selectionStyle,
           },
           onMouseDown: (e) => {
@@ -76,7 +70,7 @@ export const SummativeTableHeader = ({
                 key: `tp-header-${i}`,
                 colSpan: 2,
                 className:
-                  "px-2 py-3 text-center border-b border-l select-none cursor-default",
+                  "px-2 py-3 text-center border-b border-l border-slate-200 dark:border-slate-700 select-none cursor-default",
                 style: getSelectionStyle(-1, i * 2).selectionStyle,
                 onMouseDown: (e) => {
                   if (e.button !== 0) return;
@@ -93,7 +87,7 @@ export const SummativeTableHeader = ({
             {
               rowSpan: headerRowSpan,
               className:
-                "px-2 py-3 text-center align-middle border-b select-none cursor-default",
+                "px-2 py-3 text-center align-middle border-b border-slate-200 dark:border-slate-700 select-none cursor-default",
               style: getSelectionStyle(-1, 0).selectionStyle,
               onMouseDown: (e) => {
                 if (e.button !== 0) return;
@@ -110,7 +104,7 @@ export const SummativeTableHeader = ({
           {
             rowSpan: headerRowSpan,
             className:
-              "px-4 py-3 text-center bg-slate-200 align-middle border-b border-l",
+              "px-3 sm:px-4 py-3 text-center bg-slate-200 dark:bg-slate-700/80 align-middle border-b border-l border-slate-200 dark:border-slate-700",
           },
           "Rata-rata"
         ),
@@ -119,7 +113,7 @@ export const SummativeTableHeader = ({
         {
           rowSpan: headerRowSpan,
           className:
-            "px-4 py-3 text-center align-middle border-b border-l min-w-[600px]",
+            "px-3 sm:px-4 py-3 text-center align-middle border-b border-l border-slate-200 dark:border-slate-700 min-w-[260px] sm:min-w-[460px] lg:min-w-[600px]",
         },
         React.createElement(
           "div",
@@ -130,7 +124,7 @@ export const SummativeTableHeader = ({
             {
               onClick: handleBulkGenerateDescriptions,
               className:
-                "px-2 py-1 text-[10px] bg-green-100 text-green-700 rounded hover:bg-green-200 border border-green-300 font-bold",
+                "px-3 py-1.5 min-h-[38px] lg:min-h-0 text-xs bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-md hover:bg-emerald-200 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 font-bold transition-colors",
             },
             "Generate Otomatis"
           )
@@ -149,7 +143,7 @@ export const SummativeTableHeader = ({
               key: `weight-header-${i}`,
               colSpan: 2,
               className:
-                "px-2 py-1 bg-indigo-50 align-middle text-center border-b border-l",
+                "px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 align-middle text-center border-b border-l border-slate-200 dark:border-slate-700",
             },
             React.createElement(
               "div",
@@ -159,7 +153,7 @@ export const SummativeTableHeader = ({
               React.createElement(
                 "span",
                 {
-                  className: "text-indigo-900 text-[10px] font-bold",
+                  className: "text-indigo-900 dark:text-indigo-300 text-xs font-bold",
                 },
                 "BOBOT"
               ),
@@ -170,7 +164,7 @@ export const SummativeTableHeader = ({
                 value: weights.TP?.[item.id]?.[i] ?? "",
                 onChange: (e) =>
                   handleWeightChange("TP", e.target.value, item.id, i),
-                className: `w-16 p-1 text-center border rounded-md shadow-sm ${weights.TP?.[item.id]?.[i] !== null && weights.TP?.[item.id]?.[i] !== undefined && weights.TP?.[item.id]?.[i] !== "" ? "border-green-500 ring-1 ring-green-500" : "border-red-500 ring-1 ring-red-500"}`,
+                className: `w-16 p-1 text-center tabular-nums border rounded-md shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 ${weights.TP?.[item.id]?.[i] !== null && weights.TP?.[item.id]?.[i] !== undefined && weights.TP?.[item.id]?.[i] !== "" ? "border-green-500 ring-1 ring-green-500" : "border-red-500 ring-1 ring-red-500"}`,
               })
             )
           )
@@ -188,14 +182,14 @@ export const SummativeTableHeader = ({
               "th",
               {
                 className:
-                  "px-2 py-2 text-center font-normal border-b border-l",
+                  "px-2 py-2 text-center font-normal border-b border-l border-slate-200 dark:border-slate-700",
               },
               "Kuantitatif"
             ),
             React.createElement(
               "th",
               {
-                className: "px-2 py-2 text-center font-normal border-b",
+                className: "px-2 py-2 text-center font-normal border-b border-slate-200 dark:border-slate-700",
               },
               "Kualitatif"
             )
@@ -211,7 +205,7 @@ export const SummativeTableHeader = ({
           "th",
           {
             className:
-              "px-2 py-1 bg-indigo-50 align-middle text-center border-b",
+              "px-2 py-1 bg-indigo-50 dark:bg-indigo-950/40 align-middle text-center border-b border-slate-200 dark:border-slate-700",
           },
           React.createElement(
             "div",
@@ -219,7 +213,7 @@ export const SummativeTableHeader = ({
             React.createElement(
               "span",
               {
-                className: "text-indigo-900 text-[10px] font-bold",
+                className: "text-indigo-900 dark:text-indigo-300 text-xs font-bold",
               },
               "BOBOT"
             ),
@@ -230,7 +224,7 @@ export const SummativeTableHeader = ({
               value: weights[type.toUpperCase()] ?? "",
               onChange: (e) =>
                 handleWeightChange(type.toUpperCase(), e.target.value),
-              className: `w-20 p-2 text-center border rounded-md shadow-sm ${weights[type.toUpperCase()] !== null && weights[type.toUpperCase()] !== undefined && weights[type.toUpperCase()] !== "" ? "border-green-500 ring-1 ring-green-500" : "border-red-500 ring-1 ring-red-500"}`,
+              className: `w-20 p-2 text-center tabular-nums border rounded-md shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 ${weights[type.toUpperCase()] !== null && weights[type.toUpperCase()] !== undefined && weights[type.toUpperCase()] !== "" ? "border-green-500 ring-1 ring-green-500" : "border-red-500 ring-1 ring-red-500"}`,
             })
           )
         )

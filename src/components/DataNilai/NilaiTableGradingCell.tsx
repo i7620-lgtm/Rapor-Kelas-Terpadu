@@ -48,14 +48,14 @@ export const NilaiTableGradingCell: React.FC<NilaiTableGradingCellProps> = React
             if (onMouseDown) onMouseDown(e);
           }
         }}
-        className={`w-full p-2 text-sm border rounded-md transition-all relative z-10 bg-white ${
+        className={`w-full p-2 text-sm tabular-nums border rounded-md transition-all relative z-10 bg-white dark:bg-slate-800 ${
           showTransparentInput
-            ? "bg-white border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0"
+            ? "bg-white dark:bg-slate-800 border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0"
             : !isFilled
-              ? "text-rose-700 bg-rose-50 border-red-500 ring-1 ring-red-500"
+              ? "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-red-500 ring-1 ring-red-500"
               : isBelowKkm
-                ? "text-red-600 bg-rose-50 border-red-500 ring-1 ring-red-500"
-                : "text-emerald-700 bg-emerald-50 border-green-500 ring-1 ring-green-500"
+                ? "text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30 border-red-500 ring-1 ring-red-500"
+                : "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-green-500 ring-1 ring-green-500"
         }`}
       >
         <option value="">-</option>

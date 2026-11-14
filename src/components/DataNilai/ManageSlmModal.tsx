@@ -68,26 +68,26 @@ return React.createElement(
       "div",
       {
         className:
-          "fixed inset-0 bg-black bg-opacity-60 z-[70] flex items-center justify-center p-4",
+          "fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-2 sm:p-4",
       },
       React.createElement(
         "div",
         {
           className:
-            "bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col",
+            "bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-4xl max-h-[92dvh] sm:max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800",
         },
         React.createElement(
           "div",
-          { className: "p-4 border-b flex-shrink-0" },
+          { className: "p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 flex-shrink-0" },
           React.createElement(
             "h3",
-            { className: "text-lg font-bold text-slate-800" },
+            { className: "text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100" },
             `Atur Lingkup Materi & TP untuk ${subject.label}`,
           ),
         ),
         React.createElement(
           "div",
-          { className: "p-6 space-y-4 overflow-y-auto" },
+          { className: "p-4 sm:p-6 space-y-4 overflow-y-auto" },
           localSlms.length > 0
             ? localSlms.map((slm) =>
                 React.createElement(ManageSlmItem, {
@@ -104,7 +104,7 @@ return React.createElement(
               )
             : React.createElement(
                 "p",
-                { className: "text-slate-500 text-center py-8" },
+                { className: "text-slate-500 dark:text-slate-400 text-center py-8" },
                 "Belum ada Lingkup Materi untuk mata pelajaran ini.",
               ),
           React.createElement(
@@ -112,7 +112,7 @@ return React.createElement(
             {
               onClick: handleAddCustomSlm,
               className:
-                "w-full mt-4 p-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:bg-slate-50 hover:border-slate-400",
+                "w-full mt-4 p-3 min-h-[44px] lg:min-h-0 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 transition-colors",
             },
             "+ Tambah Lingkup Materi Baru",
           ),
@@ -128,20 +128,20 @@ return React.createElement(
             {
               onClick: () => fileInputRef.current?.click(),
               disabled: isProcessingOcr,
-              className: `w-full mt-2 p-3 border-2 border-dashed border-indigo-300 rounded-lg text-indigo-500 hover:bg-indigo-50 transition-all ${isProcessingOcr ? "opacity-50 cursor-not-allowed" : ""}`,
+              className: `w-full mt-2 p-3 min-h-[44px] lg:min-h-0 border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-all ${isProcessingOcr ? "opacity-50 cursor-not-allowed" : ""}`,
             },
             isProcessingOcr ? "Memproses Gambar..." : "📷 Scan Lingkup Materi / TP dari Gambar (Offline)",
           ),
         ),
         React.createElement(
           "div",
-          { className: "flex justify-end p-4 border-t bg-slate-50" },
+          { className: "flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 rounded-b-xl flex-shrink-0" },
           React.createElement(
             "button",
             {
               onClick: onClose,
               className:
-                "px-4 py-2 text-sm font-medium bg-white border rounded-md",
+                "w-full sm:w-auto px-4 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors",
             },
             "Batal",
           ),
@@ -150,7 +150,7 @@ return React.createElement(
             {
               onClick: handleSaveChanges,
               className:
-                "ml-3 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md",
+                "w-full sm:w-auto px-4 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors",
             },
             `Simpan & Terapkan`,
           ),

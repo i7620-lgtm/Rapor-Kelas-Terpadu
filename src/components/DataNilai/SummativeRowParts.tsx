@@ -35,7 +35,7 @@ export const SummativeRowScoreCells = ({
       return (
         <React.Fragment key={key}>
           <td
-            className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="px-1.5 sm:px-2 py-1 text-center relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/60 w-16 sm:w-20 min-w-[4rem]"
             style={styleQnt}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -73,21 +73,21 @@ export const SummativeRowScoreCells = ({
                 handleMouseDownCell(e, index, colSelectIdxQnt);
               }}
               readOnly={active === "ql"}
-              className={`w-full p-2 text-center border rounded-md relative z-10 transition-all ${
+              className={`w-full p-2 text-center tabular-nums border rounded-md relative z-10 transition-all text-slate-900 dark:text-slate-100 ${
                 showTransQnt
-                  ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                  ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                   : active === "qnt"
                   ? numericValue !== ""
                     ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
-                      ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                      : "border-green-500 ring-1 ring-green-500 bg-white"
-                    : "border-red-500 ring-1 ring-red-500 bg-white"
-                  : "border-slate-300 bg-slate-50"
+                      ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
+                      : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
+                    : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"
+                  : "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70"
               }`}
             />
           </td>
           <td
-            className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+            className="px-1.5 sm:px-2 py-1 text-center relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/60 w-16 sm:w-20 min-w-[4rem]"
             style={styleQl}
             onMouseDown={(e) => {
               const target = e.target as HTMLElement;
@@ -108,16 +108,16 @@ export const SummativeRowScoreCells = ({
                   handleMouseDownCell(e, index, colSelectIdxQl);
                 }
               }}
-              className={`w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
+              className={`w-full p-2 text-xs tabular-nums border rounded-md relative z-10 transition-all text-slate-900 dark:text-slate-100 ${
                 showTransQl
-                  ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                  ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                   : active === "ql"
                   ? qualitativeValue !== ""
                     ? qualitativeValue === "BB"
-                      ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                      : "border-green-500 ring-1 ring-green-500 bg-white"
-                    : "border-red-500 ring-1 ring-red-500 bg-white"
-                  : "border-slate-300 bg-slate-50"
+                      ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
+                      : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
+                    : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"
+                  : "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70"
               }`}
             >
               <option value="">...</option>
@@ -144,7 +144,7 @@ export const SummativeRowScoreCells = ({
     return (
       <React.Fragment>
         <td
-          className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+          className="px-1.5 sm:px-2 py-1 text-center relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/60 w-16 sm:w-20 min-w-[4rem]"
           style={styleQnt}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
@@ -172,21 +172,21 @@ export const SummativeRowScoreCells = ({
               handleMouseDownCell(e, index, colSelectIdxQnt);
             }}
             readOnly={active === "ql"}
-            className={`w-full p-2 text-center border rounded-md relative z-10 transition-all ${
+            className={`w-full p-2 text-center tabular-nums border rounded-md relative z-10 transition-all text-slate-900 dark:text-slate-100 ${
               showTransQnt
-                ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                 : active === "qnt"
                 ? numericValue !== ""
                   ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
-                    ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                    : "border-green-500 ring-1 ring-green-500 bg-white"
-                  : "border-red-500 ring-1 ring-red-500 bg-white"
-                : "border-slate-300 bg-slate-50"
+                    ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
+                    : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
+                  : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"
+                : "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70"
             }`}
           />
         </td>
         <td
-          className="px-2 py-1 text-center relative cursor-default select-none bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50"
+          className="px-1.5 sm:px-2 py-1 text-center relative cursor-default select-none bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/60 w-16 sm:w-20 min-w-[4rem]"
           style={styleQl}
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
@@ -207,16 +207,16 @@ export const SummativeRowScoreCells = ({
                 handleMouseDownCell(e, index, colSelectIdxQl);
               }
             }}
-            className={`w-full p-2 text-xs border rounded-md relative z-10 transition-all ${
+            className={`w-full p-2 text-xs tabular-nums border rounded-md relative z-10 transition-all text-slate-900 dark:text-slate-100 ${
               showTransQl
-                ? "bg-white border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
+                ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                 : active === "ql"
                 ? qualitativeValue !== ""
                   ? qualitativeValue === "BB"
-                    ? "border-red-500 ring-1 ring-red-500 text-red-600 bg-rose-50"
-                    : "border-green-500 ring-1 ring-green-500 bg-white"
-                  : "border-red-500 ring-1 ring-red-500 bg-white"
-                : "border-slate-300 bg-slate-50"
+                    ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
+                    : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
+                  : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"
+                : "border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70"
             }`}
           >
             <option value="">...</option>

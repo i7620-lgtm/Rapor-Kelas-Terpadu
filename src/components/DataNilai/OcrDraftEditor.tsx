@@ -67,7 +67,8 @@ export const OcrDraftEditor = ({
                 "button",
                 {
                   onClick: () => handleRemoveTp(idx),
-                  className: "text-red-400 hover:text-red-500 font-bold text-lg p-1.5 self-center cursor-pointer"
+                  "aria-label": `Hapus TP ${idx + 1}`,
+                  className: "text-red-400 hover:text-red-500 min-w-[44px] min-h-[44px] lg:min-w-0 lg:min-h-0 flex items-center justify-center font-bold text-lg p-1.5 self-center cursor-pointer rounded hover:bg-red-950/30"
                 },
                 "×"
               )
@@ -81,7 +82,7 @@ export const OcrDraftEditor = ({
         "button",
         {
           onClick: handleAddTpManual,
-          className: "px-3 py-1 text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-indigo-900/60 rounded-md transition-colors cursor-pointer"
+          className: "px-3 py-1.5 min-h-[40px] lg:min-h-0 text-xs bg-slate-900 hover:bg-slate-800 text-indigo-400 border border-indigo-900/60 rounded-md transition-colors cursor-pointer"
         },
         "+ Tambah TP Baru secara Manual"
       ),
@@ -90,7 +91,7 @@ export const OcrDraftEditor = ({
             "button",
             {
               onClick: handleClear,
-              className: "px-3 py-1 text-xs text-red-400 hover:text-red-500 hover:bg-red-950/20 rounded transition-colors cursor-pointer"
+              className: "px-3 py-1.5 min-h-[40px] lg:min-h-0 text-xs text-red-400 hover:text-red-500 hover:bg-red-950/20 rounded transition-colors cursor-pointer"
             },
             "Kosongkan Formulir"
           )
