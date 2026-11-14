@@ -116,7 +116,7 @@ export const useNilaiStore = create<NilaiState>()(
               item.detailedGrades[update.subjectId] = update.newDetailedGrade;
               
               const subject = subjects.find((s) => s.id === update.subjectId);
-              const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "5"}`;
+              const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
               const curriculumKey = subject ? subject.curriculumKey || subject.fullName : null;
               
               item.finalGrades = item.finalGrades ?? {};
@@ -138,7 +138,7 @@ export const useNilaiStore = create<NilaiState>()(
 
           Object.values(updateMap).forEach((update: any) => {
             const subject = subjects.find((s) => s.id === update.subjectId);
-            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "5"}`;
+            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
             const curriculumKey = subject ? subject.curriculumKey || subject.fullName : null;
             
             const finalGradeVal = calculateFinalGrade(
