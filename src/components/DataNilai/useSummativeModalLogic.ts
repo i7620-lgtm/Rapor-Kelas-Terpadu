@@ -41,7 +41,7 @@ export const useSummativeModalLogic = (props) => {
   const { qualitativeGradingMap } = settings;
 
   const objectivesForSubject = useMemo(() => {
-    const gradeKey = `Kelas ${gradeNumber}`;
+    const gradeKey = `Kelas ${gradeNumber || 6}`;
     const curriculumKey = subject.curriculumKey || subject.fullName;
     return objectives[gradeKey]?.[curriculumKey] || [];
   }, [objectives, gradeNumber, subject]);
@@ -264,7 +264,7 @@ export const useSummativeModalLogic = (props) => {
 
   const handleSave = () => {
     if (isSLM) {
-      const gradeKey = `Kelas ${gradeNumber}`;
+      const gradeKey = `Kelas ${gradeNumber || 6}`;
       const curriculumKey = subject.curriculumKey || subject.fullName;
       const existingObjectives = objectives[gradeKey]?.[curriculumKey] || [];
       const otherSlmObjectives = existingObjectives.filter(
@@ -496,12 +496,18 @@ export const useSummativeModalLogic = (props) => {
   const handleTpSelectionModalClose = (selectedTps) => {
     setIsTpSelectionModalOpen(false);
     if (selectedTps && selectedTps.length > 0) {
+      const timestamp = Date.now();
       setLocalObjectives((prev) => {
-        const newTps = selectedTps.map((tp) => ({
-          id: `tp_selected_${tp.id}_${Date.now()}`,
-          text: tp.text,
-          isEdited: false,
-        }));
+        const newTps = selectedTps
+          .map((tp, idx) => {
+            const text = typeof tp === "string" ? tp : tp?.text || "";
+            return {
+              id: `tp_selected_${timestamp}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+              text,
+              isEdited: typeof tp === "string" ? true : Boolean(tp?.isEdited),
+            };
+          })
+          .filter((tp) => tp.text.trim() !== "");
         return [...prev, ...newTps];
       });
     }
@@ -511,16 +517,7 @@ export const useSummativeModalLogic = (props) => {
   const availableTPsForSelection = useMemo(() => {
     if (!predefinedCurriculum) return [];
     const curriculumKey = subject.curriculumKey || subject.fullName;
-    const predefinedSlms = predefinedCurriculum[curriculumKey] || [];
-    const allTps = [];
-    predefinedSlms.forEach((slm) => {
-      if (slm.tps) {
-        slm.tps.forEach((tp) => {
-          allTps.push({ id: `${slm.id}_${tp.id}`, text: tp.text });
-        });
-      }
-    });
-    return allTps;
+    return predefinedCurriculum[curriculumKey] || [];
   }, [predefinedCurriculum, subject]);
 
   return {
