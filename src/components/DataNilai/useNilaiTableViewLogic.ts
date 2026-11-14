@@ -58,7 +58,7 @@ export const useNilaiTableViewLogic = (props) => {
   const tableContainerRef = useRef(null);
 
   const gradeNumber = useMemo(
-    () => getGradeNumber(settings.nama_kelas),
+    () => getGradeNumber(settings.nama_kelas) ?? 6,
     [settings.nama_kelas],
   );
 
@@ -83,7 +83,7 @@ export const useNilaiTableViewLogic = (props) => {
   );
 
   const objectivesForSubject = useMemo(() => {
-    const gradeKey = `Kelas ${gradeNumber}`;
+    const gradeKey = `Kelas ${gradeNumber || 6}`;
     const curriculumKey = subject.curriculumKey || subject.fullName;
     return (
       (learningObjectives &&
