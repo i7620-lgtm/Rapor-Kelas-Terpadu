@@ -1,21 +1,25 @@
 import React from 'react';
+import type { GridSelectionBounds } from '../../hooks/useGridSelection';
 
 interface SiswaTableRowProps {
     student: any;
+    photoSrc?: string;
     rowIndex: number;
     otherFields: any[];
     nameField: any;
+    selectionBounds?: GridSelectionBounds | null;
     getSelectionStyle: (r: number, c: number) => any;
     handleMouseDownCell: (e: any, r: number, c: number) => void;
     handleMouseEnterCell: (r: number, c: number) => void;
     handleMoveStudent: (idx: number, dir: number) => void;
-    renderCellInput: (student: any, fieldDef: any, rowIndex: number, colIndex: number) => React.ReactNode;
+    renderCellInput: (student: any, fieldDef: any, rowIndex: number, colIndex: number, photoSrc?: string) => React.ReactNode;
     handleDelete: (id: string) => void;
     isLastRow: boolean;
 }
 
 export const SiswaTableRow = React.memo(({
     student,
+    photoSrc,
     rowIndex,
     otherFields,
     nameField,
@@ -67,10 +71,10 @@ export const SiswaTableRow = React.memo(({
                 </div>
             </td>
             {/* Name Column -> colIndex: 0 */}
-            {renderCellInput(student, nameField, rowIndex, 0)}
+            {renderCellInput(student, nameField, rowIndex, 0, photoSrc)}
             {/* Other Fields Columns -> colIndex: 1 to N */}
             {otherFields.map((field, colIndexOffset) => {
-                const cell = renderCellInput(student, field, rowIndex, colIndexOffset + 1);
+                const cell = renderCellInput(student, field, rowIndex, colIndexOffset + 1, photoSrc);
                 return React.cloneElement(cell as React.ReactElement, { key: field.key });
             })}
             {/* Action Column -> Skipped grid selection as it's not a data field */}
@@ -93,20 +97,48 @@ export const SiswaTableRow = React.memo(({
     if (prev.student.id !== next.student.id) return false;
     if (prev.rowIndex !== next.rowIndex) return false;
     if (prev.isLastRow !== next.isLastRow) return false;
+    if (prev.photoSrc !== next.photoSrc) return false;
 
-    if (JSON.stringify(prev.student) !== JSON.stringify(next.student)) return false;
-
-    const maxCols = prev.otherFields.length + 1;
-    for (let c = -1; c <= maxCols; c++) {
-        const prevStyle = prev.getSelectionStyle(prev.rowIndex, c);
-        const nextStyle = next.getSelectionStyle(next.rowIndex, c);
-        if (
-            prevStyle.isCellSelected !== nextStyle.isCellSelected ||
-            prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
-            prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
-            prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
-        ) {
+    if (prev.student !== next.student) {
+        if (prev.nameField && prev.student[prev.nameField.key] !== next.student[prev.nameField.key]) {
             return false;
+        }
+        for (let i = 0; i < prev.otherFields.length; i++) {
+            const key = prev.otherFields[i].key;
+            if (prev.student[key] !== next.student[key]) {
+                return false;
+            }
+        }
+    }
+
+    if (prev.selectionBounds !== next.selectionBounds) {
+        if (prev.selectionBounds !== undefined || next.selectionBounds !== undefined) {
+            const prevInRow = Boolean(
+                prev.selectionBounds &&
+                prev.rowIndex >= prev.selectionBounds.minR &&
+                prev.rowIndex <= prev.selectionBounds.maxR
+            );
+            const nextInRow = Boolean(
+                next.selectionBounds &&
+                next.rowIndex >= next.selectionBounds.minR &&
+                next.rowIndex <= next.selectionBounds.maxR
+            );
+            if (!prevInRow && !nextInRow) {
+                return true;
+            }
+        }
+        const maxCols = prev.otherFields.length + 1;
+        for (let c = -1; c <= maxCols; c++) {
+            const prevStyle = prev.getSelectionStyle(prev.rowIndex, c);
+            const nextStyle = next.getSelectionStyle(next.rowIndex, c);
+            if (
+                prevStyle.isCellSelected !== nextStyle.isCellSelected ||
+                prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
+                prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
+                prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
+            ) {
+                return false;
+            }
         }
     }
     return true;
