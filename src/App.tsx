@@ -13,23 +13,26 @@ import useServiceWorker from "./hooks/useServiceWorker";
 import useWindowDimensions from "./hooks/useWindowDimensions";
 
 import { useAppStorage } from "./hooks/useAppStorage";
-import { getGradeNumber } from "./utils/nilaiHelpers";
-import { calculateFinalGrade } from "./utils/gradeCalculations";
-
-import { useSemesterManager } from "./hooks/useSemesterManager";
+import { useDataSyncCoordinators } from "./hooks/useDataSyncCoordinators";
 import { useExcelManager } from "./hooks/useExcelManager";
+import { useExitWarning } from "./hooks/useExitWarning";
+import { useSettingsStore } from "./stores/useSettingsStore";
+import { flushAllPendingWrites } from "./stores/customPersistStorage";
+import { flushRegisteredInputs } from "./utils/dataIntegrity";
 
 import Navigation from "./components/Navigation";
 import ActivePageRenderer from "./components/ActivePageRenderer";
 import Toast from "./components/Toast";
+import { ExitConfirmationModal } from "./components/ExitConfirmationModal";
 
 const ERaporProcessorModal = lazy(() => import("./components/ERaporProcessorModal"));
-const SemesterChangeModal = lazy(() => import("./components/SemesterChangeModal"));
 
 const App = () => {
   const { isUpdateAvailable, isUpdating, updateAssets } = useServiceWorker();
   const [activePage, setActivePage] = useState("DASHBOARD");
   const [targetSection, setTargetSection] = useState(null);
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+  const [isSessionClosed, setIsSessionClosed] = useState(false);
   const mainRef = useRef(null);
 
   const handleNavigate = useCallback((page, target = null) => {
@@ -53,127 +56,75 @@ const App = () => {
   const { isMobile } = useWindowDimensions();
 
   const {
-    toast, setToast, showToast,
-    isLoading, setIsLoading,
-    activeNilaiTab, setActiveNilaiTab,
-    isMobileMenuOpen, setIsMobileMenuOpen,
-    isERaporModalOpen, setIsERaporModalOpen,
-    pendingSemester,
-    showSemesterModal, setShowSemesterModal,
+    toast,
+    setToast,
+    showToast,
+    isLoading,
+    setIsLoading,
+    activeNilaiTab,
+    setActiveNilaiTab,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    isERaporModalOpen,
+    setIsERaporModalOpen,
     isDataLoaded,
-    settings, setSettings,
-    students, setStudents,
-    grades, setGrades,
-    notes, setNotes,
-    cocurricularData, setCocurricularData,
-    attendance, setAttendance,
-    extracurriculars, setExtracurriculars,
-    studentExtracurriculars, setStudentExtracurriculars,
-    subjects, setSubjects,
-    learningObjectives, setLearningObjectives,
-    formativeJournal, setFormativeJournal,
-    predefinedCurriculum
   } = useAppStorage();
 
-  // Handle grade autocalculations based on students array size
-  useEffect(() => {
-    if (isDataLoaded && students.length > 0 && grades.length < students.length) {
-      const newGrades = [...grades];
-      let hasChanges = false;
-      students.forEach((student) => {
-        if (!newGrades.some((g) => g.studentId === student.id)) {
-          newGrades.push({
-            studentId: student.id,
-            detailedGrades: {},
-            finalGrades: {},
-          });
-          hasChanges = true;
-        }
-      });
-      if (hasChanges) setGrades(newGrades);
-    }
-  }, [students.length, isDataLoaded]);
+  const enableExitWarning = useSettingsStore((state) => Boolean(state.settings?.enableExitWarning));
 
-  // Handle auto calculations when settings or parameters change
-  useEffect(() => {
-    if (!isDataLoaded) return;
-    setGrades((currentGrades) => {
-      let anyChanged = false;
-      const newGrades = currentGrades.map((studentGrade) => {
-        const newFinalGrades = { ...studentGrade.finalGrades };
-        let studentChanged = false;
-        subjects.forEach((subj) => {
-          const detailed = studentGrade.detailedGrades?.[subj.id];
-          if (detailed) {
-            const config = settings.gradeCalculation?.[subj.id] || { method: "rata-rata" };
-            const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
-            const curriculumKey = subj.curriculumKey || subj.fullName;
-            const calculated = calculateFinalGrade(
-              detailed, config, settings, subj.id, learningObjectives, gradeKey, curriculumKey, predefinedCurriculum
-            );
-            if (calculated !== newFinalGrades[subj.id]) {
-              newFinalGrades[subj.id] = calculated;
-              studentChanged = true;
-            }
-          }
-        });
-        if (studentChanged) {
-          anyChanged = true;
-          return { ...studentGrade, finalGrades: newFinalGrades };
-        }
-        return studentGrade;
-      });
-      return anyChanged ? newGrades : currentGrades;
-    });
-  }, [
-    settings.gradeCalculation, settings.predikats, settings.qualitativeGradingMap,
-    settings.slmVisibility, settings.semester, settings.nama_kelas,
-    learningObjectives, subjects, predefinedCurriculum, isDataLoaded
-  ]);
+  useDataSyncCoordinators(isDataLoaded);
 
-  // Place custom hooks
   const { handleExportAll, handleImportAll } = useExcelManager({
-    settings,
-    setSettings,
-    students,
-    setStudents,
-    grades,
-    setGrades,
-    attendance,
-    setAttendance,
-    studentExtracurriculars,
-    setStudentExtracurriculars,
-    notes,
-    setNotes,
-    cocurricularData,
-    setCocurricularData,
-    subjects,
-    setSubjects,
-    extracurriculars,
-    setExtracurriculars,
-    learningObjectives,
-    setLearningObjectives,
-    formativeJournal,
-    setFormativeJournal,
     setIsLoading,
     showToast,
-    predefinedCurriculum,
   });
 
-  const { handleSemesterChangeConfirm } = useSemesterManager({
-    settings,
-    pendingSemester,
-    setSettings,
-    setShowSemesterModal,
-    setStudents,
-    setGrades,
-    setAttendance,
-    setNotes,
-    setCocurricularData,
-    setStudentExtracurriculars,
-    setFormativeJournal,
-    showToast,
+  useExitWarning({
+    enabled: enableExitWarning,
+    isSessionClosed,
   });
+
+  const handleDirectExit = useCallback(async () => {
+    flushRegisteredInputs();
+    await flushAllPendingWrites();
+    setIsExitModalOpen(false);
+    setIsSessionClosed(true);
+  }, []);
+
+  const handleDownloadAndExit = useCallback(async (): Promise<boolean> => {
+    const ok = await handleExportAll();
+    if (ok) {
+      await flushAllPendingWrites();
+      setIsExitModalOpen(false);
+      setIsSessionClosed(true);
+    }
+    return ok;
+  }, [handleExportAll]);
+
+  if (isSessionClosed) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex items-center justify-center p-4 font-sans transition-colors">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 max-w-md w-full p-6 sm:p-8 text-center">
+          <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Sesi Kerja Diakhiri</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Seluruh perubahan data telah disimpan ke penyimpanan lokal browser. Anda sekarang dapat menutup tab browser dengan aman.
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsSessionClosed(false)}
+            className="mt-6 w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors cursor-pointer"
+          >
+            Kembali ke Aplikasi
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
@@ -189,6 +140,8 @@ const App = () => {
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           currentPageName={NAV_ITEMS.find((i) => i.id === activePage)?.label || "Dashboard"}
+          enableExitWarning={enableExitWarning}
+          onRequestExit={() => setIsExitModalOpen(true)}
         />
         <main ref={mainRef} className="flex-1 flex flex-col min-h-0 min-w-0 overflow-auto px-3 pb-4 sm:px-6 sm:pb-6 pt-3 sm:pt-4">
           {isLoading ? (
@@ -214,56 +167,21 @@ const App = () => {
       {isERaporModalOpen && (
         <Suspense fallback={null}>
           <ERaporProcessorModal
-            isOpen={isERaporModalOpen}
             onClose={() => setIsERaporModalOpen(false)}
-            settings={settings}
-            students={students}
-            grades={grades}
-            attendance={attendance}
-            notes={notes}
-            studentExtracurriculars={studentExtracurriculars}
-            cocurricularData={cocurricularData}
-            subjects={subjects}
-            extracurriculars={extracurriculars}
-            learningObjectives={learningObjectives}
-            formativeJournal={formativeJournal}
-            predefinedCurriculum={predefinedCurriculum}
-            onImportSettings={setSettings}
-            onImportStudents={setStudents}
-            onImportGrades={setGrades}
-            onImportAttendance={setAttendance}
-            onImportNotes={setNotes}
-            onImportStudentExtracurriculars={setStudentExtracurriculars}
-            onImportCocurricularData={setCocurricularData}
-            onImportSubjects={setSubjects}
-            onImportExtracurriculars={setExtracurriculars}
-            onImportLearningObjectives={setLearningObjectives}
-            onImportFormativeJournal={setFormativeJournal}
             showToast={showToast}
           />
         </Suspense>
       )}
 
-      {showSemesterModal && (
-        <Suspense fallback={null}>
-          <SemesterChangeModal
-            isOpen={showSemesterModal}
-            currentSemester={settings.semester || "Ganjil"}
-            pendingSemester={pendingSemester}
-            onClose={() => setShowSemesterModal(false)}
-            students={students}
-            grades={grades}
-            attendance={attendance}
-            notes={notes}
-            cocurricularData={cocurricularData}
-            studentExtracurriculars={studentExtracurriculars}
-            formativeJournal={formativeJournal}
-            onConfirm={handleSemesterChangeConfirm}
-          />
-        </Suspense>
-      )}
+      <ExitConfirmationModal
+        isOpen={isExitModalOpen}
+        onClose={() => setIsExitModalOpen(false)}
+        onDirectExit={handleDirectExit}
+        onDownloadAndExit={handleDownloadAndExit}
+      />
     </div>
   );
 };
 
 export default App;
+

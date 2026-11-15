@@ -30,10 +30,10 @@ export const initialSettings = {
   nama_kelas: '', tahun_ajaran: '', semester: '', tanggal_rapor: '',
   nama_kepala_sekolah: '', nip_kepala_sekolah: '', nama_wali_kelas: '', nip_wali_kelas: '',
   nip_label_kepala_sekolah: 'NIP', nip_label_wali_kelas: 'NIP',
-  cocurricular_theme: '', cocurricular_theme_Genap: '',
+  cocurricular_theme: '',
   predikats: { a: '90', b: '80', c: '70', d: '0' },
   gradeCalculation: {},
-  qualitativeGradingMap: {},
+  qualitativeGradingMap: { SB: 95, BSH: 85, MB: 75, BB: 35 },
   slmVisibility: {}, 
   kop_layout: [],
   piagam_layout: [],
@@ -115,32 +115,46 @@ export const QUALITATIVE_DESCRIPTORS = {
     BB: 'Belum Berkembang',
 };
 
-export const getContextualKey = (settings, baseKey) => {
+export const getContextualKey = (settings: any, baseKey: string) => {
     if (!settings) return baseKey;
     const kls = String(settings.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
     const ta = String(settings.tahun_ajaran || '').replace(/[^a-zA-Z0-9]/g, '');
-    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
-    return `${baseKey}_ctx_${kls}_${ta}_${sem}`;
+    return `${baseKey}_ctx_${kls}_${ta}`;
 };
 
-export const getContextualValue = (settings, baseKey) => {
+export const getContextualValue = (settings: any, baseKey: string) => {
     if (!settings) return '';
     const dynKey = getContextualKey(settings, baseKey);
-    return settings[dynKey] || settings[baseKey] || '';
+    if (settings[dynKey]) return settings[dynKey];
+    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
+    return (
+        settings[`${dynKey}_${sem}`] ||
+        settings[`${dynKey}_Ganjil`] ||
+        settings[`${dynKey}_Genap`] ||
+        settings[baseKey] ||
+        ''
+    );
 };
 
-export const getTanggalRaporKey = (settings) => {
+export const getTanggalRaporKey = (settings: any) => {
     if (!settings) return 'tanggal_rapor';
     const kls = String(settings.nama_kelas || '').replace(/[^a-zA-Z0-9]/g, '');
     const ta = String(settings.tahun_ajaran || '').replace(/[^a-zA-Z0-9]/g, '');
-    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
-    return `tanggal_rapor_ctx_${kls}_${ta}_${sem}`;
+    return `tanggal_rapor_ctx_${kls}_${ta}`;
 };
 
-export const getTanggalRaporValue = (settings) => {
+export const getTanggalRaporValue = (settings: any) => {
     if (!settings) return '';
     const dynKey = getTanggalRaporKey(settings);
-    return settings[dynKey] || '';
+    if (settings[dynKey]) return settings[dynKey];
+    const sem = String(settings.semester || '').replace(/[^a-zA-Z0-9]/g, '');
+    return (
+        settings[`${dynKey}_${sem}`] ||
+        settings[`${dynKey}_Ganjil`] ||
+        settings[`${dynKey}_Genap`] ||
+        settings.tanggal_rapor ||
+        ''
+    );
 };
 
 export const FORMATIVE_ASSESSMENT_TYPES = [
