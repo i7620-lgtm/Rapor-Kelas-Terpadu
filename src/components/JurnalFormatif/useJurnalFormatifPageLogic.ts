@@ -28,8 +28,6 @@ export const useJurnalFormatifPageLogic = (props: any) => {
   const formativeJournal = props.formativeJournal || storeFormative;
   const predefinedCurriculum = props.predefinedCurriculum || storePredefined;
 
-  const currentSemester = settings?.semester || 'Ganjil';
-
   const handleUpdate = props.onUpdate || ((sid: string, data: any) => {
     useFormativeStore.getState().setFormativeJournal((prev: any) => {
       const next = { ...prev };
@@ -60,7 +58,6 @@ export const useJurnalFormatifPageLogic = (props: any) => {
     grades,
     formativeJournal,
     predefinedCurriculum,
-    currentSemester,
     isModalOpen,
     setIsModalOpen,
     selectedStudent,

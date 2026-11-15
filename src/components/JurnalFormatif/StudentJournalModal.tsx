@@ -25,7 +25,7 @@ export const StudentJournalModal: React.FC<StudentJournalModalProps> = ({
   showToast, 
   subjects, 
   grades, 
-  settings, 
+  settings: _settings, 
   predefinedCurriculum 
 }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -49,12 +49,9 @@ export const StudentJournalModal: React.FC<StudentJournalModalProps> = ({
   };
 
   const handleSaveNote = (noteData: any) => {
-    const enrichedNote = {
-      ...noteData,
-      semester: noteData.semester || settings?.semester || 'Ganjil'
-    };
-    onUpdate(student.id, enrichedNote);
-    showToast(enrichedNote.id ? 'Catatan berhasil diperbarui.' : 'Catatan baru berhasil disimpan.', 'success');
+    const { semester: _ignoredSemester, ...cleanNote } = noteData || {};
+    onUpdate(student.id, cleanNote);
+    showToast(cleanNote.id ? 'Catatan berhasil diperbarui.' : 'Catatan baru berhasil disimpan.', 'success');
   };
   
   const getSlmName = (note: any) => {
