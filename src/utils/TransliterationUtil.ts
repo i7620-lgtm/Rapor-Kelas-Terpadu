@@ -399,11 +399,10 @@ export const generateInitialLayout = (appSettings: any) => {
 /**
  * Resolves the appropriate kop layout according to semester and aksara Bali status.
  */
-export const resolveKopLayout = (settings: any, currentSemester: string = 'Ganjil'): any[] => {
-    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+export const resolveKopLayout = (settings: any, _currentSemester: string = 'Ganjil'): any[] => {
     const showAksara = settings?.show_aksara_bali !== false;
 
-    let rawLayout = settings ? settings[layoutField] : null;
+    let rawLayout = settings ? (settings.kop_layout ?? settings.kop_layout_Genap) : null;
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);

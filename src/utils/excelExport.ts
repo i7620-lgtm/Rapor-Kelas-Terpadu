@@ -7,6 +7,7 @@ import { sanitizeGrades, sanitizeNotes, sanitizeAttendance, sanitizeStudentExtra
 export const exportToExcelBlob = async ({
     settings,
     students,
+    studentPhotos = {},
     grades,
     attendance,
     studentExtracurriculars,
@@ -16,7 +17,7 @@ export const exportToExcelBlob = async ({
     extracurriculars = [],
     learningObjectives = {},
     formativeJournal = {}
-}) => {
+}: any) => {
     if (typeof XLSX === "undefined") return null;
     try {
         const wb = XLSX.utils.book_new();
@@ -31,6 +32,15 @@ export const exportToExcelBlob = async ({
          const cleanCocurricularData = sanitizeCocurricularData(cocurricularData, activeSemester);
          const cleanLearningObjectives = sanitizeLearningObjectives(learningObjectives, activeSemester);
          const cleanFormativeJournal = sanitizeFormativeJournal(formativeJournal, activeSemester);
+
+         const studentNameMap = new Map<string, string>();
+         (students || []).forEach((s: any) => {
+           if (s?.id) studentNameMap.set(String(s.id), s.namaLengkap || "");
+         });
+         const cleanGradeMap = new Map<string, any>();
+         (cleanGrades || []).forEach((g: any) => {
+           if (g?.studentId) cleanGradeMap.set(String(g.studentId), g);
+         });
 
         // 1. Settings (Readable)
         let rSettings = [ ["Kunci Pengaturan Nilai", "Nilai"] ];
@@ -82,20 +92,18 @@ export const exportToExcelBlob = async ({
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rStudents), "Daftar Siswa");
 
         // 5. Tujuan Pembelajaran
-        let rLO = [ ["Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)", "Semester"] ];
+        let rLO = [ ["Nama Mata Pelajaran", "ID SLM", "Nama SLM", "Deskripsi Tujuan Pembelajaran (TP)"] ];
         if (cleanLearningObjectives) {
              Object.entries(cleanLearningObjectives).forEach(([, subMap]) => {
                   if (subMap) {
                        Object.entries(subMap).forEach(([subjName, list]) => {
                             if (Array.isArray(list)) {
                                  list.forEach(row => {
-                                      const rowSem = row.semester || "Ganjil";
                                       rLO.push([
                                            subjName,
                                            row.slmId || "",
                                            row.name || (subjName + " - SLM"),
-                                           row.text || "",
-                                           rowSem
+                                           row.text || ""
                                       ]);
                                  });
                             }
@@ -115,7 +123,7 @@ export const exportToExcelBlob = async ({
              // Detect unique slmId and max TP count for this subject
              let slmTps = {};
              students.forEach(st => {
-                  const g = cleanGrades.find(x => x.studentId === st.id);
+                  const g = cleanGradeMap.get(String(st.id));
                   const detailed = g?.detailedGrades?.[subj.id];
                   if (detailed && detailed.slm) {
                        detailed.slm.forEach(slm => {
@@ -129,11 +137,8 @@ export const exportToExcelBlob = async ({
                   }
              });
              objectives.forEach(obj => {
-                  const rowSem = obj.semester || "Ganjil";
-                  if (rowSem.toLowerCase().trim() === activeSemester.toLowerCase().trim()) {
-                       if (obj.slmId) {
-                            if (!slmTps[obj.slmId]) slmTps[obj.slmId] = 1;
-                       }
+                  if (obj.slmId) {
+                       if (!slmTps[obj.slmId]) slmTps[obj.slmId] = 1;
                   }
              });
 
@@ -148,7 +153,7 @@ export const exportToExcelBlob = async ({
 
              let rGrMapel = [ headers ];
              students.forEach(st => {
-                  const g = cleanGrades.find(x => x.studentId === st.id);
+                  const g = cleanGradeMap.get(String(st.id));
                   const detailed = g?.detailedGrades?.[subj.id];
                   
                   let rData = [st.id, st.namaLengkap || ""];
@@ -158,21 +163,15 @@ export const exportToExcelBlob = async ({
                             rData.push(slmObj && slmObj.scores && slmObj.scores[i] !== undefined ? slmObj.scores[i] : "");
                        }
                   });
-                  if (isGenap) {
-                       rData.push(
-                            detailed?.sts2 !== undefined && detailed?.sts2 !== null ? detailed.sts2 : "",
-                            detailed?.sas2 !== undefined && detailed?.sas2 !== null ? detailed.sas2 : "",
-                            detailed?.descriptions_Genap?.highest || "",
-                            detailed?.descriptions_Genap?.lowest || ""
-                       );
-                  } else {
-                       rData.push(
-                            detailed?.sts1 !== undefined && detailed?.sts1 !== null ? detailed.sts1 : "",
-                            detailed?.sas1 !== undefined && detailed?.sas1 !== null ? detailed.sas1 : "",
-                            detailed?.descriptions?.highest || "",
-                            detailed?.descriptions?.lowest || ""
-                       );
-                  }
+                  const stsVal = detailed?.sts !== undefined ? detailed.sts : (isGenap ? detailed?.sts2 : detailed?.sts1);
+                  const sasVal = detailed?.sas !== undefined ? detailed.sas : (isGenap ? detailed?.sas2 : detailed?.sas1);
+                  const descObj = detailed?.descriptions || (isGenap ? detailed?.descriptions_Genap : undefined);
+                  rData.push(
+                       stsVal !== undefined && stsVal !== null ? stsVal : "",
+                       sasVal !== undefined && sasVal !== null ? sasVal : "",
+                       descObj?.highest || "",
+                       descObj?.lowest || ""
+                  );
                   rGrMapel.push(rData);
              });
              XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rGrMapel), "Nilai_" + subj.id);
@@ -181,7 +180,7 @@ export const exportToExcelBlob = async ({
         // 7. Absensi (Readable)
         let rAbsensi = [ ["ID Siswa", "Nama Siswa", "Sakit", "Izin", "Alpa"] ];
         cleanAttendance.forEach(a => {
-             const studentName = students.find(s => s.id === a.studentId)?.namaLengkap || "";
+             const studentName = studentNameMap.get(String(a.studentId)) || "";
              rAbsensi.push([a.studentId, studentName, a.sakit != null ? Number(a.sakit) : "", a.izin != null ? Number(a.izin) : "", a.alpa != null ? Number(a.alpa) : ""]);
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAbsensi), "Absensi");
@@ -189,7 +188,7 @@ export const exportToExcelBlob = async ({
         // 8. Data Ekstra
         let rDE = [ ["ID Siswa", "Nama Siswa", "Urutan Ekstra", "ID Ekstrakurikuler", "Deskripsi"] ];
         cleanStudentExtracurriculars.forEach(se => {
-             const studentName = students.find(s => s.id === se.studentId)?.namaLengkap || "";
+             const studentName = studentNameMap.get(String(se.studentId)) || "";
              if (Array.isArray(se.assignedActivities)) {
                   se.assignedActivities.forEach((actId, idx) => {
                        if (actId) {
@@ -203,26 +202,16 @@ export const exportToExcelBlob = async ({
 
         // 9. Data Kokurikuler
         let rKo = [ ["ID Siswa", "Nama Siswa", ...COCURRICULAR_DIMENSIONS.map(d => d.id), "Deskripsi Manual"] ];
-        Object.entries(cleanCocurricularData || {}).forEach(([sid, data]) => {
-             const studentName = students.find(s => s.id === sid)?.namaLengkap || "";
-             if (isGenap) {
-                  if (data.dimensionRatings_Genap) {
-                       let rowGenap = [sid, studentName];
-                       COCURRICULAR_DIMENSIONS.forEach(dim => {
-                            rowGenap.push(data.dimensionRatings_Genap[dim.id] || "");
-                       });
-                       rowGenap.push(data.dimensionRatings_Genap.manualDescription || "");
-                       rKo.push(rowGenap);
-                  }
-             } else {
-                  if (data.dimensionRatings) {
-                       let rowGanjil = [sid, studentName];
-                       COCURRICULAR_DIMENSIONS.forEach(dim => {
-                            rowGanjil.push(data.dimensionRatings[dim.id] || "");
-                       });
-                       rowGanjil.push(data.dimensionRatings.manualDescription || "");
-                       rKo.push(rowGanjil);
-                  }
+        Object.entries(cleanCocurricularData || {}).forEach(([sid, data]: [string, any]) => {
+             const studentName = studentNameMap.get(String(sid)) || "";
+             const ratings = data?.dimensionRatings || data?.dimensionRatings_Genap;
+             if (ratings) {
+                  let row = [sid, studentName];
+                  COCURRICULAR_DIMENSIONS.forEach(dim => {
+                       row.push(ratings[dim.id] || "");
+                  });
+                  row.push(ratings.manualDescription || "");
+                  rKo.push(row);
              }
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rKo), "Data Kokurikuler");
@@ -230,7 +219,7 @@ export const exportToExcelBlob = async ({
         // 10. Catatan Wali Kelas
         let rCat = [ ["ID Siswa", "Nama Siswa", "Catatan Wali Kelas"] ];
         Object.entries(cleanNotes || {}).forEach(([sid, note]) => {
-             const studentName = students.find(s => s.id === sid)?.namaLengkap || "";
+             const studentName = studentNameMap.get(String(sid)) || "";
              rCat.push([sid, studentName, note]);
         });
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rCat), "Catatan Wali Kelas");
@@ -238,7 +227,7 @@ export const exportToExcelBlob = async ({
         // 11. Jurnal Formatif
         let rJF = [ ["ID Siswa", "Nama Siswa", "ID Catatan", "Tanggal", "Tipe", "Mapel ID", "SLM ID", "TP ID", "Topik", "Isi Catatan"] ];
         Object.entries(cleanFormativeJournal || {}).forEach(([sid, list]) => {
-              const studentName = students.find(s => s.id === sid)?.namaLengkap || "";
+              const studentName = studentNameMap.get(String(sid)) || "";
               if (Array.isArray(list)) {
                    list.forEach(jf => {
                         rJF.push([
@@ -261,8 +250,9 @@ export const exportToExcelBlob = async ({
         // 12. Foto Siswa
         let rFoto = [ ["ID Siswa", "Part Index", "Base64 Chunk"] ];
         students.forEach(st => {
-             if (st.foto) {
-                  const chunks = chunkString(st.foto, 30000);
+             const fotoData = (studentPhotos && studentPhotos[st.id]) || st.foto;
+             if (fotoData && typeof fotoData === 'string' && !fotoData.startsWith('blob:')) {
+                  const chunks = chunkString(fotoData, 30000);
                   chunks.forEach((chunk, idx) => {
                        rFoto.push([st.id, idx, chunk]);
                   });
@@ -284,11 +274,17 @@ export const exportToExcelBlob = async ({
         XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rAset), "Aset Gambar");
 
         // System _DataStore (fallback & deep active-semester only states)
+        const cleanStudentsForStore = students.map((st: any) => {
+            if (!st || !st.foto) return st;
+            const copy = { ...st };
+            delete copy.foto;
+            return copy;
+        });
         let rStore = [ ["StoreKey", "JSONDataChunks..."] ];
         const storeMapping = {
             appSignature: "RKT_SECURE_EXPORT_v1",
             appSettings: cleanSettings,
-            appStudents: students,
+            appStudents: cleanStudentsForStore,
             appGrades: cleanGrades,
             appAttendance: cleanAttendance,
             appStudentExtracurriculars: cleanStudentExtracurriculars,

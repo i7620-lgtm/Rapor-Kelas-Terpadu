@@ -1,145 +1,102 @@
-import { getGradeNumber } from './nilaiHelpers';
+import { IMAGE_KEYS } from './imageDB';
+import {
+  normalizeAttendanceSingleSemester,
+  normalizeCocurricularSingleSemester,
+  normalizeExtrasSingleSemester,
+  normalizeGradesSingleSemester,
+  normalizeLearningObjectivesSingleSemester,
+  normalizeNotesSingleSemester,
+  normalizeSettingsSingleSemester,
+} from './dataIntegrity';
 
-// --- Sanitization helpers ---
-export const sanitizeGrades = (gradesList, semester, loList, namaKelas, subjects = []) => {
-    const isGenap = semester === "Genap";
-    const gradeKey = `Kelas ${getGradeNumber(namaKelas) || '6'}`;
-    return (gradesList || []).map(g => {
-        const newDetailedGrades = {};
-        if (g.detailedGrades) {
-            Object.entries(g.detailedGrades).forEach(([subId, detailed]) => {
-                if (!detailed) return;
+const ALL_EXPORTABLE_IMAGE_KEYS = Array.from(
+  new Set([...IMAGE_KEYS, 'logoSistem', 'ttdKepsek', 'ttdKepsek_Genap'])
+);
 
-                // Only keep SLM (TP) scores that belong to the active semester
-                const subj = subjects.find(s => s.id === subId);
-                const curriculumKey = subj ? (subj.curriculumKey || subj.fullName) : subId;
-                const activeObjectives = loList?.[gradeKey]?.[curriculumKey] || [];
-                const activeSlmIds = new Set(
-                    activeObjectives
-                        .filter(obj => (obj.semester || "Ganjil").toLowerCase().trim() === semester.toLowerCase().trim())
-                        .map(obj => obj.slmId)
-                        .filter(Boolean)
-                );
+// --- Sanitization helpers (Unified 1-Semester Active Model) ---
+export const sanitizeGrades = (
+  gradesList: any[],
+  semester = 'Ganjil',
+  _loList?: any,
+  _namaKelas?: any,
+  _subjects: any[] = []
+) => {
+  return normalizeGradesSingleSemester(gradesList || [], semester).grades;
+};
 
-                const filteredSlm = (detailed.slm || []).filter(slm => slm.id && activeSlmIds.has(slm.id));
+export const sanitizeNotes = (notesData: Record<string, string>, semester = 'Ganjil') => {
+  return normalizeNotesSingleSemester(notesData || {}, semester).notes;
+};
 
-                const newDet = {
-                    ...detailed,
-                    slm: filteredSlm,
-                };
+export const sanitizeAttendance = (attendanceList: any[], semester = 'Ganjil') => {
+  return normalizeAttendanceSingleSemester(attendanceList || [], semester).attendance;
+};
 
-                if (isGenap) {
-                    newDet.sts1 = null;
-                    newDet.sas1 = null;
-                    delete newDet.descriptions;
-                } else {
-                    newDet.sts2 = null;
-                    newDet.sas2 = null;
-                    delete newDet.descriptions_Genap;
-                }
-                newDetailedGrades[subId] = newDet;
-            });
+export const sanitizeStudentExtracurriculars = (list: any[], semester = 'Ganjil') => {
+  return normalizeExtrasSingleSemester(list || [], semester).studentExtracurriculars;
+};
+
+export const sanitizeCocurricularData = (coData: Record<string, any>, semester = 'Ganjil') => {
+  return normalizeCocurricularSingleSemester(coData || {}, semester).cocurricularData;
+};
+
+export const sanitizeLearningObjectives = (lo: Record<string, any>, _semester?: string) => {
+  return normalizeLearningObjectivesSingleSemester(lo || {}).learningObjectives;
+};
+
+export const sanitizeFormativeJournal = (fj: Record<string, any[]>, _semester?: string) => {
+  const newFj: Record<string, any[]> = {};
+  Object.entries(fj || {}).forEach(([sid, list]) => {
+    if (Array.isArray(list) && list.length > 0) {
+      newFj[sid] = list.map((row) => {
+        if (row && typeof row === 'object' && 'semester' in row) {
+          const { semester: _semester, ...rest } = row;
+          return rest;
         }
-        return {
-            ...g,
-            detailedGrades: newDetailedGrades,
-            finalGrades: g.finalGrades || {}
-        };
-    });
-};
-
-export const sanitizeNotes = (notesData, semester) => {
-    const isGenap = semester === "Genap";
-    const newNotes = {};
-    Object.entries(notesData || {}).forEach(([key, val]) => {
-        const isNoteGenap = key.endsWith("_Genap");
-        if (isGenap === isNoteGenap) {
-            newNotes[key] = val;
-        }
-    });
-    return newNotes;
-};
-
-export const sanitizeAttendance = (attendanceList, semester) => {
-    return (attendanceList || []).filter(item => (item.semester || "Ganjil") === semester);
-};
-
-export const sanitizeStudentExtracurriculars = (list, semester) => {
-    return (list || []).filter(item => (item.semester || "Ganjil") === semester);
-};
-
-export const sanitizeCocurricularData = (coData, semester) => {
-    const isGenap = semester === "Genap";
-    const newCo = {};
-    Object.entries(coData || {}).forEach(([sid, data]) => {
-        if (!data) return;
-        const sData = { ...data };
-        if (isGenap) {
-            delete sData.dimensionRatings;
-        } else {
-            delete sData.dimensionRatings_Genap;
-        }
-        if (isGenap && sData.dimensionRatings_Genap) {
-            newCo[sid] = sData;
-        } else if (!isGenap && sData.dimensionRatings) {
-            newCo[sid] = sData;
-        }
-    });
-    return newCo;
-};
-
-export const sanitizeLearningObjectives = (lo, _semester) => {
-    return lo;
-};
-
-export const sanitizeFormativeJournal = (fj, semester) => {
-    const newFj = {};
-    Object.entries(fj || {}).forEach(([sid, list]) => {
-        if (Array.isArray(list)) {
-            const filtered = list.filter(row => (row.semester || "Ganjil") === semester);
-            if (filtered.length > 0) {
-                newFj[sid] = filtered;
-            }
-        }
-    });
-    return newFj;
-};
-
-export const sanitizeSettings = (settings, _semester) => {
-    const imageKeys = ['logoSistem', 'ttdKepsek', 'ttdKepsek_Genap', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
-    const booleanKeys = [
-        'show_aksara_bali',
-        'enableExitWarning',
-        'enableAutoRegression',
-        'show_photo',
-        'show_nip_kepsek',
-        'show_nis_cover',
-        'show_nisn_cover',
-        'show_alamat_cover',
-        'show_rt_rw',
-        'use_clean_piagam_text',
-    ];
-    
-    if (settings) {
-        imageKeys.forEach(key => {
-            if (settings[key] === "null" || settings[key] === "undefined" || settings[key] === "") {
-                settings[key] = null;
-            } else if (typeof settings[key] === 'string' && settings[key].length === 32767) {
-                // Truncated by Excel cell limit
-                settings[key] = null;
-            }
-        });
-
-        booleanKeys.forEach(key => {
-            if (typeof settings[key] === 'string') {
-                const lower = settings[key].trim().toLowerCase();
-                if (lower === 'true') settings[key] = true;
-                else if (lower === 'false') settings[key] = false;
-            }
-        });
+        return row;
+      });
     }
-
-    return settings;
+  });
+  return newFj;
 };
 
-// --- Core functions ---
+export const sanitizeSettings = (settings: any, _semester?: string) => {
+  if (!settings || typeof settings !== 'object') return settings;
+
+  const nextSettings = { ...settings };
+  const booleanKeys = [
+    'show_aksara_bali',
+    'enableExitWarning',
+    'enableAutoRegression',
+    'show_photo',
+    'show_nip_kepsek',
+    'show_nis_cover',
+    'show_nisn_cover',
+    'show_alamat_cover',
+    'show_rt_rw',
+    'use_clean_piagam_text',
+  ];
+
+  ALL_EXPORTABLE_IMAGE_KEYS.forEach((key) => {
+    if (
+      nextSettings[key] === 'null' ||
+      nextSettings[key] === 'undefined' ||
+      nextSettings[key] === ''
+    ) {
+      nextSettings[key] = null;
+    } else if (typeof nextSettings[key] === 'string' && nextSettings[key].length === 32767) {
+      // Truncated by Excel cell limit
+      nextSettings[key] = null;
+    }
+  });
+
+  booleanKeys.forEach((key) => {
+    if (typeof nextSettings[key] === 'string') {
+      const lower = nextSettings[key].trim().toLowerCase();
+      if (lower === 'true') nextSettings[key] = true;
+      else if (lower === 'false') nextSettings[key] = false;
+    }
+  });
+
+  return normalizeSettingsSingleSemester(nextSettings).settings;
+};

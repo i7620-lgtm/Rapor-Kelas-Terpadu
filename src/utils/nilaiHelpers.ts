@@ -31,12 +31,42 @@ export const getGradeNumber = (str: any): number | null => {
   return null;
 };
 
+export const computeQualitativeGradingMap = (predikats?: {
+  a?: any;
+  b?: any;
+  c?: any;
+  d?: any;
+}) => {
+  const parsedA = parseInt(predikats?.a ?? "90", 10);
+  const parsedB = parseInt(predikats?.b ?? "80", 10);
+  const parsedC = parseInt(predikats?.c ?? "70", 10);
+
+  const valA = isNaN(parsedA) ? 90 : parsedA;
+  const valB = isNaN(parsedB) ? 80 : parsedB;
+  const valC = isNaN(parsedC) ? 70 : parsedC;
+
+  return {
+    SB: Math.round((valA + 100) / 2),
+    BSH: Math.round((valB + valA - 1) / 2),
+    MB: Math.round((valC + valB - 1) / 2),
+    BB: Math.round((0 + valC - 1) / 2),
+  };
+};
+
+export const isValidQualitativeGradingMap = (map: any): boolean => {
+  if (!map || typeof map !== "object") return false;
+  return (["SB", "BSH", "MB", "BB"] as const).every(
+    (key) => typeof map[key] === "number" && Number.isFinite(map[key])
+  );
+};
+
 export const getNumericValue = (score, qualitativeGradingMap) => {
   if (typeof score === "number") return score;
   if (
     typeof score === "string" &&
     qualitativeGradingMap &&
-    qualitativeGradingMap[score]
+    typeof qualitativeGradingMap[score] === "number" &&
+    Number.isFinite(qualitativeGradingMap[score])
   ) {
     return qualitativeGradingMap[score];
   }
@@ -131,28 +161,18 @@ export const generateSubjectDescription = (
   const gradedTps = [];
 
   if (detailedGrade && detailedGrade.slm) {
-    // Determine current semester
-    const currentAppSemester = settings?.semester || "Ganjil";
-    
-    // Create a lookup map for faster access to TP texts, grouped by slmId.
-    // Also build a map of SLM semesters.
     const tpTextMap = new Map();
-    const slmSemesterMap = new Map();
-    
+
     objectivesForSubject.forEach((obj) => {
       if (!tpTextMap.has(obj.slmId)) {
         tpTextMap.set(obj.slmId, []);
-        slmSemesterMap.set(obj.slmId, obj.semester || "Semua");
       }
       tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
     });
 
-    // Filter SLMs based on visibility settings and semester
+    // Filter SLMs based solely on visibility settings (unified single-semester model)
     const visibleSlms = detailedGrade.slm.filter((slm) => {
-      const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
-      const slmSemester = slmSemesterMap.get(slm.id) || "Semua";
-      const isCorrectSemester = slmSemester === "Semua" || slmSemester === currentAppSemester;
-      return isVisible && isCorrectSemester;
+      return activeSlmIds ? activeSlmIds.includes(slm.id) : true;
     });
 
     // Iterate over the student's graded SLMs.
