@@ -2,7 +2,7 @@ import React from 'react';
 import { NAV_ITEMS, DATA_ACTIONS } from '../constants';
 import { AppearanceControls } from './AppearanceControls';
 
-const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, currentPageName }: any) => {
+const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, currentPageName, enableExitWarning, onRequestExit }: any) => {
   const handleDataAction = (id: any) => {
       if (id === 'EKSPORT') onExport();
       else if (id === 'IMPORT') onImport();
@@ -22,6 +22,19 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
         </div>
         <div className="flex items-center gap-3">
             <AppearanceControls />
+            {enableExitWarning && onRequestExit && (
+              <button
+                type="button"
+                onClick={onRequestExit}
+                title="Keluar & Cadangkan Data"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/70 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Keluar</span>
+              </button>
+            )}
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
             <div className="flex items-center gap-4 hidden sm:flex">
                 <a 
@@ -68,7 +81,7 @@ const DesktopNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor
   );
 };
 
-const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName }: any) => {
+const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor, isMobileMenuOpen, setIsMobileMenuOpen, currentPageName, enableExitWarning, onRequestExit }: any) => {
     const handleNavClick = (id: any) => {
         setActivePage(id);
         setIsMobileMenuOpen(false);
@@ -96,6 +109,23 @@ const MobileNav = ({ activePage, setActivePage, onExport, onImport, onIsiERapor,
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                     <AppearanceControls compact={true} />
+                    {enableExitWarning && onRequestExit && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsMobileMenuOpen(false);
+                          onRequestExit();
+                        }}
+                        title="Keluar & Cadangkan Data"
+                        className="min-h-[36px] inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/70 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Keluar</span>
+                      </button>
+                    )}
                     <button 
                         type="button"
                         aria-label={isMobileMenuOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}

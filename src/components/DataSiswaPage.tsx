@@ -6,11 +6,14 @@ import { BulkAddRowModal } from './DataSiswa/BulkAddRowModal';
 import { SiswaTableRow } from './DataSiswa/SiswaTableRow';
 import { useDataSiswaPageLogic } from './DataSiswa/useDataSiswaPageLogic';
 import { processImageWithWorker } from '../workers/workerManager';
+import { dataURLToBlob, saveStudentPhotoBlob } from '../utils/imageDB';
+import { useStudentsStore } from '../stores/useStudentsStore';
 
 const DataSiswaPage = (props) => {
     const logic = useDataSiswaPageLogic(props);
     const {
         students: localStudents,
+        studentPhotoUrls,
         namaKelas,
         isModalOpen,
         setIsModalOpen,
@@ -22,6 +25,7 @@ const DataSiswaPage = (props) => {
         handleInputBlur,
         handlePaste,
         handleBulkPhotoUpload,
+        selectionBounds,
         isSelecting,
         setIsSelecting,
         getSelectionStyle,
@@ -34,7 +38,7 @@ const DataSiswaPage = (props) => {
         onBulkSaveStudents
     } = logic;
 
-    const renderCellInput = (student, fieldDef, rowIndex, colIndex) => {
+    const renderCellInput = (student, fieldDef, rowIndex, colIndex, photoSrcOverride = '') => {
         const isFilled = student[fieldDef.key] && String(student[fieldDef.key]).trim() !== '';
         
         const { selectionStyle, showTransparentInput } = getSelectionStyle(rowIndex, colIndex);
@@ -85,8 +89,9 @@ const DataSiswaPage = (props) => {
         }
         
         if (fieldDef.type === 'photo') {
+            const resolvedPhotoSrc = photoSrcOverride || studentPhotoUrls?.[student.id] || student[fieldDef.key] || '';
             const handlePhotoUpload = async (e) => {
-                const file = e.target.files[0];
+                const file = e.target.files?.[0];
                 if (!file) return;
                 
                 if (!file.type.startsWith('image/')) {
@@ -100,19 +105,31 @@ const DataSiswaPage = (props) => {
                 
                 try {
                     const base64Data = await processImageWithWorker(file, 354, 472, 0.9);
-                    const newStudents = localStudents.map(s => s.id === student.id ? { ...s, [fieldDef.key]: base64Data } : s);
-                    setLocalStudents(newStudents);
-                    onBulkSaveStudents(newStudents);
+                    const blob = dataURLToBlob(base64Data);
+                    const blobUrl = await saveStudentPhotoBlob(String(student.id), blob);
+                    useStudentsStore.getState().setStudentPhotoUrl(String(student.id), blobUrl);
+                    if (student[fieldDef.key]) {
+                        const cleaned = (localStudents || []).map((s) => {
+                            if (s.id !== student.id) return s;
+                            const copy = { ...s };
+                            delete copy[fieldDef.key];
+                            return copy;
+                        });
+                        setLocalStudents(cleaned);
+                        onBulkSaveStudents(cleaned);
+                    }
                     if (props.showToast) props.showToast("Foto berhasil diunggah", "success");
                 } catch {
                     if (props.showToast) props.showToast("Gagal memproses foto", "error");
+                } finally {
+                    if (e.target) e.target.value = '';
                 }
             };
 
             return React.createElement('td', wrapperProps, 
                 React.createElement('div', { className: `flex flex-col items-center min-w-[80px] ${showTransparentInput ? 'opacity-50' : 'opacity-100'}` },
                     React.createElement('label', { className: "cursor-pointer group relative overflow-hidden rounded border border-zinc-300 shadow-sm transition-all hover:border-indigo-400" },
-                        student[fieldDef.key] ? React.createElement('img', { src: student[fieldDef.key], alt: "Foto Siswa", className: "w-12 h-16 object-cover" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 flex items-center justify-center text-zinc-400 text-xs text-center p-1 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors" }, "3x4"),
+                        resolvedPhotoSrc ? React.createElement('img', { src: resolvedPhotoSrc, alt: "Foto Siswa", className: "w-12 h-16 object-cover" }) : React.createElement('div', { className: "w-12 h-16 bg-zinc-100 flex items-center justify-center text-zinc-400 text-xs text-center p-1 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors" }, "3x4"),
                         React.createElement('input', { type: "file", accept: "image/*", className: "hidden", onChange: handlePhotoUpload })
                     )
                 )
@@ -209,9 +226,11 @@ const DataSiswaPage = (props) => {
                                     React.createElement('tr', { key: student.id, id: student.id, className: "bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group" },
                                         React.createElement(SiswaTableRow, {
                                             student: student,
+                                            photoSrc: studentPhotoUrls?.[student.id] || student.foto || '',
                                             rowIndex: rowIndex,
                                             otherFields: otherFields,
                                             nameField: nameField,
+                                            selectionBounds: selectionBounds,
                                             getSelectionStyle: getSelectionStyle,
                                             handleMouseDownCell: handleMouseDownCell,
                                             handleMouseEnterCell: handleMouseEnterCell,

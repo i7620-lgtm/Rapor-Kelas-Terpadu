@@ -22,7 +22,6 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
     grades,
     formativeJournal,
     predefinedCurriculum,
-    currentSemester,
     isModalOpen,
     setIsModalOpen,
     selectedStudent,
@@ -38,7 +37,7 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)} 
           student={selectedStudent} 
-          notes={(formativeJournal[selectedStudent.id] || []).filter((n: any) => (n.semester || 'Ganjil') === currentSemester)}
+          notes={formativeJournal[selectedStudent.id] || []}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
           showToast={props.showToast}
@@ -75,7 +74,7 @@ const JurnalFormatifPage: React.FC<JurnalFormatifPageProps> = (props) => {
                 </thead>
                 <tbody>
                   {students.map((student: any, index: number) => {
-                      const studentNotes = (formativeJournal[student.id] || []).filter((n: any) => (n.semester || 'Ganjil') === currentSemester);
+                      const studentNotes = formativeJournal[student.id] || [];
                       const noteCount = studentNotes.length;
                       return (
                         <tr key={student.id} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors group">

@@ -25,9 +25,7 @@ const PrintPiagamPage = ({ students: propStudents, settings: propSettings, grade
     const grades = propGrades || storeGrades;
 
     const defaultOnUpdateLayout = (newLayout) => {
-        const currentSemester = settings?.semester || "Ganjil";
-        const layoutField = currentSemester === "Genap" ? "piagam_layout_Genap" : "piagam_layout";
-        setSettings((s) => ({ ...s, [layoutField]: newLayout }));
+        setSettings((s) => ({ ...s, piagam_layout: newLayout }));
     };
 
     const logic = usePrintPiagamPageLogic({

@@ -8,7 +8,6 @@ const DataKokurikulerPage = (props: any) => {
     students,
     settings,
     cocurricularData,
-    currentSemester,
     dimensionField,
     isSelecting,
     setIsSelecting,
@@ -43,8 +42,8 @@ const DataKokurikulerPage = (props: any) => {
         </p>
         <input
           type="text"
-          name={currentSemester === "Genap" ? "cocurricular_theme_Genap" : "cocurricular_theme"}
-          value={currentSemester === "Genap" ? (settings.cocurricular_theme_Genap || "") : (settings.cocurricular_theme || "")}
+          name="cocurricular_theme"
+          value={settings.cocurricular_theme || ""}
           onChange={onSettingsChange}
           placeholder="Contoh: Kearifan Lokal"
           className="w-full max-w-lg px-3 py-2 lg:py-1.5 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"

@@ -1,26 +1,42 @@
 import React from 'react';
 import { ConfirmationModal } from './ERapor/ConfirmationModal';
 import { useERaporProcessor } from './ERapor/useERaporProcessor';
+import { useStudentsStore } from '../stores/useStudentsStore';
+import { useNilaiStore } from '../stores/useNilaiStore';
+import { useSettingsStore } from '../stores/useSettingsStore';
+import { useCurriculumStore } from '../stores/useCurriculumStore';
 
 interface ERaporProcessorModalProps {
   onClose: () => void;
-  students: any[];
-  grades: any[];
-  subjects: any[];
-  settings: any;
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
-  learningObjectives: any;
+  students?: any[];
+  grades?: any[];
+  subjects?: any[];
+  settings?: any;
+  learningObjectives?: any;
 }
 
 const ERaporProcessorModal: React.FC<ERaporProcessorModalProps> = ({
   onClose,
-  students,
-  grades,
-  subjects,
-  settings,
+  students: propStudents,
+  grades: propGrades,
+  subjects: propSubjects,
+  settings: propSettings,
   showToast,
-  learningObjectives,
+  learningObjectives: propLearningObjectives,
 }) => {
+  const storeStudents = useStudentsStore((s) => s.students);
+  const storeGrades = useNilaiStore((s) => s.grades);
+  const storeSubjects = useSettingsStore((s) => s.subjects);
+  const storeSettings = useSettingsStore((s) => s.settings);
+  const storeLearningObjectives = useCurriculumStore((s) => s.learningObjectives);
+
+  const students = propStudents ?? storeStudents;
+  const grades = propGrades ?? storeGrades;
+  const subjects = propSubjects ?? storeSubjects;
+  const settings = propSettings ?? storeSettings;
+  const learningObjectives = propLearningObjectives ?? storeLearningObjectives;
+
   const {
     file,
     fileName,

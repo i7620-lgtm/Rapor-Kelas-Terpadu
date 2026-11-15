@@ -15,6 +15,8 @@ interface PrintRaporPageProps {
   setActivePage?: (page: string) => void;
 }
 
+const NOOP = () => {};
+
 const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePage }) => {
   const {
     settings,
@@ -49,7 +51,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     enabled: isAllStudents,
   });
 
-  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || NOOP });
   
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);

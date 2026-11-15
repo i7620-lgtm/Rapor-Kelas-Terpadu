@@ -29,6 +29,8 @@ interface PrintLegerPageProps {
   setActivePage?: (page: string) => void;
 }
 
+const NOOP = () => {};
+
 const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
   const {
     students,
@@ -57,7 +59,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
     pageStyle,
   } = usePrintLegerPageLogic(props);
 
-  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: props.setActivePage || (() => {}) } as any);
+  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: props.setActivePage || NOOP } as any);
   const incompleteItems = completenessChecks.filter((check: any) => check.status === 'bad');
 
   const belowKkmItems = (academicAlerts || [])

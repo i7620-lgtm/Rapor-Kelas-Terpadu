@@ -7,7 +7,6 @@ const DataEkstrakurikulerPage = (props: any) => {
     students,
     activeExtracurriculars,
     studentExtracurriculars,
-    currentSemester,
     isSelecting,
     setIsSelecting,
     getSelectionStyle,
@@ -102,7 +101,7 @@ const DataEkstrakurikulerPage = (props: any) => {
               <tbody>
                 {students.map((student: any, index: number) => {
                   const studentExtra = studentExtracurriculars.find(
-                    (se: any) => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester,
+                    (se: any) => se.studentId === student.id,
                   );
                   const allAssignedIdsForStudent = (studentExtra?.assignedActivities || []).filter(Boolean);
 
