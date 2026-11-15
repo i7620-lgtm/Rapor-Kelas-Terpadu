@@ -32,12 +32,10 @@ const capitalizeFirstLetter = (string: string) => {
 
 export const useDataEkstrakurikulerPageLogic = (props: any) => {
   const storeStudents = useStudentsStore((state) => state.students);
-  const storeSettings = useSettingsStore((state) => state.settings);
   const storeExtracurriculars = useSettingsStore((state) => state.extracurriculars);
   const storeStudentExtracurriculars = useExtracurricularStore((state) => state.studentExtracurriculars);
 
   const students = props.students || storeStudents;
-  const settings = props.settings || storeSettings;
   const extracurriculars = props.extracurriculars || storeExtracurriculars;
   const studentExtracurriculars = props.studentExtracurriculars || storeStudentExtracurriculars;
   const showToast = props.showToast;
@@ -46,13 +44,12 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     useExtracurricularStore.getState().setStudentExtracurriculars(newStudentEx);
   });
 
-  const currentSemester = settings?.semester || 'Ganjil';
   const activeExtracurriculars = extracurriculars.filter((e: any) => e.active);
 
   const handleAssignmentChange = (studentId: string, index: number, activityId: string) => {
     const studentExtra = studentExtracurriculars.find(
-      (se: any) => se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester,
-    ) || { studentId, assignedActivities: [], descriptions: {}, semester: currentSemester };
+      (se: any) => se.studentId === studentId,
+    ) || { studentId, assignedActivities: [], descriptions: {} };
 
     const newAssigned = [...(studentExtra.assignedActivities || [])];
     while (newAssigned.length < MAX_EXTRA_FIELDS) {
@@ -76,15 +73,16 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
       }
     }
 
+    const { semester: _ignoredSemester, ...restStudentExtra } = studentExtra;
     const updatedStudentExtra = {
-      ...studentExtra,
+      ...restStudentExtra,
+      studentId,
       assignedActivities: newAssigned,
       descriptions: newDescriptions,
-      semester: currentSemester
     };
 
     const newStudentExtracurriculars = studentExtracurriculars
-      .filter((se: any) => !(se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester))
+      .filter((se: any) => se.studentId !== studentId)
       .concat(updatedStudentExtra);
 
     onUpdateStudentExtracurriculars(newStudentExtracurriculars);
@@ -92,21 +90,22 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
 
   const handleDescriptionChange = (studentId: string, activityId: string, description: string) => {
     const studentExtra = studentExtracurriculars.find(
-      (se: any) => se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester,
-    ) || { studentId, assignedActivities: [], descriptions: {}, semester: currentSemester };
+      (se: any) => se.studentId === studentId,
+    ) || { studentId, assignedActivities: [], descriptions: {} };
     const newDescriptions = {
       ...studentExtra.descriptions,
       [activityId]: description,
     };
 
+    const { semester: _ignoredSemester, ...restStudentExtra } = studentExtra;
     const updatedStudentExtra = {
-      ...studentExtra,
+      ...restStudentExtra,
+      studentId,
       descriptions: newDescriptions,
-      semester: currentSemester
     };
 
     const newStudentExtracurriculars = studentExtracurriculars.filter(
-      (se: any) => !(se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester),
+      (se: any) => se.studentId !== studentId,
     );
     newStudentExtracurriculars.push(updatedStudentExtra);
     onUpdateStudentExtracurriculars(newStudentExtracurriculars);
@@ -127,7 +126,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     containerClass: 'ekstra-table-container',
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
-      const newStudentExtracurricularsMap = new Map(studentExtracurriculars.map((se: any) => [`${se.studentId}_${se.semester || 'Ganjil'}`, { ...se }]));
+      const newStudentExtracurricularsMap = new Map(studentExtracurriculars.map((se: any) => [se.studentId, { ...se }]));
       
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         for (let c = bounds.minC; c <= bounds.maxC; c++) {
@@ -136,11 +135,11 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
             if (student) {
               const isDesc = c % 2 !== 0;
               const extraIdx = Math.floor(c / 2);
-              const key = `${student.id}_${currentSemester}`;
+              const key = student.id;
               let extraData: any = newStudentExtracurricularsMap.get(key);
               
               if (!extraData) {
-                extraData = { studentId: student.id, assignedActivities: [], descriptions: {}, semester: currentSemester };
+                extraData = { studentId: student.id, assignedActivities: [], descriptions: {} };
                 newStudentExtracurricularsMap.set(key, extraData);
               }
               
@@ -206,7 +205,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
               } else if (c === -1) {
                 rowData.push(student.namaLengkap);
               } else {
-                const studentExtra = studentExtracurriculars.find((se: any) => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
+                const studentExtra = studentExtracurriculars.find((se: any) => se.studentId === student.id);
                 const extraIdx = Math.floor(c / 2);
                 const isDesc = c % 2 !== 0;
                 const currentAssignedId = studentExtra?.assignedActivities?.[extraIdx] || null;
@@ -266,7 +265,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
 
     const studentExtraMap = new Map();
     currentStudentExtracurriculars.forEach((se) => {
-      if ((se.semester || 'Ganjil') === currentSemester) {
+      if (se?.studentId && !studentExtraMap.has(se.studentId)) {
         studentExtraMap.set(se.studentId, se);
       }
     });
@@ -284,7 +283,6 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
           studentId: student.id,
           assignedActivities: [],
           descriptions: {},
-          semester: currentSemester
         };
       } else {
         record = {
@@ -320,7 +318,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     });
 
     if (updatedCount > 0) {
-      const newExtracurricularsList = studentExtracurriculars.filter((se: any) => (se.semester || 'Ganjil') !== currentSemester).concat(Array.from(studentExtraMap.values()));
+      const newExtracurricularsList = Array.from(studentExtraMap.values());
       onUpdateStudentExtracurriculars(newExtracurricularsList);
       if (showToast) {
         showToast(
@@ -350,7 +348,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
 
     const studentExtraMap = new Map();
     currentStudentExtracurriculars.forEach((se) => {
-      if ((se.semester || 'Ganjil') === currentSemester) {
+      if (se?.studentId && !studentExtraMap.has(se.studentId)) {
         studentExtraMap.set(se.studentId, se);
       }
     });
@@ -368,7 +366,6 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
           studentId: student.id,
           assignedActivities: [],
           descriptions: {},
-          semester: currentSemester
         };
       } else {
         record = { ...record, descriptions: { ...record.descriptions } };
@@ -394,7 +391,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     });
 
     if (updatedCount > 0) {
-      const newExtracurricularsList = studentExtracurriculars.filter((se: any) => (se.semester || 'Ganjil') !== currentSemester).concat(Array.from(studentExtraMap.values()));
+      const newExtracurricularsList = Array.from(studentExtraMap.values());
       onUpdateStudentExtracurriculars(newExtracurricularsList);
       if (showToast) {
         showToast(`${updatedCount} deskripsi berhasil ditempel.`, "success");
@@ -406,7 +403,6 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     students,
     activeExtracurriculars,
     studentExtracurriculars,
-    currentSemester,
     isSelecting,
     setIsSelecting,
     getSelectionStyle,
