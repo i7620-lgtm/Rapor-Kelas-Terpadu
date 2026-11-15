@@ -130,8 +130,32 @@ export const usePrintLegerPageLogic = (props: any) => {
 
   const processedData = useMemo(() => {
     if (!students || !grades) return [];
+    const gradeMap = new Map<string, any>();
+    grades.forEach((g: any) => {
+      if (g?.studentId) gradeMap.set(String(g.studentId), g);
+    });
+
+    const beliefSubject = activeSubjects.find((s: any) => s.id === 'PAKTTMYME');
+    const religionSubjectByRel = new Map<string, any>();
+    const groupMembersByFullName = new Map<string, any[]>();
+    displaySubjects.forEach((ds) => {
+      if (ds.id === 'PABP') {
+        activeSubjects.forEach((s: any) => {
+          if (s.fullName.startsWith(ds.fullName)) {
+            const m = s.fullName.toLowerCase().match(/\(([^)]+)\)/);
+            if (m) religionSubjectByRel.set(m[1].trim(), s);
+          }
+        });
+      } else if (ds.id === 'SB' || ds.id === 'Mulok') {
+        groupMembersByFullName.set(
+          ds.fullName,
+          activeSubjects.filter((s: any) => s.fullName.startsWith(ds.fullName))
+        );
+      }
+    });
+
     const dataWithScores = students.map((student: any, index: number) => {
-      const finalGrades = grades.find((g: any) => g.studentId === student.id)?.finalGrades || {};
+      const finalGrades = gradeMap.get(String(student.id))?.finalGrades || {};
       let total = 0, count = 0;
       const studentGrades: Record<string, any> = {};
 
@@ -141,15 +165,14 @@ export const usePrintLegerPageLogic = (props: any) => {
           const religion = String(student.agama || '').trim().toLowerCase();
           if (religion) {
             if (religion === 'kepercayaan') {
-              const beliefSubject = activeSubjects.find((s: any) => s.id === 'PAKTTMYME');
               if (beliefSubject) grade = finalGrades[beliefSubject.id];
             } else {
-              const relSubject = activeSubjects.find((s: any) => s.fullName.startsWith(ds.fullName) && s.fullName.toLowerCase().includes(`(${religion})`));
+              const relSubject = religionSubjectByRel.get(religion);
               if (relSubject) grade = finalGrades[relSubject.id];
             }
           }
         } else if (['SB', 'Mulok'].includes(ds.id)) {
-          const memberSubjects = activeSubjects.filter((s: any) => s.fullName.startsWith(ds.fullName));
+          const memberSubjects = groupMembersByFullName.get(ds.fullName) || [];
           grade = memberSubjects.map(ms => finalGrades[ms.id]).find(g => g != null);
         } else {
           grade = finalGrades[ds.id];
