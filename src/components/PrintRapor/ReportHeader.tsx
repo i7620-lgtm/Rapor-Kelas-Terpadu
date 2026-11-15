@@ -7,8 +7,7 @@ interface ReportHeaderProps {
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ settings }) => {
-    const currentSemester = settings?.semester || 'Ganjil';
-    const layout = resolveKopLayout(settings, currentSemester);
+    const layout = resolveKopLayout(settings);
 
     return (
         React.createElement('div', {

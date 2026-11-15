@@ -68,7 +68,7 @@ export function useReportChunks({
                 });
             }
 
-            const studentExtraData = studentExtracurriculars.find(se => se.studentId === studentId && (se.semester || 'Ganjil') === currentSemester);
+            const studentExtraData = studentExtracurriculars.find(se => se.studentId === studentId);
             const hasExtras = (studentExtraData?.assignedActivities || []).some(id => id && extracurriculars.some(e => e.id === id));
 
             const footerItems = [

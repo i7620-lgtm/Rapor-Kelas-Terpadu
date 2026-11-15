@@ -48,9 +48,16 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
     }
 
     const allActiveSubjects = subjects.filter((s) => s.active);
+    const activeSubjectMap = new Map<string, any>();
+    allActiveSubjects.forEach((s) => activeSubjectMap.set(s.id, s));
+
+    const gradeMap = new Map<string, any>();
+    grades.forEach((g) => {
+      if (g?.studentId) gradeMap.set(String(g.studentId), g);
+    });
 
     const studentsWithTotals = students.map((student) => {
-      const gradeData = grades.find((g) => g.studentId === student.id);
+      const gradeData = gradeMap.get(String(student.id));
       if (!gradeData || !gradeData.finalGrades) {
         return { studentId: student.id, totalScore: 0 };
       }
@@ -58,7 +65,7 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
       const studentReligionLower = String(student.agama || '').trim().toLowerCase();
 
       const totalScore = Object.entries(gradeData.finalGrades).reduce((sum, [subjectId, score]) => {
-        const subjectInfo = allActiveSubjects.find((s) => s.id === subjectId);
+        const subjectInfo = activeSubjectMap.get(subjectId);
         if (subjectInfo && typeof score === 'number') {
           const subjectFullNameLower = subjectInfo.fullName.toLowerCase();
 

@@ -50,11 +50,9 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
     );
     
     const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
-    const currentSemester = settings.semester || 'Ganjil';
     const tanggalRaporValue = getTanggalRaporValue(settings) || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
 
-    const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
-    const originalNote = notes[originalNoteKey] || '';
+    const originalNote = notes[student.id] || notes[`${student.id}_Genap`] || '';
     
     let studentNoteContent;
     if (shouldDisplayRank) {
@@ -87,12 +85,12 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
         );
     }
 
-    const attendanceData = attendance.find(a => a.studentId === student.id && (a.semester || 'Ganjil') === currentSemester) || { sakit: null, izin: null, alpa: null };
+    const attendanceData = attendance.find(a => a.studentId === student.id) || { sakit: null, izin: null, alpa: null };
     const sakitCount = (attendanceData.sakit === null || attendanceData.sakit === undefined || attendanceData.sakit === '') ? 0 : attendanceData.sakit;
     const izinCount = (attendanceData.izin === null || attendanceData.izin === undefined || attendanceData.izin === '') ? 0 : attendanceData.izin;
     const alpaCount = (attendanceData.alpa === null || attendanceData.alpa === undefined || attendanceData.alpa === '') ? 0 : attendanceData.alpa;
 
-    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester);
+    const studentExtraData = studentExtracurriculars.find(se => se.studentId === student.id);
     
     const extraActivities = (studentExtraData?.assignedActivities || [])
         .map((activityId: string) => {
@@ -104,19 +102,17 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
         
     const cocurricularDescription = useMemo(() => {
         const studentCoData = cocurricularData?.[student.id];
-        const fieldName = currentSemester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
-        
-        let manualContent = studentCoData?.[fieldName]?.manualDescription;
-        if (!manualContent && currentSemester === 'Ganjil' && studentCoData?.manualDescription) {
-             manualContent = studentCoData.manualDescription;
-        }
+        const ratings =
+            studentCoData?.dimensionRatings && typeof studentCoData.dimensionRatings === 'object'
+                ? studentCoData.dimensionRatings
+                : studentCoData?.dimensionRatings_Genap && typeof studentCoData.dimensionRatings_Genap === 'object'
+                    ? studentCoData.dimensionRatings_Genap
+                    : {};
 
+        const manualContent = ratings?.manualDescription || studentCoData?.manualDescription;
         if (manualContent) return manualContent;
 
-        const theme = currentSemester === 'Genap' ? settings.cocurricular_theme_Genap : settings.cocurricular_theme;
-        const ratings = (studentCoData && typeof studentCoData[fieldName] === 'object' && studentCoData[fieldName] !== null)
-            ? studentCoData[fieldName]
-            : {};
+        const theme = settings.cocurricular_theme || settings.cocurricular_theme_Genap;
         
         const hasRatings = Object.values(ratings).some(r => r && r !== "---");
 
@@ -161,7 +157,7 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
 
         return descriptionParts.join(' ');
         
-    }, [student, settings, cocurricularData, nickname, currentSemester]);
+    }, [student, settings, cocurricularData, nickname]);
 
     const fontSizeClass = compactLevel === 2 ? '9pt' : compactLevel === 1 ? '9.5pt' : '10pt';
     const paddingClass = compactLevel === 2 ? 'p-1' : compactLevel === 1 ? 'p-1.5' : 'p-2';

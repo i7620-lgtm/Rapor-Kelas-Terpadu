@@ -27,20 +27,18 @@ export function useReportPagesForStudentLogic(student: any, settings: any, rank:
 
     const onUpdateDescription = useCallback((sid: string, subId: string, type: 'highest' | 'lowest', val: string, currentDescriptions: any) => {
         setGrades(prev => {
-            const currentSemester = settings?.semester || "Ganjil";
-            const descField = currentSemester === "Genap" ? "descriptions_Genap" : "descriptions";
             const n = JSON.parse(JSON.stringify(prev));
             const g = n.find((x: any) => x.studentId === sid);
             if (g) {
-                if (!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts1: null, sts2: null, sas1: null, sas2: null };
-                if (!g.detailedGrades[subId][descField]) {
-                    g.detailedGrades[subId][descField] = currentDescriptions || { highest: "", lowest: "" };
+                if (!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts: null, sas: null };
+                if (!g.detailedGrades[subId].descriptions) {
+                    g.detailedGrades[subId].descriptions = currentDescriptions || { highest: "", lowest: "" };
                 }
-                g.detailedGrades[subId][descField][type] = val;
+                g.detailedGrades[subId].descriptions[type] = val;
             }
             return n;
         });
-    }, [setGrades, settings?.semester]);
+    }, [setGrades]);
 
     const onUpdateStudent = useCallback((id: string, k: string, v: string) => setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, [k]: v } : s))), [setStudents]);
 
@@ -52,42 +50,38 @@ export function useReportPagesForStudentLogic(student: any, settings: any, rank:
     }), [setSettings]);
 
     const onUpdateNote = useCallback((sid: string, v: string) => {
-        useNotesStore.getState().updateNote(sid, v, settings?.semester);
-    }, [settings?.semester]);
+        useNotesStore.getState().updateNote(sid, v);
+    }, []);
 
     const onUpdateAttendance = useCallback((sid: string, k: string, v: string) =>
         setAttendance((prev) => {
             const n = [...prev];
-            const sem = settings?.semester || "Ganjil";
-            const i = n.findIndex((a) => a.studentId === sid && (a.semester || "Ganjil") === sem);
-            if (i > -1) n[i][k] = v === "" ? null : parseInt(v);
-            else n.push({ studentId: sid, semester: sem, [k]: v === "" ? null : parseInt(v) });
+            const i = n.findIndex((a) => a.studentId === sid);
+            if (i > -1) n[i] = { ...n[i], [k]: v === "" ? null : parseInt(v) };
+            else n.push({ studentId: sid, [k]: v === "" ? null : parseInt(v) });
             return n;
-        }), [setAttendance, settings?.semester]);
+        }), [setAttendance]);
 
     const onUpdateExtraDescription = useCallback((sid: string, eid: string, v: string) =>
         setStudentExtracurriculars((prev) =>
             prev.map((s) => {
-                const sem = settings?.semester || "Ganjil";
-                if (s.studentId === sid && (s.semester || "Ganjil") === sem) {
+                if (s.studentId === sid) {
                     return { ...s, descriptions: { ...s.descriptions, [eid]: v } };
                 }
                 return s;
             })
-        ), [setStudentExtracurriculars, settings?.semester]);
+        ), [setStudentExtracurriculars]);
 
     const onUpdateCocurricularManual = useCallback((sid: string, v: string) =>
         setCocurricularData((prev) => {
-            const currentSemester = settings?.semester || "Ganjil";
-            const fieldName = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
             return {
                 ...prev,
                 [sid]: {
                     ...prev[sid],
-                    [fieldName]: { ...(prev[sid]?.[fieldName] || {}), manualDescription: v },
+                    dimensionRatings: { ...(prev[sid]?.dimensionRatings || {}), manualDescription: v },
                 },
             };
-        }), [setCocurricularData, settings?.semester]);
+        }), [setCocurricularData]);
 
     const currentSemester = settings?.semester || 'Ganjil';
     
@@ -100,20 +94,19 @@ export function useReportPagesForStudentLogic(student: any, settings: any, rank:
 
     const notesForMeasurement = useMemo(() => {
         const safeNotes = notes || {};
-        const originalNoteKey = currentSemester === 'Genap' ? student.id + '_Genap' : student.id;
         if (shouldDisplayRank) {
             const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
             const rankMessage = `Selamat! ${nickname} berhasil meraih Peringkat ${rank} di kelas. `;
-            const originalNote = safeNotes[originalNoteKey] || '';
+            const originalNote = safeNotes[student.id] || '';
             const autoMsgPattern = new RegExp(`Selamat!.*Peringkat \\d+ di kelas\\.?\\s*`, 'i');
             const cleanNote = originalNote.replace(autoMsgPattern, '').trim();
             return {
                 ...safeNotes,
-                [originalNoteKey]: rankMessage + cleanNote
+                [student.id]: rankMessage + cleanNote
             };
         }
         return safeNotes;
-    }, [notes, student, currentSemester, rank, shouldDisplayRank]);
+    }, [notes, student, rank, shouldDisplayRank]);
 
     const reportSubjects = useMemo(() => {
         const result: any[] = [];

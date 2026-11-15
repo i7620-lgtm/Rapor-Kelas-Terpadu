@@ -46,11 +46,9 @@ export const getDynamicStyle = (text: string, baseSize = 11, smallSize = 9, thre
 };
 
 export const generateDescription = (student: any, subject: any, gradeData: any, learningObjectives: any, settings: any) => {
-    const currentSemester = settings?.semester || 'Ganjil';
     const detailedGrade = gradeData?.detailedGrades?.[subject.id];
     
-    const descField = currentSemester === 'Genap' ? 'descriptions_Genap' : 'descriptions';
-    const manualDescriptions = detailedGrade?.[descField] || {};
+    const manualDescriptions = detailedGrade?.descriptions || detailedGrade?.descriptions_Genap || {};
     
     const studentNameRaw = student.namaPanggilan || (student.namaLengkap || '').split(' ')[0];
     const studentName = capitalize(studentNameRaw);
@@ -96,22 +94,17 @@ export const generateDescription = (student: any, subject: any, gradeData: any, 
     
     if (detailedGrade && detailedGrade.slm) {
         const tpTextMap = new Map();
-        const slmSemesterMap = new Map();
 
         objectivesForSubject.forEach((obj: any) => {
             if (!tpTextMap.has(obj.slmId)) {
                 tpTextMap.set(obj.slmId, []);
-                slmSemesterMap.set(obj.slmId, obj.semester || 'Semua');
             }
             tpTextMap.get(obj.slmId).push(cleanTpText(obj.text));
         });
 
         const activeSlmIds = settings.slmVisibility?.[subject.id];
         const visibleSlms = detailedGrade.slm.filter((slm: any) => {
-            const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
-            const slmSemester = slmSemesterMap.get(slm.id) || 'Semua';
-            const isCorrectSemester = slmSemester === 'Semua' || slmSemester === currentSemester;
-            return isVisible && isCorrectSemester;
+            return activeSlmIds ? activeSlmIds.includes(slm.id) : true;
         });
 
         visibleSlms.forEach((slm: any) => {
