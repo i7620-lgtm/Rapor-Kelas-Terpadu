@@ -13,7 +13,7 @@ interface CocurricularState {
     studentId: string,
     dimensionId: string,
     value: any,
-    semester: string
+    semester?: string
   ) => void;
 }
 
@@ -34,13 +34,12 @@ export const useCocurricularStore = create<CocurricularState>()(
         });
       },
 
-      updateCocurricularData: (studentId, dimensionId, value, semester) => {
+      updateCocurricularData: (studentId, dimensionId, value) => {
         set((state) => {
-          const fieldName = semester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
           const updatedStudent = {
             ...state.cocurricularData[studentId],
-            [fieldName]: {
-              ...(state.cocurricularData[studentId]?.[fieldName] || {}),
+            dimensionRatings: {
+              ...(state.cocurricularData[studentId]?.dimensionRatings || {}),
               [dimensionId]: value,
             },
           };

@@ -11,8 +11,20 @@ interface GradeItem {
   finalGrades?: any;
 }
 
+const buildGradesIndex = (grades: GradeItem[]): Record<string, GradeItem> => {
+  const index: Record<string, GradeItem> = {};
+  if (!Array.isArray(grades)) return index;
+  for (const g of grades) {
+    if (g?.studentId) {
+      index[g.studentId] = g;
+    }
+  }
+  return index;
+};
+
 interface NilaiState {
   grades: GradeItem[];
+  gradesByStudentId: Record<string, GradeItem>;
   isLoaded: boolean;
 
   // Actions
@@ -50,16 +62,17 @@ export const useNilaiStore = create<NilaiState>()(
   persist(
     (set) => ({
       grades: [],
+      gradesByStudentId: {},
       isLoaded: false,
 
       initGrades: (grades) => {
-        set({ grades, isLoaded: true });
+        set({ grades, gradesByStudentId: buildGradesIndex(grades), isLoaded: true });
       },
 
       setGrades: (gradesAction) => {
         set((state) => {
           const newGrades = typeof gradesAction === 'function' ? gradesAction(state.grades) : gradesAction;
-          return { grades: newGrades };
+          return { grades: newGrades, gradesByStudentId: buildGradesIndex(newGrades) };
         });
       },
 
@@ -86,6 +99,7 @@ export const useNilaiStore = create<NilaiState>()(
           } else {
             subjectGrades[type] = value;
           }
+          state.gradesByStudentId[studentId] = grade;
         }));
       },
 
@@ -97,6 +111,9 @@ export const useNilaiStore = create<NilaiState>()(
             if (grade.finalGrades?.[subjectId] !== finalVal) {
               grade.finalGrades = grade.finalGrades ?? {};
               grade.finalGrades[subjectId] = finalVal;
+              if (grade.studentId) {
+                state.gradesByStudentId[grade.studentId] = grade;
+              }
             }
           });
         }));
@@ -130,6 +147,7 @@ export const useNilaiStore = create<NilaiState>()(
                 curriculumKey,
                 predefinedCurriculum,
               );
+              state.gradesByStudentId[item.studentId] = item;
               
               // remove from map so we only append remaining later
               delete updateMap[item.studentId];
@@ -152,7 +170,7 @@ export const useNilaiStore = create<NilaiState>()(
               predefinedCurriculum,
             );
             
-            state.grades.push({
+            const newItem: GradeItem = {
               studentId: update.studentId,
               detailedGrades: {
                 [update.subjectId]: update.newDetailedGrade,
@@ -160,7 +178,9 @@ export const useNilaiStore = create<NilaiState>()(
               finalGrades: {
                 [update.subjectId]: finalGradeVal,
               },
-            });
+            };
+            state.grades.push(newItem);
+            state.gradesByStudentId[update.studentId] = newItem;
           });
         }));
       },
@@ -171,10 +191,8 @@ export const useNilaiStore = create<NilaiState>()(
             g.detailedGrades = g.detailedGrades ?? {};
             g.detailedGrades[subjectId] = g.detailedGrades[subjectId] ?? {
               slm: [],
-              sts1: null,
-              sts2: null,
-              sas1: null,
-              sas2: null,
+              sts: null,
+              sas: null,
             };
             
             const d = g.detailedGrades[subjectId];
@@ -185,6 +203,9 @@ export const useNilaiStore = create<NilaiState>()(
                 ...slm,
                 scores: [...slm.scores],
               });
+              if (g.studentId) {
+                state.gradesByStudentId[g.studentId] = g;
+              }
             }
           });
         }));
@@ -194,6 +215,11 @@ export const useNilaiStore = create<NilaiState>()(
       name: 'appGrades',
       storage: createCustomPersistStorage<NilaiState>('grades'),
       partialize: (state) => ({ grades: state.grades }) as any,
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.gradesByStudentId = buildGradesIndex(state.grades || []);
+        }
+      },
     }
   )
 );

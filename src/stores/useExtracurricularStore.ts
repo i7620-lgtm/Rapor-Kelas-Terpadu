@@ -4,7 +4,7 @@ import { createCustomPersistStorage } from './customPersistStorage';
 
 interface StudentExtracurricularItem {
   studentId: string;
-  semester: string;
+  semester?: string;
   assignedActivities: (string | null)[];
   descriptions: Record<string, string>;
 }
@@ -24,7 +24,7 @@ interface ExtracurricularState {
     studentId: string,
     assignedActivities: (string | null)[],
     descriptions: Record<string, string>,
-    semester: string
+    semester?: string
   ) => void;
 }
 
@@ -48,18 +48,16 @@ export const useExtracurricularStore = create<ExtracurricularState>()(
         });
       },
 
-      updateStudentExtracurricular: (studentId, assignedActivities, descriptions, semester) => {
+      updateStudentExtracurricular: (studentId, assignedActivities, descriptions) => {
         set((state) => {
-          const sem = semester || 'Ganjil';
-          const updatedItem = {
+          const updatedItem: StudentExtracurricularItem = {
             studentId,
-            semester: sem,
             assignedActivities,
             descriptions,
           };
 
           const filtered = state.studentExtracurriculars.filter(
-            (se) => !(se.studentId === studentId && (se.semester || 'Ganjil') === sem)
+            (se) => se.studentId !== studentId
           );
 
           const next = [...filtered, updatedItem];

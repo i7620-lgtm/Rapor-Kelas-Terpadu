@@ -9,7 +9,7 @@ interface NotesState {
   // Actions
   initNotes: (notes: Record<string, string>) => void;
   setNotes: (notesAction: Record<string, string> | ((prev: Record<string, string>) => Record<string, string>)) => void;
-  updateNote: (studentId: string, note: string, semester: string) => void;
+  updateNote: (studentId: string, note: string, semester?: string) => void;
 }
 
 export const useNotesStore = create<NotesState>()(
@@ -29,12 +29,11 @@ export const useNotesStore = create<NotesState>()(
         });
       },
 
-      updateNote: (studentId, note, semester) => {
+      updateNote: (studentId, note) => {
         set((state) => {
-          const noteKey = semester === 'Genap' ? studentId + '_Genap' : studentId;
           const next = {
             ...state.notes,
-            [noteKey]: note,
+            [studentId]: note,
           };
           return { notes: next };
         });
