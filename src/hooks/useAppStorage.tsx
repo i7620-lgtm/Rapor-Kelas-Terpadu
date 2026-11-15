@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import {
-  defaultSubjects,
-} from "../constants";
+import { useState, useEffect, useRef } from "react";
+import { defaultSubjects } from "../constants";
 import { getGradeNumber } from "../utils/nilaiHelpers";
+import { cleanupOrphanedRecords, normalizeSingleSemesterState } from "../utils/dataIntegrity";
 import { useNilaiStore } from "../stores/useNilaiStore";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useStudentsStore } from "../stores/useStudentsStore";
@@ -13,7 +12,15 @@ import { useExtracurricularStore } from "../stores/useExtracurricularStore";
 import { useFormativeStore } from "../stores/useFormativeStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
 import { useUiStore } from "../stores/useUiStore";
-import { loadAllImagesFromDB } from "../utils/imageDB";
+import { initSummarySync } from "../stores/useSummaryStore";
+import {
+  cleanupUnusedStudentPhotosInDB,
+  convertDataUrlToWebPBlob,
+  deleteStudentPhotoFromDB,
+  loadAllImagesFromDB,
+  loadAllStudentPhotosFromDB,
+  saveStudentPhotoBlob,
+} from "../utils/imageDB";
 
 export const useAppStorage = () => {
   const toast = useUiStore((state) => state.toast);
@@ -28,43 +35,13 @@ export const useAppStorage = () => {
   const isERaporModalOpen = useUiStore((state) => state.isERaporModalOpen);
   const setIsERaporModalOpen = useUiStore((state) => state.setIsERaporModalOpen);
 
-  const pendingSemester = useSettingsStore((state) => state.pendingSemester);
-  const setPendingSemester = useSettingsStore((state) => state.setPendingSemester);
-  const showSemesterModal = useSettingsStore((state) => state.showSemesterModal);
-  const setShowSemesterModal = useSettingsStore((state) => state.setShowSemesterModal);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-  const settings = useSettingsStore((state) => state.settings);
-  const setSettings = useSettingsStore((state) => state.setSettings);
-  const students = useStudentsStore((state) => state.students);
-  const setStudents = useStudentsStore((state) => state.setStudents);
-  const grades = useNilaiStore((state) => state.grades);
-  const setGrades = useNilaiStore((state) => state.setGrades);
-  const notes = useNotesStore((state) => state.notes);
-  const setNotes = useNotesStore((state) => state.setNotes);
-  const cocurricularData = useCocurricularStore((state) => state.cocurricularData);
-  const setCocurricularData = useCocurricularStore((state) => state.setCocurricularData);
-  const attendance = useAttendanceStore((state) => state.attendance);
-  const setAttendance = useAttendanceStore((state) => state.setAttendance);
-  const extracurriculars = useSettingsStore((state) => state.extracurriculars);
-  const setExtracurriculars = useSettingsStore((state) => state.setExtracurriculars);
-  const studentExtracurriculars = useExtracurricularStore((state) => state.studentExtracurriculars);
-  const setStudentExtracurriculars = useExtracurricularStore((state) => state.setStudentExtracurriculars);
-  const subjects = useSettingsStore((state) => state.subjects);
-  const setSubjects = useSettingsStore((state) => state.setSubjects);
-  
-  const learningObjectives = useCurriculumStore((state) => state.learningObjectives);
-  const setLearningObjectives = useCurriculumStore((state) => state.setLearningObjectives);
-  const predefinedCurriculum = useCurriculumStore((state) => state.predefinedCurriculum);
-  
-  const formativeJournal = useFormativeStore((state) => state.formativeJournal);
-  const setFormativeJournal = useFormativeStore((state) => state.setFormativeJournal);
-
   const [hasHydratedAll, setHasHydratedAll] = useState(false);
+  const prevStudentIdsRef = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     const checkHydration = () => {
-      const allHydrated = 
+      const allHydrated =
         useSettingsStore.persist.hasHydrated() &&
         useStudentsStore.persist.hasHydrated() &&
         useNilaiStore.persist.hasHydrated() &&
@@ -111,7 +88,17 @@ export const useAppStorage = () => {
     let isMounted = true;
     const initializeAllData = async () => {
       try {
-        const currentSubjects = useSettingsStore.getState().subjects || [];
+        const settingsActions = useSettingsStore.getState();
+        const studentsActions = useStudentsStore.getState();
+        const nilaiActions = useNilaiStore.getState();
+        const attendanceActions = useAttendanceStore.getState();
+        const notesActions = useNotesStore.getState();
+        const cocurricularActions = useCocurricularStore.getState();
+        const extraActions = useExtracurricularStore.getState();
+        const formativeActions = useFormativeStore.getState();
+        const curriculumActions = useCurriculumStore.getState();
+
+        const currentSubjects = settingsActions.subjects || [];
         const newSubjects = [...currentSubjects];
         let hasUpdates = false;
 
@@ -131,16 +118,72 @@ export const useAppStorage = () => {
         });
 
         if (hasUpdates) {
-          setSubjects(newSubjects);
+          settingsActions.setSubjects(newSubjects);
         }
 
-        const currentSettings = useSettingsStore.getState().settings;
-        const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 6;
-        const baseUrl = import.meta.env.BASE_URL || '/';
-        const presetsUrl = baseUrl.endsWith('/') ? `${baseUrl}presets.json` : `${baseUrl}/presets.json`;
+        // Normalize legacy dual-semester / _Genap structures & remove orphaned records cleanly on startup
+        const normalized = normalizeSingleSemesterState({
+          settings: settingsActions.settings,
+          students: studentsActions.students,
+          grades: nilaiActions.grades,
+          attendance: attendanceActions.attendance,
+          notes: notesActions.notes,
+          cocurricularData: cocurricularActions.cocurricularData,
+          studentExtracurriculars: extraActions.studentExtracurriculars,
+          formativeJournal: formativeActions.formativeJournal,
+          learningObjectives: curriculumActions.learningObjectives,
+        });
 
-        const [imagesResult, presetsResult] = await Promise.allSettled([
+        // Auto-migrate legacy inline base64 student photos to RKT_ImagesDB binary storage
+        const migratedPhotoUrls: Record<string, string> = {};
+        let hasStrippedLegacyPhotos = false;
+        const cleanedStudents = await Promise.all(
+          (normalized.students || []).map(async (s: any) => {
+            if (!s || typeof s !== "object") return s;
+            const rawFoto = typeof s.foto === "string" ? s.foto : "";
+            if (!rawFoto) return s;
+
+            hasStrippedLegacyPhotos = true;
+            if (s.id && rawFoto.startsWith("data:image")) {
+              try {
+                const blob = await convertDataUrlToWebPBlob(rawFoto, 354, 472, 0.9);
+                migratedPhotoUrls[String(s.id)] = await saveStudentPhotoBlob(String(s.id), blob);
+              } catch (err) {
+                console.error(`Failed to migrate inline photo for student ${s.id}`, err);
+              }
+            }
+            const rest = { ...s };
+            delete rest.foto;
+            return rest;
+          })
+        );
+
+        if (!isMounted) return;
+
+        if (normalized.changed.students || hasStrippedLegacyPhotos) {
+          studentsActions.setStudents(cleanedStudents);
+        }
+        if (normalized.changed.grades) nilaiActions.setGrades(normalized.grades);
+        if (normalized.changed.attendance) attendanceActions.setAttendance(normalized.attendance);
+        if (normalized.changed.notes) notesActions.setNotes(normalized.notes);
+        if (normalized.changed.cocurricularData) cocurricularActions.setCocurricularData(normalized.cocurricularData);
+        if (normalized.changed.studentExtracurriculars) extraActions.setStudentExtracurriculars(normalized.studentExtracurriculars);
+        if (normalized.changed.formativeJournal) formativeActions.setFormativeJournal(normalized.formativeJournal);
+        if (normalized.changed.learningObjectives) curriculumActions.setLearningObjectives(normalized.learningObjectives);
+
+        const validStudentIdSet = new Set<string>(
+          cleanedStudents.filter((s: any) => s?.id).map((s: any) => String(s.id))
+        );
+        prevStudentIdsRef.current = validStudentIdSet;
+
+        const currentSettings = normalized.settings;
+        const activeGradeNumber = getGradeNumber(currentSettings?.nama_kelas) || 6;
+        const baseUrl = import.meta.env.BASE_URL || "/";
+        const presetsUrl = baseUrl.endsWith("/") ? `${baseUrl}presets.json` : `${baseUrl}/presets.json`;
+
+        const [imagesResult, studentPhotosResult, presetsResult] = await Promise.allSettled([
           loadAllImagesFromDB(),
+          loadAllStudentPhotosFromDB(validStudentIdSet),
           (async () => {
             const response = await fetch(presetsUrl);
             if (response.ok) {
@@ -148,28 +191,56 @@ export const useAppStorage = () => {
             }
             return null;
           })(),
+          cleanupUnusedStudentPhotosInDB(validStudentIdSet),
           activeGradeNumber >= 1 && activeGradeNumber <= 12
-            ? useCurriculumStore.getState().loadPredefinedCurriculum(activeGradeNumber)
+            ? curriculumActions.loadPredefinedCurriculum(activeGradeNumber)
             : Promise.resolve(null),
         ]);
 
         if (!isMounted) return;
 
-        if (imagesResult.status === "fulfilled" && imagesResult.value) {
-          setSettings((prev) => ({ ...prev, ...imagesResult.value }));
-        } else if (imagesResult.status === "rejected") {
+        const restoredImages =
+          imagesResult.status === "fulfilled" && imagesResult.value ? imagesResult.value : {};
+        if (imagesResult.status === "rejected") {
           console.error("Failed to restore images on startup", imagesResult.reason);
+        }
+
+        const restoredStudentPhotos =
+          studentPhotosResult.status === "fulfilled" && studentPhotosResult.value
+            ? studentPhotosResult.value
+            : {};
+        if (studentPhotosResult.status === "rejected") {
+          console.error("Failed to restore student photos on startup", studentPhotosResult.reason);
+        }
+
+        // Revoke any DB-loaded URL if superseded by a freshly migrated URL for the same student
+        Object.keys(migratedPhotoUrls).forEach((sid) => {
+          const oldUrl = restoredStudentPhotos[sid];
+          if (typeof oldUrl === "string" && oldUrl.startsWith("blob:") && oldUrl !== migratedPhotoUrls[sid]) {
+            URL.revokeObjectURL(oldUrl);
+          }
+        });
+        useStudentsStore
+          .getState()
+          .setAllStudentPhotoUrls({ ...restoredStudentPhotos, ...migratedPhotoUrls });
+
+        if (normalized.changed.settings || Object.keys(restoredImages).length > 0) {
+          useSettingsStore.getState().setSettings((prev) => {
+            const base = normalized.changed.settings ? normalized.settings : prev;
+            return { ...base, ...restoredImages };
+          });
         }
 
         if (presetsResult.status === "fulfilled" && presetsResult.value) {
           const currentExtracurriculars = useSettingsStore.getState().extracurriculars || [];
           if (currentExtracurriculars.length === 0) {
-            setExtracurriculars(presetsResult.value.extracurriculars || []);
+            useSettingsStore.getState().setExtracurriculars(presetsResult.value.extracurriculars || []);
           }
         } else if (presetsResult.status === "rejected") {
           console.error("Failed to load presets", presetsResult.reason);
         }
 
+        initSummarySync();
         setIsDataLoaded(true);
         setIsLoading(false);
       } catch (e) {
@@ -179,29 +250,74 @@ export const useAppStorage = () => {
     };
 
     initializeAllData();
-    return () => { isMounted = false; };
-  }, [hasHydratedAll, setSubjects, setExtracurriculars, setIsLoading]);
+    return () => {
+      isMounted = false;
+    };
+  }, [hasHydratedAll, setIsLoading]);
+
+  // Automatic orphan cleanup (including student 3x4 photos in RKT_ImagesDB) via store subscription
+  useEffect(() => {
+    if (!isDataLoaded) return;
+
+    const unsub = useStudentsStore.subscribe((state, prevState) => {
+      if (state.students === prevState.students) return;
+
+      const currentStudents = state.students || [];
+      const currentIds = new Set(
+        currentStudents.filter((s: any) => s?.id).map((s: any) => String(s.id))
+      );
+      const prevIds = prevStudentIdsRef.current;
+      prevStudentIdsRef.current = currentIds;
+
+      if (!prevIds) return;
+      const removedIds: string[] = [];
+      for (const id of prevIds) {
+        if (!currentIds.has(id)) {
+          removedIds.push(id);
+        }
+      }
+
+      if (removedIds.length === 0) return;
+
+      removedIds.forEach((removedId) => {
+        useStudentsStore.getState().removeStudentPhotoUrl(removedId);
+        void deleteStudentPhotoFromDB(removedId);
+      });
+
+      const cleaned = cleanupOrphanedRecords({
+        students: currentStudents,
+        grades: useNilaiStore.getState().grades,
+        attendance: useAttendanceStore.getState().attendance,
+        notes: useNotesStore.getState().notes,
+        cocurricularData: useCocurricularStore.getState().cocurricularData,
+        studentExtracurriculars: useExtracurricularStore.getState().studentExtracurriculars,
+        formativeJournal: useFormativeStore.getState().formativeJournal,
+      });
+
+      if (cleaned.changed.grades) useNilaiStore.getState().setGrades(cleaned.grades);
+      if (cleaned.changed.attendance) useAttendanceStore.getState().setAttendance(cleaned.attendance);
+      if (cleaned.changed.notes) useNotesStore.getState().setNotes(cleaned.notes);
+      if (cleaned.changed.cocurricularData) useCocurricularStore.getState().setCocurricularData(cleaned.cocurricularData);
+      if (cleaned.changed.studentExtracurriculars) useExtracurricularStore.getState().setStudentExtracurriculars(cleaned.studentExtracurriculars);
+      if (cleaned.changed.formativeJournal) useFormativeStore.getState().setFormativeJournal(cleaned.formativeJournal);
+    });
+
+    return () => unsub();
+  }, [isDataLoaded]);
 
   return {
-    toast, setToast, showToast,
-    isLoading, setIsLoading,
-    activeNilaiTab, setActiveNilaiTab,
-    isMobileMenuOpen, setIsMobileMenuOpen,
-    isERaporModalOpen, setIsERaporModalOpen,
-    pendingSemester, setPendingSemester,
-    showSemesterModal, setShowSemesterModal,
+    toast,
+    setToast,
+    showToast,
+    isLoading,
+    setIsLoading,
+    activeNilaiTab,
+    setActiveNilaiTab,
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    isERaporModalOpen,
+    setIsERaporModalOpen,
     isDataLoaded,
-    settings, setSettings,
-    students, setStudents,
-    grades, setGrades,
-    notes, setNotes,
-    cocurricularData, setCocurricularData,
-    attendance, setAttendance,
-    extracurriculars, setExtracurriculars,
-    studentExtracurriculars, setStudentExtracurriculars,
-    subjects, setSubjects,
-    learningObjectives, setLearningObjectives,
-    formativeJournal, setFormativeJournal,
-    predefinedCurriculum
   };
 };
+
