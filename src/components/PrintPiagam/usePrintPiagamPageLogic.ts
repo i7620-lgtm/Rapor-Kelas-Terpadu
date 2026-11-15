@@ -3,6 +3,8 @@ import { getFontEmbedCSS } from '../../utils/pdfFonts';
 import { PAPER_SIZES } from './utils';
 import { useDashboardLogic } from '../Dashboard/useDashboardLogic';
 
+const NOOP = () => {};
+
 export const usePrintPiagamPageLogic = ({
     students,
     grades,
@@ -14,7 +16,7 @@ export const usePrintPiagamPageLogic = ({
 }) => {
     const handleUpdateLayout = onUpdatePiagamLayout;
 
-    const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+    const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || NOOP });
     const incompleteItems = completenessChecks.filter(check => check.status === 'bad' && check.category !== 'Data Lainnya');
 
     const belowKkmItems = (academicAlerts || [])
@@ -98,15 +100,23 @@ export const usePrintPiagamPageLogic = ({
 
     const studentRankings = useMemo(() => {
         const allActiveSubjects = subjects.filter(s => s.active);
+        const activeSubjectMap = new Map<string, any>();
+        allActiveSubjects.forEach((s) => activeSubjectMap.set(s.id, s));
+
+        const gradeMap = new Map<string, any>();
+        grades.forEach((g) => {
+            if (g?.studentId) gradeMap.set(String(g.studentId), g);
+        });
+
         const studentsWithScores = students.map(student => {
-            const gradeData = grades.find(g => g.studentId === student.id);
+            const gradeData = gradeMap.get(String(student.id));
             if (!gradeData || !gradeData.finalGrades) return { studentId: student.id, total: 0, count: 0 };
 
             const studentReligion = String(student.agama || '').trim().toLowerCase();
             let total = 0, count = 0;
             
             Object.entries(gradeData.finalGrades).forEach(([subjectId, score]) => {
-                const subjectInfo = allActiveSubjects.find(s => s.id === subjectId);
+                const subjectInfo = activeSubjectMap.get(subjectId);
                 if (subjectInfo && typeof score === 'number') {
                     if (subjectInfo.fullName.startsWith('Pendidikan Agama')) {
                         if (studentReligion && subjectInfo.fullName.toLowerCase().includes(`(${studentReligion})`)) {

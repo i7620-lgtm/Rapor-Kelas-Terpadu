@@ -4,10 +4,7 @@ import { generateInitialPiagamLayout, toRoman, getTextWidth, PIAGAM_WIDTH, PIAGA
 import { getTanggalRaporValue, getContextualValue } from '../../constants';
 
 export const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions }: any) => {
-    const currentSemester = settings?.semester || 'Ganjil';
-    const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
-    
-    let rawLayout = settings[layoutField];
+    let rawLayout = settings?.piagam_layout ?? settings?.piagam_layout_Genap;
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);

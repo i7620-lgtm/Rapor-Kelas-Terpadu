@@ -10,9 +10,7 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
 
     useEffect(() => {
         if (isOpen) {
-            const currentSemester = settings?.semester || 'Ganjil';
-            const layoutField = currentSemester === 'Genap' ? 'piagam_layout_Genap' : 'piagam_layout';
-            let rawLayout = settings[layoutField];
+            let rawLayout = settings?.piagam_layout ?? settings?.piagam_layout_Genap;
             if (typeof rawLayout === 'string') {
                 try {
                     rawLayout = JSON.parse(rawLayout);
