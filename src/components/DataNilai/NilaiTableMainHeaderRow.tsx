@@ -25,7 +25,7 @@ interface NilaiTableMainHeaderRowProps {
     semester?: string;
     enableAutoRegression?: boolean;
   };
-  handleAutoRegressionNonTP: (type: "sts1" | "sts2" | "sas1" | "sas2") => void;
+  handleAutoRegressionNonTP: (type: "sts" | "sas") => void;
   showTooltip: (e: React.MouseEvent, content: string) => void;
   hideTooltip: () => void;
   slmTextRefs: React.RefObject<Record<string, HTMLSpanElement | null>>;

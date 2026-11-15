@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { NilaiTableGradingCell } from "./NilaiTableGradingCell";
 import { NilaiTableCapaianCell } from "./NilaiTableCapaianCell";
 import { generateSubjectDescription } from "../../utils/nilaiHelpers";
 import { useNilaiStore } from "../../stores/useNilaiStore";
 import { StsSasCells } from "./NilaiTableRowParts";
+import type { GridSelectionBounds } from "../../hooks/useGridSelection";
 
 interface NilaiTableRowProps {
   student: {
@@ -23,10 +24,11 @@ interface NilaiTableRowProps {
     text: string;
     displayIndex: string;
   }>;
+  selectionBounds?: GridSelectionBounds | null;
   getSelectionStyle: (
     row: number,
     col: number
-  ) => { selectionStyle?: React.CSSProperties; showTransparentInput: boolean };
+  ) => { selectionStyle?: React.CSSProperties; showTransparentInput: boolean; isCellSelected?: boolean };
   handleMouseDownCell: (
     e: React.MouseEvent,
     row: number,
@@ -72,42 +74,66 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
     mode,
   } = props;
   
-  const studentGrade = useNilaiStore(state => state.grades.find((g) => g.studentId === student.id));
-
-  const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
-  const generated = generateSubjectDescription(
-    student,
-    detailedGrade || {
-      slm: [],
-      sts1: null,
-      sts2: null,
-      sas1: null,
-      sas2: null,
-    },
-    objectivesForSubject,
-    settings,
-    activeSlmIds,
+  const detailedGrade = useNilaiStore(
+    (state) => state.gradesByStudentId[student.id]?.detailedGrades?.[subject.id]
+  );
+  const finalVal = useNilaiStore(
+    (state) => state.gradesByStudentId[student.id]?.finalGrades?.[subject.id]
   );
 
-  const descriptions = {
-    highest:
-      detailedGrade?.descriptions?.highest &&
-      detailedGrade.descriptions.highest.trim()
-        ? detailedGrade.descriptions.highest
-        : generated.highest,
-    lowest:
-      detailedGrade?.descriptions?.lowest &&
-      detailedGrade.descriptions.lowest.trim()
-        ? detailedGrade.descriptions.lowest
-        : generated.lowest,
-  };
+  const slmScoresMap = useMemo(() => {
+    const map = new Map<string, any[]>();
+    const slmList = detailedGrade?.slm;
+    if (Array.isArray(slmList)) {
+      for (let i = 0; i < slmList.length; i++) {
+        const item = slmList[i];
+        if (item?.id) {
+          map.set(item.id, item.scores || []);
+        }
+      }
+    }
+    return map;
+  }, [detailedGrade?.slm]);
+
+  const savedDescriptions = detailedGrade?.descriptions;
+  const descriptions = useMemo(() => {
+    const hasSavedHighest = Boolean(
+      savedDescriptions?.highest && savedDescriptions.highest.trim()
+    );
+    const hasSavedLowest = Boolean(
+      savedDescriptions?.lowest && savedDescriptions.lowest.trim()
+    );
+
+    if (hasSavedHighest && hasSavedLowest) {
+      return {
+        highest: savedDescriptions!.highest,
+        lowest: savedDescriptions!.lowest,
+      };
+    }
+
+    const generated = generateSubjectDescription(
+      student,
+      detailedGrade || {
+        slm: [],
+        sts: null,
+        sas: null,
+      },
+      objectivesForSubject,
+      settings,
+      activeSlmIds,
+    );
+
+    return {
+      highest: hasSavedHighest ? savedDescriptions!.highest : generated.highest,
+      lowest: hasSavedLowest ? savedDescriptions!.lowest : generated.lowest,
+    };
+  }, [student, detailedGrade, savedDescriptions, objectivesForSubject, settings, activeSlmIds]);
 
   let total = "-";
   let isFinalBelowKkm = false;
   let isFinalMissing = true;
   const kkmVal = parseInt(settings?.predikats?.c, 10);
   if (detailedGrade) {
-    const finalVal = studentGrade?.finalGrades?.[subject.id];
     if (finalVal !== null && finalVal !== undefined && String(finalVal).trim() !== "") {
       total = String(finalVal);
       isFinalMissing = false;
@@ -164,7 +190,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
       {/* 3. Render TP Grades */}
       {tpHeaders.map((h, colIdx) => {
         const { selectionStyle: style, showTransparentInput: showTrans } = getSelectionStyle(index, colIdx);
-        const cellValue = detailedGrade?.slm?.find((s) => s.id === h.slmId)?.scores?.[h.tpIndex] ?? null;
+        const cellValue = slmScoresMap.get(h.slmId)?.[h.tpIndex] ?? null;
 
         return (
           <td
@@ -238,20 +264,37 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
   if (prev.isCapaianPinned !== next.isCapaianPinned) return false;
   if (prev.mode !== next.mode) return false;
 
-  // Compare selection styles for all columns (including -1, -2 and up to tpHeaders.length + 2)
-  const maxCols = prev.tpHeaders.length + 2; 
-  for (let c = -2; c < maxCols; c++) {
-    const prevStyle = prev.getSelectionStyle(prev.index, c);
-    const nextStyle = next.getSelectionStyle(next.index, c);
-    if (
-        prevStyle.isCellSelected !== nextStyle.isCellSelected ||
-        prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
-        prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
-        prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
-    ) {
-        return false;
+  if (prev.selectionBounds !== next.selectionBounds) {
+    if (prev.selectionBounds !== undefined || next.selectionBounds !== undefined) {
+      const prevInRow = Boolean(
+        prev.selectionBounds &&
+        prev.index >= prev.selectionBounds.minR &&
+        prev.index <= prev.selectionBounds.maxR
+      );
+      const nextInRow = Boolean(
+        next.selectionBounds &&
+        next.index >= next.selectionBounds.minR &&
+        next.index <= next.selectionBounds.maxR
+      );
+      if (!prevInRow && !nextInRow) {
+        return true;
+      }
+    }
+    // Compare selection styles for all columns (including -1, -2 and up to tpHeaders.length + 2)
+    const maxCols = prev.tpHeaders.length + 2;
+    for (let c = -2; c < maxCols; c++) {
+      const prevStyle = prev.getSelectionStyle(prev.index, c);
+      const nextStyle = next.getSelectionStyle(next.index, c);
+      if (
+          prevStyle.isCellSelected !== nextStyle.isCellSelected ||
+          prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
+          prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
+          prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
+      ) {
+          return false;
+      }
     }
   }
 
   return true; // No changes to display, safe to skip re-render
-});;
+});

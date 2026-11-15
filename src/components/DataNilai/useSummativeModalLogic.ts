@@ -25,12 +25,12 @@ export const useSummativeModalLogic = (props) => {
     predefinedCurriculum,
   } = props;
 
-  const { type, item } = modalData;
+  const { type = "", item = null } = modalData || {};
   const isSLM = type === "slm";
   
   const calculationConfig = useMemo(
-    () => settings.gradeCalculation?.[subject.id] || { method: "rata-rata" },
-    [settings.gradeCalculation, subject.id],
+    () => settings?.gradeCalculation?.[subject?.id] || { method: "rata-rata" },
+    [settings?.gradeCalculation, subject?.id],
   );
   
   const isWeighting = calculationConfig.method === "pembobotan";
@@ -38,12 +38,12 @@ export const useSummativeModalLogic = (props) => {
     () => calculationConfig.weights || {},
     [calculationConfig],
   );
-  const { qualitativeGradingMap } = settings;
+  const { qualitativeGradingMap = {} } = settings || {};
 
   const objectivesForSubject = useMemo(() => {
     const gradeKey = `Kelas ${gradeNumber || 6}`;
-    const curriculumKey = subject.curriculumKey || subject.fullName;
-    return objectives[gradeKey]?.[curriculumKey] || [];
+    const curriculumKey = subject?.curriculumKey || subject?.fullName || "";
+    return objectives?.[gradeKey]?.[curriculumKey] || [];
   }, [objectives, gradeNumber, subject]);
 
   const [slmName, setSlmName] = useState(isSLM ? item?.name || "" : "");
@@ -68,9 +68,9 @@ export const useSummativeModalLogic = (props) => {
   }, [isSLM, item?.id, objectivesForSubject, localObjectives]);
 
   const relevantStudents = useMemo(() => {
-    const curriculumKey = subject.curriculumKey || subject.fullName;
+    const curriculumKey = subject?.curriculumKey || subject?.fullName || "";
     if (
-      subject.id === "PAKTTMYME" ||
+      subject?.id === "PAKTTMYME" ||
       curriculumKey.toLowerCase().includes("kepercayaan terhadap tuhan")
     ) {
       return students.filter(
@@ -89,7 +89,7 @@ export const useSummativeModalLogic = (props) => {
         );
       }
     }
-    return students;
+    return students || [];
   }, [students, subject]);
 
   const {
@@ -228,18 +228,16 @@ export const useSummativeModalLogic = (props) => {
   }, [getSelectionBounds, relevantStudents, localGrades, isSLM, item?.id, settings.predikats, settings.qualitativeGradingMap, type, showToast]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && subject?.id) {
       const initialLocalGrades = {};
-      students.forEach((student) => {
-        const studentGrade = grades.find((g) => g.studentId === student.id);
+      (students || []).forEach((student) => {
+        const studentGrade = (grades || []).find((g) => g.studentId === student.id);
         const gradeObj = JSON.parse(
           JSON.stringify(
             studentGrade?.detailedGrades?.[subject.id] || {
               slm: [],
-              sts1: null,
-              sts2: null,
-              sas1: null,
-              sas2: null,
+              sts: null,
+              sas: null,
             },
           ),
         );
@@ -248,6 +246,7 @@ export const useSummativeModalLogic = (props) => {
       });
       setLocalGrades(initialLocalGrades);
       setActiveInput({});
+      setSlmName(isSLM ? item?.name || "" : "");
 
       if (isSLM && item) {
         const initialTps = objectivesForSubject
@@ -258,9 +257,11 @@ export const useSummativeModalLogic = (props) => {
             isEdited: obj.isEdited,
           }));
         setLocalObjectives(initialTps);
+      } else {
+        setLocalObjectives([]);
       }
     }
-  }, [isOpen, item, objectivesForSubject, isSLM, students, grades, subject.id]);
+  }, [isOpen, item, objectivesForSubject, isSLM, students, grades, subject?.id]);
 
   const handleSave = () => {
     if (isSLM) {
@@ -373,6 +374,7 @@ export const useSummativeModalLogic = (props) => {
     (studentId, descType, value) => {
       setLocalGrades((prevGrades) => {
         const newGrades = { ...prevGrades };
+        if (!newGrades[studentId]) return prevGrades;
         const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
         const student = students.find((s) => s.id === studentId);
         const generated = generateSubjectDescription(
@@ -380,35 +382,36 @@ export const useSummativeModalLogic = (props) => {
           studentGrade,
           currentObjectives,
           settings,
-          settings.slmVisibility?.[subject.id],
+          settings?.slmVisibility?.[subject?.id],
         );
 
-        if (!studentGrade.descriptions) {
-          studentGrade.descriptions = {
+        const descField = "descriptions";
+        if (!studentGrade[descField]) {
+          studentGrade[descField] = {
             highest: generated.highest,
             lowest: generated.lowest,
           };
         } else {
           if (
-            !studentGrade.descriptions.highest ||
-            !studentGrade.descriptions.highest.trim()
+            !studentGrade[descField].highest ||
+            !studentGrade[descField].highest.trim()
           ) {
-            studentGrade.descriptions.highest = generated.highest;
+            studentGrade[descField].highest = generated.highest;
           }
           if (
-            !studentGrade.descriptions.lowest ||
-            !studentGrade.descriptions.lowest.trim()
+            !studentGrade[descField].lowest ||
+            !studentGrade[descField].lowest.trim()
           ) {
-            studentGrade.descriptions.lowest = generated.lowest;
+            studentGrade[descField].lowest = generated.lowest;
           }
         }
 
-        studentGrade.descriptions[descType] = value;
+        studentGrade[descField][descType] = value;
         newGrades[studentId] = studentGrade;
         return newGrades;
       });
     },
-    [students, currentObjectives, settings, subject.id],
+    [students, currentObjectives, settings, subject?.id],
   );
 
 
@@ -516,7 +519,7 @@ export const useSummativeModalLogic = (props) => {
   
   const availableTPsForSelection = useMemo(() => {
     if (!predefinedCurriculum) return [];
-    const curriculumKey = subject.curriculumKey || subject.fullName;
+    const curriculumKey = subject?.curriculumKey || subject?.fullName || "";
     return predefinedCurriculum[curriculumKey] || [];
   }, [predefinedCurriculum, subject]);
 

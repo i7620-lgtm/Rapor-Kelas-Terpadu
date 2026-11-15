@@ -4,12 +4,10 @@ interface ManageSlmItemProps {
   slm: {
     id: string;
     name: string;
-    semester?: string;
     tps: Array<{ text: string; isEdited?: boolean }>;
   };
   onSlmNameChange: (slmId: string, newName: string) => void;
   onDeleteSlm: (slmId: string) => void;
-  onSemesterToggle: (slmId: string, currentSemester: string, targetSemester: string) => void;
   onTpTextChange: (slmId: string, tpIndex: number, newText: string) => void;
   onDeleteTp: (slmId: string, tpIndex: number) => void;
   onAddManualTp: (slmId: string) => void;
@@ -20,7 +18,6 @@ export const ManageSlmItem: React.FC<ManageSlmItemProps> = ({
   slm,
   onSlmNameChange,
   onDeleteSlm,
-  onSemesterToggle,
   onTpTextChange,
   onDeleteTp,
   onAddManualTp,
@@ -69,43 +66,7 @@ export const ManageSlmItem: React.FC<ManageSlmItemProps> = ({
             Belum ada Tujuan Pembelajaran.
           </p>
         )}
-        <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-row flex-wrap gap-2 justify-between items-center">
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() =>
-                onSemesterToggle(
-                  slm.id,
-                  slm.semester || "Semua",
-                  "Ganjil",
-                )
-              }
-              className={`px-3 py-1.5 min-h-[40px] lg:min-h-0 text-xs font-medium border rounded-lg transition-all cursor-pointer ${
-                !slm.semester || slm.semester === "Semua" || slm.semester === "Ganjil"
-                  ? "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 shadow-inner"
-                  : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              Semester Ganjil
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                onSemesterToggle(
-                  slm.id,
-                  slm.semester || "Semua",
-                  "Genap",
-                )
-              }
-              className={`px-3 py-1.5 min-h-[40px] lg:min-h-0 text-xs font-medium border rounded-lg transition-all cursor-pointer ${
-                !slm.semester || slm.semester === "Semua" || slm.semester === "Genap"
-                  ? "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 shadow-inner"
-                  : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-              }`}
-            >
-              Semester Genap
-            </button>
-          </div>
+        <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-row flex-wrap gap-2 justify-end items-center">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"

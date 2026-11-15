@@ -1,14 +1,14 @@
 import React from "react";
 import { QUALITATIVE_DESCRIPTORS } from "../../constants";
+import { computeQualitativeGradingMap, isValidQualitativeGradingMap } from "../../utils/nilaiHelpers";
 
 export const QualitativeGradingTable = ({ settings }) => {
-  const { predikats, qualitativeGradingMap } = settings;
-  if (
-    !predikats ||
-    !qualitativeGradingMap ||
-    Object.keys(qualitativeGradingMap).length === 0
-  )
-    return null;
+  const { predikats } = settings;
+  if (!predikats) return null;
+
+  const qualitativeGradingMap = isValidQualitativeGradingMap(settings.qualitativeGradingMap)
+    ? settings.qualitativeGradingMap
+    : computeQualitativeGradingMap(predikats);
 
   const valA = parseInt(predikats.a, 10);
   const valB = parseInt(predikats.b, 10);

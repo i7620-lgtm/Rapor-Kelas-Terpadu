@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 interface TpItem {
   text: string;
@@ -42,25 +42,44 @@ interface UseAllSlmsParams {
   grades: GradeItem[];
 }
 
+const areSlmListsStructurallyEqual = (a: SlmItem[], b: SlmItem[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const slmA = a[i];
+    const slmB = b[i];
+    if (slmA.id !== slmB.id || slmA.name !== slmB.name) return false;
+    if (slmA.tps.length !== slmB.tps.length) return false;
+    for (let j = 0; j < slmA.tps.length; j++) {
+      if (
+        slmA.tps[j].text !== slmB.tps[j].text ||
+        slmA.tps[j].isEdited !== slmB.tps[j].isEdited
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 export function useAllSlms({
   predefinedSlms,
   subjectId,
   objectivesForSubject,
   grades,
 }: UseAllSlmsParams): SlmItem[] {
+  const prevSlmsRef = useRef<SlmItem[]>([]);
+
   return useMemo(() => {
     const slmMap = new Map<string, SlmItem>();
 
     // Step 1: Populate with predefined SLMs
-    const preHalf = Math.ceil(predefinedSlms.length / 2);
     predefinedSlms.forEach((pSlm, index) => {
       const slmId = `slm_predefined_${subjectId}_${index}`;
-      const defaultSemester = index < preHalf ? "Ganjil" : "Genap";
       slmMap.set(slmId, {
         id: slmId,
         name: pSlm.slm,
         tps: pSlm.tp.map((tpText) => ({ text: tpText, isEdited: false })),
-        semester: defaultSemester,
       });
     });
 
@@ -72,18 +91,16 @@ export function useAllSlms({
       acc[tp.slmId].push({
         text: tp.text,
         isEdited: tp.isEdited === true,
-        semester: tp.semester || "Semua",
       });
       return acc;
     }, {});
 
     // Step 3: Merge user objectives. This adds custom SLMs and overrides TPs of predefined ones.
     Object.entries(userObjectivesBySlm).forEach(([slmId, tps]) => {
-      const semester = tps[0]?.semester || "Semua";
       if (slmMap.has(slmId)) {
         // User has edited the TPs for a predefined SLM. Override them.
         const existingSlm = slmMap.get(slmId)!;
-        slmMap.set(slmId, { ...existingSlm, tps, semester });
+        slmMap.set(slmId, { ...existingSlm, tps });
       } else {
         // This is a completely custom SLM. Add it to the map.
         const slmNameFromGrades =
@@ -96,7 +113,6 @@ export function useAllSlms({
           id: slmId,
           name: slmNameFromGrades || "Lingkup Materi Kustom",
           tps,
-          semester,
         });
       }
     });
@@ -126,6 +142,11 @@ export function useAllSlms({
       });
     });
 
-    return Array.from(slmMap.values());
+    const nextList = Array.from(slmMap.values());
+    if (areSlmListsStructurallyEqual(prevSlmsRef.current, nextList)) {
+      return prevSlmsRef.current;
+    }
+    prevSlmsRef.current = nextList;
+    return nextList;
   }, [objectivesForSubject, grades, subjectId, predefinedSlms]);
 }

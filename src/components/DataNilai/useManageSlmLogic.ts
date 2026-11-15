@@ -78,16 +78,6 @@ export const useManageSlmLogic = (props) => {
     );
   };
 
-  const handleSemesterToggle = (slmId, currentSemester, targetSemester) => {
-    const newSemester =
-      currentSemester === targetSemester ? "Semua" : targetSemester;
-    setLocalSlms((prev) =>
-      prev.map((slm) =>
-        slm.id === slmId ? { ...slm, semester: newSemester } : slm
-      )
-    );
-  };
-
   const handleAddCustomSlm = () => {
     const newSlm = {
       id: `slm_custom_${Date.now()}`,
@@ -276,7 +266,6 @@ export const useManageSlmLogic = (props) => {
         slmId: slm.id,
         text: tp.text,
         isEdited: tp.isEdited,
-        semester: slm.semester || "Semua",
       }))
     );
     const newLearningObjectives = {
@@ -297,10 +286,8 @@ export const useManageSlmLogic = (props) => {
         JSON.stringify(
           studentGrade?.detailedGrades?.[subject.id] || {
             slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
+            sts: null,
+            sas: null,
           }
         )
       );
@@ -378,7 +365,6 @@ export const useManageSlmLogic = (props) => {
     handleApplyOfflineOcr,
     handleSlmNameChange,
     handleTpTextChange,
-    handleSemesterToggle,
     handleAddCustomSlm,
     handleDeleteSlm,
     handleAddManualTp,

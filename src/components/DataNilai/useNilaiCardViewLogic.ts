@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { getGradeNumber } from "../../utils/nilaiHelpers";
 
 export const useNilaiCardViewLogic = ({
@@ -40,6 +40,8 @@ export const useNilaiCardViewLogic = ({
     const curriculumKey = subject.curriculumKey || subject.fullName;
     return predefinedCurriculum[curriculumKey] || [];
   }, [predefinedCurriculum, subject]);
+
+  const prevSlmsRef = useRef<any[]>([]);
 
   const allSlms = useMemo(() => {
     const slmMap = new Map();
@@ -93,7 +95,33 @@ export const useNilaiCardViewLogic = ({
       }
     });
 
-    return Array.from(slmMap.values());
+    const nextList = Array.from(slmMap.values());
+    const prevList = prevSlmsRef.current;
+    let isEqual = prevList.length === nextList.length;
+    if (isEqual) {
+      for (let i = 0; i < nextList.length; i++) {
+        const a = prevList[i];
+        const b = nextList[i];
+        const tpsA = a.tps || [];
+        const tpsB = b.tps || [];
+        if (a.id !== b.id || a.name !== b.name || tpsA.length !== tpsB.length) {
+          isEqual = false;
+          break;
+        }
+        for (let j = 0; j < tpsA.length; j++) {
+          if (tpsA[j]?.text !== tpsB[j]?.text || tpsA[j]?.isEdited !== tpsB[j]?.isEdited) {
+            isEqual = false;
+            break;
+          }
+        }
+        if (!isEqual) break;
+      }
+    }
+    if (isEqual) {
+      return prevList;
+    }
+    prevSlmsRef.current = nextList;
+    return nextList;
   }, [predefinedSlms, objectivesForSubject, subject.id, grades]);
 
   const activeSlmIds = useMemo(() => {
@@ -138,13 +166,21 @@ export const useNilaiCardViewLogic = ({
     return students;
   }, [students, subject.fullName, subject.curriculumKey, subject.id]);
 
+  const gradeByStudentIdMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (grades || []).forEach((g) => {
+      if (g?.studentId) map.set(String(g.studentId), g);
+    });
+    return map;
+  }, [grades]);
+
   const getCompletionStatus = useCallback(
     (type, item) => {
       let filled = 0;
       let total = 0;
 
       relevantStudents.forEach((student) => {
-        const studentGrades = grades.find((g) => g.studentId === student.id)
+        const studentGrades = gradeByStudentIdMap.get(String(student.id))
           ?.detailedGrades?.[subject.id];
 
         if (type === "slm" && studentGrades?.slm) {
@@ -164,19 +200,17 @@ export const useNilaiCardViewLogic = ({
           } else {
             total += item.tps.length;
           }
-        } else if (
-          ["sts1", "sts2", "sas1", "sas2"].includes(type) &&
-          studentGrades
-        ) {
+        } else if ((type === "sts" || type === "sas") && studentGrades) {
           total++;
-          if (
-            studentGrades[type] !== undefined &&
-            studentGrades[type] !== null &&
-            studentGrades[type] !== ""
-          ) {
+          const scoreVal =
+            studentGrades[type] ??
+            (type === "sts"
+              ? (studentGrades.sts2 ?? studentGrades.sts1)
+              : (studentGrades.sas2 ?? studentGrades.sas1));
+          if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
             filled++;
           }
-        } else if (["sts1", "sts2", "sas1", "sas2"].includes(type)) {
+        } else if (type === "sts" || type === "sas") {
           total++;
         }
       });
@@ -187,7 +221,7 @@ export const useNilaiCardViewLogic = ({
         percentage: total > 0 ? Math.round((filled / total) * 100) : 0,
       };
     },
-    [relevantStudents, grades, subject.id],
+    [relevantStudents, gradeByStudentIdMap, subject.id],
   );
 
   return {

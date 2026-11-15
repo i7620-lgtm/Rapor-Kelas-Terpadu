@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { QualitativeGradingTable } from "./QualitativeGradingTable";
+import { computeQualitativeGradingMap } from "../../utils/nilaiHelpers";
 
 export const GradeSettingsModal = ({
   isOpen,
@@ -10,17 +11,32 @@ export const GradeSettingsModal = ({
   onUpdateGradeCalculation,
   onUpdateDisplayMode,
 }) => {
-  if (!isOpen) return null;
-
-  const [localPredikats, setLocalPredikats] = useState(settings.predikats);
+  const defaultPredikats = settings?.predikats || { a: "90", b: "80", c: "70", d: "0" };
+  const [localPredikats, setLocalPredikats] = useState(defaultPredikats);
   const calculationConfig = useMemo(
-    () => settings.gradeCalculation?.[subject.id] || { method: "rata-rata" },
-    [settings.gradeCalculation, subject.id],
+    () => settings?.gradeCalculation?.[subject?.id] || { method: "rata-rata" },
+    [settings?.gradeCalculation, subject?.id],
   );
   const [localMethod, setLocalMethod] = useState(calculationConfig.method);
   const [localDisplayMode, setLocalDisplayMode] = useState(
-    settings.nilaiDisplayMode || "kuantitatif saja",
+    settings?.nilaiDisplayMode || "kuantitatif saja",
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      setLocalPredikats(settings?.predikats || { a: "90", b: "80", c: "70", d: "0" });
+      setLocalMethod(calculationConfig.method || "rata-rata");
+      setLocalDisplayMode(settings?.nilaiDisplayMode || "kuantitatif saja");
+    }
+  }, [
+    isOpen,
+    subject?.id,
+    settings?.predikats,
+    calculationConfig.method,
+    settings?.nilaiDisplayMode,
+  ]);
+
+  if (!isOpen) return null;
 
   const handleSave = () => {
     onUpdatePredikats(localPredikats);
@@ -153,7 +169,13 @@ export const GradeSettingsModal = ({
             ),
           ),
         ),
-        React.createElement(QualitativeGradingTable, { settings: settings }),
+        React.createElement(QualitativeGradingTable, {
+          settings: {
+            ...settings,
+            predikats: localPredikats,
+            qualitativeGradingMap: computeQualitativeGradingMap(localPredikats),
+          },
+        }),
         React.createElement(
           "section",
           null,

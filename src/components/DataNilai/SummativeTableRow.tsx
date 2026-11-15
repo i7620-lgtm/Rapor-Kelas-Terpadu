@@ -27,8 +27,11 @@ export const SummativeTableRow = React.memo(({
   handleLocalGradeChange,
   handleLocalDescriptionChange,
 }) => {
-  let descriptions = studentGrade.descriptions;
-  if (!descriptions) {
+  const savedDescriptions = studentGrade?.descriptions;
+  const needsHighest = !savedDescriptions?.highest || !savedDescriptions.highest.trim();
+  const needsLowest = !savedDescriptions?.lowest || !savedDescriptions.lowest.trim();
+  let descriptions = savedDescriptions;
+  if (needsHighest || needsLowest) {
     const generated = generateSubjectDescription(
       student,
       studentGrade,
@@ -37,8 +40,8 @@ export const SummativeTableRow = React.memo(({
       settings.slmVisibility?.[subject.id]
     );
     descriptions = {
-      highest: generated.highest,
-      lowest: generated.lowest,
+      highest: needsHighest ? generated.highest : savedDescriptions.highest,
+      lowest: needsLowest ? generated.lowest : savedDescriptions.lowest,
     };
   }
 

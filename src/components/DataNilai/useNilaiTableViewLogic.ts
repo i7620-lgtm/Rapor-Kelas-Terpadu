@@ -1,5 +1,5 @@
 import { useNilaiTableActionsLogic } from "./useNilaiTableActionsLogic";
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
 import { useAllSlms } from "./useAllSlms";
 import { useNilaiStore } from "../../stores/useNilaiStore";
@@ -170,15 +170,8 @@ export const useNilaiTableViewLogic = (props) => {
     const columnKeys = [];
     let tpCounter = 0;
 
-    const currentAppSemester = settings.semester || "Ganjil";
-
     allSlms.forEach((slm) => {
       if (activeSlmIds.includes(slm.id)) {
-        const slmSemester = slm.semester || "Semua";
-        if (slmSemester !== "Semua" && slmSemester !== currentAppSemester) {
-          return;
-        }
-
         const colSpan = Math.max(1, slm.tps.length);
         slmHeaders.push({ id: slm.id, name: slm.name, colSpan: colSpan });
         slm.tps.forEach((tp, index) => {
@@ -205,22 +198,20 @@ export const useNilaiTableViewLogic = (props) => {
         }
       }
     });
-    if (!settings.semester || settings.semester === "Ganjil") {
-      columnKeys.push("sts1");
-    }
-    if (settings.semester === "Genap") {
-      columnKeys.push("sts2");
-    }
-    if (!settings.semester || settings.semester === "Ganjil") {
-      columnKeys.push("sas1");
-    }
-    if (settings.semester === "Genap") {
-      columnKeys.push("sas2");
-    }
+    columnKeys.push("sts", "sas");
     return { slmHeaders, tpHeaders, columnKeys };
-  }, [allSlms, activeSlmIds, settings.semester]);
+  }, [allSlms, activeSlmIds]);
+
+  const gradeByStudentIdMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (grades || []).forEach((g) => {
+      if (g?.studentId) map.set(String(g.studentId), g);
+    });
+    return map;
+  }, [grades]);
 
   const {
+    selectionBounds,
     getSelectionBounds,
     getSelectionStyle,
     handleMouseDownCell,
@@ -237,15 +228,13 @@ export const useNilaiTableViewLogic = (props) => {
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         if (r < 0 || r >= relevantStudents.length) continue;
         const student = relevantStudents[r];
-        const studentGrade = grades.find((g) => g.studentId === student.id);
+        const studentGrade = gradeByStudentIdMap.get(String(student.id));
         const detailedGrade = JSON.parse(
           JSON.stringify(
             studentGrade?.detailedGrades?.[subject.id] || {
               slm: [],
-              sts1: null,
-              sts2: null,
-              sas1: null,
-              sas2: null,
+              sts: null,
+              sas: null,
             },
           ),
         );
@@ -317,7 +306,7 @@ export const useNilaiTableViewLogic = (props) => {
         let rowData = [];
         const student = relevantStudents[r];
         if (student) {
-          const studentGrade = grades.find((g) => g.studentId === student.id);
+          const studentGrade = gradeByStudentIdMap.get(String(student.id));
           const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || {};
           for (let c = bounds.minC; c <= bounds.maxC; c++) {
             if (c < 0 || c >= columnKeys.length) continue;
@@ -361,7 +350,7 @@ export const useNilaiTableViewLogic = (props) => {
 
     document.addEventListener("copy", handleCopyGlobal);
     return () => document.removeEventListener("copy", handleCopyGlobal);
-  }, [getSelectionBounds, relevantStudents, grades, columnKeys, mode, settings.predikats, settings.qualitativeGradingMap, subject.id, showToast]);
+  }, [getSelectionBounds, relevantStudents, gradeByStudentIdMap, columnKeys, mode, settings.predikats, settings.qualitativeGradingMap, subject.id, showToast]);
 
   const handleSaveSlmSettings = (newActiveIds) => {
     setActiveSlmIds(newActiveIds);
@@ -370,24 +359,22 @@ export const useNilaiTableViewLogic = (props) => {
     }
   };
 
-  const handleSingleGradeChange = (
+  const handleSingleGradeChange = useCallback((
     studentId,
     value,
     type,
     slmId = null,
     tpIndex = null,
   ) => {
-    const currentGrades = useNilaiStore.getState().grades;
-    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
+    const nilaiState = useNilaiStore.getState();
+    const studentGrade = nilaiState.gradesByStudentId[studentId] || nilaiState.grades.find((g) => g.studentId === studentId);
     const detailedGrade = JSON.parse(
       JSON.stringify(
         studentGrade?.detailedGrades?.[subject.id] || {
           slm: [],
-          sts1: null,
-          sts2: null,
-          sas1: null,
-          sas2: null,
-         },
+          sts: null,
+          sas: null,
+        },
       ),
     );
     if (!detailedGrade.slm) detailedGrade.slm = [];
@@ -424,19 +411,17 @@ export const useNilaiTableViewLogic = (props) => {
     onBulkUpdateGrades([
       { studentId, subjectId: subject.id, newDetailedGrade: detailedGrade },
     ]);
-  };
+  }, [subject.id, mode, allSlms, onBulkUpdateGrades]);
 
-  const handleDescriptionChange = (studentId, type, value) => {
-    const currentGrades = useNilaiStore.getState().grades;
-    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
+  const handleDescriptionChange = useCallback((studentId, type, value) => {
+    const nilaiState = useNilaiStore.getState();
+    const studentGrade = nilaiState.gradesByStudentId[studentId] || nilaiState.grades.find((g) => g.studentId === studentId);
     const detailedGrade = JSON.parse(
       JSON.stringify(
         studentGrade?.detailedGrades?.[subject.id] || {
           slm: [],
-          sts1: null,
-          sts2: null,
-          sas1: null,
-          sas2: null,
+          sts: null,
+          sas: null,
         },
       ),
     );
@@ -479,7 +464,7 @@ export const useNilaiTableViewLogic = (props) => {
         newDetailedGrade: detailedGrade,
       },
     ]);
-  };
+  }, [subject.id, students, objectivesForSubject, settings, onBulkUpdateGrades]);
 
 
 
@@ -590,6 +575,7 @@ export const useNilaiTableViewLogic = (props) => {
     slmHeaders,
     tpHeaders,
     columnKeys,
+    selectionBounds,
     getSelectionBounds,
     getSelectionStyle,
     handleMouseDownCell,

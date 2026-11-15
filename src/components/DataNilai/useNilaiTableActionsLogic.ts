@@ -21,10 +21,8 @@ export const useNilaiTableActionsLogic = ({
         JSON.stringify(
           studentGrade?.detailedGrades?.[subject.id] || {
             slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
+            sts: null,
+            sas: null,
           }
         )
       );
@@ -101,10 +99,8 @@ export const useNilaiTableActionsLogic = ({
         JSON.stringify(
           studentGrade?.detailedGrades?.[subject.id] || {
             slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
+            sts: null,
+            sas: null,
           }
         )
       );
@@ -187,10 +183,8 @@ export const useNilaiTableActionsLogic = ({
         JSON.stringify(
           studentGrade?.detailedGrades?.[subject.id] || {
             slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
+            sts: null,
+            sas: null,
           }
         )
       );
@@ -244,10 +238,8 @@ export const useNilaiTableActionsLogic = ({
         JSON.stringify(
           studentGrade?.detailedGrades?.[subject.id] || {
             slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
+            sts: null,
+            sas: null,
           }
         )
       );

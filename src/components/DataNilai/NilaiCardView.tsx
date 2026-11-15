@@ -184,39 +184,28 @@ export const NilaiCardView = (props) => {
         React.createElement(
           "div",
           { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-          (!settings.semester || settings.semester === "Ganjil") &&
-            React.createElement(AssessmentCard, {
-              title: "Sumatif Tengah Semester I (Ganjil)",
-              type: "sts1",
-              item: {},
-              getCompletionStatus,
-              handleOpenModal,
-            }),
-          settings.semester === "Genap" &&
-            React.createElement(AssessmentCard, {
-              title: "Sumatif Tengah Semester II (Genap)",
-              type: "sts2",
-              item: {},
-              getCompletionStatus,
-              handleOpenModal,
-            }),
-          (!settings.semester || settings.semester === "Ganjil") &&
-            React.createElement(AssessmentCard, {
-              title: "Sumatif Akhir Semester I (Ganjil)",
-              type: "sas1",
-              item: {},
-              getCompletionStatus,
-              handleOpenModal,
-            }),
-          settings.semester === "Genap" &&
-            React.createElement(AssessmentCard, {
-              title:
-                gradeNumber === 6 ? "US" : "Sumatif Akhir Semester II (Genap)",
-              type: "sas2",
-              item: {},
-              getCompletionStatus,
-              handleOpenModal,
-            }),
+          React.createElement(AssessmentCard, {
+            title:
+              settings.semester === "Genap"
+                ? "Sumatif Tengah Semester II (Genap)"
+                : "Sumatif Tengah Semester I (Ganjil)",
+            type: "sts",
+            item: {},
+            getCompletionStatus,
+            handleOpenModal,
+          }),
+          React.createElement(AssessmentCard, {
+            title:
+              settings.semester === "Genap"
+                ? gradeNumber === 6
+                  ? "US"
+                  : "Sumatif Akhir Semester II (Genap)"
+                : "Sumatif Akhir Semester I (Ganjil)",
+            type: "sas",
+            item: {},
+            getCompletionStatus,
+            handleOpenModal,
+          }),
         ),
       ),
     ),

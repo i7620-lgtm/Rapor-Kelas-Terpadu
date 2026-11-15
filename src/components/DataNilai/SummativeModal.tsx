@@ -9,10 +9,9 @@ import { SummativeTableRow } from "./SummativeTableRow";
 import { useSummativeModalLogic } from './useSummativeModalLogic';
 export const SummativeModal = (props) => {
   const { isOpen, onClose, settings, subject, showToast: _showToast } = props;
-  
-  if (!isOpen) return null;
-
   const logic = useSummativeModalLogic(props);
+
+  if (!isOpen) return null;
   const {
     isSLM,
     type,
@@ -90,7 +89,17 @@ return React.createElement(
             : React.createElement(
                 "h3",
                 { className: "text-base sm:text-xl font-bold text-slate-800 dark:text-slate-100" },
-                `Input Nilai ${type.toUpperCase()}`,
+                type === "sts"
+                  ? settings?.semester === "Genap"
+                    ? "Input Nilai STS II"
+                    : "Input Nilai STS I"
+                  : type === "sas"
+                    ? settings?.semester === "Genap"
+                      ? gradeNumber === 6
+                        ? "Input Nilai US"
+                        : "Input Nilai SAS II"
+                      : "Input Nilai SAS I"
+                    : `Input Nilai ${type.toUpperCase()}`,
               ),
           React.createElement(
             "div",

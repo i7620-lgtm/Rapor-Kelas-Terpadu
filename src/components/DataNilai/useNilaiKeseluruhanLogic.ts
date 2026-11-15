@@ -90,9 +90,13 @@ export const useNilaiKeseluruhanLogic = ({
 
   const processedData = useMemo(() => {
     const predicateCValue = parseInt(predikats?.c, 10);
+    const gradeMap = new Map<string, any>();
+    (grades || []).forEach((g) => {
+      if (g?.studentId) gradeMap.set(String(g.studentId), g);
+    });
 
     const dataWithCalculations = students.map((student, index) => {
-      const studentGrades = grades.find((g) => g.studentId === student.id) || {
+      const studentGrades = gradeMap.get(String(student.id)) || {
         studentId: student.id,
         detailedGrades: {},
         finalGrades: {},
@@ -217,10 +221,13 @@ export const useNilaiKeseluruhanLogic = ({
         return acc;
       }, []);
 
-    const dataWithRanks = dataWithCalculations.map((d) => {
-      const studentWithRank = rankedData.find((s) => s.id === d.id);
-      return { ...d, rank: studentWithRank?.rank || "-" };
-    });
+    const rankedMap = new Map<string, any>();
+    rankedData.forEach((s) => rankedMap.set(String(s.id), s.rank));
+
+    const dataWithRanks = dataWithCalculations.map((d) => ({
+      ...d,
+      rank: rankedMap.get(String(d.id)) || "-",
+    }));
 
     if (sortBy === "rank") {
       return dataWithRanks.sort((a, b) =>
