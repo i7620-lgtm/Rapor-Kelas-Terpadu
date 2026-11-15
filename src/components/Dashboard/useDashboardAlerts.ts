@@ -9,9 +9,6 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
     const activeSubjects = (subjects || []).filter((s: any) => s.active);
     const currentStudents = students || [];
     const currentGrades = grades || [];
-    const currentSemester = settings?.semester || 'Ganjil';
-    const coDimensionField = currentSemester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
-    const getNoteKey = (studentId: string) => (currentSemester === 'Genap' ? studentId + '_Genap' : studentId);
 
     if (currentStudents.length === 0) {
       return items;
@@ -26,7 +23,6 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
     (studentExtracurriculars || []).forEach((se: any) => {
       if (
         se?.studentId &&
-        (se.semester || 'Ganjil') === currentSemester &&
         se.assignedActivities?.some((activity: any) => activity !== null)
       ) {
         extraSet.add(se.studentId);
@@ -37,7 +33,6 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
     (attendance || []).forEach((a: any) => {
       if (
         a?.studentId &&
-        (a.semester || 'Ganjil') === currentSemester &&
         (a.sakit !== null || a.izin !== null || a.alpa !== null)
       ) {
         attendanceSet.add(a.studentId);
@@ -89,12 +84,11 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
       });
 
       const studentCoData = cocurricularData?.[student.id];
-      const hasCocurricular = studentCoData && Object.values(studentCoData[coDimensionField] || {}).some((r) => r);
+      const hasCocurricular = studentCoData && Object.values(studentCoData.dimensionRatings || {}).some((r) => r);
       const hasExtra = extraSet.has(student.id);
       const hasAttendance = attendanceSet.has(student.id);
 
-      const noteKey = getNoteKey(student.id);
-      const hasNote = notes?.[noteKey] && String(notes[noteKey]).trim() !== '';
+      const hasNote = notes?.[student.id] && String(notes[student.id]).trim() !== '';
 
       const studentAlerts: { label: string; onClick: () => void }[] = [];
       if (missingStudentFields.length > 0) {
@@ -127,7 +121,7 @@ export const useDashboardAlerts = (settings: any, subjects: any[], students: any
       }
 
       const failingCoDimensions: string[] = [];
-      const studentRatings = studentCoData?.[coDimensionField];
+      const studentRatings = studentCoData?.dimensionRatings;
       if (studentRatings && typeof studentRatings === 'object') {
         Object.entries(studentRatings).forEach(([dimId, rating]) => {
           if (rating === 'BB') {

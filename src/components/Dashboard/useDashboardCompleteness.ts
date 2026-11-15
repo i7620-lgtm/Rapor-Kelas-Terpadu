@@ -192,11 +192,9 @@ export const useDashboardCompleteness = (settings: any, subjects: any[], student
 
     // 4. Kokurikuler
     const cocurricData = cocurricularData || {};
-    const currentSemester = settings?.semester || 'Ganjil';
-    const coDimensionField = currentSemester === 'Genap' ? 'dimensionRatings_Genap' : 'dimensionRatings';
     let studentsWithCo = currentStudents.filter((s) => {
       const studentCoData = cocurricData[s.id];
-      return studentCoData && Object.values(studentCoData[coDimensionField] || {}).some((r) => r);
+      return studentCoData && Object.values(studentCoData.dimensionRatings || {}).some((r) => r);
     }).length;
     const coPercentage = Math.floor((studentsWithCo / totalStudents) * 100);
     if (studentsWithCo === totalStudents) {
@@ -226,7 +224,6 @@ export const useDashboardCompleteness = (settings: any, subjects: any[], student
       currentStudentExtracurriculars.some(
         (se) =>
           se.studentId === s.id &&
-          (se.semester || 'Ganjil') === currentSemester &&
           se.assignedActivities?.some((activity: any) => activity !== null)
       )
     ).length;
@@ -258,7 +255,6 @@ export const useDashboardCompleteness = (settings: any, subjects: any[], student
       currentAttendance.some(
         (a) =>
           a.studentId === s.id &&
-          (a.semester || 'Ganjil') === currentSemester &&
           (a.sakit !== null || a.izin !== null || a.alpa !== null)
       )
     ).length;
@@ -287,10 +283,8 @@ export const useDashboardCompleteness = (settings: any, subjects: any[], student
 
     // 7. Catatan Wali Kelas
     const checkSimpleCompletion = (data: any, key: string, titleName: string, pageName: string) => {
-      const getNoteKey = (studentId: string) => (currentSemester === 'Genap' ? studentId + '_Genap' : studentId);
       let completed = currentStudents.filter((s) => {
-        const noteKey = getNoteKey(s.id);
-        return data[noteKey] && data[noteKey].trim() !== '';
+        return data[s.id] && data[s.id].trim() !== '';
       }).length;
       const percentage = Math.floor((completed / totalStudents) * 100);
       if (completed === totalStudents) {
