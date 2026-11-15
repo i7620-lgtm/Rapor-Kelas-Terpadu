@@ -93,7 +93,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             label="Nama Kepala Sekolah" 
                                             id={getContextualKey(settings, 'nama_kepala_sekolah')} 
                                             value={getContextualValue(settings, 'nama_kepala_sekolah')} 
-                                            status={getStatus(settings.nama_kepala_sekolah)} 
+                                            status={getStatus(getContextualValue(settings, 'nama_kepala_sekolah'))} 
                                             onChange={onSettingsChange} 
                                             onBlur={resolvedOnSave} 
                                             onKeyDown={handleKeyDown} 
@@ -109,9 +109,9 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                         onChange={onSettingsChange} 
                                                         onBlur={resolvedOnSave} 
                                                         className={`w-full px-3 py-2 min-h-[44px] lg:min-h-0 bg-white dark:bg-slate-800 border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none ${
-                                                            getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                            getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'bad' 
                                                             ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'good' 
                                                             ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
                                                             : "border-slate-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                                                         }`}
@@ -123,9 +123,9 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                 <div className="flex-1">
                                                     <div 
                                                         className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white dark:bg-slate-800 ${
-                                                            getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                            getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'bad' 
                                                             ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'good' 
                                                             ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
                                                             : "border-slate-300 dark:border-slate-600 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                         }`} 
@@ -148,7 +148,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             label="Nama Wali Kelas" 
                                             id={getContextualKey(settings, 'nama_wali_kelas')} 
                                             value={getContextualValue(settings, 'nama_wali_kelas')} 
-                                            status={getStatus(settings.nama_wali_kelas)} 
+                                            status={getStatus(getContextualValue(settings, 'nama_wali_kelas'))} 
                                             onChange={onSettingsChange} 
                                             onBlur={resolvedOnSave} 
                                             onKeyDown={handleKeyDown} 
@@ -164,9 +164,9 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                         onChange={onSettingsChange} 
                                                         onBlur={resolvedOnSave} 
                                                         className={`w-full px-3 py-2 min-h-[44px] lg:min-h-0 bg-white dark:bg-slate-800 border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none ${
-                                                            getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                            getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'bad' 
                                                             ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'good' 
                                                             ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
                                                             : "border-slate-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                                                         }`}
@@ -178,9 +178,9 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                 <div className="flex-1">
                                                     <div 
                                                         className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white dark:bg-slate-800 ${
-                                                            getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                            getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'bad' 
                                                             ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'good' 
                                                             ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
                                                             : "border-slate-300 dark:border-slate-600 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                         }`} 

@@ -21,8 +21,7 @@ export function useKopSuratEditorLogic(settings: any, isOpen: boolean, onSaveLay
 
     useEffect(() => {
         if (isOpen) {
-            const currentSemester = settings?.semester || 'Ganjil';
-            const layoutToLoad = resolveKopLayout(settings, currentSemester);
+            const layoutToLoad = resolveKopLayout(settings);
     
             const pemdaText = generatePemdaText(settings.kota_kabupaten, settings.provinsi);
             const dinasDetailText = (settings.nama_dinas_pendidikan || "DINAS PENDIDIKAN KEPEMUDAAN DAN OLAHRAGA KOTA DENPASAR").toUpperCase();

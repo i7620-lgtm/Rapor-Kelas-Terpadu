@@ -1,5 +1,6 @@
 import React from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../../constants';
+import { computeQualitativeGradingMap, isValidQualitativeGradingMap } from '../../utils/nilaiHelpers';
 
 interface QualitativeGradingTableProps {
     settings: any;
@@ -14,14 +15,9 @@ export const QualitativeGradingTable = React.memo<QualitativeGradingTableProps>(
     const valC = parseInt(predikats.c, 10);
     const valD = parseInt(predikats.d, 10);
 
-    const qualitativeGradingMap = settings.qualitativeGradingMap && Object.keys(settings.qualitativeGradingMap).length > 0
+    const qualitativeGradingMap = isValidQualitativeGradingMap(settings.qualitativeGradingMap)
         ? settings.qualitativeGradingMap
-        : {
-            SB: Math.round((valA + 100) / 2),
-            BSH: Math.round((valB + valA - 1) / 2),
-            MB: Math.round((valC + valB - 1) / 2),
-            BB: Math.round((0 + valC - 1) / 2),
-        };
+        : computeQualitativeGradingMap(predikats);
 
     const data = [
         { code: 'SB', descriptor: QUALITATIVE_DESCRIPTORS.SB, range: `${valA} - 100`, value: qualitativeGradingMap.SB },
