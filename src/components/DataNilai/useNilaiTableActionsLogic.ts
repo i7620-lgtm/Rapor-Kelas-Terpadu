@@ -2,10 +2,17 @@ import { generateSubjectDescription } from "../../utils/nilaiHelpers";
 import { getClipboardText } from "../../utils/clipboard";
 import { QUALITATIVE_DESCRIPTORS } from "../../constants";
 import { splitRowIntoColumns } from "../../utils/nilaiHelpers";
+import { useNilaiStore } from "../../stores/useNilaiStore";
+import {
+  areDetailedGradesEqual,
+  cloneDetailedGrade,
+  GradeSnapshotChange,
+  useNilaiHistoryStore,
+} from "../../stores/useNilaiHistoryStore";
 
 export const useNilaiTableActionsLogic = ({
   relevantStudents,
-  grades,
+  grades: _grades,
   subject,
   settings,
   allSlms,
@@ -14,12 +21,25 @@ export const useNilaiTableActionsLogic = ({
   showToast,
   columnKeys,
 }) => {
+  const getStudentDetailedGrade = (studentId: string) => {
+    const nilaiState = useNilaiStore.getState();
+    const studentGrade =
+      nilaiState.gradesByStudentId[studentId] ||
+      nilaiState.grades.find((g: any) => g.studentId === studentId);
+    return studentGrade?.detailedGrades?.[subject.id];
+  };
+
   const handleBulkGenerateDescriptions = () => {
-    const updates = relevantStudents.map((student: any) => {
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
+    const updates: any[] = [];
+    const historyChanges: GradeSnapshotChange[] = [];
+
+    relevantStudents.forEach((student: any) => {
+      const beforeRaw = getStudentDetailedGrade(student.id);
+      const before = cloneDetailedGrade(beforeRaw);
+
       const detailedGrade = JSON.parse(
         JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
+          beforeRaw || {
             slm: [],
             sts: null,
             sas: null,
@@ -42,18 +62,32 @@ export const useNilaiTableActionsLogic = ({
       detailedGrade.descriptions.highest = generated.highest;
       detailedGrade.descriptions.lowest = generated.lowest;
 
-      return {
-        studentId: student.id,
-        subjectId: subject.id,
-        newDetailedGrade: detailedGrade,
-      };
+      if (!areDetailedGradesEqual(before, detailedGrade)) {
+        updates.push({
+          studentId: student.id,
+          subjectId: subject.id,
+          newDetailedGrade: detailedGrade,
+        });
+        historyChanges.push({
+          studentId: student.id,
+          before,
+          after: detailedGrade,
+        });
+      }
     });
 
-    onBulkUpdateGrades(updates);
-    showToast(
-      `Deskripsi kompetensi berhasil digenerate untuk ${updates.length} siswa.`,
-      "success"
-    );
+    if (updates.length > 0) {
+      onBulkUpdateGrades(updates);
+      useNilaiHistoryStore
+        .getState()
+        .recordHistory(subject.id, "Generate deskripsi", historyChanges);
+      showToast(
+        `Deskripsi kompetensi berhasil digenerate untuk ${updates.length} siswa.`,
+        "success"
+      );
+    } else {
+      showToast("Semua deskripsi kompetensi sudah sesuai.", "info");
+    }
   };
 
   const handleAutoRegression = (slmId: string, tpIndex: number) => {
@@ -67,8 +101,7 @@ export const useNilaiTableActionsLogic = ({
     let scoresFound = false;
 
     relevantStudents.forEach((student: any) => {
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
-      const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+      const detailedGrade = getStudentDetailedGrade(student.id);
       const slm = detailedGrade?.slm?.find((s: any) => s.id === slmId);
       const score = slm?.scores?.[tpIndex];
       if (score !== null && score !== undefined && score !== "") {
@@ -93,11 +126,16 @@ export const useNilaiTableActionsLogic = ({
       return;
     }
 
-    const updates = relevantStudents.map((student: any) => {
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
+    const updates: any[] = [];
+    const historyChanges: GradeSnapshotChange[] = [];
+
+    relevantStudents.forEach((student: any) => {
+      const beforeRaw = getStudentDetailedGrade(student.id);
+      const before = cloneDetailedGrade(beforeRaw);
+
       const detailedGrade = JSON.parse(
         JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
+          beforeRaw || {
             slm: [],
             sts: null,
             sas: null,
@@ -126,18 +164,30 @@ export const useNilaiTableActionsLogic = ({
         slmToUpdate.scores[tpIndex] = Math.round(newScore);
       }
 
-      return {
-        studentId: student.id,
-        subjectId: subject.id,
-        newDetailedGrade: detailedGrade,
-      };
+      if (!areDetailedGradesEqual(before, detailedGrade)) {
+        updates.push({
+          studentId: student.id,
+          subjectId: subject.id,
+          newDetailedGrade: detailedGrade,
+        });
+        historyChanges.push({
+          studentId: student.id,
+          before,
+          after: detailedGrade,
+        });
+      }
     });
 
-    onBulkUpdateGrades(updates);
-    showToast(
-      `Nilai TP berhasil diolah otomatis menggunakan rumus regresi.`,
-      "success"
-    );
+    if (updates.length > 0) {
+      onBulkUpdateGrades(updates);
+      useNilaiHistoryStore
+        .getState()
+        .recordHistory(subject.id, "Olah nilai regresi TP", historyChanges);
+      showToast(
+        `Nilai TP berhasil diolah otomatis menggunakan rumus regresi.`,
+        "success"
+      );
+    }
   };
 
   const handleAutoRegressionNonTP = (type: string) => {
@@ -151,8 +201,7 @@ export const useNilaiTableActionsLogic = ({
     let scoresFound = false;
 
     relevantStudents.forEach((student: any) => {
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
-      const detailedGrade = studentGrade?.detailedGrades?.[subject.id];
+      const detailedGrade = getStudentDetailedGrade(student.id);
       const score = detailedGrade?.[type];
 
       if (score !== null && score !== undefined && score !== "") {
@@ -177,11 +226,16 @@ export const useNilaiTableActionsLogic = ({
       return;
     }
 
-    const updates = relevantStudents.map((student: any) => {
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
+    const updates: any[] = [];
+    const historyChanges: GradeSnapshotChange[] = [];
+
+    relevantStudents.forEach((student: any) => {
+      const beforeRaw = getStudentDetailedGrade(student.id);
+      const before = cloneDetailedGrade(beforeRaw);
+
       const detailedGrade = JSON.parse(
         JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
+          beforeRaw || {
             slm: [],
             sts: null,
             sas: null,
@@ -197,24 +251,40 @@ export const useNilaiTableActionsLogic = ({
         detailedGrade[type] = Math.round(newScore);
       }
 
-      return {
-        studentId: student.id,
-        subjectId: subject.id,
-        newDetailedGrade: detailedGrade,
-      };
+      if (!areDetailedGradesEqual(before, detailedGrade)) {
+        updates.push({
+          studentId: student.id,
+          subjectId: subject.id,
+          newDetailedGrade: detailedGrade,
+        });
+        historyChanges.push({
+          studentId: student.id,
+          before,
+          after: detailedGrade,
+        });
+      }
     });
 
-    onBulkUpdateGrades(updates);
-    showToast(
-      `Nilai berhasil diolah otomatis menggunakan rumus regresi.`,
-      "success"
-    );
+    if (updates.length > 0) {
+      onBulkUpdateGrades(updates);
+      useNilaiHistoryStore
+        .getState()
+        .recordHistory(
+          subject.id,
+          `Olah nilai regresi ${type.toUpperCase()}`,
+          historyChanges
+        );
+      showToast(
+        `Nilai berhasil diolah otomatis menggunakan rumus regresi.`,
+        "success"
+      );
+    }
   };
 
   const handlePaste = async (e: any, startStudentId: string, startKey: string) => {
     e.preventDefault();
     const pasteData = await getClipboardText(e);
-    let rows = pasteData.split(/\r\n|\n|\r/);
+    const rows = pasteData.split(/\r\n|\n|\r/);
     if (rows.length > 0 && rows[rows.length - 1] === "") {
       rows.pop();
     }
@@ -228,15 +298,19 @@ export const useNilaiTableActionsLogic = ({
     if (startStudentIndex === -1 || startColumnIndex === -1) return;
 
     const updates: any[] = [];
+    const historyChanges: GradeSnapshotChange[] = [];
+
     rows.forEach((row, rIndex) => {
       const currentStudentIndex = startStudentIndex + rIndex;
       if (currentStudentIndex >= relevantStudents.length) return;
 
       const student = relevantStudents[currentStudentIndex];
-      const studentGrade = grades.find((g: any) => g.studentId === student.id);
+      const beforeRaw = getStudentDetailedGrade(student.id);
+      const before = cloneDetailedGrade(beforeRaw);
+
       const detailedGrade = JSON.parse(
         JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
+          beforeRaw || {
             slm: [],
             sts: null,
             sas: null,
@@ -290,30 +364,46 @@ export const useNilaiTableActionsLogic = ({
           while (slm.scores.length <= tpIndex) {
             slm.scores.push(null);
           }
-          slm.scores[tpIndex] = finalVal;
-          hasChanged = true;
+          if (slm.scores[tpIndex] !== finalVal) {
+            slm.scores[tpIndex] = finalVal;
+            hasChanged = true;
+          }
         } else if (
           ["sts1", "sts2", "sas1", "sas2", "sts", "sas"].includes(key) &&
           (typeof finalVal === "number" ||
             finalVal === null ||
             typeof finalVal === "string")
         ) {
-          detailedGrade[key] = finalVal;
-          hasChanged = true;
+          if ((detailedGrade[key] ?? null) !== finalVal) {
+            detailedGrade[key] = finalVal;
+            hasChanged = true;
+          }
         }
       });
 
-      if (hasChanged) {
+      if (hasChanged && !areDetailedGradesEqual(before, detailedGrade)) {
         updates.push({
           studentId: student.id,
           subjectId: subject.id,
           newDetailedGrade: detailedGrade,
+        });
+        historyChanges.push({
+          studentId: student.id,
+          before,
+          after: detailedGrade,
         });
       }
     });
 
     if (updates.length > 0) {
       onBulkUpdateGrades(updates);
+      useNilaiHistoryStore
+        .getState()
+        .recordHistory(
+          subject.id,
+          `Tempel nilai (${updates.length} siswa)`,
+          historyChanges
+        );
       showToast(`${updates.length} baris berhasil ditempel.`, "success");
     }
   };
