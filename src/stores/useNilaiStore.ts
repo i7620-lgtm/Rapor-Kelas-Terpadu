@@ -129,24 +129,33 @@ export const useNilaiStore = create<NilaiState>()(
           state.grades.forEach((item) => {
             const update = updateMap[item.studentId];
             if (update) {
-              item.detailedGrades = item.detailedGrades ?? {};
-              item.detailedGrades[update.subjectId] = update.newDetailedGrade;
-              
-              const subject = subjects.find((s) => s.id === update.subjectId);
-              const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
-              const curriculumKey = subject ? subject.curriculumKey || subject.fullName : null;
-              
-              item.finalGrades = item.finalGrades ?? {};
-              item.finalGrades[update.subjectId] = calculateFinalGrade(
-                update.newDetailedGrade,
-                settings.gradeCalculation[update.subjectId] || { method: "rata-rata" },
-                settings,
-                update.subjectId,
-                learningObjectives,
-                gradeKey,
-                curriculumKey,
-                predefinedCurriculum,
-              );
+              if (update.newDetailedGrade === undefined || update.newDetailedGrade === null) {
+                if (item.detailedGrades) {
+                  delete item.detailedGrades[update.subjectId];
+                }
+                if (item.finalGrades) {
+                  item.finalGrades[update.subjectId] = null;
+                }
+              } else {
+                item.detailedGrades = item.detailedGrades ?? {};
+                item.detailedGrades[update.subjectId] = update.newDetailedGrade;
+                
+                const subject = subjects.find((s) => s.id === update.subjectId);
+                const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
+                const curriculumKey = subject ? subject.curriculumKey || subject.fullName : null;
+                
+                item.finalGrades = item.finalGrades ?? {};
+                item.finalGrades[update.subjectId] = calculateFinalGrade(
+                  update.newDetailedGrade,
+                  settings.gradeCalculation[update.subjectId] || { method: "rata-rata" },
+                  settings,
+                  update.subjectId,
+                  learningObjectives,
+                  gradeKey,
+                  curriculumKey,
+                  predefinedCurriculum,
+                );
+              }
               state.gradesByStudentId[item.studentId] = item;
               
               // remove from map so we only append remaining later
@@ -155,6 +164,9 @@ export const useNilaiStore = create<NilaiState>()(
           });
 
           Object.values(updateMap).forEach((update: any) => {
+            if (update.newDetailedGrade === undefined || update.newDetailedGrade === null) {
+              return;
+            }
             const subject = subjects.find((s) => s.id === update.subjectId);
             const gradeKey = `Kelas ${getGradeNumber(settings.nama_kelas) || "6"}`;
             const curriculumKey = subject ? subject.curriculumKey || subject.fullName : null;
