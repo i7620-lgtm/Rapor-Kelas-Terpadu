@@ -29,6 +29,7 @@ import { useCocurricularStore } from "../stores/useCocurricularStore";
 import { useFormativeStore } from "../stores/useFormativeStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
 import { useSummaryStore } from "../stores/useSummaryStore";
+import { useNilaiHistoryStore } from "../stores/useNilaiHistoryStore";
 
 interface UseExcelManagerProps {
   setIsLoading: (loading: boolean) => void;
@@ -142,6 +143,7 @@ export const useExcelManager = ({ setIsLoading, showToast }: UseExcelManagerProp
       useCurriculumStore.getState().setLearningObjectives(sanitized.learningObjectives);
       useFormativeStore.getState().setFormativeJournal(sanitized.formativeJournal);
 
+      useNilaiHistoryStore.getState().clearAllHistory();
       useSummaryStore.getState().recomputeSummary();
 
       if (report.repairedCount > 0 || report.skippedOrphanedCount > 0) {
