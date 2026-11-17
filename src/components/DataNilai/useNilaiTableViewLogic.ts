@@ -5,6 +5,12 @@ import { useAllSlms } from "./useAllSlms";
 import { useNilaiStore } from "../../stores/useNilaiStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import {
+  areDetailedGradesEqual,
+  cloneDetailedGrade,
+  GradeSnapshotChange,
+  useNilaiHistoryStore,
+} from "../../stores/useNilaiHistoryStore";
+import {
   getGradeNumber,
   getNumericValue,
   getQualitativeCode,
@@ -56,6 +62,54 @@ export const useNilaiTableViewLogic = (props) => {
   };
 
   const tableContainerRef = useRef(null);
+
+  const subjectHistory = useNilaiHistoryStore(
+    useCallback((state) => state.historyBySubject[subject.id], [subject.id])
+  );
+  const canUndo = Boolean(subjectHistory && subjectHistory.past.length > 0);
+  const canRedo = Boolean(subjectHistory && subjectHistory.future.length > 0);
+  const undoLabel = canUndo
+    ? subjectHistory!.past[subjectHistory!.past.length - 1]?.label
+    : undefined;
+  const redoLabel = canRedo
+    ? subjectHistory!.future[subjectHistory!.future.length - 1]?.label
+    : undefined;
+
+  const handleUndo = useCallback(() => {
+    const entry = useNilaiHistoryStore.getState().popUndo(subject.id);
+    if (!entry) return;
+
+    const updates = entry.changes.map((c) => ({
+      studentId: c.studentId,
+      subjectId: subject.id,
+      newDetailedGrade: cloneDetailedGrade(c.before),
+    }));
+
+    if (updates.length > 0) {
+      onBulkUpdateGrades(updates);
+      if (showToast) {
+        showToast(`Urungkan: ${entry.label}`, "info");
+      }
+    }
+  }, [subject.id, onBulkUpdateGrades, showToast]);
+
+  const handleRedo = useCallback(() => {
+    const entry = useNilaiHistoryStore.getState().popRedo(subject.id);
+    if (!entry) return;
+
+    const updates = entry.changes.map((c) => ({
+      studentId: c.studentId,
+      subjectId: subject.id,
+      newDetailedGrade: cloneDetailedGrade(c.after),
+    }));
+
+    if (updates.length > 0) {
+      onBulkUpdateGrades(updates);
+      if (showToast) {
+        showToast(`Ulangi: ${entry.label}`, "info");
+      }
+    }
+  }, [subject.id, onBulkUpdateGrades, showToast]);
 
   const gradeNumber = useMemo(
     () => getGradeNumber(settings.nama_kelas) ?? 6,
@@ -224,14 +278,22 @@ export const useNilaiTableViewLogic = (props) => {
     containerClass: "mapel-table-container",
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
-      const updates = [];
+      const updates: any[] = [];
+      const historyChanges: GradeSnapshotChange[] = [];
+      const nilaiState = useNilaiStore.getState();
+
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         if (r < 0 || r >= relevantStudents.length) continue;
         const student = relevantStudents[r];
-        const studentGrade = gradeByStudentIdMap.get(String(student.id));
+        const studentGrade =
+          nilaiState.gradesByStudentId[student.id] ||
+          nilaiState.grades.find((g) => g.studentId === student.id);
+        const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
+        const before = cloneDetailedGrade(beforeRaw);
+
         const detailedGrade = JSON.parse(
           JSON.stringify(
-            studentGrade?.detailedGrades?.[subject.id] || {
+            beforeRaw || {
               slm: [],
               sts: null,
               sas: null,
@@ -247,7 +309,7 @@ export const useNilaiTableViewLogic = (props) => {
           if (key.startsWith("tp|")) {
             const [, slmId, tpIndexStr] = key.split("|");
             const tpIndex = parseInt(tpIndexStr, 10);
-            let slm = detailedGrade.slm?.find((s) => s.id === slmId);
+            const slm = detailedGrade.slm?.find((s) => s.id === slmId);
             if (slm && slm.scores && tpIndex < slm.scores.length) {
               if (slm.scores[tpIndex] !== null) {
                 slm.scores[tpIndex] = null;
@@ -263,16 +325,24 @@ export const useNilaiTableViewLogic = (props) => {
             }
           }
         }
-        if (hasChanged) {
+        if (hasChanged && !areDetailedGradesEqual(before, detailedGrade)) {
           updates.push({
             studentId: student.id,
             subjectId: subject.id,
             newDetailedGrade: detailedGrade,
           });
+          historyChanges.push({
+            studentId: student.id,
+            before,
+            after: detailedGrade,
+          });
         }
       }
       if (updates.length > 0) {
         onBulkUpdateGrades(updates);
+        useNilaiHistoryStore
+          .getState()
+          .recordHistory(subject.id, `Hapus ${updatedCount} nilai`, historyChanges);
         if (showToast) {
           showToast(`${updatedCount} nilai berhasil dihapus.`, "success");
         }
@@ -368,9 +438,12 @@ export const useNilaiTableViewLogic = (props) => {
   ) => {
     const nilaiState = useNilaiStore.getState();
     const studentGrade = nilaiState.gradesByStudentId[studentId] || nilaiState.grades.find((g) => g.studentId === studentId);
+    const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
+    const before = cloneDetailedGrade(beforeRaw);
+
     const detailedGrade = JSON.parse(
       JSON.stringify(
-        studentGrade?.detailedGrades?.[subject.id] || {
+        beforeRaw || {
           slm: [],
           sts: null,
           sas: null,
@@ -408,17 +481,27 @@ export const useNilaiTableViewLogic = (props) => {
       detailedGrade[type] = finalValue;
     }
 
-    onBulkUpdateGrades([
-      { studentId, subjectId: subject.id, newDetailedGrade: detailedGrade },
-    ]);
+    if (!areDetailedGradesEqual(before, detailedGrade)) {
+      onBulkUpdateGrades([
+        { studentId, subjectId: subject.id, newDetailedGrade: detailedGrade },
+      ]);
+      useNilaiHistoryStore.getState().recordHistory(
+        subject.id,
+        "Ubah nilai",
+        [{ studentId, before, after: detailedGrade }],
+      );
+    }
   }, [subject.id, mode, allSlms, onBulkUpdateGrades]);
 
   const handleDescriptionChange = useCallback((studentId, type, value) => {
     const nilaiState = useNilaiStore.getState();
     const studentGrade = nilaiState.gradesByStudentId[studentId] || nilaiState.grades.find((g) => g.studentId === studentId);
+    const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
+    const before = cloneDetailedGrade(beforeRaw);
+
     const detailedGrade = JSON.parse(
       JSON.stringify(
-        studentGrade?.detailedGrades?.[subject.id] || {
+        beforeRaw || {
           slm: [],
           sts: null,
           sas: null,
@@ -457,13 +540,21 @@ export const useNilaiTableViewLogic = (props) => {
 
     detailedGrade.descriptions[type] = value;
 
-    onBulkUpdateGrades([
-      {
-        studentId: studentId,
-        subjectId: subject.id,
-        newDetailedGrade: detailedGrade,
-      },
-    ]);
+    if (!areDetailedGradesEqual(before, detailedGrade)) {
+      onBulkUpdateGrades([
+        {
+          studentId: studentId,
+          subjectId: subject.id,
+          newDetailedGrade: detailedGrade,
+        },
+      ]);
+      useNilaiHistoryStore.getState().recordHistory(
+        subject.id,
+        "Ubah deskripsi",
+        [{ studentId, before, after: detailedGrade }],
+        `desc:${studentId}:${type}`,
+      );
+    }
   }, [subject.id, students, objectivesForSubject, settings, onBulkUpdateGrades]);
 
 
@@ -552,6 +643,47 @@ export const useNilaiTableViewLogic = (props) => {
     }
   }, [slmHeaders, truncatedSlmIds]);
 
+  useEffect(() => {
+    const handleUndoRedoKeyDown = (e: KeyboardEvent) => {
+      if (isManageSlmModalOpen || isSettingsModalOpen) return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      const isUndo = key === "z" && !e.shiftKey;
+      const isRedo = (key === "y" && !e.shiftKey) || (key === "z" && e.shiftKey);
+      if (!isUndo && !isRedo) return;
+
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) {
+        return;
+      }
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isGridContext =
+        !activeEl ||
+        activeEl === document.body ||
+        Boolean(tableContainerRef.current?.contains(activeEl));
+      if (!isGridContext) return;
+
+      if (activeEl && activeEl.tagName === "INPUT" && isUndo) {
+        const inputEl = activeEl as HTMLInputElement;
+        const committedValue = inputEl.dataset?.committedValue;
+        if (committedValue !== undefined && inputEl.value !== committedValue) {
+          return;
+        }
+      }
+
+      e.preventDefault();
+      if (isUndo) {
+        handleUndo();
+      } else {
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleUndoRedoKeyDown);
+    return () => window.removeEventListener("keydown", handleUndoRedoKeyDown);
+  }, [isManageSlmModalOpen, isSettingsModalOpen, handleUndo, handleRedo]);
+
   return {
     isManageSlmModalOpen,
     setIsManageSlmModalOpen,
@@ -591,6 +723,12 @@ export const useNilaiTableViewLogic = (props) => {
     handlePaste,
     showTooltip,
     hideTooltip,
-    headerRowSpan
+    headerRowSpan,
+    canUndo,
+    canRedo,
+    undoLabel,
+    redoLabel,
+    handleUndo,
+    handleRedo,
   };
 };
