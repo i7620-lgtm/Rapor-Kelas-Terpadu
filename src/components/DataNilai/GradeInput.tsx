@@ -72,6 +72,7 @@ export const GradeInput = React.memo(({
     inputMode: "numeric",
     pattern: "[0-9]*",
     value: localValue,
+    "data-committed-value": String(value ?? ""),
     onChange: handleChange,
     onBlur: handleBlur,
     onKeyDown: handleKeyDown,
