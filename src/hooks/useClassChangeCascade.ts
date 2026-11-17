@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useNilaiStore } from "../stores/useNilaiStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
+import { useNilaiHistoryStore } from "../stores/useNilaiHistoryStore";
 import { getGradeNumber } from "../utils/nilaiHelpers";
 
 /**
@@ -53,6 +54,7 @@ export const useClassChangeCascade = () => {
 
       // CLEAR grades cascade: to avoid mismatched grade criteria & assignments from previous level
       setGrades([]);
+      useNilaiHistoryStore.getState().clearAllHistory();
 
       // CLEAR learning objectives cascade: to clean up user edited objectives from previous level
       setLearningObjectives({});
