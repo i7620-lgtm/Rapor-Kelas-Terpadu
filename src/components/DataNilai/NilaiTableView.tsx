@@ -60,7 +60,13 @@ export const NilaiTableView = (props) => {
     handlePaste,
     showTooltip,
     hideTooltip,
-    headerRowSpan
+    headerRowSpan,
+    canUndo,
+    canRedo,
+    undoLabel,
+    redoLabel,
+    handleUndo,
+    handleRedo,
   } = logic;
 
   return React.createElement(
@@ -105,6 +111,12 @@ export const NilaiTableView = (props) => {
     React.createElement(NilaiTableToolbar, {
       onOpenSettings: () => setIsSettingsModalOpen(true),
       onOpenManageSlm: () => setIsManageSlmModalOpen(true),
+      canUndo,
+      canRedo,
+      undoLabel,
+      redoLabel,
+      onUndo: handleUndo,
+      onRedo: handleRedo,
     }),
     React.createElement(
       "div",
