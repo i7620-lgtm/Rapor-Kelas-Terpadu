@@ -13,6 +13,7 @@ import { useFormativeStore } from "../stores/useFormativeStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
 import { useUiStore } from "../stores/useUiStore";
 import { initSummarySync } from "../stores/useSummaryStore";
+import { useNilaiHistoryStore } from "../stores/useNilaiHistoryStore";
 import {
   cleanupUnusedStudentPhotosInDB,
   convertDataUrlToWebPBlob,
@@ -300,6 +301,12 @@ export const useAppStorage = () => {
       if (cleaned.changed.cocurricularData) useCocurricularStore.getState().setCocurricularData(cleaned.cocurricularData);
       if (cleaned.changed.studentExtracurriculars) useExtracurricularStore.getState().setStudentExtracurriculars(cleaned.studentExtracurriculars);
       if (cleaned.changed.formativeJournal) useFormativeStore.getState().setFormativeJournal(cleaned.formativeJournal);
+
+      if (currentIds.size === 0) {
+        useNilaiHistoryStore.getState().clearAllHistory();
+      } else {
+        useNilaiHistoryStore.getState().pruneStudentsFromHistory(currentIds);
+      }
     });
 
     return () => unsub();
