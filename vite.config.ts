@@ -93,6 +93,9 @@ export default defineConfig({
   resolve: {
     extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
+  worker: {
+    format: 'es',
+  },
   build: {
     rollupOptions: {
       output: {
