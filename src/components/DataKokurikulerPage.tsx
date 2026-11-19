@@ -8,7 +8,6 @@ const DataKokurikulerPage = (props: any) => {
     students,
     settings,
     cocurricularData,
-    currentSemester,
     dimensionField,
     isSelecting,
     setIsSelecting,
@@ -25,6 +24,12 @@ const DataKokurikulerPage = (props: any) => {
     showBelowKkmHighlight,
     setShowBelowKkmHighlight,
     stats,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   } = useDataKokurikulerPageLogic(props);
 
   return (
@@ -36,18 +41,18 @@ const DataKokurikulerPage = (props: any) => {
         </p>
       </div>
 
-      <div className="bg-white p-3.5 sm:p-4 rounded-xl shadow-sm border border-zinc-200/60 flex-shrink-0">
-        <h3 className="text-sm font-semibold text-zinc-800">Tema Kegiatan</h3>
-        <p className="mt-0.5 text-xs text-zinc-500 mb-2">
+      <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0">
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Tema Kegiatan</h3>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 mb-2">
           Masukkan nama tema kegiatan kokurikuler yang dilaksanakan pada semester ini. Tema ini akan muncul pada deskripsi di rapor.
         </p>
         <input
           type="text"
-          name={currentSemester === "Genap" ? "cocurricular_theme_Genap" : "cocurricular_theme"}
-          value={currentSemester === "Genap" ? (settings.cocurricular_theme_Genap || "") : (settings.cocurricular_theme || "")}
+          name="cocurricular_theme"
+          value={settings.cocurricular_theme || ""}
           onChange={onSettingsChange}
           placeholder="Contoh: Kearifan Lokal"
-          className="w-full max-w-lg px-3 py-1.5 text-xs sm:text-sm bg-white border border-zinc-300/60 rounded-lg shadow-sm focus:ring-zinc-900 focus:border-zinc-900"
+          className="w-full max-w-lg px-3 py-2 lg:py-1.5 text-xs sm:text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
         />
       </div>
 
@@ -59,46 +64,46 @@ const DataKokurikulerPage = (props: any) => {
           onPrimaryAction={() => props.setActivePage && props.setActivePage('DATA_SISWA')}
         />
       ) : (
-        <div className="bg-white border border-zinc-200/60 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden">
-          <div className="p-4 sm:p-6 border-b border-zinc-200/60 flex-shrink-0 flex flex-col gap-4">
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-9.5rem)] overflow-hidden">
+          <div className="p-3.5 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex-shrink-0 flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 sm:gap-4">
               <div>
-                <h3 className="text-xl font-bold text-zinc-800">Penilaian Dimensi Profil</h3>
-                <p className="text-sm text-zinc-500 mt-1">Masukkan kode penilaian pada kolom dimensi yang sesuai.</p>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-slate-100">Penilaian Dimensi Profil</h3>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">Masukkan kode penilaian pada kolom dimensi yang sesuai.</p>
               </div>
               {/* Legend Panel */}
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs bg-[#fafafa] p-3 rounded-xl border border-zinc-200/60">
+              <div className="flex flex-wrap gap-x-3 sm:gap-x-4 gap-y-2 text-xs bg-slate-50 dark:bg-slate-800/70 p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-slate-700">
                 {Object.entries(COCURRICULAR_RATINGS).map(([code, desc]) => (
                   <div key={code} className="flex items-center gap-1.5">
-                    <span className="font-bold text-zinc-800 bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-200/60">{code}</span>
-                    <span className="text-zinc-600">{desc}</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">{code}</span>
+                    <span className="text-slate-600 dark:text-slate-300">{desc}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Highlight Controls */}
-            <div className="flex items-center gap-2.5 text-xs font-semibold select-none flex-wrap pt-2 border-t border-zinc-100">
+            <div className="flex items-center gap-2.5 text-xs font-semibold select-none flex-wrap pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   setShowIncompleteHighlight(!showIncompleteHighlight);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                className={`min-h-[44px] lg:min-h-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
                   showIncompleteHighlight
-                    ? "bg-red-100 border-red-300 text-red-700"
-                    : "bg-slate-50 border-slate-200 text-slate-400"
+                    ? "bg-red-100 dark:bg-red-900/40 border-red-300 dark:border-red-700 text-red-700 dark:text-red-200"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
                 }`}
               >
                 <span
                   className={`w-2.5 h-2.5 rounded-full inline-block shadow-sm ${
-                    showIncompleteHighlight ? "bg-red-500" : "bg-slate-300"
+                    showIncompleteHighlight ? "bg-red-500" : "bg-slate-300 dark:bg-slate-600"
                   }`}
                 />
                 <span>Nilai Tidak Lengkap</span>
                 {stats?.incompleteCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.2 bg-red-200 text-red-800 rounded-full text-[10px] font-bold">
+                  <span className="ml-1 px-1.5 py-0.2 bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-100 rounded-full text-[10px] font-bold tabular-nums">
                     {stats.incompleteCount}
                   </span>
                 )}
@@ -110,20 +115,20 @@ const DataKokurikulerPage = (props: any) => {
                   e.preventDefault();
                   setShowBelowKkmHighlight(!showBelowKkmHighlight);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                className={`min-h-[44px] lg:min-h-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
                   showBelowKkmHighlight
-                    ? "bg-rose-100 border-rose-300 text-rose-700"
-                    : "bg-slate-50 border-slate-200 text-slate-400"
+                    ? "bg-rose-100 dark:bg-rose-900/40 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-200"
+                    : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400"
                 }`}
               >
                 <span
                   className={`w-2.5 h-2.5 rounded-full inline-block shadow-sm ${
-                    showBelowKkmHighlight ? "bg-rose-500" : "bg-slate-300"
+                    showBelowKkmHighlight ? "bg-rose-500" : "bg-slate-300 dark:bg-slate-600"
                   }`}
                 />
                 <span>Nilai di Bawah KKM (BB)</span>
                 {stats?.belowKkmCount > 0 && (
-                  <span className="ml-1 px-1.5 py-0.2 bg-rose-200 text-rose-800 rounded-full text-[10px] font-bold">
+                  <span className="ml-1 px-1.5 py-0.2 bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-100 rounded-full text-[10px] font-bold tabular-nums">
                     {stats.belowKkmCount}
                   </span>
                 )}
@@ -132,17 +137,18 @@ const DataKokurikulerPage = (props: any) => {
           </div>
           
           <div
+            ref={scrollContainerRef}
             className="flex-1 overflow-auto select-none cocurricular-table-container"
             onMouseLeave={() => {
               if (isSelecting) setIsSelecting(false);
             }}
           >
-            <table className="w-full text-sm text-left text-zinc-500 border-separate border-spacing-0">
-              <thead className="text-xs text-zinc-700 uppercase bg-zinc-100 sticky top-0 z-30">
+            <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0">
+              <thead className="text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 z-30">
                 <tr>
                   <th
                     scope="col"
-                    className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 sticky left-0 top-0 z-40 bg-zinc-100 text-center  border-b border-zinc-200/60 relative cursor-default select-none"
+                    className="w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-1.5 sm:px-2 py-3 sticky left-0 top-0 z-40 bg-slate-100 dark:bg-slate-800 text-center border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none"
                     style={getSelectionStyle(-1, -2).selectionStyle}
                     onMouseDown={(e) => {
                       if (e.button !== 0) return;
@@ -155,7 +161,7 @@ const DataKokurikulerPage = (props: any) => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 min-w-[200px] border-b border-zinc-200/60 sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-zinc-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
+                    className="px-3 sm:px-6 py-3 w-[135px] min-w-[135px] sm:w-auto sm:min-w-[200px] border-b border-slate-200 dark:border-slate-700 sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-slate-100 dark:bg-slate-800 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
                     style={getSelectionStyle(-1, -1).selectionStyle}
                     onMouseDown={(e) => {
                       if (e.button !== 0) return;
@@ -170,10 +176,10 @@ const DataKokurikulerPage = (props: any) => {
                     <th
                       key={dim.id}
                       scope="col"
-                      className="px-3 py-2 w-[116px] min-w-[116px] text-center border-b border-zinc-200/60 align-bottom relative cursor-default select-none"
+                      className="px-2 sm:px-3 py-2 w-[112px] sm:w-[116px] min-w-[112px] sm:min-w-[116px] text-center border-b border-slate-200 dark:border-slate-700 align-bottom relative cursor-default select-none"
                       style={getSelectionStyle(-1, dimIndex).selectionStyle}
                       onMouseDown={(e) => {
-                        if (e.target.tagName === "BUTTON") return;
+                        if ((e.target as HTMLElement).tagName === "BUTTON") return;
                         if (e.button !== 0) return;
                         if (e.shiftKey) e.preventDefault();
                         handleMouseDownCell(e, -1, dimIndex);
@@ -188,7 +194,7 @@ const DataKokurikulerPage = (props: any) => {
                           <button
                             key={rating}
                             onClick={() => handleSetAllRatings(dim.id, rating)}
-                            className="px-1 py-0.5 text-[8px] font-bold text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-100 hover:text-zinc-900 transition-colors whitespace-nowrap"
+                            className="min-h-[30px] lg:min-h-0 px-1.5 lg:px-1 py-1 lg:py-0.5 text-[9px] lg:text-[8px] font-bold text-slate-600 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap cursor-pointer"
                             title={`Set semua siswa menjadi ${rating}`}
                           >
                             {rating}
@@ -200,23 +206,29 @@ const DataKokurikulerPage = (props: any) => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student: any, index: number) => {
+                {topSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + COCURRICULAR_DIMENSIONS.length} style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {students.slice(startIndex, endIndex + 1).map((student: any, sliceIdx: number) => {
+                  const index = startIndex + sliceIdx;
                   const studentRatings = cocurricularData[student.id]?.[dimensionField] || {};
                   const hasMissingRating = COCURRICULAR_DIMENSIONS.some(dim => !studentRatings[dim.id] || studentRatings[dim.id] === "-" || studentRatings[dim.id] === "");
                   const hasBbRating = COCURRICULAR_DIMENSIONS.some(dim => studentRatings[dim.id] === "BB");
                   const studentRowHighlight = (hasMissingRating && showIncompleteHighlight)
-                    ? "bg-red-50 text-red-700 font-bold"
+                    ? "bg-red-50 dark:bg-red-900/35 text-red-700 dark:text-red-200 font-bold"
                     : (hasBbRating && showBelowKkmHighlight)
-                      ? "bg-rose-50 text-red-600 font-bold"
+                      ? "bg-rose-50 dark:bg-rose-900/35 text-red-600 dark:text-red-200 font-bold"
                       : "";
 
                   return (
                     <React.Fragment key={student.id}>
-                      <tr id={student.id} className="bg-white hover:bg-[#fafafa]">
+                      <tr id={student.id} ref={(el) => measureRow(index, el)} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 group">
                         <td
                           id={`cocurricular-cell-${index}--2`}
                           tabIndex={-1}
-                          className={`w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 relative cursor-default select-none ${studentRowHighlight || "bg-white"}`}
+                          className={`w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-1.5 sm:px-2 py-2 text-center tabular-nums border-b border-slate-200 dark:border-slate-700 sticky left-0 z-20 relative cursor-default select-none ${studentRowHighlight || "bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70"}`}
                           style={getSelectionStyle(index, -2).selectionStyle}
                           onMouseDown={(e) => {
                             if (e.button !== 0) return;
@@ -231,7 +243,7 @@ const DataKokurikulerPage = (props: any) => {
                           id={`cocurricular-cell-${index}--1`}
                           tabIndex={-1}
                           scope="row"
-                          className={`px-6 py-4 font-medium whitespace-nowrap text-left border-b border-zinc-200/60 lg:sticky lg:left-[50px] lg:z-20 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-[#fafafa] ${studentRowHighlight ? studentRowHighlight : "text-zinc-900 bg-white"}`}
+                          className={`px-3 sm:px-6 py-3 sm:py-4 font-medium whitespace-normal sm:whitespace-nowrap break-words text-left border-b border-slate-200 dark:border-slate-700 lg:sticky lg:left-[50px] lg:z-20 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 ${studentRowHighlight ? studentRowHighlight : "text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900"}`}
                           style={getSelectionStyle(index, -1).selectionStyle}
                           onMouseDown={(e) => {
                             if (e.button !== 0) return;
@@ -248,7 +260,7 @@ const DataKokurikulerPage = (props: any) => {
                           const isRatingPassing = ["MB", "BSH", "SB"].includes(rating);
                           const isRatingInvalid = rating && !["BB", "MB", "BSH", "SB", "-"].includes(rating);
 
-                          let inputHighlightClass = "bg-white shadow-sm border focus:ring-zinc-900 focus:border-zinc-900 relative z-10 ";
+                          let inputHighlightClass = "bg-white shadow-sm border focus:ring-indigo-500 focus:border-indigo-500 relative z-10 ";
                           if (isRatingInvalid) {
                             inputHighlightClass += "border-red-500 ring-1 ring-red-500 bg-rose-100 text-rose-800 font-bold";
                           } else if (isRatingBB) {
@@ -263,7 +275,7 @@ const DataKokurikulerPage = (props: any) => {
                             if (showIncompleteHighlight) {
                               inputHighlightClass += "border-red-500 ring-1 ring-red-500 bg-red-50/30 text-red-600 placeholder:text-red-400 font-semibold";
                             } else {
-                              inputHighlightClass += "border-zinc-300 text-zinc-500";
+                              inputHighlightClass += "border-slate-300 dark:border-slate-600 text-slate-500";
                             }
                           }
 
@@ -272,7 +284,7 @@ const DataKokurikulerPage = (props: any) => {
                           return (
                             <td
                               key={dim.id}
-                              className="relative px-3 py-2 border-b border-zinc-200/60 text-center align-middle transition-colors"
+                              className="relative px-2 sm:px-3 py-2 border-b border-slate-200 dark:border-slate-700 text-center align-middle transition-colors"
                               style={selectionStyle}
                               onMouseDown={(e) => {
                                 const target = e.target as HTMLElement;
@@ -293,7 +305,7 @@ const DataKokurikulerPage = (props: any) => {
                                 onMouseDown={(e) => {
                                   if (e.button !== 0) return;
                                 }}
-                                className={`block w-11 mx-auto px-1 py-1 text-center text-sm uppercase rounded-md transition-all ${
+                                className={`block w-14 sm:w-11 mx-auto px-1 py-1.5 sm:py-1 text-center text-sm uppercase rounded-md transition-all ${
                                   showTransparentInput
                                     ? "bg-transparent border-transparent shadow-[none_!important] outline-none focus:outline-none focus:ring-0 relative z-10 font-bold"
                                     : inputHighlightClass
@@ -310,6 +322,11 @@ const DataKokurikulerPage = (props: any) => {
                     </React.Fragment>
                   );
                 })}
+                {bottomSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + COCURRICULAR_DIMENSIONS.length} style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

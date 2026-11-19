@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useCurriculumStore } from "../../stores/useCurriculumStore";
+import { cloneDetailedGrade } from "../../stores/useNilaiHistoryStore";
 
 export const useManageSlmLogic = (props) => {
   const {
@@ -45,7 +46,12 @@ export const useManageSlmLogic = (props) => {
 
   useEffect(() => {
     if (isOpen) {
-      setLocalSlms(JSON.parse(JSON.stringify(allSlms))); // Deep copy
+      setLocalSlms(
+        (allSlms || []).map((slm: any) => ({
+          ...slm,
+          tps: Array.isArray(slm?.tps) ? slm.tps.map((tp: any) => ({ ...tp })) : [],
+        }))
+      );
     }
   }, [isOpen, allSlms, initialActiveIds]);
 
@@ -75,16 +81,6 @@ export const useManageSlmLogic = (props) => {
         }
         return slm;
       })
-    );
-  };
-
-  const handleSemesterToggle = (slmId, currentSemester, targetSemester) => {
-    const newSemester =
-      currentSemester === targetSemester ? "Semua" : targetSemester;
-    setLocalSlms((prev) =>
-      prev.map((slm) =>
-        slm.id === slmId ? { ...slm, semester: newSemester } : slm
-      )
     );
   };
 
@@ -133,7 +129,7 @@ export const useManageSlmLogic = (props) => {
   const handleOpenTpSelection = (slmId) => {
     setSlmForTpSelection(slmId);
     setIsTpSelectionModalOpen(true);
-    const targetGrade = gradeNumber && gradeNumber >= 1 && gradeNumber <= 12 ? gradeNumber : 5;
+    const targetGrade = gradeNumber && gradeNumber >= 1 && gradeNumber <= 12 ? gradeNumber : 6;
     useCurriculumStore.getState().loadPredefinedCurriculum(targetGrade).catch(() => {});
   };
 
@@ -172,7 +168,7 @@ export const useManageSlmLogic = (props) => {
           const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(",")[1]);
+            reader.onload = () => resolve(String(reader.result || "").split(",")[1]);
             reader.onerror = (error) => reject(error);
           });
 
@@ -248,7 +244,12 @@ export const useManageSlmLogic = (props) => {
         }
 
         const fileUrl = URL.createObjectURL(file);
-        setOfflineOcrImageSrc(fileUrl);
+        setOfflineOcrImageSrc((prev: string | null) => {
+          if (prev && prev.startsWith("blob:")) {
+            URL.revokeObjectURL(prev);
+          }
+          return fileUrl;
+        });
         setOfflineOcrDetectedLines([]);
         setOfflineIsRunningOcr(false);
         setIsOfflineOcrModalOpen(true);
@@ -263,7 +264,7 @@ export const useManageSlmLogic = (props) => {
   };
 
   const handleSaveChanges = () => {
-    const gradeKey = `Kelas ${gradeNumber}`;
+    const gradeKey = `Kelas ${gradeNumber || 6}`;
     const curriculumKey = subject.curriculumKey || subject.fullName;
 
     const allTpsForSubject = localSlms.flatMap((slm) =>
@@ -271,7 +272,6 @@ export const useManageSlmLogic = (props) => {
         slmId: slm.id,
         text: tp.text,
         isEdited: tp.isEdited,
-        semester: slm.semester || "Semua",
       }))
     );
     const newLearningObjectives = {
@@ -288,17 +288,11 @@ export const useManageSlmLogic = (props) => {
 
     students.forEach((student) => {
       const studentGrade = grades.find((g) => g.studentId === student.id);
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
-            slm: [],
-            sts1: null,
-            sts2: null,
-            sas1: null,
-            sas2: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(studentGrade?.detailedGrades?.[subject.id]) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
       if (!detailedGrade.slm) detailedGrade.slm = [];
       let hasChanged = false;
 
@@ -366,13 +360,13 @@ export const useManageSlmLogic = (props) => {
     isOfflineOcrModalOpen,
     setIsOfflineOcrModalOpen,
     offlineOcrImageSrc,
+    setOfflineOcrImageSrc,
     offlineOcrDetectedLines,
     offlineIsRunningOcr,
     availableTPsForSelection,
     handleApplyOfflineOcr,
     handleSlmNameChange,
     handleTpTextChange,
-    handleSemesterToggle,
     handleAddCustomSlm,
     handleDeleteSlm,
     handleAddManualTp,

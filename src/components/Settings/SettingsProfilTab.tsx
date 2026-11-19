@@ -24,9 +24,9 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
 }) => {
     return (
         <section className="animate-fade-in space-y-6" id="section-profil">
-                                <div className="flex justify-between items-center border-b pb-2 mb-4">
-                                    <h3 className="text-base font-bold text-slate-800">Profil Sekolah</h3>
-                                    <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b border-slate-200 dark:border-slate-700 pb-3 mb-4">
+                                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Profil Sekolah</h3>
+                                    <div className="flex flex-wrap items-center gap-2">
                                         <button
                                             type="button"
                                             id="btn-toggle-aksara-bali"
@@ -36,7 +36,7 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
                                                 setTimeout(() => resolvedOnSave && resolvedOnSave(), 50);
                                             }}
                                             title="Klik untuk mengaktifkan atau menonaktifkan tampilan Aksara Bali pada kop surat"
-                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shadow-sm ${
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] lg:min-h-0 rounded-lg text-xs font-semibold border transition-all shadow-sm whitespace-nowrap shrink-0 ${
                                                 settings.show_aksara_bali !== false
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                                                     : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
@@ -45,7 +45,7 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
                                             <span
                                                 className={`w-2 h-2 rounded-full ${
                                                     settings.show_aksara_bali !== false
-                                                        ? 'bg-emerald-500 animate-pulse'
+                                                        ? 'bg-emerald-500'
                                                         : 'bg-slate-400 dark:bg-slate-500'
                                                 }`}
                                             />
@@ -57,7 +57,7 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
                                         <button
                                             id="btn-design-kop"
                                             onClick={() => setIsEditorOpen(true)}
-                                            className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition"
+                                            className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-medium text-white bg-indigo-600 border border-transparent rounded-lg shadow-sm hover:bg-indigo-700 transition whitespace-nowrap shrink-0"
                                         >
                                             Desain Kop Surat
                                         </button>
@@ -213,9 +213,9 @@ export const SettingsProfilTab: React.FC<SettingsProfilTabProps> = ({
                                             imagePreview={typeof settings.piagam_background === 'string' ? settings.piagam_background : null} 
                                             onMakeTransparent={handleMakeTransparent} 
                                         />
-                                        <div className="border-t pt-4">
-                                            <h4 className="text-lg font-semibold text-slate-700">Pratinjau Kop Surat</h4>
-                                            <p className="text-sm text-slate-500 mb-4">
+                                        <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                                            <h4 className="text-lg font-semibold text-slate-700 dark:text-slate-200">Pratinjau Kop Surat</h4>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                                                 Ini adalah tampilan yang akan digunakan saat mencetak rapor. Klik 'Desain Kop Surat' untuk mengubah.
                                             </p>
                                             <KopSuratPreview settings={settings} />

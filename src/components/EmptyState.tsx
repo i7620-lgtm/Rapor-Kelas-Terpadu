@@ -18,15 +18,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   onPrimaryAction,
   secondaryActionLabel = "Import Excel",
   onSecondaryAction,
-  icon = <Users className="w-16 h-16 text-zinc-300 mx-auto" />
+  icon = <Users className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto" />
 }) => {
   return (
-    <div className="bg-white border border-zinc-200/60 rounded-xl p-6 sm:p-8 text-center max-w-lg mx-auto my-6 shadow-sm">
-      <div className="bg-zinc-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 sm:p-8 text-center max-w-lg mx-auto my-6 shadow-sm">
+      <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
         {icon}
       </div>
-      <h3 className="text-base font-bold text-zinc-800 mb-1.5">{title}</h3>
-      <p className="text-xs text-zinc-500 mb-5 max-w-md mx-auto leading-relaxed">
+      <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1.5">{title}</h3>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 max-w-md mx-auto leading-relaxed">
         {description}
       </p>
       
@@ -34,7 +34,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {onPrimaryAction && (
           <button
             onClick={onPrimaryAction}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-sm transition-all flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto min-h-[44px] lg:min-h-0 px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 hover:shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {primaryActionLabel}
           </button>
@@ -43,7 +43,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {onSecondaryAction && (
           <button
             onClick={onSecondaryAction}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto min-h-[44px] lg:min-h-0 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
             {secondaryActionLabel}

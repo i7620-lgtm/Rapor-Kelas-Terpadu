@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { defaultSubjects, initialSettings, COCURRICULAR_DIMENSIONS } from '../constants';
-import { getGradeNumber } from './nilaiHelpers';
+import { getGradeNumber, computeQualitativeGradingMap } from './nilaiHelpers';
 import { calculateFinalGrade } from './gradeCalculations';
 import { sanitizeGrades, sanitizeNotes, sanitizeAttendance, sanitizeStudentExtracurriculars, sanitizeCocurricularData, sanitizeLearningObjectives, sanitizeFormativeJournal, sanitizeSettings } from "./excelSanitize";
 
@@ -31,10 +31,32 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
             return "";
         };
         
+        const parseFotoSiswaSheet = () => {
+            const wsFoto = findSheet(["Foto Siswa"]);
+            const map: Record<string, string> = {};
+            if (wsFoto) {
+                const fotoData = XLSX.utils.sheet_to_json(wsFoto, { header: 1 }) as any[][];
+                const chunksById: Record<string, string[]> = {};
+                fotoData.forEach(row => {
+                    const idSiswa = row[0] ? String(row[0]).trim() : '';
+                    const partIdx = parseInt(row[1], 10);
+                    const data = row[2];
+                    if (idSiswa && idSiswa !== 'ID Siswa' && !isNaN(partIdx) && data) {
+                        if (!chunksById[idSiswa]) chunksById[idSiswa] = [];
+                        chunksById[idSiswa][partIdx] = String(data);
+                    }
+                });
+                Object.entries(chunksById).forEach(([id, chunks]) => {
+                    map[id] = chunks.join('');
+                });
+            }
+            return map;
+        };
+
         const rStoreSheet = workbook.Sheets["_DataStore"];
         if (rStoreSheet) {
-             const storeData = XLSX.utils.sheet_to_json(rStoreSheet, { header: 1 });
-             let parsedMap = {};
+             const storeData = XLSX.utils.sheet_to_json(rStoreSheet, { header: 1 }) as any[][];
+             const parsedMap: Record<string, any> = {};
              let hasValidSignature = false;
              
              for (const r of storeData.slice(1)) {
@@ -61,7 +83,17 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
             
              let loadedSettings = parsedMap['appSettings'] || initialSettings;
              const activeSemester = loadedSettings.semester || "Ganjil";
-             const sd = parsedMap['appStudents'] || [];
+             const rawSd = Array.isArray(parsedMap['appStudents']) ? parsedMap['appStudents'] : [];
+             const studentPhotos: Record<string, string> = { ...parseFotoSiswaSheet() };
+             const sd = rawSd.map((s: any) => {
+                 if (!s || typeof s !== 'object') return s;
+                 if (s.id && typeof s.foto === 'string' && s.foto.startsWith('data:image') && !studentPhotos[String(s.id)]) {
+                     studentPhotos[String(s.id)] = s.foto;
+                 }
+                 const copy = { ...s };
+                 delete copy.foto;
+                 return copy;
+             });
              const gd = parsedMap['appGrades'] || [];
              const ad = parsedMap['appAttendance'] || [];
              const se = parsedMap['appStudentExtracurriculars'] || [];
@@ -75,6 +107,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
              return {
                  settings: sanitizeSettings(loadedSettings, activeSemester),
                  students: sd,
+                 studentPhotos,
                  grades: sanitizeGrades(gd, activeSemester, lo, loadedSettings.nama_kelas, su),
                  attendance: sanitizeAttendance(ad, activeSemester),
                  studentExtracurriculars: sanitizeStudentExtracurriculars(se, activeSemester),
@@ -88,11 +121,11 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         }
 
         const wsAset = findSheet(["Aset Gambar", "Images", "Assets"]);
-        const assetMap = {};
+        const assetMap: Record<string, string> = {};
         if (wsAset) {
-            const assetData = XLSX.utils.sheet_to_json(wsAset, { header: 1 });
-            const chunksByKey = {};
-            assetData.forEach(row => { const keyPart = row[0], data = row[1]; if (keyPart && data) { const match = keyPart.match(/^(.*)_part_(\d+)$/); if (match) { const realKey = match[1], idx = parseInt(match[2], 10); if (!chunksByKey[realKey]) chunksByKey[realKey] = []; chunksByKey[realKey][idx] = data; } } });
+            const assetData = XLSX.utils.sheet_to_json(wsAset, { header: 1 }) as any[][];
+            const chunksByKey: Record<string, string[]> = {};
+            assetData.forEach(row => { const keyPart = row[0], data = row[1]; if (keyPart && data) { const match = String(keyPart).match(/^(.*)_part_(\d+)$/); if (match) { const realKey = match[1], idx = parseInt(match[2], 10); if (!chunksByKey[realKey]) chunksByKey[realKey] = []; chunksByKey[realKey][idx] = String(data); } } });
             Object.entries(chunksByKey).forEach(([key, chunks]) => { assetMap[key] = chunks.join(''); });
         }
         const wsMapel = findSheet(["Mata Pelajaran", "Mata_Pelajaran"]);
@@ -190,7 +223,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                             console.warn(`Failed parsing ${key}`, e);
                             news[key] = key === 'appLock' ? { enabled: false, pin: '', hint: '', securityQuestion: '', securityAnswer: '' } : [];
                         }
-                    } else if (key in news) {
+                    } else if (key in news || key.includes('_ctx_') || key.startsWith('tanggal_rapor_')) {
                         const imageKeys = ['logoSistem', 'ttdKepsek', 'ttdKepsek_Genap', 'logo_sekolah', 'logo_dinas', 'logo_cover', 'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'];
                         if (imageKeys.includes(key) && assetMap[key]) {
                             // Do not overwrite valid image keys from Aset Gambar with potentially truncated Pengaturan sheet values.
@@ -201,21 +234,11 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                         }
                     }
                 }
-                const subjectId = r[0]; if (nSub.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: r[1] || 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
+                const subjectId = r[0]; if (nSub.some(ds => ds.id === subjectId)) { try { const weights = r[2] ? JSON.parse(r[2]) : {}, visibility = r[3] ? JSON.parse(r[3]) : []; const rawMethod = String(r[1] || 'rata-rata').trim().toLowerCase(); const normalizedMethod = rawMethod === 'bobot' ? 'pembobotan' : rawMethod; if (!news.gradeCalculation) news.gradeCalculation = {}; news.gradeCalculation[subjectId] = { method: ['rata-rata', 'pembobotan', 'persentase'].includes(normalizedMethod) ? normalizedMethod : 'rata-rata', weights }; if (!news.slmVisibility) news.slmVisibility = {}; news.slmVisibility[subjectId] = visibility; } catch (e) { console.warn("Failed parsing config for", subjectId, e); } }
             });
             
             // Recalculate qualitativeGradingMap based on imported predikats
-            const valA = parseInt(news.predikats.a, 10);
-            const valB = parseInt(news.predikats.b, 10);
-            const valC = parseInt(news.predikats.c, 10);
-            if (!isNaN(valA) && !isNaN(valB) && !isNaN(valC)) {
-                news.qualitativeGradingMap = {
-                    SB: Math.round((valA + 100) / 2),
-                    BSH: Math.round((valB + valA - 1) / 2),
-                    MB: Math.round((valC + valB - 1) / 2),
-                    BB: Math.round((0 + valC - 1) / 2),
-                };
-            }
+            news.qualitativeGradingMap = computeQualitativeGradingMap(news.predikats);
             
             news = { ...news, ...assetMap };
         }
@@ -232,24 +255,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                 };
             });
         }
-        const wsFoto = findSheet(["Foto Siswa"]);
-        const fotoSiswaMap = {};
-        if (wsFoto) {
-            const fotoData = XLSX.utils.sheet_to_json(wsFoto, { header: 1 });
-            const chunksById = {};
-            fotoData.forEach(row => {
-                const idSiswa = row[0] ? String(row[0]) : '';
-                const partIdx = parseInt(row[1], 10);
-                const data = row[2];
-                if (idSiswa && idSiswa !== 'ID Siswa' && data) {
-                    if (!chunksById[idSiswa]) chunksById[idSiswa] = [];
-                    chunksById[idSiswa][partIdx] = data;
-                }
-            });
-            Object.entries(chunksById).forEach(([id, chunks]) => {
-                fotoSiswaMap[id] = chunks.join('');
-            });
-        }
+        const fotoSiswaMap = parseFotoSiswaSheet();
         const wsS = findSheet(["Daftar Siswa", "Students", "Siswa", "Data Siswa"]);
         if (wsS) {
             nStud = XLSX.utils.sheet_to_json(wsS).map((s: any, idx) => {
@@ -263,7 +269,6 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                 );
                 return {
                     id: sid,
-                    foto: fotoSiswaMap[sid] || '',
                     namaLengkap: getValueWithAliases(s, ["Nama Lengkap", "Nama", "Nama Siswa", "nama_lengkap", "nama_siswa", "full name", "student name", "fullName", "studentName"]),
                     namaPanggilan: getValueWithAliases(s, ["Nama Panggilan", "Panggilan", "nama_panggilan", "nick name", "nickname"]),
                     nis: getValueWithAliases(s, ["NIS", "NIS Siswa", "Nomor Induk Siswa", "no induk", "no_induk", "nis_siswa", "induk"]),
@@ -291,7 +296,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         const wsTP = findSheet(["Tujuan Pembelajaran", "Tujuan_Pembelajaran"]);
         if (wsTP) {
             const tpData = XLSX.utils.sheet_to_json(wsTP);
-            const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '?'}`;
+            const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '6'}`;
             nLO[gradeKey] = {};
             tpData.forEach(row => {
                 const subjName = getValueWithAliases(row, ['Nama Mata Pelajaran', 'Mata Pelajaran', 'ID Mata Pelajaran', 'ID MataPelajaran', 'Mata_Pelajaran', 'Mapel']);
@@ -305,12 +310,13 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                         text: desc,
                         name: slmName,
                         isEdited: true,
-                        semester: getValueWithAliases(row, ['Semester', 'semester']) || news.semester || 'Ganjil'
                     });
                 }
             });
         }
         nGr = nStud.map(st => ({ studentId: st.id, detailedGrades: {}, finalGrades: {} }));
+        const gradeByIdMap = new Map<string, any>();
+        nGr.forEach((g) => gradeByIdMap.set(String(g.studentId), g));
         workbook.SheetNames.forEach(name => { 
             if (name.startsWith("Nilai_")) { 
                 const subIdRaw = name.split('_')[1]; 
@@ -319,79 +325,73 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
                 const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name]); 
                 rows.forEach(row => { 
                     const sid = String(row['ID Siswa'] || row['ID'] || row['a'] || '').trim(); 
-                    let entry = nGr.find(g => g.studentId === sid); 
-                    if (!entry) entry = nGr.find(g => g.studentId === 'student' + sid); 
-                    if (!entry) entry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId)); 
+                    let entry = gradeByIdMap.get(sid) || gradeByIdMap.get('student' + sid);
+                    if (!entry && sid) {
+                        entry = nGr.find(g => g.studentId.endsWith(sid) || sid.endsWith(g.studentId));
+                    }
                     if (entry) { 
                         if (!entry.detailedGrades[subId]) {
                             entry.detailedGrades[subId] = { 
                                 slm: [], 
-                                sts1: null,
-                                sts2: null,
-                                sas1: null,
-                                sas2: null,
+                                sts: null,
+                                sas: null,
                                 descriptions: { highest: '', lowest: '' },
-                                descriptions_Genap: { highest: '', lowest: '' } 
                             };
                         }
                         const detailed = entry.detailedGrades[subId];
                         
                         const isImportGenap = news.semester === "Genap";
 
-                        // Handle explicit columns
-                        if (row['STS 1 (Ganjil)'] !== undefined) detailed.sts1 = row['STS 1 (Ganjil)'];
-                        if (row['SAS 1 (Ganjil)'] !== undefined) detailed.sas1 = row['SAS 1 (Ganjil)'];
-                        if (row['STS 2 (Genap)'] !== undefined) detailed.sts2 = row['STS 2 (Genap)'];
-                        if (row['SAS 2 (Genap)'] !== undefined) detailed.sas2 = row['SAS 2 (Genap)'];
-
-                        // Handle plain semester-specific "STS" / "SAS"
-                        if (row['STS'] !== undefined) {
-                            if (isImportGenap) detailed.sts2 = row['STS'];
-                            else detailed.sts1 = row['STS'];
-                        }
-                        if (row['SAS'] !== undefined) {
-                            if (isImportGenap) detailed.sas2 = row['SAS'];
-                            else detailed.sas1 = row['SAS'];
+                        // Handle legacy dual-semester columns while keeping active semester priority
+                        if (isImportGenap) {
+                            if (row['STS 1 (Ganjil)'] !== undefined && detailed.sts === null) detailed.sts = row['STS 1 (Ganjil)'];
+                            if (row['SAS 1 (Ganjil)'] !== undefined && detailed.sas === null) detailed.sas = row['SAS 1 (Ganjil)'];
+                            if (row['STS 2 (Genap)'] !== undefined) detailed.sts = row['STS 2 (Genap)'];
+                            if (row['SAS 2 (Genap)'] !== undefined) detailed.sas = row['SAS 2 (Genap)'];
+                        } else {
+                            if (row['STS 2 (Genap)'] !== undefined && detailed.sts === null) detailed.sts = row['STS 2 (Genap)'];
+                            if (row['SAS 2 (Genap)'] !== undefined && detailed.sas === null) detailed.sas = row['SAS 2 (Genap)'];
+                            if (row['STS 1 (Ganjil)'] !== undefined) detailed.sts = row['STS 1 (Ganjil)'];
+                            if (row['SAS 1 (Ganjil)'] !== undefined) detailed.sas = row['SAS 1 (Ganjil)'];
                         }
 
-                        // Handle plain semester-specific descriptions
-                        if (row['Deskripsi Tinggi'] !== undefined) {
-                            if (isImportGenap) {
-                                if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
-                                detailed.descriptions_Genap.highest = row['Deskripsi Tinggi'];
-                            } else {
-                                if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
-                                detailed.descriptions.highest = row['Deskripsi Tinggi'];
+                        // Canonical STS / SAS columns take highest precedence
+                        if (row['STS'] !== undefined) detailed.sts = row['STS'];
+                        if (row['SAS'] !== undefined) detailed.sas = row['SAS'];
+
+                        // Handle legacy descriptions while keeping active semester priority
+                        if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
+                        if (isImportGenap) {
+                            if (row['Deskripsi Tinggi (Ganjil)'] !== undefined && !detailed.descriptions.highest) {
+                                detailed.descriptions.highest = row['Deskripsi Tinggi (Ganjil)'];
+                            }
+                            if (row['Deskripsi Rendah (Ganjil)'] !== undefined && !detailed.descriptions.lowest) {
+                                detailed.descriptions.lowest = row['Deskripsi Rendah (Ganjil)'];
+                            }
+                            if (row['Deskripsi Tinggi (Genap)'] !== undefined) {
+                                detailed.descriptions.highest = row['Deskripsi Tinggi (Genap)'];
+                            }
+                            if (row['Deskripsi Rendah (Genap)'] !== undefined) {
+                                detailed.descriptions.lowest = row['Deskripsi Rendah (Genap)'];
+                            }
+                        } else {
+                            if (row['Deskripsi Tinggi (Genap)'] !== undefined && !detailed.descriptions.highest) {
+                                detailed.descriptions.highest = row['Deskripsi Tinggi (Genap)'];
+                            }
+                            if (row['Deskripsi Rendah (Genap)'] !== undefined && !detailed.descriptions.lowest) {
+                                detailed.descriptions.lowest = row['Deskripsi Rendah (Genap)'];
+                            }
+                            if (row['Deskripsi Tinggi (Ganjil)'] !== undefined) {
+                                detailed.descriptions.highest = row['Deskripsi Tinggi (Ganjil)'];
+                            }
+                            if (row['Deskripsi Rendah (Ganjil)'] !== undefined) {
+                                detailed.descriptions.lowest = row['Deskripsi Rendah (Ganjil)'];
                             }
                         }
-                        if (row['Deskripsi Rendah'] !== undefined) {
-                            if (isImportGenap) {
-                                if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
-                                detailed.descriptions_Genap.lowest = row['Deskripsi Rendah'];
-                            } else {
-                                if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
-                                detailed.descriptions.lowest = row['Deskripsi Rendah'];
-                            }
-                        }
 
-                        // Handle explicit descriptions
-                        if (row['Deskripsi Tinggi (Ganjil)'] !== undefined) {
-                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
-                            detailed.descriptions.highest = row['Deskripsi Tinggi (Ganjil)'];
-                        }
-                        if (row['Deskripsi Rendah (Ganjil)'] !== undefined) {
-                            if (!detailed.descriptions) detailed.descriptions = { highest: '', lowest: '' };
-                            detailed.descriptions.lowest = row['Deskripsi Rendah (Ganjil)'];
-                        }
-                        
-                        if (row['Deskripsi Tinggi (Genap)'] !== undefined) {
-                            if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
-                            detailed.descriptions_Genap.highest = row['Deskripsi Tinggi (Genap)'];
-                        }
-                        if (row['Deskripsi Rendah (Genap)'] !== undefined) {
-                            if (!detailed.descriptions_Genap) detailed.descriptions_Genap = { highest: '', lowest: '' };
-                            detailed.descriptions_Genap.lowest = row['Deskripsi Rendah (Genap)'];
-                        }
+                        // Canonical description columns take highest precedence
+                        if (row['Deskripsi Tinggi'] !== undefined) detailed.descriptions.highest = row['Deskripsi Tinggi'];
+                        if (row['Deskripsi Rendah'] !== undefined) detailed.descriptions.lowest = row['Deskripsi Rendah'];
 
                         Object.keys(row).forEach(rawH => { 
                             const h = rawH.trim(), match = h.match(/^(.*)_TP(\d+)$/); 
@@ -450,11 +450,11 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
             nNot[key] = row['Catatan Wali Kelas'] || row['Catatan']; 
         });
         const wsJF = findSheet(["Jurnal Formatif"]);
-        if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'], semester: row['Semester'] || news.semester || 'Ganjil' }); }); }
+        if (wsJF) { const jfData = XLSX.utils.sheet_to_json(wsJF); jfData.forEach(row => { const sid = String(row['ID Siswa']); if (!nFJ[sid]) nFJ[sid] = []; nFJ[sid].push({ id: row['ID Catatan'] || Date.now(), date: row['Tanggal'], type: row['Tipe'], subjectId: row['Mapel ID'], slmId: row['SLM ID'], tpId: row['TP ID'], topic: row['Topik'], note: row['Isi Catatan'] }); }); }
         nGr.forEach(studentGrade => { nSub.forEach(subj => { 
             const detailed = studentGrade.detailedGrades[subj.id]; 
             if (detailed) {
-                const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '5'}`;
+                const gradeKey = `Kelas ${getGradeNumber(news.nama_kelas) || '6'}`;
                 const curriculumKey = subj.curriculumKey || subj.fullName;
                 studentGrade.finalGrades[subj.id] = calculateFinalGrade(detailed, news.gradeCalculation?.[subj.id] || { method: 'rata-rata' }, news, subj.id, nLO, gradeKey, curriculumKey, predefinedCurriculum);
             }
@@ -463,6 +463,7 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         return {
             settings: sanitizeSettings(news, news.semester),
             students: nStud,
+            studentPhotos: fotoSiswaMap,
             attendance: sanitizeAttendance(nAtt, news.semester),
             notes: sanitizeNotes(nNot, news.semester),
             studentExtracurriculars: sanitizeStudentExtracurriculars(nStEx, news.semester),

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { useTableVirtualizer } from '../../hooks/useTableVirtualizer';
 import { useStudentsStore } from '../../stores/useStudentsStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useNilaiStore } from '../../stores/useNilaiStore';
@@ -28,8 +29,6 @@ export const useJurnalFormatifPageLogic = (props: any) => {
   const formativeJournal = props.formativeJournal || storeFormative;
   const predefinedCurriculum = props.predefinedCurriculum || storePredefined;
 
-  const currentSemester = settings?.semester || 'Ganjil';
-
   const handleUpdate = props.onUpdate || ((sid: string, data: any) => {
     useFormativeStore.getState().setFormativeJournal((prev: any) => {
       const next = { ...prev };
@@ -53,6 +52,26 @@ export const useJurnalFormatifPageLogic = (props: any) => {
     setIsModalOpen(true);
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getJurnalRowKey = useCallback(
+    (idx: number) => students[idx]?.id ?? idx,
+    [students],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+  } = useTableVirtualizer({
+    count: students.length,
+    scrollContainerRef,
+    estimateRowHeight: 58,
+    overscan: 8,
+    getItemKey: getJurnalRowKey,
+  });
+
   return {
     students,
     settings,
@@ -60,7 +79,6 @@ export const useJurnalFormatifPageLogic = (props: any) => {
     grades,
     formativeJournal,
     predefinedCurriculum,
-    currentSemester,
     isModalOpen,
     setIsModalOpen,
     selectedStudent,
@@ -68,5 +86,11 @@ export const useJurnalFormatifPageLogic = (props: any) => {
     handleUpdate,
     handleDelete,
     handleOpenModal,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };

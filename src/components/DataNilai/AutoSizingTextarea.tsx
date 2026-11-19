@@ -1,34 +1,45 @@
 import React, { useRef, useState, useEffect } from "react";
 
-export const AutoSizingTextarea = React.memo(({ value, onChange, onBlur, ...props }) => {
-  const textareaRef = useRef(null);
-  const [localValue, setLocalValue] = useState(value || "");
+export interface AutoSizingTextareaProps
+  extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onBlur"> {
+  value?: string | number | null;
+  onChange?: React.ChangeEventHandler<HTMLTextAreaElement>;
+  onBlur?: (value: string) => void;
+}
 
-  useEffect(() => {
-    setLocalValue(value || "");
-  }, [value]);
+export const AutoSizingTextarea = React.memo<AutoSizingTextareaProps>(
+  ({ value, onChange, onBlur, ...props }) => {
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+    const [localValue, setLocalValue] = useState<string>(String(value ?? ""));
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [localValue]);
+    useEffect(() => {
+      setLocalValue(String(value ?? ""));
+    }, [value]);
 
-  const handleChange = (e) => {
-    setLocalValue(e.target.value);
-    if (onChange) onChange(e);
-  };
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      }
+    }, [localValue]);
 
-  const handleBlur = (e) => {
-    if (onBlur) onBlur(e.target.value);
-  };
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setLocalValue(e.target.value);
+      if (onChange) onChange(e);
+    };
 
-  return React.createElement("textarea", {
-    ref: textareaRef,
-    value: localValue,
-    onChange: handleChange,
-    onBlur: handleBlur,
-    ...props,
-  });
-});
+    const handleBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      if (onBlur) onBlur(e.target.value);
+    };
+
+    return (
+      <textarea
+        ref={textareaRef}
+        value={localValue}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        {...props}
+      />
+    );
+  }
+);

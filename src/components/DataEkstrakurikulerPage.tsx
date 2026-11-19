@@ -7,7 +7,6 @@ const DataEkstrakurikulerPage = (props: any) => {
     students,
     activeExtracurriculars,
     studentExtracurriculars,
-    currentSemester,
     isSelecting,
     setIsSelecting,
     getSelectionStyle,
@@ -18,6 +17,13 @@ const DataEkstrakurikulerPage = (props: any) => {
     handleDescriptionChange,
     handlePasteActivity,
     handlePasteDescription,
+    studentExtraByIdMap,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   } = useDataEkstrakurikulerPageLogic(props);
 
   return (
@@ -36,18 +42,18 @@ const DataEkstrakurikulerPage = (props: any) => {
         />
       ) : (
         <div
-          className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-6rem)] sm:max-h-[calc(100dvh-4rem)] overflow-hidden"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm flex flex-col sticky top-0 z-20 max-h-[calc(100dvh-11rem)] sm:max-h-[calc(100dvh-9.5rem)] overflow-hidden"
           onMouseLeave={() => {
             if (isSelecting) setIsSelecting(false);
           }}
         >
-          <div className="flex-1 overflow-auto select-none ekstra-table-container">
-            <table className="w-full text-sm text-left text-slate-500 border-separate border-spacing-0">
-              <thead className="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0 z-30">
+          <div ref={scrollContainerRef} className="flex-1 overflow-auto select-none ekstra-table-container">
+            <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0">
+              <thead className="text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 z-30">
                 <tr>
                   <th
                     scope="col"
-                    className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-3 sticky left-0 top-0 bg-slate-100 z-40 text-center  border-b border-slate-200 relative cursor-default select-none"
+                    className="w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-1.5 sm:px-2 py-3 sticky left-0 top-0 bg-slate-100 dark:bg-slate-800 z-40 text-center border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none"
                     style={getSelectionStyle(-1, -2).selectionStyle}
                     onMouseDown={(e: any) => {
                       if (e.button !== 0) return;
@@ -59,7 +65,7 @@ const DataEkstrakurikulerPage = (props: any) => {
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 min-w-[200px] border-b border-slate-200 sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-slate-100 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
+                    className="px-3 sm:px-6 py-3 w-[135px] min-w-[135px] sm:w-auto sm:min-w-[200px] border-b border-slate-200 dark:border-slate-700 sticky top-0 lg:left-[50px] z-30 lg:z-40 bg-slate-100 dark:bg-slate-800 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none"
                     style={getSelectionStyle(-1, -1).selectionStyle}
                     onMouseDown={(e: any) => {
                       if (e.button !== 0) return;
@@ -73,7 +79,7 @@ const DataEkstrakurikulerPage = (props: any) => {
                     <React.Fragment key={i}>
                       <th
                         scope="col"
-                        className="px-4 py-3 min-w-[200px] border-b border-slate-200 relative cursor-default select-none"
+                        className="px-3 sm:px-4 py-3 min-w-[165px] sm:min-w-[200px] border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none"
                         style={getSelectionStyle(-1, i * 2).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -85,7 +91,7 @@ const DataEkstrakurikulerPage = (props: any) => {
                       </th>
                       <th
                         scope="col"
-                        className="px-4 py-3 min-w-[300px] border-b border-slate-200 relative cursor-default select-none"
+                        className="px-3 sm:px-4 py-3 min-w-[230px] sm:min-w-[300px] border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none"
                         style={getSelectionStyle(-1, i * 2 + 1).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -100,18 +106,29 @@ const DataEkstrakurikulerPage = (props: any) => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student: any, index: number) => {
-                  const studentExtra = studentExtracurriculars.find(
-                    (se: any) => se.studentId === student.id && (se.semester || 'Ganjil') === currentSemester,
-                  );
+                {topSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + MAX_EXTRA_FIELDS * 2} style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {students.slice(startIndex, endIndex + 1).map((student: any, sliceIdx: number) => {
+                  const index = startIndex + sliceIdx;
+                  const studentExtra =
+                    studentExtraByIdMap.get(student.id) ||
+                    studentExtracurriculars.find((se: any) => se.studentId === student.id);
                   const allAssignedIdsForStudent = (studentExtra?.assignedActivities || []).filter(Boolean);
 
                   return (
-                    <tr key={student.id} id={student.id} className="bg-white hover:bg-slate-50">
+                    <tr
+                      key={student.id}
+                      id={student.id}
+                      ref={(el) => measureRow(index, el)}
+                      className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 group"
+                    >
                       <td
                         id={`cell-${index}--2`}
                         tabIndex={-1}
-                        className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-slate-200 sticky left-0 z-20 bg-white  relative cursor-default select-none"
+                        className="w-[40px] min-w-[40px] max-w-[40px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-1.5 sm:px-2 py-2 text-center tabular-nums border-b border-slate-200 dark:border-slate-700 sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 relative cursor-default select-none"
                         style={getSelectionStyle(index, -2).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -125,7 +142,7 @@ const DataEkstrakurikulerPage = (props: any) => {
                         id={`cell-${index}--1`}
                         tabIndex={-1}
                         scope="row"
-                        className="px-6 py-4 font-medium text-slate-900 whitespace-nowrap text-left border-b border-slate-200 lg:sticky lg:left-[50px] lg:z-20 bg-white lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-[#fafafa]"
+                        className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-900 dark:text-slate-100 whitespace-normal sm:whitespace-nowrap break-words text-left border-b border-slate-200 dark:border-slate-700 lg:sticky lg:left-[50px] lg:z-20 bg-white dark:bg-slate-900 lg:shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] relative cursor-default select-none group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70"
                         style={getSelectionStyle(index, -1).selectionStyle}
                         onMouseDown={(e: any) => {
                           if (e.button !== 0) return;
@@ -150,7 +167,7 @@ const DataEkstrakurikulerPage = (props: any) => {
                         return (
                           <React.Fragment key={i}>
                             <td
-                              className="px-4 py-2 border-b border-slate-200 relative cursor-default select-none"
+                              className="px-3 sm:px-4 py-2 border-b border-slate-200 dark:border-slate-700 relative cursor-default select-none"
                               style={styleSelect}
                               onMouseDown={(e: any) => {
                                 if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
@@ -232,6 +249,11 @@ const DataEkstrakurikulerPage = (props: any) => {
                     </tr>
                   );
                 })}
+                {bottomSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + MAX_EXTRA_FIELDS * 2} style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -41,10 +41,12 @@ body {
 .absensi-table-container,
 .catatan-table-container,
 .ekstra-table-container,
-.cocurricular-table-container {
+.cocurricular-table-container,
+.nilai-table-container,
+.keseluruhan-table-container,
+.jurnal-table-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  scroll-behavior: smooth;
   touch-action: pan-x pan-y;
 }
 
@@ -150,6 +152,18 @@ body {
   color: #c2410c !important;
 }
 
+html.dark .highlight-highest {
+  background-color: rgba(30, 58, 138, 0.55) !important;
+  border-color: #3b82f6 !important;
+  color: #bfdbfe !important;
+}
+
+html.dark .highlight-lowest {
+  background-color: rgba(124, 45, 18, 0.55) !important;
+  border-color: #f97316 !important;
+  color: #fed7aa !important;
+}
+
 /* Custom robust 1pt thick border utilities */
 .border-print-heavy {
   border: 1.5pt solid black !important;
@@ -179,49 +193,120 @@ html.dark .bg-white:not(#print-area, #print-area *, .report-page, .report-page *
   color: #f8fafc;
 }
 
-html.dark .bg-slate-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .bg-slate-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-zinc-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-\[\#fafafa\]:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-gray-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   background-color: #0f172a !important;
 }
 
-html.dark .bg-slate-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .hover\:bg-\[\#fafafa\]:hover:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .hover\:bg-slate-50:hover:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .hover\:bg-zinc-50:hover:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: #334155 !important;
+}
+
+html.dark .bg-slate-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-zinc-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-gray-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   background-color: #1e293b !important;
 }
 
-html.dark .bg-zinc-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
-  background-color: #0f172a !important;
-}
-
-html.dark .bg-zinc-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
-  background-color: #1e293b !important;
-}
-
+html.dark .border-slate-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-zinc-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
 html.dark .border-slate-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
 html.dark .border-zinc-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-zinc-200\/60:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
 html.dark .border-slate-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
-html.dark .border-zinc-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .border-zinc-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-zinc-300\/60:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-gray-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .border-gray-300:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   border-color: #334155 !important;
 }
 
 html.dark .text-slate-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
 html.dark .text-slate-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
 html.dark .text-zinc-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
-html.dark .text-zinc-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .text-zinc-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-gray-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-gray-900:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   color: #f8fafc !important;
 }
 
 html.dark .text-slate-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
-html.dark .text-zinc-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .text-zinc-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-gray-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   color: #e2e8f0 !important;
 }
 
 html.dark .text-slate-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
-html.dark .text-zinc-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .text-zinc-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-gray-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   color: #cbd5e1 !important;
 }
 
 html.dark .text-slate-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
-html.dark .text-zinc-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+html.dark .text-zinc-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-gray-500:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
   color: #94a3b8 !important;
+}
+
+/* Semantic surface and text adaptation in dark mode (outside print area) */
+html.dark .bg-indigo-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(49, 46, 129, 0.35) !important;
+}
+html.dark .bg-indigo-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(55, 48, 163, 0.45) !important;
+}
+html.dark .border-indigo-200:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  border-color: rgba(99, 102, 241, 0.45) !important;
+}
+html.dark .text-indigo-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-indigo-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #c7d2fe !important;
+}
+
+html.dark .bg-amber-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(120, 53, 15, 0.35) !important;
+}
+html.dark .bg-amber-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-yellow-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(146, 64, 14, 0.45) !important;
+}
+html.dark .text-amber-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-yellow-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #fde68a !important;
+}
+
+html.dark .bg-green-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-emerald-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(6, 78, 59, 0.35) !important;
+}
+html.dark .bg-green-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-emerald-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(6, 95, 70, 0.45) !important;
+}
+html.dark .text-green-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-green-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-emerald-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-emerald-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #a7f3d0 !important;
+}
+
+html.dark .bg-red-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-rose-50:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(127, 29, 29, 0.35) !important;
+}
+html.dark .bg-red-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .bg-rose-100:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  background-color: rgba(153, 27, 27, 0.45) !important;
+}
+html.dark .text-red-600:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-red-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-red-800:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *),
+html.dark .text-rose-700:not(#print-area, #print-area *, .report-page, .report-page *, .leger-page, .leger-page *, .piagam-page, .piagam-page *) {
+  color: #fecaca !important;
 }
 
 html.dark input:not(#print-area input, .report-page input, .leger-page input, .piagam-page input),
@@ -298,6 +383,8 @@ html.dark textarea::placeholder {
       width: 100%;
       margin: 0 !important;
       padding: 0 !important;
+      overflow: visible !important;
+      display: block !important;
   }
   
   /* Tailwind's space-y-* adds margin-top. Reset this for print. */

@@ -3,14 +3,25 @@ import { persist } from 'zustand/middleware';
 import { produce } from 'immer';
 import { initialSettings, defaultSubjects } from '../constants';
 import { createCustomPersistStorage } from './customPersistStorage';
+import { computeQualitativeGradingMap, isValidQualitativeGradingMap } from '../utils/nilaiHelpers';
+
+const ensureQualitativeMapSynced = (settingsObj: any, prevPredikats?: any) => {
+  if (!settingsObj || typeof settingsObj !== 'object') return settingsObj;
+  const predikatsChanged = prevPredikats !== undefined && settingsObj.predikats !== prevPredikats;
+  if (predikatsChanged || !isValidQualitativeGradingMap(settingsObj.qualitativeGradingMap)) {
+    return {
+      ...settingsObj,
+      qualitativeGradingMap: computeQualitativeGradingMap(settingsObj.predikats),
+    };
+  }
+  return settingsObj;
+};
 
 interface SettingsState {
   settings: any;
   subjects: any[];
   extracurriculars: any[];
   isLoaded: boolean;
-  pendingSemester: any;
-  showSemesterModal: boolean;
 
   // Actions
   initSettingsData: (settings: any, subjects: any[], extracurriculars: any[]) => void;
@@ -18,8 +29,6 @@ interface SettingsState {
   setSubjects: (subjects: any[] | ((prev: any[]) => any[])) => void;
   setExtracurriculars: (extracurriculars: any[] | ((prev: any[]) => any[])) => void;
   updateSettingValue: (key: string, value: any) => void;
-  setPendingSemester: (val: any) => void;
-  setShowSemesterModal: (val: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -29,16 +38,20 @@ export const useSettingsStore = create<SettingsState>()(
       subjects: defaultSubjects,
       extracurriculars: [],
       isLoaded: false,
-      pendingSemester: null,
-      showSemesterModal: false,
 
       initSettingsData: (settings, subjects, extracurriculars) => {
-        set({ settings, subjects, extracurriculars, isLoaded: true });
+        set({
+          settings: ensureQualitativeMapSynced(settings),
+          subjects,
+          extracurriculars,
+          isLoaded: true,
+        });
       },
 
       setSettings: (settingsAction) => {
         set((state) => {
-          const newSettings = typeof settingsAction === 'function' ? settingsAction(state.settings) : settingsAction;
+          const rawSettings = typeof settingsAction === 'function' ? settingsAction(state.settings) : settingsAction;
+          const newSettings = ensureQualitativeMapSynced(rawSettings, state.settings?.predikats);
           return { settings: newSettings };
         });
       },
@@ -68,28 +81,17 @@ export const useSettingsStore = create<SettingsState>()(
             }
             pointer[parts[parts.length - 1]] = value;
 
-            // If updating predikats, also sync qualitativeGradingMap
-            if (parts[0] === 'predikats') {
-              const valA = parseInt(state.settings.predikats?.a || "90", 10);
-              const valB = parseInt(state.settings.predikats?.b || "80", 10);
-              const valC = parseInt(state.settings.predikats?.c || "70", 10);
-              const valD = parseInt(state.settings.predikats?.d || "0", 10);
-
-              state.settings.qualitativeGradingMap = {
-                A: { min: valA, max: 100 },
-                B: { min: valB, max: valA - 1 },
-                C: { min: valC, max: valB - 1 },
-                D: { min: valD, max: valC - 1 },
-              };
+            if (parts[0] === 'predikats' || !isValidQualitativeGradingMap(state.settings.qualitativeGradingMap)) {
+              state.settings.qualitativeGradingMap = computeQualitativeGradingMap(state.settings.predikats);
             }
           } else {
             state.settings[key] = value;
+            if (key === 'predikats' || !isValidQualitativeGradingMap(state.settings.qualitativeGradingMap)) {
+              state.settings.qualitativeGradingMap = computeQualitativeGradingMap(state.settings.predikats);
+            }
           }
         }));
       },
-
-      setPendingSemester: (val) => set({ pendingSemester: val }),
-      setShowSemesterModal: (val) => set({ showSemesterModal: val }),
     }),
     {
       name: 'appSettingsCompound',

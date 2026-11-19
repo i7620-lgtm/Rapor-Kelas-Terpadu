@@ -1,4 +1,12 @@
 import { COCURRICULAR_DIMENSIONS, initialSettings, defaultSubjects } from "../constants";
+import { computeQualitativeGradingMap } from "./nilaiHelpers";
+import {
+  normalizeAttendanceSingleSemester,
+  normalizeCocurricularSingleSemester,
+  normalizeExtrasSingleSemester,
+  normalizeNotesSingleSemester,
+  normalizeSettingsSingleSemester,
+} from "./dataIntegrity";
 
 export interface ValidationReport {
   repairedCount: number;
@@ -9,7 +17,7 @@ export interface ValidationReport {
 /**
  * Safe conversion helpers to avoid corrupting our state with undefined, NaN, or raw nulls.
  */
-export const safeString = (val: any, fallback = ""): string => {
+const safeString = (val: any, fallback = ""): string => {
   if (val === null || val === undefined) return fallback;
   if (typeof val === "object") {
     try {
@@ -22,13 +30,13 @@ export const safeString = (val: any, fallback = ""): string => {
   return str === "null" || str === "undefined" ? fallback : str;
 };
 
-export const safeNumber = (val: any, fallback: number | null = null): number | null => {
+const safeNumber = (val: any, fallback: number | null = null): number | null => {
   if (val === null || val === undefined || val === "") return null;
   const num = Number(val);
   return isNaN(num) ? fallback : num;
 };
 
-export const safeInt = (val: any, fallback: number | null = null): number | null => {
+const safeInt = (val: any, fallback: number | null = null): number | null => {
   const num = safeNumber(val, fallback);
   return num === null ? null : Math.floor(num);
 };
@@ -61,11 +69,38 @@ export const validateAndSanitizeImportedData = (
 
   // --- 1. SANITIZE SETTINGS ---
   const rawSettings = rawPayload.settings || {};
-  const settings: any = { ...initialSettings };
+  let settings: any = { ...initialSettings };
 
-  // Core scalar settings - dynamically include all initialSettings keys to avoid future out-of-sync omissions, plus explicit/legacy aliases
+  const booleanKeys = [
+    "show_aksara_bali",
+    "enableExitWarning",
+    "enableAutoRegression",
+    "show_photo",
+    "show_nip_kepsek",
+    "show_nis_cover",
+    "show_nisn_cover",
+    "show_alamat_cover",
+    "show_rt_rw",
+    "use_clean_piagam_text",
+  ];
+  const booleanKeySet = new Set(booleanKeys);
+  const arrayOrObjectKeys = new Set([
+    "predikats",
+    "gradeCalculation",
+    "qualitativeGradingMap",
+    "slmVisibility",
+    "kop_layout",
+    "piagam_layout",
+    "kop_layout_Genap",
+    "piagam_layout_Genap",
+    "appLock",
+  ]);
+
+  // Core scalar settings - dynamically include all non-boolean/non-object initialSettings keys plus legacy aliases
   const stringKeys = [
-    ...Object.keys(initialSettings),
+    ...Object.keys(initialSettings).filter(
+      (key) => !booleanKeySet.has(key) && !arrayOrObjectKeys.has(key)
+    ),
     "kabupaten_kota",
     "kodepos",
     "tempat_ttd_rapor",
@@ -77,6 +112,7 @@ export const validateAndSanitizeImportedData = (
     "logoSistem",
     "ttdKepsek",
     "ttdKepsek_Genap",
+    "cocurricular_theme_Genap",
     "piagam_nomor_prefix",
     "piagam_nama_kegiatan",
     "piagam_tanggal_cetak",
@@ -88,14 +124,43 @@ export const validateAndSanitizeImportedData = (
     }
   });
 
+  // Preserve dynamic contextual keys (*_ctx_* and tanggal_rapor_*) safely before single-semester migration
+  Object.keys(rawSettings).forEach((key) => {
+    if (
+      !["__proto__", "constructor", "prototype"].includes(key) &&
+      (key.includes("_ctx_") || key.startsWith("tanggal_rapor_"))
+    ) {
+      settings[key] = safeString(rawSettings[key]);
+    }
+  });
+
+  // Preserve layout & appLock arrays/objects properly
+  (["kop_layout", "piagam_layout", "kop_layout_Genap", "piagam_layout_Genap"] as const).forEach((lKey) => {
+    if (rawSettings[lKey] !== undefined) {
+      if (Array.isArray(rawSettings[lKey])) {
+        settings[lKey] = rawSettings[lKey];
+      } else if (typeof rawSettings[lKey] === "string") {
+        try {
+          const parsed = JSON.parse(rawSettings[lKey]);
+          settings[lKey] = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          settings[lKey] = [];
+        }
+      }
+    }
+  });
+  if (rawSettings.appLock && typeof rawSettings.appLock === "object") {
+    settings.appLock = rawSettings.appLock;
+  }
+
   // Handle compatibility alias assignments
-  if (rawSettings.kodepos !== undefined && (rawSettings.kode_pos === undefined || rawSettings.kode_pos === '')) {
+  if (rawSettings.kodepos !== undefined && (rawSettings.kode_pos === undefined || rawSettings.kode_pos === "")) {
     settings.kode_pos = safeString(rawSettings.kodepos);
   }
-  if (rawSettings.kabupaten_kota !== undefined && (rawSettings.kota_kabupaten === undefined || rawSettings.kota_kabupaten === '')) {
+  if (rawSettings.kabupaten_kota !== undefined && (rawSettings.kota_kabupaten === undefined || rawSettings.kota_kabupaten === "")) {
     settings.kota_kabupaten = safeString(rawSettings.kabupaten_kota);
   }
-  if (rawSettings.tanggal_ttd_rapor !== undefined && (rawSettings.tanggal_rapor === undefined || rawSettings.tanggal_rapor === '')) {
+  if (rawSettings.tanggal_ttd_rapor !== undefined && (rawSettings.tanggal_rapor === undefined || rawSettings.tanggal_rapor === "")) {
     settings.tanggal_rapor = safeString(rawSettings.tanggal_ttd_rapor);
   }
 
@@ -135,19 +200,15 @@ export const validateAndSanitizeImportedData = (
     logRepair(`Rentang nilai predikat B disesuaikan agar lebih besar dari predikat C (${predVals.c})`);
   }
 
-  // Recalculate qualitative mapping
-  settings.qualitativeGradingMap = {
-    SB: Math.round((predVals.a + 100) / 2),
-    BSH: Math.round((predVals.b + predVals.a - 1) / 2),
-    MB: Math.round((predVals.c + predVals.b - 1) / 2),
-    BB: Math.round((0 + predVals.c - 1) / 2),
-  };
+  // Recalculate qualitative mapping (Prioritas 1 safeguard)
+  settings.qualitativeGradingMap = computeQualitativeGradingMap(settings.predikats);
 
-  // Grade Calculations sanitization
+  // Grade Calculations sanitization (accept bobot -> pembobotan & persentase)
   settings.gradeCalculation = {};
   if (rawSettings.gradeCalculation && typeof rawSettings.gradeCalculation === "object") {
     Object.entries(rawSettings.gradeCalculation).forEach(([subId, calcObj]: [string, any]) => {
-      const method = safeString(calcObj?.method, "rata-rata");
+      const rawMethod = safeString(calcObj?.method, "rata-rata").toLowerCase();
+      const normalizedMethod = rawMethod === "bobot" ? "pembobotan" : rawMethod;
       const cleanWeights: Record<string, number> = {};
       if (calcObj?.weights && typeof calcObj.weights === "object") {
         Object.entries(calcObj.weights).forEach(([wKey, wVal]) => {
@@ -156,7 +217,9 @@ export const validateAndSanitizeImportedData = (
         });
       }
       settings.gradeCalculation[subId] = {
-        method: ["rata-rata", "bobot"].includes(method) ? method : "rata-rata",
+        method: ["rata-rata", "pembobotan", "persentase"].includes(normalizedMethod)
+          ? normalizedMethod
+          : "rata-rata",
         weights: cleanWeights,
       };
     });
@@ -175,23 +238,17 @@ export const validateAndSanitizeImportedData = (
   }
 
   // Boolean settings sanitization
-  const booleanKeys = [
-    "show_photo",
-    "show_nip_kepsek",
-    "show_nis_cover",
-    "show_nisn_cover",
-    "show_alamat_cover",
-    "show_rt_rw",
-    "use_clean_piagam_text",
-  ];
   booleanKeys.forEach((key) => {
-    if (rawSettings[key] !== undefined) {
-      settings[key] = rawSettings[key] === true || String(rawSettings[key]).toLowerCase() === "true";
+    if (rawSettings[key] !== undefined && rawSettings[key] !== null && rawSettings[key] !== "") {
+      settings[key] = rawSettings[key] === true || String(rawSettings[key]).trim().toLowerCase() === "true";
     }
   });
 
+  // Unify any legacy *_Genap settings & contextual keys into canonical 1-semester keys
+  settings = normalizeSettingsSingleSemester(settings).settings;
+  const isGenapActive = settings.semester === "Genap";
 
-  // --- 2. SANITIZE STUDENTS ---
+  // --- 2. SANITIZE & DEDUPLICATE STUDENTS ---
   const rawStudents = Array.isArray(rawPayload.students) ? rawPayload.students : [];
   const students: any[] = [];
   const validStudentIds = new Set<string>();
@@ -206,7 +263,11 @@ export const validateAndSanitizeImportedData = (
       return;
     }
 
-    // Standardize all keys to avoid errors with undefined fields in UI
+    if (validStudentIds.has(cleanId)) {
+      logSkip(`Baris siswa duplikat dengan ID "${cleanId}" diabaikan.`);
+      return;
+    }
+
     const sanitizedStudent: any = {
       id: cleanId,
       namaLengkap: cleanNama,
@@ -230,17 +291,20 @@ export const validateAndSanitizeImportedData = (
       pekerjaanWali: safeString(student?.pekerjaanWali || student?.pekerjaan_wali),
       alamatWali: safeString(student?.alamatWali || student?.alamat_wali),
       teleponWali: safeString(student?.teleponWali || student?.telepon_wali),
-      foto: safeString(student?.foto),
+      ...(safeString(student?.foto) ? { foto: safeString(student?.foto) } : {}),
     };
 
     students.push(sanitizedStudent);
     validStudentIds.add(cleanId);
   });
 
-
-  // --- 3. SANITIZE GRADES ---
+  // --- 3. SANITIZE & DEDUPLICATE GRADES (UNIFIED 1-SEMESTER) ---
   const rawGrades = Array.isArray(rawPayload.grades) ? rawPayload.grades : [];
   const grades: any[] = [];
+  const seenGradeStudentIds = new Set<string>();
+
+  const hasDescText = (d: any) =>
+    Boolean(d && ((d.highest && String(d.highest).trim() !== "") || (d.lowest && String(d.lowest).trim() !== "")));
 
   rawGrades.forEach((g: any) => {
     const studentId = safeString(g?.studentId);
@@ -248,6 +312,11 @@ export const validateAndSanitizeImportedData = (
       logSkip(`Data nilai untuk siswa ID "${studentId}" diabaikan karena siswa tidak terdaftar.`);
       return;
     }
+    if (seenGradeStudentIds.has(studentId)) {
+      logSkip(`Data nilai duplikat untuk siswa ID "${studentId}" diabaikan.`);
+      return;
+    }
+    seenGradeStudentIds.add(studentId);
 
     const detailedGrades: Record<string, any> = {};
     if (g.detailedGrades && typeof g.detailedGrades === "object") {
@@ -281,22 +350,38 @@ export const validateAndSanitizeImportedData = (
           return num === null ? null : Math.min(100, Math.max(0, num));
         };
 
-        const descriptions = subGrades.descriptions || {};
-        const descriptionsGenap = subGrades.descriptions_Genap || {};
+        const rawSts =
+          subGrades.sts !== undefined
+            ? subGrades.sts
+            : isGenapActive
+              ? (subGrades.sts2 ?? subGrades.sts1)
+              : (subGrades.sts1 ?? subGrades.sts2);
+
+        const rawSas =
+          subGrades.sas !== undefined
+            ? subGrades.sas
+            : isGenapActive
+              ? (subGrades.sas2 ?? subGrades.sas1)
+              : (subGrades.sas1 ?? subGrades.sas2);
+
+        const descPrimary = subGrades.descriptions || {};
+        const descGenap = subGrades.descriptions_Genap || {};
+        const chosenDesc =
+          isGenapActive && hasDescText(descGenap)
+            ? descGenap
+            : hasDescText(descPrimary)
+              ? descPrimary
+              : hasDescText(descGenap)
+                ? descGenap
+                : {};
 
         detailedGrades[subjectId] = {
           slm: cleanSlm,
-          sts1: safeGradeVal(subGrades.sts1),
-          sts2: safeGradeVal(subGrades.sts2),
-          sas1: safeGradeVal(subGrades.sas1),
-          sas2: safeGradeVal(subGrades.sas2),
+          sts: safeGradeVal(rawSts),
+          sas: safeGradeVal(rawSas),
           descriptions: {
-            highest: safeString(descriptions.highest),
-            lowest: safeString(descriptions.lowest),
-          },
-          descriptions_Genap: {
-            highest: safeString(descriptionsGenap.highest),
-            lowest: safeString(descriptionsGenap.lowest),
+            highest: safeString(chosenDesc.highest),
+            lowest: safeString(chosenDesc.lowest),
           },
         };
       });
@@ -317,9 +402,10 @@ export const validateAndSanitizeImportedData = (
     });
   });
 
-  // Ensure all students have a entry in grades array
+  // Ensure all students have an entry in grades array
   students.forEach((s) => {
-    if (!grades.some((g) => g.studentId === s.id)) {
+    if (!seenGradeStudentIds.has(s.id)) {
+      seenGradeStudentIds.add(s.id);
       grades.push({
         studentId: s.id,
         detailedGrades: {},
@@ -328,10 +414,9 @@ export const validateAndSanitizeImportedData = (
     }
   });
 
-
-  // --- 4. SANITIZE ATTENDANCE ---
+  // --- 4. SANITIZE & DEDUPLICATE ATTENDANCE ---
   const rawAttendance = Array.isArray(rawPayload.attendance) ? rawPayload.attendance : [];
-  const attendance: any[] = [];
+  const validRawAttendance: any[] = [];
 
   rawAttendance.forEach((item: any) => {
     const studentId = safeString(item?.studentId);
@@ -340,46 +425,43 @@ export const validateAndSanitizeImportedData = (
       return;
     }
 
-    const semester = safeString(item?.semester, settings.semester);
     const cleanSakit = safeInt(item?.sakit);
     const cleanIzin = safeInt(item?.izin);
     const cleanAlpa = safeInt(item?.alpa);
 
-    attendance.push({
+    validRawAttendance.push({
       studentId,
-      semester: ["Ganjil", "Genap"].includes(semester) ? semester : settings.semester,
+      ...(item?.semester ? { semester: safeString(item.semester) } : {}),
       sakit: cleanSakit === null ? null : Math.max(0, cleanSakit),
       izin: cleanIzin === null ? null : Math.max(0, cleanIzin),
       alpa: cleanAlpa === null ? null : Math.max(0, cleanAlpa),
     });
   });
+  const attendance = normalizeAttendanceSingleSemester(validRawAttendance, settings.semester).attendance;
 
-
-  // --- 5. SANITIZE NOTES (CATATAN WALI KELAS) ---
+  // --- 5. SANITIZE NOTES (CATATAN WALI KELAS, UNIFIED KEY) ---
   const rawNotes = rawPayload.notes || {};
-  const notes: Record<string, string> = {};
+  const validRawNotes: Record<string, string> = {};
 
   Object.entries(rawNotes).forEach(([key, val]) => {
-    // Keys are studentId or studentId_Genap
-    const rawStudentId = key.endsWith("_Genap") ? key.replace("_Genap", "") : key;
+    const rawStudentId = key.endsWith("_Genap") ? key.slice(0, -6) : key;
     if (validStudentIds.has(rawStudentId)) {
-      notes[key] = safeString(val);
+      validRawNotes[key] = safeString(val);
     } else {
       logSkip(`Catatan untuk siswa ID "${rawStudentId}" diabaikan.`);
     }
   });
+  const notes = normalizeNotesSingleSemester(validRawNotes, settings.semester).notes;
 
-
-  // --- 6. SANITIZE COCURRICULAR DATA ---
+  // --- 6. SANITIZE COCURRICULAR DATA (UNIFIED) ---
   const rawCocurricular = rawPayload.cocurricularData || {};
-  const cocurricularData: Record<string, any> = {};
+  const validRawCo: Record<string, any> = {};
 
   Object.entries(rawCocurricular).forEach(([studentId, dataObj]: [string, any]) => {
     if (!validStudentIds.has(studentId)) {
       logSkip(`Data kokurikuler untuk siswa ID "${studentId}" diabaikan.`);
       return;
     }
-
     if (!dataObj || typeof dataObj !== "object") return;
 
     const cleanRatings: Record<string, string> = {};
@@ -401,19 +483,19 @@ export const validateAndSanitizeImportedData = (
     sanitizeRatingsMap(dataObj.dimensionRatings, cleanRatings);
     sanitizeRatingsMap(dataObj.dimensionRatings_Genap, cleanRatingsGenap);
 
-    cocurricularData[studentId] = {};
+    validRawCo[studentId] = {};
     if (Object.keys(cleanRatings).length > 0) {
-      cocurricularData[studentId].dimensionRatings = cleanRatings;
+      validRawCo[studentId].dimensionRatings = cleanRatings;
     }
     if (Object.keys(cleanRatingsGenap).length > 0) {
-      cocurricularData[studentId].dimensionRatings_Genap = cleanRatingsGenap;
+      validRawCo[studentId].dimensionRatings_Genap = cleanRatingsGenap;
     }
   });
+  const cocurricularData = normalizeCocurricularSingleSemester(validRawCo, settings.semester).cocurricularData;
 
-
-  // --- 7. SANITIZE STUDENT EXTRACURRICULARS ---
+  // --- 7. SANITIZE & DEDUPLICATE STUDENT EXTRACURRICULARS ---
   const rawStudentEx = Array.isArray(rawPayload.studentExtracurriculars) ? rawPayload.studentExtracurriculars : [];
-  const studentExtracurriculars: any[] = [];
+  const validRawStudentEx: any[] = [];
 
   rawStudentEx.forEach((item: any) => {
     const studentId = safeString(item?.studentId);
@@ -422,7 +504,6 @@ export const validateAndSanitizeImportedData = (
       return;
     }
 
-    const semester = safeString(item?.semester, settings.semester);
     const assignedActivities = Array.isArray(item?.assignedActivities)
       ? item.assignedActivities.map((act: any) => (act ? safeString(act) : null))
       : [];
@@ -434,20 +515,19 @@ export const validateAndSanitizeImportedData = (
       });
     }
 
-    studentExtracurriculars.push({
+    validRawStudentEx.push({
       studentId,
-      semester: ["Ganjil", "Genap"].includes(semester) ? semester : settings.semester,
+      ...(item?.semester ? { semester: safeString(item.semester) } : {}),
       assignedActivities,
       descriptions,
     });
   });
-
+  const studentExtracurriculars = normalizeExtrasSingleSemester(validRawStudentEx, settings.semester).studentExtracurriculars;
 
   // --- 8. SANITIZE SUBJECTS (MATA PELAJARAN) ---
   const rawSubjects = Array.isArray(rawPayload.subjects) ? rawPayload.subjects : [];
   const subjects: any[] = [];
 
-  // Initialize with initial defaults and overwrite if valid custom properties exist
   const existingMap = new Map<string, any>();
   subjectsInSystem.forEach((s) => existingMap.set(s.id, { ...s }));
 
@@ -465,18 +545,16 @@ export const validateAndSanitizeImportedData = (
     };
 
     subjects.push(cleanSubj);
-    existingMap.delete(sId); // to track missing subjects
+    existingMap.delete(sId);
   });
 
-  // Append default missing subjects to avoid empty state or UI breaks
   existingMap.forEach((missingSubj) => {
     subjects.push({
       ...missingSubj,
-      active: false, // Default to inactive if it was deleted or missing from sheet
+      active: false,
     });
     logRepair(`Mengembalikan mata pelajaran default yang absen dari berkas impor: "${missingSubj.fullName}"`);
   });
-
 
   // --- 9. SANITIZE EXTRACURRICULARS (MASTER LIST) ---
   const rawExList = Array.isArray(rawPayload.extracurriculars) ? rawPayload.extracurriculars : [];
@@ -493,8 +571,7 @@ export const validateAndSanitizeImportedData = (
     });
   });
 
-
-  // --- 10. SANITIZE LEARNING OBJECTIVES (TUJUAN PEMBELAJARAN) ---
+  // --- 10. SANITIZE LEARNING OBJECTIVES (TUJUAN PEMBELAJARAN, UNIFIED) ---
   const rawLO = rawPayload.learningObjectives || {};
   const learningObjectives: Record<string, any> = {};
 
@@ -510,14 +587,13 @@ export const validateAndSanitizeImportedData = (
           const slmId = safeString(lo?.slmId);
           const name = safeString(lo?.name || `${subjName} SLM`);
           const text = safeString(lo?.text);
-          if (!text) return null; // skip completely empty descriptors
+          if (!text) return null;
 
           return {
             slmId: slmId !== "" ? slmId : `slm_${Date.now()}_${lIdx}`,
             name,
             text,
             isEdited: lo?.isEdited === true || lo?.isEdited === "true",
-            semester: ["Ganjil", "Genap"].includes(lo?.semester) ? lo.semester : settings.semester,
           };
         })
         .filter(Boolean);
@@ -532,8 +608,7 @@ export const validateAndSanitizeImportedData = (
     }
   });
 
-
-  // --- 11. SANITIZE FORMATIVE JOURNAL ---
+  // --- 11. SANITIZE FORMATIVE JOURNAL (UNIFIED) ---
   const rawFJ = rawPayload.formativeJournal || {};
   const formativeJournal: Record<string, any[]> = {};
 
@@ -566,7 +641,6 @@ export const validateAndSanitizeImportedData = (
           tpId,
           topic,
           note,
-          semester: ["Ganjil", "Genap"].includes(log?.semester) ? log.semester : settings.semester,
         };
       })
       .filter(Boolean);

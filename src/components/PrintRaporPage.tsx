@@ -15,6 +15,8 @@ interface PrintRaporPageProps {
   setActivePage?: (page: string) => void;
 }
 
+const NOOP = () => {};
+
 const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePage }) => {
   const {
     settings,
@@ -49,7 +51,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     enabled: isAllStudents,
   });
 
-  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || (() => {}) });
+  const { completenessChecks, academicAlerts } = useDashboardLogic({ setActivePage: setActivePage || NOOP });
   
   const [showIncompleteModal, setShowIncompleteModal] = useState(false);
   const [pendingPrintAction, setPendingPrintAction] = useState<(() => void) | null>(null);
@@ -91,7 +93,11 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
 
   if (students.length === 0) {
     return (
-      <div className="p-6">
+      <div className="space-y-4">
+        <div className="text-left">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Cetak Rapor</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.</p>
+        </div>
         <EmptyState
           title="Belum ada data siswa"
           description="Cetak rapor tidak dapat dilakukan karena belum ada siswa di kelas ini. Silakan tambahkan siswa di halaman 'Data Siswa' terlebih dahulu."
@@ -104,7 +110,11 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
 
   if (grades.length === 0) {
     return (
-      <div className="p-6">
+      <div className="space-y-4">
+        <div className="text-left">
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">Cetak Rapor</h2>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Pilih murid, halaman, dan ukuran kertas, lalu klik tombol untuk mencetak.</p>
+        </div>
         <EmptyState
           title="Menunggu Data Nilai"
           description="Semua data nilai siswa saat ini kosong. Rapor tidak akan memiliki nilai numerik yang terisi. Lanjutkan ke halaman Data Nilai terlebih dahulu untuk melengkapinya."
@@ -119,23 +129,23 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
     <>
       <div className="flex flex-col">
         {combinedIncompleteItems.length > 0 && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 sm:p-4 flex items-center justify-between gap-3 text-amber-800 print-hidden shadow-sm">
-            <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="mb-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 text-amber-800 dark:text-amber-200 print-hidden shadow-sm">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
               <div className="text-xs sm:text-sm">
                 <span className="font-bold">Perhatian: </span>
                 {incompleteItems.length > 0 && (
-                  <span>{incompleteItems.length} data belum lengkap. </span>
+                  <span className="tabular-nums">{incompleteItems.length} data belum lengkap. </span>
                 )}
                 {belowKkmItems.length > 0 && (
-                  <span>{belowKkmItems.length} siswa memiliki nilai di bawah KKM. </span>
+                  <span className="tabular-nums">{belowKkmItems.length} siswa memiliki nilai di bawah KKM. </span>
                 )}
-                <span className="text-amber-700">Periksa rincian sebelum mencetak rapor.</span>
+                <span className="text-amber-700 dark:text-amber-300">Periksa rincian sebelum mencetak rapor.</span>
               </div>
             </div>
             <button
               onClick={() => setShowIncompleteModal(true)}
-              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap shadow-sm transition-colors"
+              className="px-3 py-1.5 min-h-[44px] lg:min-h-0 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 shadow-sm transition-colors"
             >
               Lihat Rincian
             </button>
@@ -158,7 +168,7 @@ const PrintRaporPage: React.FC<PrintRaporPageProps> = ({ showToast, setActivePag
         incompleteChecks={combinedIncompleteItems}
       />
 
-      <div id="print-area" ref={printAreaRef} className="flex flex-col items-center space-y-8 animate-fade-in">
+      <div id="print-area" ref={printAreaRef} className="w-full overflow-x-auto pb-4 flex flex-col items-start md:items-center space-y-8 animate-fade-in">
         {!isBatchComplete && isAllStudents && (
           <div className="w-full max-w-xl mx-auto py-2.5 px-4 bg-indigo-50/90 dark:bg-slate-900/90 border border-indigo-200 dark:border-indigo-800 rounded-xl text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-medium shadow-sm flex items-center justify-center gap-2.5 print-hidden">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-ping shrink-0" />

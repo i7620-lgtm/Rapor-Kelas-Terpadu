@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { studentFieldDefinitions } from '../../constants';
 import { processImageWithWorker } from '../../workers/workerManager';
 import { getClipboardText } from '../../utils/clipboard';
 import { useGridSelection } from '../../hooks/useGridSelection';
+import { useTableVirtualizer } from '../../hooks/useTableVirtualizer';
 import { useStudentsStore } from '../../stores/useStudentsStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useNilaiStore } from '../../stores/useNilaiStore';
@@ -12,6 +13,8 @@ import { useNotesStore } from '../../stores/useNotesStore';
 import { useExtracurricularStore } from '../../stores/useExtracurricularStore';
 import { useCocurricularStore } from '../../stores/useCocurricularStore';
 import { useFormativeStore } from '../../stores/useFormativeStore';
+import { registerPendingFlush } from '../../utils/dataIntegrity';
+import { dataURLToBlob, saveStudentPhotoBlob } from '../../utils/imageDB';
 
 const emptyStudent = studentFieldDefinitions.reduce((acc, field) => {
     acc[field.key] = '';
@@ -27,10 +30,11 @@ export const useDataSiswaPageLogic = (props) => {
         showToast
     } = props;
 
-    const { storeStudents, setStoreStudents } = useStudentsStore(
+    const { storeStudents, setStoreStudents, studentPhotoUrls } = useStudentsStore(
         useShallow((state) => ({
             storeStudents: state.students,
             setStoreStudents: state.setStudents,
+            studentPhotoUrls: state.studentPhotoUrls,
         }))
     );
     const storeSettings = useSettingsStore(useShallow((state) => state.settings));
@@ -67,25 +71,78 @@ export const useDataSiswaPageLogic = (props) => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [localStudents, setLocalStudents] = useState(students || []);
+    const localStudentsRef = useRef(localStudents);
+    const syncTimerRef = useRef<any>(null);
+    const isDirtyRef = useRef(false);
     const isMountedRef = useRef(true);
+
+    const flushPendingStudents = useCallback(() => {
+        if (syncTimerRef.current) {
+            clearTimeout(syncTimerRef.current);
+            syncTimerRef.current = null;
+        }
+        if (isDirtyRef.current) {
+            isDirtyRef.current = false;
+            onBulkSaveStudents(localStudentsRef.current);
+        }
+    }, [onBulkSaveStudents]);
 
     useEffect(() => {
         isMountedRef.current = true;
+        const unregister = registerPendingFlush('dataSiswa', flushPendingStudents);
         return () => {
             isMountedRef.current = false;
+            unregister();
+            flushPendingStudents();
         };
-    }, []);
+    }, [flushPendingStudents]);
 
     useEffect(() => {
-        setLocalStudents(students || []);
+        if (!isDirtyRef.current) {
+            localStudentsRef.current = students || [];
+            setLocalStudents(students || []);
+        }
     }, [students]);
 
-    const nameField = studentFieldDefinitions.find(f => f.key === 'namaLengkap');
-    const otherFields = studentFieldDefinitions.filter(f => f.key !== 'namaLengkap');
+    const commitStudentsImmediate = useCallback((nextStudents: any[]) => {
+        if (syncTimerRef.current) {
+            clearTimeout(syncTimerRef.current);
+            syncTimerRef.current = null;
+        }
+        isDirtyRef.current = false;
+        localStudentsRef.current = nextStudents;
+        setLocalStudents(nextStudents);
+        onBulkSaveStudents(nextStudents);
+    }, [onBulkSaveStudents]);
+
+    const nameField = useMemo(() => studentFieldDefinitions.find(f => f.key === 'namaLengkap'), []);
+    const otherFields = useMemo(() => studentFieldDefinitions.filter(f => f.key !== 'namaLengkap'), []);
     
     const allEditableFields = useMemo(() => [nameField, ...otherFields], [nameField, otherFields]);
 
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const getStudentRowKey = useCallback(
+        (idx: number) => localStudents[idx]?.id ?? idx,
+        [localStudents]
+    );
+
     const {
+        startIndex,
+        endIndex,
+        topSpacerHeight,
+        bottomSpacerHeight,
+        measureRow,
+        scrollToIndex,
+    } = useTableVirtualizer({
+        count: localStudents.length,
+        scrollContainerRef,
+        estimateRowHeight: 88,
+        overscan: 8,
+        getItemKey: getStudentRowKey,
+    });
+
+    const {
+        selectionBounds,
         isSelecting,
         setIsSelecting,
         getSelectionBounds,
@@ -98,9 +155,10 @@ export const useDataSiswaPageLogic = (props) => {
         colsCount: allEditableFields.length,
         minColIndex: -1,
         containerClass: 'siswa-table-container',
+        onEnsureRowVisible: scrollToIndex,
         onDeleteSelection: (bounds) => {
             let updatedCount = 0;
-            const newStudents = [...localStudents];
+            const newStudents = localStudentsRef.current.map((s) => ({ ...s }));
             for (let r = bounds.minR; r <= bounds.maxR; r++) {
                 for (let c = bounds.minC; c <= bounds.maxC; c++) {
                     if (r >= 0 && c >= 0) {
@@ -116,8 +174,7 @@ export const useDataSiswaPageLogic = (props) => {
                 }
             }
             if (updatedCount > 0) {
-                setLocalStudents(newStudents);
-                onBulkSaveStudents(newStudents);
+                commitStudentsImmediate(newStudents);
                 if (showToast) showToast(`${updatedCount} data berhasil dihapus.`, "success");
             }
         }
@@ -192,7 +249,9 @@ export const useDataSiswaPageLogic = (props) => {
             window.addEventListener('beforeunload', handleBeforeUnload);
         }
         
-        let newStudents = [...localStudents];
+        const baseStudents = localStudentsRef.current || [];
+        let hasInlinePhotoStrip = false;
+        const strippedStudentIds = new Set<string>();
         let processedCount = 0;
         
         try {
@@ -203,11 +262,19 @@ export const useDataSiswaPageLogic = (props) => {
                 const match = (file as File).name.match(/\d+/);
                 if (match) {
                     const number = parseInt(match[0], 10);
-                    if (number > 0 && number <= newStudents.length) {
+                    if (number > 0 && number <= baseStudents.length) {
+                        const targetStudent = baseStudents[number - 1];
+                        if (!targetStudent?.id) continue;
                         try {
                             const base64Data = await processImageWithWorker(file as File, 354, 472, 0.9);
                             if (!isMountedRef.current) break;
-                            newStudents[number - 1] = { ...newStudents[number - 1], foto: base64Data };
+                            const blob = dataURLToBlob(base64Data);
+                            const blobUrl = await saveStudentPhotoBlob(String(targetStudent.id), blob);
+                            useStudentsStore.getState().setStudentPhotoUrl(String(targetStudent.id), blobUrl);
+                            if (targetStudent.foto) {
+                                hasInlinePhotoStrip = true;
+                                strippedStudentIds.add(String(targetStudent.id));
+                            }
                             processedCount++;
                         } catch (error) {
                             console.error(`Failed to process photo ${(file as File).name}`, error);
@@ -217,8 +284,15 @@ export const useDataSiswaPageLogic = (props) => {
             }
             
             if (isMountedRef.current) {
-                setLocalStudents(newStudents);
-                onBulkSaveStudents(newStudents);
+                if (hasInlinePhotoStrip) {
+                    const cleanedStudents = (localStudentsRef.current || []).map((st: any) => {
+                        if (!st?.id || !strippedStudentIds.has(String(st.id))) return st;
+                        const copy = { ...st };
+                        delete copy.foto;
+                        return copy;
+                    });
+                    commitStudentsImmediate(cleanedStudents);
+                }
                 
                 if (processedCount > 0) {
                     showToast(`Berhasil memproses ${processedCount} foto siswa.`, "success");
@@ -235,6 +309,7 @@ export const useDataSiswaPageLogic = (props) => {
     };
 
     const handleAddNew = () => {
+        flushPendingStudents();
         setIsModalOpen(true);
     };
     
@@ -248,40 +323,55 @@ export const useDataSiswaPageLogic = (props) => {
             });
         }
         
-        const updatedStudents = [...localStudents, ...newStudents];
-        setLocalStudents(updatedStudents);
-        onBulkSaveStudents(updatedStudents);
+        const updatedStudents = [...localStudentsRef.current, ...newStudents];
+        commitStudentsImmediate(updatedStudents);
         showToast(`${count} baris siswa baru berhasil ditambahkan.`, 'success');
     };
 
     const handleMoveStudent = (index, direction) => {
-        if ((direction === -1 && index === 0) || (direction === 1 && index === localStudents.length - 1)) return;
+        const base = localStudentsRef.current;
+        if ((direction === -1 && index === 0) || (direction === 1 && index === base.length - 1)) return;
         
-        const newStudents = [...localStudents];
+        const newStudents = [...base];
         const temp = newStudents[index];
         newStudents[index] = newStudents[index + direction];
         newStudents[index + direction] = temp;
         
-        setLocalStudents(newStudents);
-        onBulkSaveStudents(newStudents);
+        commitStudentsImmediate(newStudents);
     };
 
     const handleDelete = (studentId) => {
+        flushPendingStudents();
         const student = students.find(s => s.id === studentId);
         if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa ${student?.namaLengkap || 'ini'}? Tindakan ini tidak dapat diurungkan.`)) {
+            isDirtyRef.current = false;
             onDeleteStudent(studentId);
             if (showToast) showToast('Siswa berhasil dihapus.', 'success');
         }
     };
 
     const handleInputChange = (studentId, fieldKey, value) => {
-        setLocalStudents(prev => 
-            prev.map(s => s.id === studentId ? { ...s, [fieldKey]: value } : s)
+        const nextStudents = localStudentsRef.current.map((s) =>
+            s.id === studentId ? { ...s, [fieldKey]: value } : s
         );
+        localStudentsRef.current = nextStudents;
+        isDirtyRef.current = true;
+        setLocalStudents(nextStudents);
+
+        if (syncTimerRef.current) {
+            clearTimeout(syncTimerRef.current);
+        }
+        syncTimerRef.current = setTimeout(() => {
+            syncTimerRef.current = null;
+            if (isDirtyRef.current) {
+                isDirtyRef.current = false;
+                onBulkSaveStudents(localStudentsRef.current);
+            }
+        }, 500);
     };
 
     const handleInputBlur = () => {
-        onBulkSaveStudents(localStudents);
+        flushPendingStudents();
     };
 
     const handlePaste = async (e, startStudentId, startFieldKey) => {
@@ -297,12 +387,13 @@ export const useDataSiswaPageLogic = (props) => {
 
         if (rows.length === 0) return;
 
-        const startStudentIndex = localStudents.findIndex(s => s.id === startStudentId);
+        const baseStudents = localStudentsRef.current;
+        const startStudentIndex = baseStudents.findIndex(s => s.id === startStudentId);
         const startFieldIndex = allEditableFields.findIndex(f => f.key === startFieldKey);
 
         if (startStudentIndex === -1 || startFieldIndex === -1) return;
 
-        const newStudents = [...localStudents];
+        const newStudents = [...baseStudents];
         let updatedCount = 0;
 
         rows.forEach((row, rIndex) => {
@@ -326,13 +417,13 @@ export const useDataSiswaPageLogic = (props) => {
             });
         });
 
-        setLocalStudents(newStudents);
-        onBulkSaveStudents(newStudents);
+        commitStudentsImmediate(newStudents);
         showToast(`${updatedCount} data berhasil ditempel (paste).`, 'success');
     };
 
     return {
         students: localStudents,
+        studentPhotoUrls,
         namaKelas,
         isModalOpen,
         setIsModalOpen,
@@ -344,6 +435,7 @@ export const useDataSiswaPageLogic = (props) => {
         handleInputBlur,
         handlePaste,
         handleBulkPhotoUpload,
+        selectionBounds,
         isSelecting,
         setIsSelecting,
         getSelectionStyle,
@@ -353,6 +445,12 @@ export const useDataSiswaPageLogic = (props) => {
         nameField,
         otherFields,
         setLocalStudents,
-        onBulkSaveStudents
+        onBulkSaveStudents,
+        scrollContainerRef,
+        startIndex,
+        endIndex,
+        topSpacerHeight,
+        bottomSpacerHeight,
+        measureRow,
     };
 };

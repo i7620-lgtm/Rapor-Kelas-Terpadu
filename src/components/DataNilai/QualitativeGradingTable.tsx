@@ -1,14 +1,14 @@
 import React from "react";
 import { QUALITATIVE_DESCRIPTORS } from "../../constants";
+import { computeQualitativeGradingMap, isValidQualitativeGradingMap } from "../../utils/nilaiHelpers";
 
 export const QualitativeGradingTable = ({ settings }) => {
-  const { predikats, qualitativeGradingMap } = settings;
-  if (
-    !predikats ||
-    !qualitativeGradingMap ||
-    Object.keys(qualitativeGradingMap).length === 0
-  )
-    return null;
+  const { predikats } = settings;
+  if (!predikats) return null;
+
+  const qualitativeGradingMap = isValidQualitativeGradingMap(settings.qualitativeGradingMap)
+    ? settings.qualitativeGradingMap
+    : computeQualitativeGradingMap(predikats);
 
   const valA = parseInt(predikats.a, 10);
   const valB = parseInt(predikats.b, 10);
@@ -47,64 +47,68 @@ export const QualitativeGradingTable = ({ settings }) => {
     { className: "mt-4" },
     React.createElement(
       "h4",
-      { className: "text-md font-semibold text-slate-700 mb-2" },
+      { className: "text-md font-semibold text-slate-700 dark:text-slate-200 mb-2" },
       "Penilaian Kualitatif Otomatis (Hanya Baca)",
     ),
     React.createElement(
       "p",
-      { className: "text-xs text-slate-500 mb-3" },
+      { className: "text-xs text-slate-500 dark:text-slate-400 mb-3" },
       "Nilai representatif ini dihitung otomatis dari nilai KKM dan rentang di atas.",
     ),
     React.createElement(
-      "table",
-      { className: "w-full text-sm border-collapse" },
+      "div",
+      { className: "overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700" },
       React.createElement(
-        "thead",
-        null,
+        "table",
+        { className: "w-full text-sm border-collapse" },
         React.createElement(
-          "tr",
-          { className: "bg-slate-100" },
-          React.createElement(
-            "th",
-            { className: "border p-2 text-left whitespace-nowrap" },
-            "Deskriptor",
-          ),
-          React.createElement(
-            "th",
-            { className: "border p-2 text-center whitespace-nowrap" },
-            "Rentang Nilai",
-          ),
-          React.createElement(
-            "th",
-            { className: "border p-2 text-center whitespace-nowrap" },
-            "Nilai Representatif",
-          ),
-        ),
-      ),
-      React.createElement(
-        "tbody",
-        null,
-        data.map((item) =>
+          "thead",
+          null,
           React.createElement(
             "tr",
-            { key: item.code },
+            { className: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200" },
             React.createElement(
-              "td",
-              { className: "border p-2 whitespace-nowrap" },
-              `${item.code} (${item.descriptor})`,
+              "th",
+              { className: "border-b border-r border-slate-200 dark:border-slate-700 p-2 text-left whitespace-nowrap" },
+              "Deskriptor",
             ),
             React.createElement(
-              "td",
-              { className: "border p-2 text-center whitespace-nowrap" },
-              item.range,
+              "th",
+              { className: "border-b border-r border-slate-200 dark:border-slate-700 p-2 text-center whitespace-nowrap" },
+              "Rentang Nilai",
             ),
             React.createElement(
-              "td",
-              {
-                className:
-                  "border p-2 text-center font-bold text-indigo-700 whitespace-nowrap",
-              },
-              item.value,
+              "th",
+              { className: "border-b border-slate-200 dark:border-slate-700 p-2 text-center whitespace-nowrap" },
+              "Nilai Representatif",
+            ),
+          ),
+        ),
+        React.createElement(
+          "tbody",
+          null,
+          data.map((item) =>
+            React.createElement(
+              "tr",
+              { key: item.code, className: "border-b last:border-b-0 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200" },
+              React.createElement(
+                "td",
+                { className: "border-r border-slate-200 dark:border-slate-700 p-2 whitespace-nowrap" },
+                `${item.code} (${item.descriptor})`,
+              ),
+              React.createElement(
+                "td",
+                { className: "border-r border-slate-200 dark:border-slate-700 p-2 text-center tabular-nums whitespace-nowrap" },
+                item.range,
+              ),
+              React.createElement(
+                "td",
+                {
+                  className:
+                    "p-2 text-center font-bold tabular-nums text-indigo-700 dark:text-indigo-400 whitespace-nowrap",
+                },
+                item.value,
+              ),
             ),
           ),
         ),

@@ -6,7 +6,7 @@ interface FormFieldProps {
     type?: string;
     placeholder?: string;
     value: any;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
     onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     className?: string;
@@ -33,7 +33,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     const isPassword = type === 'password';
     const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
-    let borderClass = "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500";
+    let borderClass = "border-slate-300 dark:border-slate-600 focus-within:ring-indigo-500 focus-within:border-indigo-500";
     if (status === 'bad') {
         borderClass = "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500";
     } else if (status === 'good') {
@@ -41,11 +41,11 @@ export const FormField: React.FC<FormFieldProps> = ({
     }
 
     return React.createElement('div', { className: "w-full text-left" },
-        React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 mb-1" },
+        React.createElement('label', { htmlFor: String(id), className: "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1" },
             label
         ),
         React.createElement('div', { 
-            className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden ${borderClass} ${className || 'bg-white'}`
+            className: `flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden ${borderClass} ${className || 'bg-white dark:bg-slate-800'}`
         },
             React.createElement('input', {
                 type: inputType,
@@ -56,14 +56,14 @@ export const FormField: React.FC<FormFieldProps> = ({
                 onBlur: onBlur,
                 onKeyDown: onKeyDown,
                 readOnly: readOnly,
-                className: "flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400 disabled:bg-slate-50",
+                className: `flex-1 px-3 py-2 min-h-[44px] lg:min-h-0 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 disabled:bg-slate-50 dark:disabled:bg-slate-900 ${type === 'number' ? 'tabular-nums' : ''}`,
                 placeholder: placeholder,
                 ...props
             }),
             isPassword && React.createElement('button', {
                 type: "button",
                 onClick: () => setShowPassword(!showPassword),
-                className: "px-3 py-2 text-slate-400 hover:text-slate-600 focus:outline-none flex-shrink-0 bg-transparent",
+                className: "px-3 py-2 min-w-[44px] min-h-[44px] lg:min-w-0 lg:min-h-0 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none flex-shrink-0 bg-transparent",
                 tabIndex: -1
             },
                 showPassword ? 

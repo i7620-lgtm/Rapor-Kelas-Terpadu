@@ -87,17 +87,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     </p>
                 </div>
 
-                <div className="border-b border-slate-200" id="settings-tab-nav">
-                    <nav className="-mb-px flex space-x-6 overflow-x-auto">
+                <div className="border-b border-slate-200 dark:border-slate-700" id="settings-tab-nav">
+                    <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto scrollbar-hide">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 id={`tab-${tab.id}`}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`whitespace-nowrap py-2.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors ${
+                                className={`whitespace-nowrap shrink-0 py-2.5 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors min-h-[44px] lg:min-h-0 flex items-center ${
                                     activeTab === tab.id 
-                                        ? 'border-indigo-500 text-indigo-600'
-                                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                        ? 'border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+                                        : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
                                 }`}
                             >
                                 {tab.label}
@@ -106,7 +106,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                     </nav>
                 </div>
 
-                <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 text-left" id="settings-content-card">
+                <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 text-left" id="settings-content-card">
                     <div className="space-y-12">
                         {activeTab === 'profil' && (
                             <SettingsProfilTab

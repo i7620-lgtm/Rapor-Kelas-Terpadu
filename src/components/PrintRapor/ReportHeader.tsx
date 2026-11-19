@@ -7,80 +7,56 @@ interface ReportHeaderProps {
 }
 
 export const ReportHeader: React.FC<ReportHeaderProps> = ({ settings }) => {
-    const currentSemester = settings?.semester || 'Ganjil';
-    const layout = resolveKopLayout(settings, currentSemester);
+    const layout = resolveKopLayout(settings);
 
     return (
-        React.createElement('div', {
-            className: "absolute",
-            style: {
+        <div
+            className="absolute"
+            style={{
                 top: `${PAGE_TOP_MARGIN_CM}cm`,
                 left: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
                 right: `${PAGE_LEFT_RIGHT_MARGIN_CM}cm`,
-            }
-        },
-            React.createElement('div', {
-                className: "relative w-full",
-                style: { aspectRatio: '800 / 200' }
-            },
-                React.createElement('svg', {
-                    className: "absolute top-0 left-0 w-full h-full",
-                    viewBox: "0 0 800 200",
-                    preserveAspectRatio: "none"
-                },
-                    layout.map((el: any) => {
+            }}
+        >
+            <div className="relative w-full" style={{ aspectRatio: '800 / 200' }}>
+                <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
+                    {layout.map((el: any) => {
                         if (el.type === 'text') {
-                            let textAnchor = "start";
+                            let textAnchor: 'start' | 'middle' | 'end' = 'start';
                             let xPos = el.x;
                             if (el.textAlign === 'center') {
-                                textAnchor = "middle";
+                                textAnchor = 'middle';
                                 xPos = el.x + (el.width ?? 0) / 2;
                             } else if (el.textAlign === 'right') {
-                                textAnchor = "end";
+                                textAnchor = 'end';
                                 xPos = el.x + (el.width ?? 0);
                             }
                             return (
-                                React.createElement('text', {
-                                    key: el.id,
-                                    x: xPos,
-                                    y: el.y + (el.fontSize ?? 14),
-                                    fontSize: el.fontSize,
-                                    fontWeight: el.fontWeight,
-                                    textAnchor: textAnchor,
-                                    fontFamily: el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'
-                                }, el.content)
+                                <text
+                                    key={el.id}
+                                    x={xPos}
+                                    y={el.y + (el.fontSize ?? 14)}
+                                    fontSize={el.fontSize}
+                                    fontWeight={el.fontWeight}
+                                    textAnchor={textAnchor}
+                                    fontFamily={el.fontFamily === 'Noto Sans Balinese' ? 'Noto Sans Balinese' : 'system-ui'}
+                                >
+                                    {el.content}
+                                </text>
                             );
                         }
                         if (el.type === 'image') {
-                            const imageUrl = String(settings[el.content] || ''); 
-                            if (!imageUrl) return null; 
-                            return (
-                                React.createElement('image', {
-                                    key: el.id,
-                                    href: imageUrl,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height
-                                })
-                            );
+                            const imageUrl = String(settings[el.content] || '');
+                            if (!imageUrl) return null;
+                            return <image key={el.id} href={imageUrl} x={el.x} y={el.y} width={el.width} height={el.height} />;
                         }
                         if (el.type === 'line') {
-                            return (
-                                React.createElement('rect', {
-                                    key: el.id,
-                                    x: el.x,
-                                    y: el.y,
-                                    width: el.width,
-                                    height: el.height,
-                                    fill: "black"
-                                })
-                            );
+                            return <rect key={el.id} x={el.x} y={el.y} width={el.width} height={el.height} fill="black" />;
                         }
                         return null;
-                    })
-                )
-            )
-        )
+                    })}
+                </svg>
+            </div>
+        </div>
     );
 };

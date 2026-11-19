@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
+import { useTableVirtualizer } from "../../hooks/useTableVirtualizer";
 import { getClipboardText } from "../../utils/clipboard";
 import { useStudentsStore } from "../../stores/useStudentsStore";
 import { useAttendanceStore } from "../../stores/useAttendanceStore";
@@ -76,29 +77,57 @@ export const useDataAbsensiPageLogic = (props: any) => {
   const showToast = props.showToast;
 
   const onUpdateAttendance = props.onUpdateAttendance || ((sid: string, field: string, val: string) => {
-    useAttendanceStore.getState().updateAttendance(sid, field, val, settings?.semester);
+    useAttendanceStore.getState().updateAttendance(sid, field, val);
   });
 
   const onBulkUpdateAttendance = props.onBulkUpdateAttendance || ((newAttendance: any) => {
     useAttendanceStore.getState().setAttendance(newAttendance);
   });
 
+  const attendanceByStudentIdMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (attendance || []).forEach((a: any) => {
+      if (a?.studentId && !map.has(a.studentId)) {
+        map.set(a.studentId, a);
+      }
+    });
+    return map;
+  }, [attendance]);
+
   const getAttendanceForStudent = useCallback(
     (studentId: string) => {
-      const sem = settings?.semester || 'Ganjil';
-      const studentAtt = attendance.find((a: any) => a.studentId === studentId && (a.semester || 'Ganjil') === sem);
+      const studentAtt = attendanceByStudentIdMap.get(studentId);
       return {
         studentId,
-        semester: sem,
         sakit: studentAtt?.sakit ?? null,
         izin: studentAtt?.izin ?? null,
         alpa: studentAtt?.alpa ?? null,
       };
     },
-    [attendance, settings?.semester],
+    [attendanceByStudentIdMap],
   );
 
   const fields = ["sakit", "izin", "alpa"];
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getAbsensiRowKey = useCallback(
+    (idx: number) => students[idx]?.id ?? idx,
+    [students],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: students.length,
+    scrollContainerRef,
+    estimateRowHeight: 64,
+    overscan: 8,
+    getItemKey: getAbsensiRowKey,
+  });
 
   const {
     isSelecting,
@@ -113,9 +142,9 @@ export const useDataAbsensiPageLogic = (props: any) => {
     colsCount: 4, // sakit, izin, alpa, total -> index 0,1,2,3
     minColIndex: -2,
     containerClass: "absensi-table-container",
+    onEnsureRowVisible: scrollToIndex,
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
-      const sem = settings?.semester || 'Ganjil';
       const newAttendance = [...attendance];
       
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
@@ -124,7 +153,7 @@ export const useDataAbsensiPageLogic = (props: any) => {
             const student = students[r];
             const field = fields[c];
             if (student) {
-              const idx = newAttendance.findIndex(a => a.studentId === student.id && (a.semester || 'Ganjil') === sem);
+              const idx = newAttendance.findIndex(a => a.studentId === student.id);
               if (idx > -1 && newAttendance[idx][field] !== null && newAttendance[idx][field] !== undefined) {
                 newAttendance[idx] = { ...newAttendance[idx], [field]: null };
                 updatedCount++;
@@ -223,10 +252,9 @@ export const useDataAbsensiPageLogic = (props: any) => {
     const startFieldIndex = fields.indexOf(startFieldType);
     if (startFieldIndex === -1) return;
 
-    const sem = settings?.semester || 'Ganjil';
     const attendanceMap = new Map();
     attendance.forEach((a: any) => {
-      if ((a.semester || 'Ganjil') === sem) {
+      if (a?.studentId && !attendanceMap.has(a.studentId)) {
         attendanceMap.set(a.studentId, a);
       }
     });
@@ -240,7 +268,6 @@ export const useDataAbsensiPageLogic = (props: any) => {
       const student = students[currentStudentIndex];
       let record = attendanceMap.get(student.id) || {
         studentId: student.id,
-        semester: sem,
         sakit: null,
         izin: null,
         alpa: null,
@@ -271,13 +298,13 @@ export const useDataAbsensiPageLogic = (props: any) => {
     if (newAttendanceList.length > 0) {
       const finalAttendance = attendance.map((a: any) => {
         const updated = newAttendanceList.find(
-          (u) => u.studentId === a.studentId && (u.semester || 'Ganjil') === (a.semester || 'Ganjil'),
+          (u) => u.studentId === a.studentId,
         );
         return updated || a;
       });
 
       newAttendanceList.forEach((newItem) => {
-        if (!finalAttendance.some((a: any) => a.studentId === newItem.studentId && (a.semester || 'Ganjil') === (newItem.semester || 'Ganjil'))) {
+        if (!finalAttendance.some((a: any) => a.studentId === newItem.studentId)) {
           finalAttendance.push(newItem);
         }
       });
@@ -302,5 +329,11 @@ export const useDataAbsensiPageLogic = (props: any) => {
     handleFocusCell,
     handleAttendanceChange,
     handlePaste,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };

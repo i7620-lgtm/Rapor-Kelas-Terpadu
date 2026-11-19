@@ -1,9 +1,18 @@
 import { useNilaiTableActionsLogic } from "./useNilaiTableActionsLogic";
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useRef, useLayoutEffect, useEffect, useCallback } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
+import { useTableVirtualizer } from "../../hooks/useTableVirtualizer";
 import { useAllSlms } from "./useAllSlms";
 import { useNilaiStore } from "../../stores/useNilaiStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useCurriculumStore } from "../../stores/useCurriculumStore";
+import {
+  areDetailedGradesEqual,
+  cloneDetailedGrade,
+  GradeSnapshotChange,
+  useNilaiHistoryStore,
+  type CellPatchField,
+} from "../../stores/useNilaiHistoryStore";
 import {
   getGradeNumber,
   getNumericValue,
@@ -56,9 +65,58 @@ export const useNilaiTableViewLogic = (props) => {
   };
 
   const tableContainerRef = useRef(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const subjectHistory = useNilaiHistoryStore(
+    useCallback((state) => state.historyBySubject[subject.id], [subject.id])
+  );
+  const canUndo = Boolean(subjectHistory && subjectHistory.past.length > 0);
+  const canRedo = Boolean(subjectHistory && subjectHistory.future.length > 0);
+  const undoLabel = canUndo
+    ? subjectHistory!.past[subjectHistory!.past.length - 1]?.label
+    : undefined;
+  const redoLabel = canRedo
+    ? subjectHistory!.future[subjectHistory!.future.length - 1]?.label
+    : undefined;
+
+  const resolvedSubjects = props.subjects || useSettingsStore.getState().subjects;
+
+  const handleUndo = useCallback(() => {
+    const entry = useNilaiHistoryStore.getState().popUndo(subject.id);
+    if (!entry) return;
+
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
+    useNilaiStore.getState().applyHistoryChanges(subject.id, entry.changes, "undo", {
+      settings: latestSettingsState.settings || settings,
+      learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+      predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+      subjects: latestSettingsState.subjects || resolvedSubjects,
+    });
+    if (showToast) {
+      showToast(`Urungkan: ${entry.label}`, "info");
+    }
+  }, [subject.id, settings, learningObjectives, predefinedCurriculum, resolvedSubjects, showToast]);
+
+  const handleRedo = useCallback(() => {
+    const entry = useNilaiHistoryStore.getState().popRedo(subject.id);
+    if (!entry) return;
+
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
+    useNilaiStore.getState().applyHistoryChanges(subject.id, entry.changes, "redo", {
+      settings: latestSettingsState.settings || settings,
+      learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+      predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+      subjects: latestSettingsState.subjects || resolvedSubjects,
+    });
+    if (showToast) {
+      showToast(`Ulangi: ${entry.label}`, "info");
+    }
+  }, [subject.id, settings, learningObjectives, predefinedCurriculum, resolvedSubjects, showToast]);
 
   const gradeNumber = useMemo(
-    () => getGradeNumber(settings.nama_kelas),
+    () => getGradeNumber(settings.nama_kelas) ?? 6,
     [settings.nama_kelas],
   );
 
@@ -83,7 +141,7 @@ export const useNilaiTableViewLogic = (props) => {
   );
 
   const objectivesForSubject = useMemo(() => {
-    const gradeKey = `Kelas ${gradeNumber}`;
+    const gradeKey = `Kelas ${gradeNumber || 6}`;
     const curriculumKey = subject.curriculumKey || subject.fullName;
     return (
       (learningObjectives &&
@@ -170,15 +228,8 @@ export const useNilaiTableViewLogic = (props) => {
     const columnKeys = [];
     let tpCounter = 0;
 
-    const currentAppSemester = settings.semester || "Ganjil";
-
     allSlms.forEach((slm) => {
       if (activeSlmIds.includes(slm.id)) {
-        const slmSemester = slm.semester || "Semua";
-        if (slmSemester !== "Semua" && slmSemester !== currentAppSemester) {
-          return;
-        }
-
         const colSpan = Math.max(1, slm.tps.length);
         slmHeaders.push({ id: slm.id, name: slm.name, colSpan: colSpan });
         slm.tps.forEach((tp, index) => {
@@ -205,22 +256,40 @@ export const useNilaiTableViewLogic = (props) => {
         }
       }
     });
-    if (!settings.semester || settings.semester === "Ganjil") {
-      columnKeys.push("sts1");
-    }
-    if (settings.semester === "Genap") {
-      columnKeys.push("sts2");
-    }
-    if (!settings.semester || settings.semester === "Ganjil") {
-      columnKeys.push("sas1");
-    }
-    if (settings.semester === "Genap") {
-      columnKeys.push("sas2");
-    }
+    columnKeys.push("sts", "sas");
     return { slmHeaders, tpHeaders, columnKeys };
-  }, [allSlms, activeSlmIds, settings.semester]);
+  }, [allSlms, activeSlmIds]);
+
+  const gradeByStudentIdMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (grades || []).forEach((g) => {
+      if (g?.studentId) map.set(String(g.studentId), g);
+    });
+    return map;
+  }, [grades]);
+
+  const getNilaiRowKey = useCallback(
+    (idx: number) => relevantStudents[idx]?.id ?? idx,
+    [relevantStudents],
+  );
 
   const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: relevantStudents.length,
+    scrollContainerRef,
+    estimateRowHeight: 96,
+    overscan: 8,
+    getItemKey: getNilaiRowKey,
+  });
+
+  const {
+    selectionBounds,
     getSelectionBounds,
     getSelectionStyle,
     handleMouseDownCell,
@@ -231,24 +300,27 @@ export const useNilaiTableViewLogic = (props) => {
     colsCount: columnKeys.length,
     minColIndex: -2,
     containerClass: "mapel-table-container",
+    onEnsureRowVisible: scrollToIndex,
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
-      const updates = [];
+      const updates: any[] = [];
+      const historyChanges: GradeSnapshotChange[] = [];
+      const nilaiState = useNilaiStore.getState();
+
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         if (r < 0 || r >= relevantStudents.length) continue;
         const student = relevantStudents[r];
-        const studentGrade = grades.find((g) => g.studentId === student.id);
-        const detailedGrade = JSON.parse(
-          JSON.stringify(
-            studentGrade?.detailedGrades?.[subject.id] || {
-              slm: [],
-              sts1: null,
-              sts2: null,
-              sas1: null,
-              sas2: null,
-            },
-          ),
-        );
+        const studentGrade =
+          nilaiState.gradesByStudentId[student.id] ||
+          nilaiState.grades.find((g) => g.studentId === student.id);
+        const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
+        const before = cloneDetailedGrade(beforeRaw);
+
+        const detailedGrade = cloneDetailedGrade(beforeRaw) || {
+          slm: [],
+          sts: null,
+          sas: null,
+        };
         if (!detailedGrade.slm) detailedGrade.slm = [];
         
         let hasChanged = false;
@@ -258,7 +330,7 @@ export const useNilaiTableViewLogic = (props) => {
           if (key.startsWith("tp|")) {
             const [, slmId, tpIndexStr] = key.split("|");
             const tpIndex = parseInt(tpIndexStr, 10);
-            let slm = detailedGrade.slm?.find((s) => s.id === slmId);
+            const slm = detailedGrade.slm?.find((s) => s.id === slmId);
             if (slm && slm.scores && tpIndex < slm.scores.length) {
               if (slm.scores[tpIndex] !== null) {
                 slm.scores[tpIndex] = null;
@@ -274,16 +346,24 @@ export const useNilaiTableViewLogic = (props) => {
             }
           }
         }
-        if (hasChanged) {
+        if (hasChanged && !areDetailedGradesEqual(before, detailedGrade)) {
           updates.push({
             studentId: student.id,
             subjectId: subject.id,
             newDetailedGrade: detailedGrade,
           });
+          historyChanges.push({
+            studentId: student.id,
+            before,
+            after: detailedGrade,
+          });
         }
       }
       if (updates.length > 0) {
         onBulkUpdateGrades(updates);
+        useNilaiHistoryStore
+          .getState()
+          .recordHistory(subject.id, `Hapus ${updatedCount} nilai`, historyChanges);
         if (showToast) {
           showToast(`${updatedCount} nilai berhasil dihapus.`, "success");
         }
@@ -317,7 +397,7 @@ export const useNilaiTableViewLogic = (props) => {
         let rowData = [];
         const student = relevantStudents[r];
         if (student) {
-          const studentGrade = grades.find((g) => g.studentId === student.id);
+          const studentGrade = gradeByStudentIdMap.get(String(student.id));
           const detailedGrade = studentGrade?.detailedGrades?.[subject.id] || {};
           for (let c = bounds.minC; c <= bounds.maxC; c++) {
             if (c < 0 || c >= columnKeys.length) continue;
@@ -361,7 +441,7 @@ export const useNilaiTableViewLogic = (props) => {
 
     document.addEventListener("copy", handleCopyGlobal);
     return () => document.removeEventListener("copy", handleCopyGlobal);
-  }, [getSelectionBounds, relevantStudents, grades, columnKeys, mode, settings.predikats, settings.qualitativeGradingMap, subject.id, showToast]);
+  }, [getSelectionBounds, relevantStudents, gradeByStudentIdMap, columnKeys, mode, settings.predikats, settings.qualitativeGradingMap, subject.id, showToast]);
 
   const handleSaveSlmSettings = (newActiveIds) => {
     setActiveSlmIds(newActiveIds);
@@ -370,119 +450,143 @@ export const useNilaiTableViewLogic = (props) => {
     }
   };
 
-  const handleSingleGradeChange = (
-    studentId,
-    value,
-    type,
-    slmId = null,
-    tpIndex = null,
+  const handleSingleGradeChange = useCallback((
+    studentId: string,
+    value: any,
+    type: string,
+    slmId: string | null = null,
+    tpIndex: number | null = null,
   ) => {
-    const currentGrades = useNilaiStore.getState().grades;
-    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
-    const detailedGrade = JSON.parse(
-      JSON.stringify(
-        studentGrade?.detailedGrades?.[subject.id] || {
-          slm: [],
-          sts1: null,
-          sts2: null,
-          sas1: null,
-          sas2: null,
-         },
-      ),
-    );
-    if (!detailedGrade.slm) detailedGrade.slm = [];
+    const nilaiState = useNilaiStore.getState();
+    const studentGrade =
+      nilaiState.gradesByStudentId[studentId] ||
+      nilaiState.grades.find((g) => g.studentId === studentId);
+    const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
 
-    let finalValue = value === "" ? null : value;
+    let finalValue: any = value === "" ? null : value;
 
     if (mode === "kuantitatif" && finalValue !== null && finalValue !== "") {
       const parsed = parseInt(finalValue, 10);
       finalValue = isNaN(parsed) ? null : parsed;
     }
 
-    if (type === "tp") {
-      let slmToUpdate = detailedGrade.slm?.find((s) => s.id === slmId);
-      if (!slmToUpdate) {
-        slmToUpdate = {
-          id: slmId,
-          name: allSlms.find((s) => s.id === slmId)?.name,
-          scores: [],
-        };
-        detailedGrade.slm.push(slmToUpdate);
-      }
-      while (slmToUpdate.scores.length <= tpIndex) {
-        slmToUpdate.scores.push(null);
-      }
-      slmToUpdate.scores[tpIndex] = finalValue;
+    let prevValue: any = null;
+    let resolvedSlmName: string | undefined;
+
+    if (type === "tp" && slmId !== null && tpIndex !== null) {
+      const existingSlm = beforeRaw?.slm?.find((s: any) => s.id === slmId);
+      prevValue = existingSlm?.scores?.[tpIndex] ?? null;
+      resolvedSlmName = existingSlm?.name || allSlms.find((s: any) => s.id === slmId)?.name;
     } else if (
-      ["sts1", "sts2", "sas1", "sas2"].includes(type) ||
-      type === "sts" ||
-      type === "sas"
+      ["sts1", "sts2", "sas1", "sas2", "sts", "sas"].includes(type)
     ) {
-      detailedGrade[type] = finalValue;
+      prevValue = beforeRaw?.[type] ?? null;
+    } else {
+      return;
     }
 
-    onBulkUpdateGrades([
-      { studentId, subjectId: subject.id, newDetailedGrade: detailedGrade },
-    ]);
-  };
+    if ((prevValue ?? null) === (finalValue ?? null)) {
+      return;
+    }
 
-  const handleDescriptionChange = (studentId, type, value) => {
-    const currentGrades = useNilaiStore.getState().grades;
-    const studentGrade = currentGrades.find((g) => g.studentId === studentId);
-    const detailedGrade = JSON.parse(
-      JSON.stringify(
-        studentGrade?.detailedGrades?.[subject.id] || {
-          slm: [],
-          sts1: null,
-          sts2: null,
-          sas1: null,
-          sas2: null,
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
+
+    nilaiState.updateSingleGrade(
+      studentId,
+      subject.id,
+      finalValue,
+      type,
+      slmId ?? undefined,
+      tpIndex ?? undefined,
+      resolvedSlmName,
+      {
+        settings: latestSettingsState.settings || settings,
+        learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+        predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+        subjects: latestSettingsState.subjects || resolvedSubjects,
+      }
+    );
+
+    useNilaiHistoryStore.getState().recordHistory(
+      subject.id,
+      "Ubah nilai",
+      [
+        {
+          kind: "cell",
+          studentId,
+          field: type as CellPatchField,
+          slmId: slmId ?? undefined,
+          slmName: resolvedSlmName,
+          tpIndex: tpIndex ?? undefined,
+          prevValue,
+          nextValue: finalValue,
         },
-      ),
+      ],
     );
-    if (!detailedGrade.slm) detailedGrade.slm = [];
-    const student = students.find((s) => s.id === studentId);
-    const generated = generateSubjectDescription(
-      student,
-      detailedGrade,
-      objectivesForSubject,
-      settings,
-      settings.slmVisibility?.[subject.id],
-    );
+  }, [subject.id, mode, allSlms, settings, learningObjectives, predefinedCurriculum, resolvedSubjects]);
 
-    if (!detailedGrade.descriptions) {
-      detailedGrade.descriptions = {
+  const handleDescriptionChange = useCallback((studentId: string, type: 'highest' | 'lowest', value: string) => {
+    const nilaiState = useNilaiStore.getState();
+    const studentGrade =
+      nilaiState.gradesByStudentId[studentId] ||
+      nilaiState.grades.find((g) => g.studentId === studentId);
+    const beforeRaw = studentGrade?.detailedGrades?.[subject.id];
+    const existingDesc = beforeRaw?.descriptions;
+    const prevValue = existingDesc?.[type] ?? "";
+
+    if ((prevValue ?? "") === (value ?? "")) {
+      return;
+    }
+
+    let fallbackDescriptions: { highest?: string; lowest?: string } | undefined;
+    const needsHighest = !existingDesc?.highest || !String(existingDesc.highest).trim();
+    const needsLowest = !existingDesc?.lowest || !String(existingDesc.lowest).trim();
+
+    if (needsHighest || needsLowest) {
+      const student = students.find((s: any) => s.id === studentId);
+      const generated = generateSubjectDescription(
+        student,
+        beforeRaw || { slm: [], sts: null, sas: null },
+        objectivesForSubject,
+        settings,
+        settings.slmVisibility?.[subject.id],
+      );
+      fallbackDescriptions = {
         highest: generated.highest,
         lowest: generated.lowest,
       };
-    } else {
-      if (
-        !detailedGrade.descriptions.highest ||
-        !detailedGrade.descriptions.highest.trim()
-      ) {
-        detailedGrade.descriptions.highest = generated.highest;
-      }
-      if (
-        !detailedGrade.descriptions.lowest ||
-        !detailedGrade.descriptions.lowest.trim()
-      ) {
-        detailedGrade.descriptions.lowest = generated.lowest;
-      }
     }
 
-    detailedGrade.descriptions[type] = value;
+    const otherType: 'highest' | 'lowest' = type === 'highest' ? 'lowest' : 'highest';
 
-    onBulkUpdateGrades([
-      {
-        studentId: studentId,
-        subjectId: subject.id,
-        newDetailedGrade: detailedGrade,
-      },
-    ]);
-  };
+    nilaiState.updateSingleDescription(
+      studentId,
+      subject.id,
+      type,
+      value,
+      fallbackDescriptions,
+    );
 
-
-
+    useNilaiHistoryStore.getState().recordHistory(
+      subject.id,
+      "Ubah deskripsi",
+      [
+        {
+          kind: "cell",
+          studentId,
+          field: "desc",
+          descType: type,
+          prevValue,
+          nextValue: value,
+          prevDescriptionsExisted: Boolean(existingDesc),
+          baselineOtherDescType: !existingDesc ? otherType : undefined,
+          baselineOtherDescValue: !existingDesc ? (fallbackDescriptions?.[otherType] ?? "") : undefined,
+        },
+      ],
+      `desc:${studentId}:${type}`,
+    );
+  }, [subject.id, students, objectivesForSubject, settings]);
 
   const handleWeightChange = (
     weightType,
@@ -498,12 +602,17 @@ export const useNilaiTableViewLogic = (props) => {
     const currentCalcConfig = currentSettings.gradeCalculation?.[subject.id] || { method: "rata-rata" };
     const currentWeights = currentCalcConfig.weights || {};
 
-    const newWeights = JSON.parse(JSON.stringify(currentWeights));
+    const newWeights: any = { ...currentWeights };
 
     if (weightType === "TP" && slmId !== null && tpIndex !== null) {
-      if (!newWeights.TP) newWeights.TP = {};
-      if (!newWeights.TP[slmId]) newWeights.TP[slmId] = {};
-      newWeights.TP[slmId][tpIndex] = numValue;
+      const prevTp = currentWeights.TP || {};
+      newWeights.TP = {
+        ...prevTp,
+        [slmId]: {
+          ...(prevTp[slmId] || {}),
+          [tpIndex]: numValue,
+        },
+      };
     } else if (weightType === "STS" || weightType === "SAS") {
       newWeights[weightType] = numValue;
     }
@@ -567,6 +676,47 @@ export const useNilaiTableViewLogic = (props) => {
     }
   }, [slmHeaders, truncatedSlmIds]);
 
+  useEffect(() => {
+    const handleUndoRedoKeyDown = (e: KeyboardEvent) => {
+      if (isManageSlmModalOpen || isSettingsModalOpen) return;
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      const isUndo = key === "z" && !e.shiftKey;
+      const isRedo = (key === "y" && !e.shiftKey) || (key === "z" && e.shiftKey);
+      if (!isUndo && !isRedo) return;
+
+      if (document.querySelector('[role="dialog"], [aria-modal="true"]')) {
+        return;
+      }
+
+      const activeEl = document.activeElement as HTMLElement | null;
+      const isGridContext =
+        !activeEl ||
+        activeEl === document.body ||
+        Boolean(tableContainerRef.current?.contains(activeEl));
+      if (!isGridContext) return;
+
+      if (activeEl && activeEl.tagName === "INPUT" && isUndo) {
+        const inputEl = activeEl as HTMLInputElement;
+        const committedValue = inputEl.dataset?.committedValue;
+        if (committedValue !== undefined && inputEl.value !== committedValue) {
+          return;
+        }
+      }
+
+      e.preventDefault();
+      if (isUndo) {
+        handleUndo();
+      } else {
+        handleRedo();
+      }
+    };
+
+    window.addEventListener("keydown", handleUndoRedoKeyDown);
+    return () => window.removeEventListener("keydown", handleUndoRedoKeyDown);
+  }, [isManageSlmModalOpen, isSettingsModalOpen, handleUndo, handleRedo]);
+
   return {
     isManageSlmModalOpen,
     setIsManageSlmModalOpen,
@@ -590,6 +740,7 @@ export const useNilaiTableViewLogic = (props) => {
     slmHeaders,
     tpHeaders,
     columnKeys,
+    selectionBounds,
     getSelectionBounds,
     getSelectionStyle,
     handleMouseDownCell,
@@ -605,6 +756,18 @@ export const useNilaiTableViewLogic = (props) => {
     handlePaste,
     showTooltip,
     hideTooltip,
-    headerRowSpan
+    headerRowSpan,
+    canUndo,
+    canRedo,
+    undoLabel,
+    redoLabel,
+    handleUndo,
+    handleRedo,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };

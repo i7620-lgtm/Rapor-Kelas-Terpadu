@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import * as XLSX from 'xlsx';
 import { getGradeNumber } from '../../utils/nilaiHelpers';
 
 interface Subject {
@@ -34,7 +33,12 @@ interface UseERaporProcessorProps {
 
 const getNumericValue = (score: any, qualitativeGradingMap: Record<string, number> | undefined) => {
   if (typeof score === 'number') return score;
-  if (typeof score === 'string' && qualitativeGradingMap && qualitativeGradingMap[score]) {
+  if (
+    typeof score === 'string' &&
+    qualitativeGradingMap &&
+    typeof qualitativeGradingMap[score] === 'number' &&
+    Number.isFinite(qualitativeGradingMap[score])
+  ) {
     return qualitativeGradingMap[score];
   }
   return null;
@@ -80,7 +84,10 @@ export const useERaporProcessor = ({
 
     setIsLoading(true);
     try {
-      const data = await file.arrayBuffer();
+      const [XLSX, data] = await Promise.all([
+        import('xlsx'),
+        file.arrayBuffer(),
+      ]);
       const workbook = XLSX.read(data);
       const sheetName = workbook.SheetNames[0];
       const ws = workbook.Sheets[sheetName];
@@ -159,10 +166,17 @@ export const useERaporProcessor = ({
 
       if (nisnColIndex === -1) throw new Error("Kolom 'NISN' tidak ditemukan di file Excel.");
 
+      const studentByNisnMap = new Map<string, Student>();
+      students.forEach((s) => {
+        if (s.nisn !== undefined && s.nisn !== null && String(s.nisn) !== '') {
+          studentByNisnMap.set(String(s.nisn), s);
+        }
+      });
+
       jsonData.forEach((row, index) => {
         const nisn = row[nisnColIndex];
         if (nisn) {
-          const student = students.find((s) => String(s.nisn) === String(nisn));
+          const student = studentByNisnMap.get(String(nisn));
           if (student) analysis.studentMap.set(index, student.id);
         }
       });
@@ -206,9 +220,9 @@ export const useERaporProcessor = ({
     if (!analysisResult) return;
     setIsLoading(true);
     try {
+      const XLSX = await import('xlsx');
       const { workbook, ws, subject, studentMap, tpMapping, fileName: currentFileName, nilaiRaporColIndex } = analysisResult;
 
-      const currentSemester = settings?.semester || 'Ganjil';
       const currentGradeNumber = getGradeNumber(settings?.nama_kelas);
       let objectivesForSubject: any[] = [];
 
@@ -226,19 +240,24 @@ export const useERaporProcessor = ({
       const activeSlmIds = settings?.slmVisibility?.[subject.id];
 
       const tpTextMap = new Map<string, string[]>();
-      const slmSemesterMap = new Map<string, string>();
 
       objectivesForSubject.forEach((obj) => {
         if (!tpTextMap.has(obj.slmId)) {
           tpTextMap.set(obj.slmId, []);
-          slmSemesterMap.set(obj.slmId, obj.semester || 'Semua');
         }
         tpTextMap.get(obj.slmId)?.push(obj.text);
       });
 
+      const studentByIdMap = new Map<string, Student>();
+      students.forEach((s) => studentByIdMap.set(String(s.id), s));
+      const gradeByIdMap = new Map<string, any>();
+      grades.forEach((g) => {
+        if (g?.studentId) gradeByIdMap.set(String(g.studentId), g);
+      });
+
       for (const [rowIndex, studentId] of studentMap.entries()) {
-        const studentData = students.find((s) => s.id === studentId);
-        const gradeData = grades.find((g) => g.studentId === studentId);
+        const studentData = studentByIdMap.get(String(studentId));
+        const gradeData = gradeByIdMap.get(String(studentId));
         if (!studentData || !gradeData) continue;
 
         const finalGrade = gradeData.finalGrades?.[subject.id];
@@ -252,10 +271,7 @@ export const useERaporProcessor = ({
 
         if (detailedGrade?.slm) {
           const visibleSlms = detailedGrade.slm.filter((slm: any) => {
-            const isVisible = activeSlmIds ? activeSlmIds.includes(slm.id) : true;
-            const slmSemester = slmSemesterMap.get(slm.id) || 'Semua';
-            const isCorrectSemester = slmSemester === 'Semua' || slmSemester === currentSemester;
-            return isVisible && isCorrectSemester;
+            return activeSlmIds ? activeSlmIds.includes(slm.id) : true;
           });
 
           visibleSlms.forEach((slm: any) => {

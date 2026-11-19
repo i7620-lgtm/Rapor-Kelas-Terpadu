@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useSettingsStore } from "../stores/useSettingsStore";
 import { useNilaiStore } from "../stores/useNilaiStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
+import { useNilaiHistoryStore } from "../stores/useNilaiHistoryStore";
 import { getGradeNumber } from "../utils/nilaiHelpers";
 
 /**
@@ -44,15 +45,16 @@ export const useClassChangeCascade = () => {
     const oldGrade = getGradeNumber(oldClassName);
     const newGrade = getGradeNumber(newClassName);
 
-    // 1. Update the Class Name in Settings
-    setSettings((prev: any) => ({ ...prev, nama_kelas: newClassName }));
-
-    // 2. Check if Grade Level changed to evaluate cascading updates
+    // 1. Check if Grade Level changed to evaluate cascading updates
     if (oldGrade !== null && newGrade !== null && oldGrade !== newGrade) {
       showToast(`Menyelaraskan tingkat kelas dari Kelas ${oldGrade} ke Kelas ${newGrade}...`, "info");
 
+      // Update class name and clear stale SLM visibility from previous grade level
+      setSettings((prev: any) => ({ ...prev, nama_kelas: newClassName, slmVisibility: {} }));
+
       // CLEAR grades cascade: to avoid mismatched grade criteria & assignments from previous level
       setGrades([]);
+      useNilaiHistoryStore.getState().clearAllHistory();
 
       // CLEAR learning objectives cascade: to clean up user edited objectives from previous level
       setLearningObjectives({});
@@ -65,6 +67,7 @@ export const useClassChangeCascade = () => {
         showToast(`Kelas diubah ke Kelas ${newGrade}, silakan lengkapi TP secara manual.`, "warning");
       }
     } else {
+      setSettings((prev: any) => ({ ...prev, nama_kelas: newClassName }));
       showToast("Nama kelas berhasil disimpan.", "success");
     }
   }, [setSettings, setGrades, setLearningObjectives, fetchAndLoadPredefinedCurriculum]);

@@ -33,7 +33,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                                     {/* Kolom 1: Periode Akademik */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Periode Akademik</h3>
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">Periode Akademik</h3>
                                         <FormField 
                                             label="Nama Kelas" 
                                             id="nama_kelas" 
@@ -55,14 +55,14 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             onKeyDown={handleKeyDown} 
                                         />
                                         <div>
-                                            <label htmlFor="semester" className="block text-sm font-medium text-slate-700 mb-1">Semester</label>
+                                            <label htmlFor="semester" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Semester</label>
                                             <select 
                                                 id="semester" 
                                                 name="semester" 
                                                 value={settings.semester || ''} 
                                                 onChange={onSettingsChange} 
                                                 onBlur={resolvedOnSave} 
-                                                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
+                                                className={`w-full px-3 py-2 min-h-[44px] lg:min-h-0 bg-white dark:bg-slate-800 border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none ${
                                                     getStatus(settings.semester) === 'bad' 
                                                         ? 'border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500' 
                                                         : 'border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500'
@@ -88,18 +88,18 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
 
                                     {/* Kolom 2: Kepala Sekolah dan Guru */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Kepala Sekolah dan Guru</h3>
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">Kepala Sekolah dan Guru</h3>
                                         <FormField 
                                             label="Nama Kepala Sekolah" 
                                             id={getContextualKey(settings, 'nama_kepala_sekolah')} 
                                             value={getContextualValue(settings, 'nama_kepala_sekolah')} 
-                                            status={getStatus(settings.nama_kepala_sekolah)} 
+                                            status={getStatus(getContextualValue(settings, 'nama_kepala_sekolah'))} 
                                             onChange={onSettingsChange} 
                                             onBlur={resolvedOnSave} 
                                             onKeyDown={handleKeyDown} 
                                         />
                                         <div className="w-full text-left">
-                                            <label htmlFor={getContextualKey(settings, 'nip_kepala_sekolah')} className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Kepsek</label>
+                                            <label htmlFor={getContextualKey(settings, 'nip_kepala_sekolah')} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipe dan Nomor Pengenal Kepsek</label>
                                             <div className="flex gap-2 w-full">
                                                 <div className="w-24 flex-shrink-0">
                                                     <select 
@@ -108,12 +108,12 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                         value={getContextualValue(settings, 'nip_label_kepala_sekolah') || 'NIP'} 
                                                         onChange={onSettingsChange} 
                                                         onBlur={resolvedOnSave} 
-                                                        className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
-                                                            getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                        className={`w-full px-3 py-2 min-h-[44px] lg:min-h-0 bg-white dark:bg-slate-800 border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none ${
+                                                            getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'bad' 
                                                             ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'good' 
                                                             ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
-                                                            : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            : "border-slate-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                                                         }`}
                                                     >
                                                         <option value="NIP">NIP</option>
@@ -122,12 +122,12 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                 </div>
                                                 <div className="flex-1">
                                                     <div 
-                                                        className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
-                                                            getStatus(settings.nip_kepala_sekolah) === 'bad' 
+                                                        className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white dark:bg-slate-800 ${
+                                                            getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'bad' 
                                                             ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_kepala_sekolah) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_kepala_sekolah')) === 'good' 
                                                             ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
-                                                            : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
+                                                            : "border-slate-300 dark:border-slate-600 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                         }`} 
                                                     >
                                                         <input 
@@ -138,7 +138,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                             onChange={onSettingsChange}
                                                             onBlur={resolvedOnSave}
                                                             onKeyDown={handleKeyDown}
-                                                            className="flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
+                                                            className="flex-1 px-3 py-2 min-h-[44px] lg:min-h-0 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 tabular-nums"
                                                         />
                                                     </div>
                                                 </div>
@@ -148,13 +148,13 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                             label="Nama Wali Kelas" 
                                             id={getContextualKey(settings, 'nama_wali_kelas')} 
                                             value={getContextualValue(settings, 'nama_wali_kelas')} 
-                                            status={getStatus(settings.nama_wali_kelas)} 
+                                            status={getStatus(getContextualValue(settings, 'nama_wali_kelas'))} 
                                             onChange={onSettingsChange} 
                                             onBlur={resolvedOnSave} 
                                             onKeyDown={handleKeyDown} 
                                         />
                                         <div className="w-full text-left">
-                                            <label htmlFor={getContextualKey(settings, 'nip_wali_kelas')} className="block text-sm font-medium text-slate-700 mb-1">Tipe dan Nomor Pengenal Wali Kelas</label>
+                                            <label htmlFor={getContextualKey(settings, 'nip_wali_kelas')} className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipe dan Nomor Pengenal Wali Kelas</label>
                                             <div className="flex gap-2 w-full">
                                                 <div className="w-24 flex-shrink-0">
                                                     <select 
@@ -163,12 +163,12 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                         value={getContextualValue(settings, 'nip_label_wali_kelas') || 'NIP'} 
                                                         onChange={onSettingsChange} 
                                                         onBlur={resolvedOnSave} 
-                                                        className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 focus:outline-none ${
-                                                            getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                        className={`w-full px-3 py-2 min-h-[44px] lg:min-h-0 bg-white dark:bg-slate-800 border rounded-md shadow-sm focus:ring-1 sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none ${
+                                                            getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'bad' 
                                                             ? "border-red-500 focus:ring-red-500 focus:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'good' 
                                                             ? "border-green-500 focus:ring-green-500 focus:border-green-500 ring-1 ring-green-500" 
-                                                            : "border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                                            : "border-slate-300 dark:border-slate-600 focus:ring-indigo-500 focus:border-indigo-500"
                                                         }`}
                                                     >
                                                         <option value="NIP">NIP</option>
@@ -177,12 +177,12 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                 </div>
                                                 <div className="flex-1">
                                                     <div 
-                                                        className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white ${
-                                                            getStatus(settings.nip_wali_kelas) === 'bad' 
+                                                        className={`flex items-center w-full border rounded-md shadow-sm focus-within:ring-1 overflow-hidden bg-white dark:bg-slate-800 ${
+                                                            getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'bad' 
                                                             ? "border-red-500 focus-within:ring-red-500 focus-within:border-red-500 ring-1 ring-red-500" 
-                                                            : getStatus(settings.nip_wali_kelas) === 'good' 
+                                                            : getStatus(getContextualValue(settings, 'nip_wali_kelas')) === 'good' 
                                                             ? "border-green-500 focus-within:ring-green-500 focus-within:border-green-500 ring-1 ring-green-500" 
-                                                            : "border-slate-300 focus-within:ring-indigo-500 focus-within:border-indigo-500"
+                                                            : "border-slate-300 dark:border-slate-600 focus-within:ring-indigo-500 focus-within:border-indigo-500"
                                                         }`} 
                                                     >
                                                         <input 
@@ -193,7 +193,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                                             onChange={onSettingsChange}
                                                             onBlur={resolvedOnSave}
                                                             onKeyDown={handleKeyDown}
-                                                            className="flex-1 px-3 py-2 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 placeholder:text-slate-400"
+                                                            className="flex-1 px-3 py-2 min-h-[44px] lg:min-h-0 bg-transparent border-none focus:ring-0 outline-none sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 tabular-nums"
                                                         />
                                                     </div>
                                                 </div>
@@ -204,7 +204,7 @@ export const SettingsAkademikTab: React.FC<SettingsAkademikTabProps> = ({
                                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                                     {/* Kolom 3: Tanda Tangan */}
                                     <div className="flex flex-col gap-4 h-full">
-                                        <h3 className="text-base font-bold text-slate-800 border-b pb-2 mb-2">Tanda Tangan</h3>
+                                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-700 pb-2 mb-2">Tanda Tangan</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
                                             <FileInputField 
                                                 label="Tanda Tangan Kepala Sekolah" 

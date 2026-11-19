@@ -53,7 +53,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
   const loadPredefinedCurriculum = useCurriculumStore((state) => state.loadPredefinedCurriculum);
 
   const [selectedGrade, setSelectedGrade] = useState<number>(() => {
-    return currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 5);
+    return currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 6);
   });
   const [selectedTPs, setSelectedTPs] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,7 +64,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
     if (isOpen) {
       setSelectedTPs([]);
       setSearchQuery("");
-      const targetGrade = currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 5);
+      const targetGrade = currentGrade && currentGrade >= 1 && currentGrade <= 12 ? currentGrade : (activeGradeNumber || 6);
       setSelectedGrade(targetGrade);
 
       // Trigger fetch on open if curriculum isn't loaded
@@ -198,9 +198,9 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
   const isLoading = isLocalLoading || isLoadingPredefined || (propIsLoading && !predefinedCurriculum);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[80] flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[80] flex items-center justify-center p-2 sm:p-4 animate-fade-in">
       <div 
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden text-left"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92dvh] sm:max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-800 overflow-hidden text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -220,7 +220,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
           </div>
 
           {/* Grade Selector */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 min-h-[44px] lg:min-h-0 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm shrink-0">
             <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
             <label htmlFor="grade-select" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Jenjang:
@@ -229,7 +229,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
               id="grade-select"
               value={selectedGrade}
               onChange={(e) => handleGradeChange(Number(e.target.value))}
-              className="text-xs font-medium bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+              className="text-xs font-medium bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer flex-1"
             >
               {GRADE_OPTIONS.map((grp) => (
                 <optgroup key={grp.group} label={grp.group}>
@@ -245,26 +245,26 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
         </div>
 
         {/* Search Bar & Counter */}
-        <div className="px-4 py-2.5 sm:px-5 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between gap-3">
-          <div className="relative flex-1 max-w-md">
+        <div className="px-3.5 py-2.5 sm:px-5 border-b border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="relative flex-1 min-w-[180px] max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari kata kunci materi atau TP..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full pl-9 pr-3 py-2 lg:py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 tabular-nums">
               {selectedTPs.length} TP dipilih
             </span>
             {selectedTPs.length > 0 && (
               <button
                 type="button"
                 onClick={() => setSelectedTPs([])}
-                className="text-[11px] text-rose-600 dark:text-rose-400 hover:underline"
+                className="text-xs text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 min-h-[36px] lg:min-h-0"
               >
                 Reset
               </button>
@@ -297,7 +297,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
                   className="border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-800/60 shadow-sm overflow-hidden"
                 >
                   {/* Group Header */}
-                  <div className="flex items-center justify-between p-3 bg-slate-50/80 dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50/80 dark:bg-slate-800 border-b border-slate-200/80 dark:border-slate-700/80">
                     <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                       <span className="w-1.5 h-3.5 bg-indigo-600 rounded-full shrink-0" />
                       {slmGroup.slm}
@@ -305,7 +305,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
                     <button
                       type="button"
                       onClick={() => handleToggleSelectAllInGroup(slmGroup.tp)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[38px] lg:min-h-0 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-md transition-colors shrink-0"
                     >
                       {allInGroupSelected ? (
                         <>
@@ -377,11 +377,11 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex items-center justify-between gap-3">
+        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
+            className="w-full sm:w-auto px-4 py-2 min-h-[44px] lg:min-h-0 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm"
           >
             Batal
           </button>
@@ -389,7 +389,7 @@ export const TPSelectionModal: React.FC<TPSelectionModalProps> = ({
             type="button"
             onClick={handleApply}
             disabled={selectedTPs.length === 0}
-            className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5"
+            className="w-full sm:w-auto justify-center px-5 py-2 min-h-[44px] lg:min-h-0 text-xs font-bold text-white bg-indigo-600 rounded-xl shadow-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-1.5 tabular-nums"
           >
             <span>+ Tambahkan {selectedTPs.length > 0 ? `${selectedTPs.length} TP Terpilih` : "Pilihan"}</span>
           </button>

@@ -26,7 +26,7 @@ export const OcrFullScanResults = ({
         "button",
         {
           onClick: runFullOcr,
-          className: "px-2.5 py-1 bg-indigo-950/60 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 rounded text-[10px] font-semibold transition-all cursor-pointer"
+          className: "px-3 py-1.5 min-h-[38px] lg:min-h-0 bg-indigo-950/60 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 rounded text-xs font-semibold transition-all cursor-pointer"
         },
         "🔍 Pindai Seluruh Gambar Otomatis"
       )
@@ -43,13 +43,13 @@ export const OcrFullScanResults = ({
           "div",
           { className: "p-4 border border-dashed border-slate-800 rounded-lg bg-slate-950/40 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2" },
           React.createElement("p", null, "Gunakan tombol alat mode di sebelah kiri untuk menyorot secara manual langsung dari gambar."),
-          React.createElement("small", { className: "text-[10px] text-slate-500" }, "Atau klik tombol di bawah untuk memindai seluruh halaman sekaligus secara otomatis:"),
+          React.createElement("small", { className: "text-[11px] text-slate-500" }, "Atau klik tombol di bawah untuk memindai seluruh halaman sekaligus secara otomatis:"),
           React.createElement(
             "button",
             {
               type: "button",
               onClick: runFullOcr,
-              className: "px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-550 text-white rounded font-semibold transition-colors cursor-pointer"
+              className: "px-3 py-2 min-h-[40px] lg:min-h-0 text-xs bg-indigo-600 hover:bg-indigo-500 text-white rounded font-semibold transition-colors cursor-pointer"
             },
             "🔍 Mulai Pindai Semua Otomatis"
           )
@@ -60,7 +60,7 @@ export const OcrFullScanResults = ({
           localLines.map((line, index) =>
             React.createElement(
               "div",
-              { key: index, className: "flex items-center gap-2 p-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded transition-all" },
+              { key: index, className: "flex items-center gap-2 p-1.5 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded transition-all" },
               React.createElement("input", {
                 type: "text",
                 value: line,
@@ -72,13 +72,13 @@ export const OcrFullScanResults = ({
                     return next;
                   });
                 },
-                className: "flex-grow bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded px-2 py-1 outline-none focus:border-indigo-500"
+                className: "flex-grow min-w-0 bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded px-2 py-1.5 outline-none focus:border-indigo-500"
               }),
               React.createElement(
                 "button",
                 {
                   onClick: () => setAsJudulBab(line),
-                  className: "px-2 py-1 bg-indigo-600 hover:bg-indigo-555 text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors cursor-pointer"
+                  className: "px-2.5 py-1.5 min-h-[38px] lg:min-h-0 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold whitespace-nowrap transition-colors cursor-pointer"
                 },
                 "🏷️ Bab"
               ),
@@ -86,7 +86,7 @@ export const OcrFullScanResults = ({
                 "button",
                 {
                   onClick: () => addAsTp(line),
-                  className: "px-2 py-1 bg-emerald-600 hover:bg-emerald-555 text-white rounded text-[10px] font-bold whitespace-nowrap transition-colors cursor-pointer"
+                  className: "px-2.5 py-1.5 min-h-[38px] lg:min-h-0 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold whitespace-nowrap transition-colors cursor-pointer"
                 },
                 "🎯 TP"
               )

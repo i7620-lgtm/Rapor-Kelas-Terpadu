@@ -1,38 +1,45 @@
+import { useMemo } from 'react';
 import { getContextualValue } from '../../constants';
 
 export const useDashboardStats = (settings: any, students: any[], setActivePage: any) => {
-  return [
+  const studentCount = (students || []).length;
+  const tahunAjaran = settings.tahun_ajaran;
+  const semester = settings.semester || 'Ganjil';
+  const namaKelas = settings.nama_kelas;
+  const waliKelas = getContextualValue(settings, 'nama_wali_kelas');
+
+  return useMemo(() => [
     {
       title: 'Jumlah Siswa',
-      value: (students || []).length.toString(),
+      value: studentCount.toString(),
       description: 'Siswa yang terdaftar di kelas.',
       actionText: 'Tambah Siswa Pertama',
       onActionClick: () => setActivePage('DATA_SISWA'),
-      showAction: (students || []).length === 0,
+      showAction: studentCount === 0,
     },
     {
       title: 'Tahun Ajaran',
-      value: settings.tahun_ajaran || '-',
-      description: `Semester ${settings.semester || 'Ganjil'}`,
+      value: tahunAjaran || '-',
+      description: `Semester ${semester}`,
       actionText: 'Atur di Pengaturan',
       onActionClick: () => setActivePage('PENGATURAN'),
-      showAction: !settings.tahun_ajaran,
+      showAction: !tahunAjaran,
     },
     {
       title: 'Kelas',
-      value: settings.nama_kelas || '-',
+      value: namaKelas || '-',
       description: 'Nama kelas saat ini.',
       actionText: 'Atur di Pengaturan',
       onActionClick: () => setActivePage('PENGATURAN'),
-      showAction: !settings.nama_kelas,
+      showAction: !namaKelas,
     },
     {
       title: 'Wali Kelas',
-      value: getContextualValue(settings, 'nama_wali_kelas') || '-',
+      value: waliKelas || '-',
       description: 'Guru wali kelas saat ini.',
       actionText: 'Atur di Pengaturan',
       onActionClick: () => setActivePage('PENGATURAN'),
-      showAction: !getContextualValue(settings, 'nama_wali_kelas'),
+      showAction: !waliKelas,
     },
-  ];
+  ], [studentCount, tahunAjaran, semester, namaKelas, waliKelas, setActivePage]);
 };

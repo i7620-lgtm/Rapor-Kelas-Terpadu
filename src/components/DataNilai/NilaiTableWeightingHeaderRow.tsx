@@ -27,7 +27,7 @@ export const NilaiTableWeightingHeaderRow: React.FC<NilaiTableWeightingHeaderRow
   tpHeaders,
   weights,
   handleWeightChange,
-  settings,
+  settings: _settings,
 }) => {
   return (
     <tr>
@@ -38,7 +38,7 @@ export const NilaiTableWeightingHeaderRow: React.FC<NilaiTableWeightingHeaderRow
         return (
           <th
             key={`w-${h.slmId}-${h.tpIndex}`}
-            className="p-1 text-center border-b border-l border-slate-200 bg-indigo-50"
+            className="p-1 text-center border-b border-l border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-950/40"
           >
             <input
               type="number"
@@ -53,7 +53,7 @@ export const NilaiTableWeightingHeaderRow: React.FC<NilaiTableWeightingHeaderRow
                   h.tpIndex
                 )
               }
-              className={`w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
+              className={`w-full p-1 text-center text-xs tabular-nums border rounded shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 ${
                 isSet
                   ? "border-green-500 ring-1 ring-green-500"
                   : "border-red-500 ring-1 ring-red-500"
@@ -64,76 +64,38 @@ export const NilaiTableWeightingHeaderRow: React.FC<NilaiTableWeightingHeaderRow
       })}
 
       {/* Weighting for STS Section */}
-      {(!settings.semester || settings.semester === "Ganjil") && (
-        <th className="p-1 text-center border-b border-l border-slate-200 bg-indigo-50">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            placeholder="%"
-            value={weights.STS ?? ""}
-            onChange={(e) => handleWeightChange("STS", e.target.value)}
-            className={`w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-              weights.STS !== null && weights.STS !== undefined && weights.STS !== ""
-                ? "border-green-500 ring-1 ring-green-500"
-                : "border-red-500 ring-1 ring-red-500"
-            }`}
-          />
-        </th>
-      )}
-      {settings.semester === "Genap" && (
-        <th className="p-1 text-center border-b border-l border-slate-200 bg-indigo-50">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            placeholder="%"
-            value={weights.STS ?? ""}
-            onChange={(e) => handleWeightChange("STS", e.target.value)}
-            className={`w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-              weights.STS !== null && weights.STS !== undefined && weights.STS !== ""
-                ? "border-green-500 ring-1 ring-green-500"
-                : "border-red-500 ring-1 ring-red-500"
-            }`}
-          />
-        </th>
-      )}
+      <th className="p-1 text-center border-b border-l border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-950/40">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          placeholder="%"
+          value={weights.STS ?? ""}
+          onChange={(e) => handleWeightChange("STS", e.target.value)}
+          className={`w-full p-1 text-center text-xs tabular-nums border rounded shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 ${
+            weights.STS !== null && weights.STS !== undefined && weights.STS !== ""
+              ? "border-green-500 ring-1 ring-green-500"
+              : "border-red-500 ring-1 ring-red-500"
+          }`}
+        />
+      </th>
 
       {/* Weighting for SAS Section */}
-      {(!settings.semester || settings.semester === "Ganjil") && (
-        <th className="p-1 text-center border-b border-l border-slate-200 bg-indigo-50">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            placeholder="%"
-            value={weights.SAS ?? ""}
-            onChange={(e) => handleWeightChange("SAS", e.target.value)}
-            className={`w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-              weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== ""
-                ? "border-green-500 ring-1 ring-green-500"
-                : "border-red-500 ring-1 ring-red-500"
-            }`}
-          />
-        </th>
-      )}
-      {settings.semester === "Genap" && (
-        <th className="p-1 text-center border-b border-l border-slate-200 bg-indigo-50">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            placeholder="%"
-            value={weights.SAS ?? ""}
-            onChange={(e) => handleWeightChange("SAS", e.target.value)}
-            className={`w-full p-0.5 text-center text-[10px] border rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 ${
-              weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== ""
-                ? "border-green-500 ring-1 ring-green-500"
-                : "border-red-500 ring-1 ring-red-500"
-            }`}
-          />
-        </th>
-      )}
+      <th className="p-1 text-center border-b border-l border-slate-200 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-950/40">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          placeholder="%"
+          value={weights.SAS ?? ""}
+          onChange={(e) => handleWeightChange("SAS", e.target.value)}
+          className={`w-full p-1 text-center text-xs tabular-nums border rounded shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-indigo-500 focus:border-indigo-500 ${
+            weights.SAS !== null && weights.SAS !== undefined && weights.SAS !== ""
+              ? "border-green-500 ring-1 ring-green-500"
+              : "border-red-500 ring-1 ring-red-500"
+          }`}
+        />
+      </th>
     </tr>
   );
 };

@@ -4,7 +4,6 @@ import { createCustomPersistStorage } from './customPersistStorage';
 
 interface AttendanceItem {
   studentId: string;
-  semester: string;
   sakit?: number | null;
   izin?: number | null;
   alpa?: number | null;
@@ -22,7 +21,7 @@ interface AttendanceState {
     studentId: string,
     field: string,
     value: any,
-    semester: string
+    semester?: string
   ) => void;
 }
 
@@ -43,19 +42,19 @@ export const useAttendanceStore = create<AttendanceState>()(
         });
       },
 
-      updateAttendance: (studentId, field, value, semester) => {
+      updateAttendance: (studentId, field, value) => {
         set((state) => {
-          const sem = semester || 'Ganjil';
           const cleanValue = (value === "" || value === null || value === undefined)
-            ? null 
+            ? null
             : typeof value === 'string' ? parseInt(value, 10) : value;
 
           let found = false;
           const next = state.attendance.map((item) => {
-            if (item.studentId === studentId && (item.semester || 'Ganjil') === sem) {
+            if (item.studentId === studentId) {
               found = true;
+              const { semester: _legacySem, ...rest } = item;
               return {
-                ...item,
+                ...rest,
                 [field]: (cleanValue === null || isNaN(cleanValue)) ? null : cleanValue
               };
             }
@@ -65,7 +64,6 @@ export const useAttendanceStore = create<AttendanceState>()(
           if (!found) {
             next.push({
               studentId,
-              semester: sem,
               sakit: null,
               izin: null,
               alpa: null,

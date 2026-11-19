@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useGridSelection } from '../../hooks/useGridSelection';
+import { useTableVirtualizer } from '../../hooks/useTableVirtualizer';
 import { getClipboardText } from "../../utils/clipboard";
 import { useStudentsStore } from "../../stores/useStudentsStore";
 import { useNotesStore } from "../../stores/useNotesStore";
@@ -21,11 +22,10 @@ export const useCatatanWaliKelasPageLogic = (props: any) => {
   const showToast = props.showToast;
 
   const onUpdateNote = props.onUpdateNote || ((sid: string, note: string) => {
-    useNotesStore.getState().updateNote(sid, note, settings?.semester);
+    useNotesStore.getState().updateNote(sid, note);
   });
 
-  const currentSemester = settings?.semester || 'Ganjil';
-  const getNoteKey = (studentId: string) => currentSemester === 'Genap' ? studentId + '_Genap' : studentId;
+  const getNoteKey = (studentId: string) => studentId;
 
   const handleGenerateNote = (student: any) => {
     const nickname =
@@ -153,6 +153,27 @@ export const useCatatanWaliKelasPageLogic = (props: any) => {
     onUpdateNote(student.id, note);
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getCatatanRowKey = useCallback(
+    (idx: number) => students[idx]?.id ?? idx,
+    [students],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: students.length,
+    scrollContainerRef,
+    estimateRowHeight: 170,
+    overscan: 6,
+    getItemKey: getCatatanRowKey,
+  });
+
   const {
     isSelecting,
     setIsSelecting,
@@ -166,17 +187,16 @@ export const useCatatanWaliKelasPageLogic = (props: any) => {
     colsCount: 1,
     minColIndex: -2,
     containerClass: 'catatan-table-container',
+    onEnsureRowVisible: scrollToIndex,
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
-      const currentSemesterSetting = settings?.semester || "Ganjil";
       
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
         for (let c = bounds.minC; c <= bounds.maxC; c++) {
           if (r >= 0 && c === 0) {
             const student = students[r];
             if (student) {
-              const noteKeyValue = currentSemesterSetting === "Genap" ? student.id + "_Genap" : student.id;
-              if (notes[noteKeyValue]) {
+              if (notes[student.id]) {
                 onUpdateNote(student.id, "");
                 updatedCount++;
               }
@@ -302,5 +322,11 @@ export const useCatatanWaliKelasPageLogic = (props: any) => {
     handleFocusCell,
     handleNoteChange,
     handlePaste,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };

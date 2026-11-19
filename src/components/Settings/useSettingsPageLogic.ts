@@ -2,6 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { removeImageBackground } from '../../utils/TransliterationUtil';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useClassChangeCascade } from '../../hooks/useClassChangeCascade';
+import {
+    IMAGE_KEYS,
+    dataURLToBlob,
+    deleteImageFromDB,
+    getImageDimensions,
+    processAndCompressImage,
+    saveImageToDB,
+} from '../../utils/imageDB';
 
 interface UseSettingsPageLogicProps {
     onSettingsChange?: (e: any) => void;
@@ -26,19 +34,66 @@ export const useSettingsPageLogic = ({
     const { executeClassChangeCascade } = useClassChangeCascade();
 
     const onUpdateKopLayout = propOnUpdateKopLayout || ((l) => {
-        setSettings((s) => {
-            const currentSemester = s.semester || "Ganjil";
-            const layoutField = currentSemester === "Genap" ? "kop_layout_Genap" : "kop_layout";
-            return { ...s, [layoutField]: l };
-        });
+        setSettings((s) => ({ ...s, kop_layout: l }));
     });
+
+    const handleImageSettingChange = useCallback(async (key: string, value: string | null) => {
+        const prevUrl = useSettingsStore.getState().settings?.[key];
+
+        if (value === null || value === '') {
+            if (typeof prevUrl === 'string' && prevUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(prevUrl);
+            }
+            setSettings((prev) => ({ ...prev, [key]: null }));
+            try {
+                await deleteImageFromDB(key);
+            } catch (err) {
+                console.error(`Failed to delete image ${key} from DB`, err);
+            }
+            return;
+        }
+
+        if (typeof value === 'string' && value.startsWith('data:image')) {
+            try {
+                const rawBlob = dataURLToBlob(value);
+                const dims = getImageDimensions(key);
+                const compressedBlob = await processAndCompressImage(rawBlob, dims.width, dims.height);
+                await saveImageToDB(key, compressedBlob);
+                const objectUrl = URL.createObjectURL(compressedBlob);
+
+                if (typeof prevUrl === 'string' && prevUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(prevUrl);
+                }
+                setSettings((prev) => ({ ...prev, [key]: objectUrl }));
+            } catch (err) {
+                console.error(`Failed to compress & persist image ${key}`, err);
+                // Fallback so UI preview still works even if compression failed
+                setSettings((prev) => ({ ...prev, [key]: value }));
+            }
+            return;
+        }
+
+        setSettings((prev) => ({ ...prev, [key]: value }));
+    }, [setSettings]);
 
     const onSettingsChange = propOnSettingsChange || ((e) => {
         const { name, value, type, checked } = e.target;
         const targetValue = type === "checkbox" ? checked : value;
-        if (name === "semester" && targetValue !== settings.semester) {
-            useSettingsStore.getState().setPendingSemester(targetValue);
-            useSettingsStore.getState().setShowSemesterModal(true);
+
+        if (typeof name === "string" && IMAGE_KEYS.includes(name)) {
+            void handleImageSettingChange(name, targetValue);
+        } else if (typeof name === "string" && name.includes(".")) {
+            const parts = name.split(".");
+            setSettings((prev) => {
+                const next = { ...prev };
+                let pointer: any = next;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    pointer[parts[i]] = { ...(pointer[parts[i]] || {}) };
+                    pointer = pointer[parts[i]];
+                }
+                pointer[parts[parts.length - 1]] = targetValue;
+                return next;
+            });
         } else {
             setSettings((prev) => ({ ...prev, [name]: targetValue }));
         }
@@ -147,30 +202,22 @@ export const useSettingsPageLogic = ({
     };
 
     const handleMakeTransparent = useCallback(async (logoKey: string) => {
-        const base64String = settings[logoKey];
-        if (!base64String) {
+        const currentImage = settings[logoKey];
+        if (!currentImage) {
             showToast('Tidak ada gambar untuk diproses.', 'error');
             return;
         }
 
         showToast('Memproses gambar...', 'info');
         try {
-            const transparentBase64 = await removeImageBackground(base64String);
-            const syntheticEvent = {
-                target: {
-                    name: logoKey,
-                    value: transparentBase64,
-                    type: 'file_processed',
-                    files: null
-                }
-            };
-            onSettingsChange(syntheticEvent);
+            const transparentBase64 = await removeImageBackground(currentImage);
+            await handleImageSettingChange(logoKey, transparentBase64);
             showToast('Latar belakang logo berhasil dihapus.', 'success');
         } catch (error: any) {
             console.error('Gagal membuat latar belakang transparan:', error);
             showToast(`Gagal memproses gambar: ${error.message}`, 'error');
         }
-    }, [settings, onSettingsChange, showToast]);
+    }, [settings, handleImageSettingChange, showToast]);
 
     const handleGradeMethodChange = (subjectId: string, newMethod: string) => {
         const currentCalc = settings.gradeCalculation || {};

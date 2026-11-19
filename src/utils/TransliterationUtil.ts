@@ -399,11 +399,10 @@ export const generateInitialLayout = (appSettings: any) => {
 /**
  * Resolves the appropriate kop layout according to semester and aksara Bali status.
  */
-export const resolveKopLayout = (settings: any, currentSemester: string = 'Ganjil'): any[] => {
-    const layoutField = currentSemester === 'Genap' ? 'kop_layout_Genap' : 'kop_layout';
+export const resolveKopLayout = (settings: any, _currentSemester: string = 'Ganjil'): any[] => {
     const showAksara = settings?.show_aksara_bali !== false;
 
-    let rawLayout = settings ? settings[layoutField] : null;
+    let rawLayout = settings ? (settings.kop_layout ?? settings.kop_layout_Genap) : null;
     if (typeof rawLayout === 'string') {
         try {
             rawLayout = JSON.parse(rawLayout);
@@ -443,14 +442,18 @@ export const resolveKopLayout = (settings: any, currentSemester: string = 'Ganji
  * @param {number} tolerance A value from 0-255 to determine how close a color must be to the background color to be removed.
  * @returns {Promise<string>} A promise that resolves with the base64 string of the new transparent PNG image.
  */
-export function removeImageBackground(base64String, tolerance = 20) {
-    return new Promise((resolve, reject) => {
+export function removeImageBackground(base64String: string, tolerance = 20): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "Anonymous";
 
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error("Canvas context tidak tersedia."));
+                return;
+            }
 
             canvas.width = img.width;
             canvas.height = img.height;

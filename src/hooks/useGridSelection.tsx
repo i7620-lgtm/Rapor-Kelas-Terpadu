@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 const scrollCellIntoView = (el, containerClass) => {
     if (!el) return;
@@ -57,21 +57,51 @@ const scrollCellIntoView = (el, containerClass) => {
     }, 10);
 };
 
-export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, containerClass = "grid-table-container", onDeleteSelection }) {
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
+export interface GridSelectionBounds {
+  minR: number;
+  maxR: number;
+  minC: number;
+  maxC: number;
+}
+
+export interface UseGridSelectionOptions {
+  rowsCount: number;
+  colsCount: number;
+  minColIndex?: number;
+  containerClass?: string;
+  onDeleteSelection?: ((bounds: GridSelectionBounds) => void) | undefined;
+  onEnsureRowVisible?: (rowIndex: number) => void;
+}
+
+export function useGridSelection({
+  rowsCount,
+  colsCount,
+  minColIndex = 0,
+  containerClass = "grid-table-container",
+  onDeleteSelection = undefined as any,
+  onEnsureRowVisible,
+}: UseGridSelectionOptions) {
+  const [selectionStart, setSelectionStart] = useState<{ r: number; c: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ r: number; c: number } | null>(null);
   const [isSelectingState, setIsSelectingState] = useState(false);
   const isSelectingRef = useRef(false);
+  const selectionStartRef = useRef<{ r: number; c: number } | null>(null);
+  const selectionEndRef = useRef<{ r: number; c: number } | null>(null);
   const isProgrammaticFocus = useRef(false);
+  const onEnsureRowVisibleRef = useRef(onEnsureRowVisible);
 
-  const setIsSelecting = useCallback((val) => {
+  selectionStartRef.current = selectionStart;
+  selectionEndRef.current = selectionEnd;
+  onEnsureRowVisibleRef.current = onEnsureRowVisible;
+
+  const setIsSelecting = useCallback((val: boolean) => {
     isSelectingRef.current = val;
     setIsSelectingState(val);
   }, []);
   
   const isSelecting = isSelectingState;
 
-  const getSelectionBounds = useCallback(() => {
+  const selectionBounds = useMemo<GridSelectionBounds | null>(() => {
     if (!selectionStart || !selectionEnd) return null;
     return {
       minR: Math.min(selectionStart.r, selectionEnd.r),
@@ -81,14 +111,47 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
     };
   }, [selectionStart, selectionEnd]);
 
+  const getSelectionBounds = useCallback(() => selectionBounds, [selectionBounds]);
+
   useEffect(() => {
+    let focusRafId: number | null = null;
+
+    const focusAndScrollTargetCell = (newR: number, newC: number, shouldFocusInput: boolean, attempt = 0) => {
+      const input =
+        document.getElementById(`cell-${newR}-${newC}`) ||
+        (document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement | null);
+
+      if (input) {
+        if (shouldFocusInput) {
+          isProgrammaticFocus.current = true;
+          input.focus();
+          if (typeof (input as HTMLInputElement).select === 'function') {
+            (input as HTMLInputElement).select();
+          }
+          scrollCellIntoView(input, containerClass);
+          setTimeout(() => {
+            isProgrammaticFocus.current = false;
+          }, 10);
+        } else {
+          scrollCellIntoView(input, containerClass);
+        }
+        return;
+      }
+
+      if (attempt < 4) {
+        focusRafId = requestAnimationFrame(() => {
+          focusAndScrollTargetCell(newR, newC, shouldFocusInput, attempt + 1);
+        });
+      }
+    };
+
     const handleMouseUpGlobal = () => setIsSelecting(false);
-    const handleMouseMoveGlobal = (e) => {
+    const handleMouseMoveGlobal = (e: MouseEvent) => {
       if (isSelectingRef.current && e.buttons !== 1) {
         setIsSelecting(false);
       }
     };
-    const handleMouseDownGlobal = (e) => {
+    const handleMouseDownGlobal = (e: MouseEvent) => {
       const isGridActive = document.querySelector(`.${containerClass}`)?.contains(e.target as Node);
       if (!isGridActive) {
         setSelectionStart(null);
@@ -96,7 +159,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
         setIsSelecting(false);
       }
     };
-    const handleKeyDownGlobal = (e) => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
         const isGridActive =
           document.activeElement?.tagName === "BODY" ||
@@ -121,7 +184,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
           const isInputActive = document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA";
           
           if (!e.shiftKey && isInputActive && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
-              const input = document.activeElement;
+              const input = document.activeElement as HTMLInputElement;
               const isFullySelected = input.selectionStart === 0 && input.selectionEnd === input.value.length;
               const isAtStart = input.selectionStart === 0 && input.selectionEnd === 0;
               const isAtEnd = input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
@@ -132,70 +195,47 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
               }
           }
 
-          if (e.key === "Enter" && isInputActive && document.activeElement.tagName === "TEXTAREA" && !e.ctrlKey && !e.metaKey) {
-              // Usually inside a textarea you want Enter to add a newline. 
-              // We'll let it execute natively and return, UNLESS they do Ctrl+Enter (which might mean "finish and move")
-              // Actually, in many data-grids, Enter moves down, and Alt/Shift+Enter adds newline.
-              // Let's implement Excel style: Alt+Enter for newline (but browsers handle Enter for newline).
-              // Let's just say: if it's a textarea, standard Enter = move down, Shift+Enter = move up.
-              // To insert newline, they need Alt+Enter.
-              // If they press Alt+Enter:
+          if (e.key === "Enter" && isInputActive && document.activeElement?.tagName === "TEXTAREA" && !e.ctrlKey && !e.metaKey) {
               if (e.altKey) {
-                 return; // Let native handling do the newline (or they might need to script it if browser doesn't do Alt+Enter native)
+                 return;
               }
           }
 
           e.preventDefault();
-          
-          setSelectionEnd((prevEnd) => {
-             if (!prevEnd) return prevEnd;
-             let newR = prevEnd.r;
-             let newC = prevEnd.c;
-             
-             if (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey)) {
-                 newR = Math.max(0, newR - 1);
-             }
-             if (e.key === "ArrowDown" || (e.key === "Enter" && !e.shiftKey)) {
-                 newR = Math.min(rowsCount - 1, newR + 1);
-             }
-             if (e.key === "ArrowLeft" || (e.key === "Tab" && e.shiftKey)) {
-                 newC = Math.max(minColIndex, newC - 1);
-                 // If moving left from start column, wrap around? Not implemented right now.
-             }
-             if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
-                 newC = Math.min(colsCount - 1, newC + 1);
-             }
-             
-             if (!e.shiftKey || e.key === "Enter" || e.key === "Tab") {
-                 // For Enter or Tab, we ALWAYS move the whole selection, even with shift.
-                 // Actually Shift+Enter moves up, Shift+Tab moves left. 
-                 setSelectionStart({ r: newR, c: newC });
-                 setTimeout(() => {
-                     const input = document.getElementById(`cell-${newR}-${newC}`) || document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                     if (input) {
-                         isProgrammaticFocus.current = true;
-                         input.focus();
-                         if (typeof (input as HTMLInputElement).select === 'function') {
-                             (input as HTMLInputElement).select();
-                         }
-                         scrollCellIntoView(input, containerClass);
-                         setTimeout(() => (isProgrammaticFocus.current = false), 10);
-                     } else {
-                         const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                         if (el) {
-                             scrollCellIntoView(el, containerClass);
-                         }
-                     }
-                 }, 0);
-             } else {
-                 setTimeout(() => {
-                     const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                     if (el) {
-                         scrollCellIntoView(el, containerClass);
-                     }
-                 }, 10);
-             }
-             return { r: newR, c: newC };
+          const prevEnd = selectionEndRef.current;
+          if (!prevEnd) return;
+
+          let newR = prevEnd.r;
+          let newC = prevEnd.c;
+
+          if (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey)) {
+            newR = Math.max(0, newR - 1);
+          }
+          if (e.key === "ArrowDown" || (e.key === "Enter" && !e.shiftKey)) {
+            newR = Math.min(rowsCount - 1, newR + 1);
+          }
+          if (e.key === "ArrowLeft" || (e.key === "Tab" && e.shiftKey)) {
+            newC = Math.max(minColIndex, newC - 1);
+          }
+          if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
+            newC = Math.min(colsCount - 1, newC + 1);
+          }
+
+          const shouldResetStart = !e.shiftKey || e.key === "Enter" || e.key === "Tab";
+          if (shouldResetStart) {
+            setSelectionStart({ r: newR, c: newC });
+          }
+          setSelectionEnd({ r: newR, c: newC });
+
+          if (onEnsureRowVisibleRef.current) {
+            onEnsureRowVisibleRef.current(newR);
+          }
+
+          if (focusRafId !== null) {
+            cancelAnimationFrame(focusRafId);
+          }
+          focusRafId = requestAnimationFrame(() => {
+            focusAndScrollTargetCell(newR, newC, shouldResetStart, 0);
           });
         }
       } else if (e.key === "Backspace" || e.key === "Delete") {
@@ -205,12 +245,11 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
           document.activeElement?.tagName === "BODY" ||
           document.querySelector(`.${containerClass}`)?.contains(document.activeElement);
           
-        const bounds = getSelectionBounds();
-        if (isGridActive && bounds) {
-            let isMultiSelect = bounds && (bounds.maxR > bounds.minR || bounds.maxC > bounds.minC);
+        if (isGridActive && selectionBounds) {
+            const isMultiSelect = selectionBounds.maxR > selectionBounds.minR || selectionBounds.maxC > selectionBounds.minC;
             if (isMultiSelect) {
                 e.preventDefault();
-                onDeleteSelection(bounds);
+                onDeleteSelection(selectionBounds);
             }
         }
       }
@@ -220,24 +259,25 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
     window.addEventListener("mousemove", handleMouseMoveGlobal);
     window.addEventListener("keydown", handleKeyDownGlobal);
     return () => {
+      if (focusRafId !== null) cancelAnimationFrame(focusRafId);
       window.removeEventListener("mousedown", handleMouseDownGlobal);
       window.removeEventListener("mouseup", handleMouseUpGlobal);
       window.removeEventListener("mousemove", handleMouseMoveGlobal);
       window.removeEventListener("keydown", handleKeyDownGlobal);
     };
-  }, [rowsCount, colsCount, minColIndex, containerClass, getSelectionBounds, onDeleteSelection]);
+  }, [rowsCount, colsCount, minColIndex, containerClass, selectionBounds, onDeleteSelection, setIsSelecting]);
 
   const getSelectionStyle = useCallback(
-    (r, c) => {
+    (r: number, c: number) => {
       let isCellSelected = false;
-      let selectionStyle = {};
-      let boxShadows = [];
+      const selectionStyle: Record<string, any> = {};
+      const boxShadows: string[] = [];
       let isLeftmost = false;
       let isRightmost = false;
       let isTopmost = false;
       let isBottommost = false;
 
-      const bounds = getSelectionBounds();
+      const bounds = selectionBounds;
 
       if (bounds) {
         isCellSelected =
@@ -283,10 +323,10 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
         showTransparentInput,
       };
     },
-    [getSelectionBounds, selectionStart],
+    [selectionBounds],
   );
 
-  const handleMouseDownCell = useCallback((e, rowIndex, colIndex, inputIdPrefix = "cell") => {
+  const handleMouseDownCell = useCallback((e: any, rowIndex: number, colIndex: number, inputIdPrefix = "cell") => {
     const targetTagName = e.target?.tagName;
     const isInputTarget = targetTagName === "INPUT" || targetTagName === "TEXTAREA" || targetTagName === "SELECT";
     const isAlreadyActive = document.activeElement?.id === `${inputIdPrefix}-${rowIndex}-${colIndex}`;
@@ -295,7 +335,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
       e.preventDefault();
     }
     
-    if (e.shiftKey && selectionStart) {
+    if (e.shiftKey && selectionStartRef.current) {
       setSelectionEnd({ r: rowIndex, c: colIndex });
     } else {
       setIsSelecting(true);
@@ -305,7 +345,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
 
     if (!isAlreadyActive) {
       setTimeout(() => {
-        const input = document.getElementById(`${inputIdPrefix}-${rowIndex}-${colIndex}`);
+        const input = document.getElementById(`${inputIdPrefix}-${rowIndex}-${colIndex}`) as HTMLInputElement | null;
         if (input) {
           isProgrammaticFocus.current = true;
           input.focus();
@@ -316,9 +356,9 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
         }
       }, 0);
     }
-  }, [selectionStart]);
+  }, [setIsSelecting]);
 
-  const handleMouseEnterCell = useCallback((rowIndex, colIndex, e?: React.MouseEvent) => {
+  const handleMouseEnterCell = useCallback((rowIndex: number, colIndex: number, e?: React.MouseEvent) => {
     if (isSelectingRef.current) {
       if (e && e.buttons !== 1) {
         setIsSelecting(false);
@@ -326,9 +366,9 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
       }
       setSelectionEnd({ r: rowIndex, c: colIndex });
     }
-  }, []);
+  }, [setIsSelecting]);
 
-  const handleFocusCell = useCallback((rowIndex, colIndex) => {
+  const handleFocusCell = useCallback((rowIndex: number, colIndex: number) => {
     if (isProgrammaticFocus.current) return;
     if (isSelectingRef.current) return;
     setSelectionStart((prevStart) => {
@@ -339,13 +379,14 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
       if (prevEnd?.r === rowIndex && prevEnd?.c === colIndex) return prevEnd;
       return { r: rowIndex, c: colIndex };
     });
-  }, [isSelecting]);
+  }, []);
 
   return {
     selectionStart,
     setSelectionStart,
     selectionEnd,
     setSelectionEnd,
+    selectionBounds,
     isSelecting,
     setIsSelecting,
     isProgrammaticFocus,

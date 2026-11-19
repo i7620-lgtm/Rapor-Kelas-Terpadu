@@ -1,9 +1,9 @@
-export const excelRound = (num) => {
+const excelRound = (num: number | null | undefined) => {
     if (num === null || typeof num === 'undefined') return null;
     return Math.round(num + Number.EPSILON);
 };
 
-export const calculateFinalGrade = (detailed, config, settings, subjectId, learningObjectivesMap, gradeKey, curriculumKey, predefinedCurriculum = null) => {
+export const calculateFinalGrade = (detailed, config, settings, subjectId, learningObjectivesMap, gradeKey, curriculumKey, _predefinedCurriculum = null) => {
     if (!detailed) return null;
     let finalScore = null;
     const { predikats, qualitativeGradingMap, slmVisibility } = settings;
@@ -11,49 +11,30 @@ export const calculateFinalGrade = (detailed, config, settings, subjectId, learn
 
     const getNumericScore = (score) => {
         if (typeof score === 'number') return score;
-        if (typeof score === 'string' && qualitativeGradingMap && qualitativeGradingMap[score]) {
+        if (
+            typeof score === 'string' &&
+            qualitativeGradingMap &&
+            typeof qualitativeGradingMap[score] === 'number' &&
+            Number.isFinite(qualitativeGradingMap[score])
+        ) {
             return qualitativeGradingMap[score];
         }
         return null;
     };
     
-    // Filter SLMs based on visibility settings
+    // Filter SLMs based solely on visibility settings (single active semester)
     const activeSlmIds = slmVisibility?.[subjectId];
-    let visibleSlms = activeSlmIds ? (detailed.slm || []).filter(slm => activeSlmIds.includes(slm.id)) : (detailed.slm || []);
-    
-    const currentSemester = settings.semester || 'Ganjil';
-    
-    // Filter SLMs by semester if learningObjectives map is provided
-    if (learningObjectivesMap && gradeKey && curriculumKey) {
-        const objectives = learningObjectivesMap[gradeKey]?.[curriculumKey] || [];
-        const slmSemesters = {};
-        objectives.forEach(obj => {
-             if (obj.slmId) slmSemesters[obj.slmId] = obj.semester || 'Semua';
-        });
-        
-        const preSlms = predefinedCurriculum?.[curriculumKey] || [];
-        const preHalf = Math.ceil(preSlms.length / 2);
-        
-        visibleSlms = visibleSlms.filter(slm => {
-             let sem = slmSemesters[slm.id];
-             if (!sem && slm.id && slm.id.startsWith('slm_predefined_') && preSlms.length > 0) {
-                 const parts = slm.id.split('_');
-                 const idx = parseInt(parts[parts.length - 1], 10);
-                 if (!isNaN(idx)) {
-                     sem = idx < preHalf ? 'Ganjil' : 'Genap';
-                 }
-             }
-             if (!sem) sem = 'Semua';
-             return sem === 'Semua' || sem === currentSemester;
-        });
-    }
+    const visibleSlms = activeSlmIds ? (detailed.slm || []).filter(slm => activeSlmIds.includes(slm.id)) : (detailed.slm || []);
 
-    const isGenap = currentSemester === 'Genap';
-    const stsField = isGenap ? 'sts2' : 'sts1';
-    const sasField = isGenap ? 'sas2' : 'sas1';
-    
-    const stsVal = (detailed[stsField] !== undefined) ? detailed[stsField] : (isGenap ? null : detailed.sts);
-    const sasVal = (detailed[sasField] !== undefined) ? detailed[sasField] : (isGenap ? null : detailed.sas);
+    const isGenap = settings?.semester === 'Genap';
+    const stsVal =
+      detailed.sts !== undefined
+        ? detailed.sts
+        : (isGenap ? (detailed.sts2 ?? detailed.sts1 ?? null) : (detailed.sts1 ?? detailed.sts2 ?? null));
+    const sasVal =
+      detailed.sas !== undefined
+        ? detailed.sas
+        : (isGenap ? (detailed.sas2 ?? detailed.sas1 ?? null) : (detailed.sas1 ?? detailed.sas2 ?? null));
     
     if (config.method === 'rata-rata') {
         const slmAvgScores = visibleSlms.map(slm => {

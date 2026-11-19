@@ -7,7 +7,7 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 
 export default [
   {
-    ignores: ["dist/**", "public/**", "*.min.js"],
+    ignores: ["dist/**", "dev-dist/**", "public/**", "*.min.js"],
   },
   js.configs.recommended,
   {

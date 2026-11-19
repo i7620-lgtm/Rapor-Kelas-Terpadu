@@ -1,21 +1,25 @@
 import React from 'react';
+import type { GridSelectionBounds } from '../../hooks/useGridSelection';
 
 interface SiswaTableRowProps {
     student: any;
+    photoSrc?: string;
     rowIndex: number;
     otherFields: any[];
     nameField: any;
+    selectionBounds?: GridSelectionBounds | null;
     getSelectionStyle: (r: number, c: number) => any;
     handleMouseDownCell: (e: any, r: number, c: number) => void;
     handleMouseEnterCell: (r: number, c: number) => void;
     handleMoveStudent: (idx: number, dir: number) => void;
-    renderCellInput: (student: any, fieldDef: any, rowIndex: number, colIndex: number) => React.ReactNode;
+    renderCellInput: (student: any, fieldDef: any, rowIndex: number, colIndex: number, photoSrc?: string) => React.ReactNode;
     handleDelete: (id: string) => void;
     isLastRow: boolean;
 }
 
 export const SiswaTableRow = React.memo(({
     student,
+    photoSrc,
     rowIndex,
     otherFields,
     nameField,
@@ -34,7 +38,7 @@ export const SiswaTableRow = React.memo(({
             <td 
                 id={`cell-${rowIndex}--1`}
                 tabIndex={-1}
-                className="w-[50px] min-w-[50px] max-w-[50px] px-2 py-2 text-center border-b border-zinc-200/60 sticky left-0 z-20 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none"
+                className="w-[42px] min-w-[42px] max-w-[42px] sm:w-[50px] sm:min-w-[50px] sm:max-w-[50px] px-1.5 sm:px-2 py-2 text-center border-b border-slate-200 dark:border-slate-700 sticky left-0 z-20 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70 shadow-[4px_0_8px_-2px_rgba(0,0,0,0.1)] lg:shadow-none cursor-default select-none"
                 style={getSelectionStyle(rowIndex, -1).selectionStyle}
                 onMouseDown={(e) => {
                     if (e.button !== 0) return;
@@ -46,18 +50,18 @@ export const SiswaTableRow = React.memo(({
                     <button
                         onClick={(e) => { e.stopPropagation(); handleMoveStudent(rowIndex, -1); }}
                         disabled={rowIndex === 0}
-                        className={`p-0.5 rounded text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${rowIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`min-w-[34px] min-h-[30px] sm:min-w-[36px] sm:min-h-[32px] lg:min-w-0 lg:min-h-0 p-1 lg:p-0.5 inline-flex items-center justify-center rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors ${rowIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                         title="Pindah ke atas"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                         </svg>
                     </button>
-                    <span className="text-xs font-semibold text-zinc-700 leading-none my-0.5">{rowIndex + 1}</span>
+                    <span className="text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-200 leading-none my-0.5">{rowIndex + 1}</span>
                     <button
                         onClick={(e) => { e.stopPropagation(); handleMoveStudent(rowIndex, 1); }}
                         disabled={isLastRow}
-                        className={`p-0.5 rounded text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors ${isLastRow ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`min-w-[34px] min-h-[30px] sm:min-w-[36px] sm:min-h-[32px] lg:min-w-0 lg:min-h-0 p-1 lg:p-0.5 inline-flex items-center justify-center rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 transition-colors ${isLastRow ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                         title="Pindah ke bawah"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -67,17 +71,17 @@ export const SiswaTableRow = React.memo(({
                 </div>
             </td>
             {/* Name Column -> colIndex: 0 */}
-            {renderCellInput(student, nameField, rowIndex, 0)}
+            {renderCellInput(student, nameField, rowIndex, 0, photoSrc)}
             {/* Other Fields Columns -> colIndex: 1 to N */}
             {otherFields.map((field, colIndexOffset) => {
-                const cell = renderCellInput(student, field, rowIndex, colIndexOffset + 1);
+                const cell = renderCellInput(student, field, rowIndex, colIndexOffset + 1, photoSrc);
                 return React.cloneElement(cell as React.ReactElement, { key: field.key });
             })}
             {/* Action Column -> Skipped grid selection as it's not a data field */}
-            <td className="px-4 py-2 text-center border-b border-zinc-200/60 bg-white group-hover:bg-slate-50 group-focus-within:bg-slate-50">
+            <td className="px-3 sm:px-4 py-2 text-center border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/70 group-focus-within:bg-slate-50 dark:group-focus-within:bg-slate-800/70">
                 <button
                     onClick={() => handleDelete(student.id)}
-                    className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200 transition-colors"
+                    className="min-w-[44px] min-h-[44px] lg:min-w-0 lg:min-h-0 p-2 lg:p-1.5 inline-flex items-center justify-center bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/60 border border-red-200 dark:border-red-800 transition-colors cursor-pointer"
                     title={`Hapus ${student.namaLengkap}`}
                 > 
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -93,20 +97,48 @@ export const SiswaTableRow = React.memo(({
     if (prev.student.id !== next.student.id) return false;
     if (prev.rowIndex !== next.rowIndex) return false;
     if (prev.isLastRow !== next.isLastRow) return false;
+    if (prev.photoSrc !== next.photoSrc) return false;
 
-    if (JSON.stringify(prev.student) !== JSON.stringify(next.student)) return false;
-
-    const maxCols = prev.otherFields.length + 1;
-    for (let c = -1; c <= maxCols; c++) {
-        const prevStyle = prev.getSelectionStyle(prev.rowIndex, c);
-        const nextStyle = next.getSelectionStyle(next.rowIndex, c);
-        if (
-            prevStyle.isCellSelected !== nextStyle.isCellSelected ||
-            prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
-            prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
-            prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
-        ) {
+    if (prev.student !== next.student) {
+        if (prev.nameField && prev.student[prev.nameField.key] !== next.student[prev.nameField.key]) {
             return false;
+        }
+        for (let i = 0; i < prev.otherFields.length; i++) {
+            const key = prev.otherFields[i].key;
+            if (prev.student[key] !== next.student[key]) {
+                return false;
+            }
+        }
+    }
+
+    if (prev.selectionBounds !== next.selectionBounds) {
+        if (prev.selectionBounds !== undefined || next.selectionBounds !== undefined) {
+            const prevInRow = Boolean(
+                prev.selectionBounds &&
+                prev.rowIndex >= prev.selectionBounds.minR &&
+                prev.rowIndex <= prev.selectionBounds.maxR
+            );
+            const nextInRow = Boolean(
+                next.selectionBounds &&
+                next.rowIndex >= next.selectionBounds.minR &&
+                next.rowIndex <= next.selectionBounds.maxR
+            );
+            if (!prevInRow && !nextInRow) {
+                return true;
+            }
+        }
+        const maxCols = prev.otherFields.length + 1;
+        for (let c = -1; c <= maxCols; c++) {
+            const prevStyle = prev.getSelectionStyle(prev.rowIndex, c);
+            const nextStyle = next.getSelectionStyle(next.rowIndex, c);
+            if (
+                prevStyle.isCellSelected !== nextStyle.isCellSelected ||
+                prevStyle.showTransparentInput !== nextStyle.showTransparentInput ||
+                prevStyle.selectionStyle?.backgroundColor !== nextStyle.selectionStyle?.backgroundColor ||
+                prevStyle.selectionStyle?.boxShadow !== nextStyle.selectionStyle?.boxShadow
+            ) {
+                return false;
+            }
         }
     }
     return true;

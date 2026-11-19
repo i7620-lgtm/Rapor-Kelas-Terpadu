@@ -1,60 +1,149 @@
 import { PersistStorage, StorageValue } from "zustand/middleware";
 import localforage from "localforage";
+import { computeQualitativeGradingMap, isValidQualitativeGradingMap } from "../utils/nilaiHelpers";
+import { IMAGE_KEYS } from "../utils/imageDB";
 
 // Memory cache to serve instant reads of pending debounced queues
 const memoryCache: Record<string, any> = {};
 const pendingTimers: Record<string, any> = {};
+const writeGeneration: Record<string, number> = {};
+const inFlightFlushes: Record<string, Promise<void>> = {};
 
-// Helper to flush a specific debounced save instantly
-const flushQueue = async (name: string, value: any): Promise<void> => {
-  try {
-    if (pendingTimers[name]) {
-      clearTimeout(pendingTimers[name]);
-      delete pendingTimers[name];
+// Strip transient blob: URLs from persisted settings JSON without mutating runtime state
+const stripBlobImageUrlsFromSettings = (settingsObj: any): any => {
+  if (!settingsObj || typeof settingsObj !== "object") return settingsObj;
+  let hasBlob = false;
+  for (const key of IMAGE_KEYS) {
+    if (typeof settingsObj[key] === "string" && settingsObj[key].startsWith("blob:")) {
+      hasBlob = true;
+      break;
     }
-    await localforage.setItem(name, value);
-    
-    // Sync back to individual flat keys for full backwards-compatibility
-    if (name === "appSettingsCompound") {
-      const state = value.state as any;
-      if (state.settings) {
-        await localforage.setItem("appSettings", state.settings);
-      }
-      if (state.subjects) {
-        await localforage.setItem("appSubjects", state.subjects);
-      }
-      if (state.extracurriculars) {
-        await localforage.setItem("appExtracurriculars", state.extracurriculars);
-      }
-    }
-    delete memoryCache[name];
-  } catch (err) {
-    console.error(`Error flushing debounced persistence for "${name}":`, err);
   }
+  if (!hasBlob) return settingsObj;
+  const cleaned = { ...settingsObj };
+  for (const key of IMAGE_KEYS) {
+    if (typeof cleaned[key] === "string" && cleaned[key].startsWith("blob:")) {
+      cleaned[key] = null;
+    }
+  }
+  return cleaned;
+};
+
+const stripBlobStudentPhotoUrls = (studentsList: any[]): any[] => {
+  if (!Array.isArray(studentsList)) return studentsList;
+  let hasBlob = false;
+  for (const s of studentsList) {
+    if (typeof s?.foto === "string" && s.foto.startsWith("blob:")) {
+      hasBlob = true;
+      break;
+    }
+  }
+  if (!hasBlob) return studentsList;
+  return studentsList.map((s) =>
+    typeof s?.foto === "string" && s.foto.startsWith("blob:")
+      ? { ...s, foto: "" }
+      : s
+  );
+};
+
+const preparePayloadForPersistence = (name: string, value: any): any => {
+  if (!value || typeof value !== "object") return value;
+  if (name === "appSettingsCompound" && value.state?.settings) {
+    const cleanedSettings = stripBlobImageUrlsFromSettings(value.state.settings);
+    if (cleanedSettings === value.state.settings) return value;
+    return {
+      ...value,
+      state: {
+        ...value.state,
+        settings: cleanedSettings,
+      },
+    };
+  }
+  if (name === "appStudents" && Array.isArray(value.state?.students)) {
+    const cleanedStudents = stripBlobStudentPhotoUrls(value.state.students);
+    if (cleanedStudents === value.state.students) return value;
+    return {
+      ...value,
+      state: {
+        ...value.state,
+        students: cleanedStudents,
+      },
+    };
+  }
+  return value;
+};
+
+// Helper to flush a specific debounced save safely using writeGeneration to prevent race deletions
+const flushQueue = async (name: string): Promise<void> => {
+  if (pendingTimers[name]) {
+    clearTimeout(pendingTimers[name]);
+    delete pendingTimers[name];
+  }
+
+  if (inFlightFlushes[name]) {
+    await inFlightFlushes[name];
+    if (!memoryCache[name]) return;
+  }
+
+  const runFlush = async () => {
+    while (memoryCache[name] !== undefined) {
+      const genAtStart = writeGeneration[name] || 0;
+      const snapshot = preparePayloadForPersistence(name, memoryCache[name]);
+      try {
+        await localforage.setItem(name, snapshot);
+
+        // Sync back to individual flat keys for backwards-compatibility
+        if (name === "appSettingsCompound" && snapshot?.state) {
+          const state = snapshot.state as any;
+          if (state.settings) {
+            await localforage.setItem("appSettings", state.settings);
+          }
+          if (state.subjects) {
+            await localforage.setItem("appSubjects", state.subjects);
+          }
+          if (state.extracurriculars) {
+            await localforage.setItem("appExtracurriculars", state.extracurriculars);
+          }
+        }
+      } catch (err) {
+        console.error(`Error flushing debounced persistence for "${name}":`, err);
+        break;
+      }
+
+      if ((writeGeneration[name] || 0) === genAtStart) {
+        delete memoryCache[name];
+        break;
+      }
+      // A newer write happened while localforage.setItem was awaiting; loop again to persist it
+    }
+  };
+
+  const promise = runFlush().finally(() => {
+    if (inFlightFlushes[name] === promise) {
+      delete inFlightFlushes[name];
+    }
+  });
+  inFlightFlushes[name] = promise;
+  await promise;
+};
+
+export const flushAllPendingWrites = async (): Promise<void> => {
+  const keys = Array.from(
+    new Set([...Object.keys(memoryCache), ...Object.keys(inFlightFlushes)])
+  );
+  if (keys.length === 0) return;
+  await Promise.all(keys.map((name) => flushQueue(name)));
 };
 
 // Global fallback listeners to flush the queue when user moves/closes the page
 if (typeof window !== "undefined") {
-  const flushAll = () => {
-    for (const [name, value] of Object.entries(memoryCache)) {
-      if (pendingTimers[name]) {
-        clearTimeout(pendingTimers[name]);
-        delete pendingTimers[name];
-      }
-      // Trigger instant save
-      localforage.setItem(name, value).catch(() => {});
-      if (name === "appSettingsCompound") {
-        const state = value?.state as any;
-        if (state?.settings) localforage.setItem("appSettings", state.settings).catch(() => {});
-        if (state?.subjects) localforage.setItem("appSubjects", state.subjects).catch(() => {});
-        if (state?.extracurriculars) localforage.setItem("appExtracurriculars", state.extracurriculars).catch(() => {});
-      }
-    }
+  const flushAllSyncTrigger = () => {
+    void flushAllPendingWrites();
   };
-  window.addEventListener("beforeunload", flushAll);
+  window.addEventListener("beforeunload", flushAllSyncTrigger);
   window.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-      flushAll();
+      flushAllSyncTrigger();
     }
   });
 }
@@ -85,6 +174,45 @@ const sanitizeRestoredState = (name: string, state: any): any => {
   if (name.includes("Settings") || name.includes("settings") || name.includes("appSettingsCompound")) {
     if (!state.settings || typeof state.settings !== "object") {
       state.settings = {};
+    } else {
+      const booleanSettingKeys = [
+        "show_aksara_bali",
+        "enableExitWarning",
+        "enableAutoRegression",
+        "show_photo",
+        "show_nip_kepsek",
+        "show_nis_cover",
+        "show_nisn_cover",
+        "show_alamat_cover",
+        "show_rt_rw",
+        "use_clean_piagam_text",
+      ];
+      booleanSettingKeys.forEach((key) => {
+        if (typeof state.settings[key] === "string") {
+          const normalized = state.settings[key].trim().toLowerCase();
+          if (normalized === "true") state.settings[key] = true;
+          else if (normalized === "false") state.settings[key] = false;
+        }
+      });
+
+      // Heal stray flat predikat keys if previously persisted by dotted input names
+      ["a", "b", "c", "d"].forEach((subKey) => {
+        const flatKey = `predikats.${subKey}`;
+        if (flatKey in state.settings) {
+          delete state.settings[flatKey];
+        }
+      });
+
+      // Ensure predikats exists and heal missing or legacy-formatted qualitativeGradingMap
+      if (!state.settings.predikats || typeof state.settings.predikats !== "object") {
+        state.settings.predikats = { a: "90", b: "80", c: "70", d: "0" };
+      }
+      if (!isValidQualitativeGradingMap(state.settings.qualitativeGradingMap)) {
+        state.settings.qualitativeGradingMap = computeQualitativeGradingMap(state.settings.predikats);
+      }
+
+      // Strip expired blob: URLs from hydrated JSON before RKT_ImagesDB loads fresh URLs
+      state.settings = stripBlobImageUrlsFromSettings(state.settings);
     }
     if (!Array.isArray(state.subjects)) {
       state.subjects = [];
@@ -188,8 +316,9 @@ export const createCustomPersistStorage = <T extends object>(
     },
     setItem: async (name: string, value: StorageValue<T>): Promise<void> => {
       try {
-        // Set hot memory cache representation to keep state instantaneous
+        // Set hot memory cache representation and bump generation counter
         memoryCache[name] = value;
+        writeGeneration[name] = (writeGeneration[name] || 0) + 1;
 
         // Clear existing queue timers for the current key
         if (pendingTimers[name]) {
@@ -200,7 +329,7 @@ export const createCustomPersistStorage = <T extends object>(
         // Highly dynamic keys like grades and formative typing will update visually instantly, 
         // but commit to IndexedDB only once typing slows down, freeing up CPU/memory loops on low-end devices.
         pendingTimers[name] = setTimeout(() => {
-          flushQueue(name, value);
+          void flushQueue(name);
         }, 1500);
 
       } catch (err) {

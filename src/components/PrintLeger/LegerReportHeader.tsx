@@ -4,7 +4,7 @@ import { resolveKopLayout } from '../../utils/TransliterationUtil';
 const PAGE_TOP_MARGIN_CM = 1.5;
 const PAGE_LEFT_RIGHT_MARGIN_CM = 1.5;
 
-export const LegerReportHeader = ({ settings }) => {
+export const LegerReportHeader = ({ settings }: { settings: any }) => {
     const currentSemester = settings?.semester || 'Ganjil';
     const layout = resolveKopLayout(settings, currentSemester);
 
@@ -28,13 +28,13 @@ export const LegerReportHeader = ({ settings }) => {
                 >
                     {layout.map((el) => {
                         if (el.type === 'text') {
-                            let textAnchor = "start";
+                            let textAnchor: 'start' | 'middle' | 'end' = 'start';
                             let xPos = el.x;
                             if (el.textAlign === 'center') {
-                                textAnchor = "middle";
+                                textAnchor = 'middle';
                                 xPos = el.x + (el.width ?? 0) / 2;
                             } else if (el.textAlign === 'right') {
-                                textAnchor = "end";
+                                textAnchor = 'end';
                                 xPos = el.x + (el.width ?? 0);
                             }
                             return (
