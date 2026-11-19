@@ -30,19 +30,28 @@ const buildGradesIndex = (grades: GradeItem[]): Record<string, GradeItem> => {
   return index;
 };
 
-const getOrCreateDraftStudentGrade = (state: NilaiState, studentId: string): GradeItem => {
-  let item = state.gradesByStudentId[studentId];
-  if (!item) {
-    const idx = state.grades.findIndex((g) => g.studentId === studentId);
-    if (idx !== -1) {
-      item = state.grades[idx];
-      state.gradesByStudentId[studentId] = item;
-    } else {
-      item = { studentId, detailedGrades: {}, finalGrades: {} };
-      state.grades.push(item);
-      state.gradesByStudentId[studentId] = item;
-    }
+const getDraftStudentGrade = (
+  state: NilaiState,
+  studentId: string,
+  createIfMissing = true
+): GradeItem | undefined => {
+  const idx = state.grades.findIndex((g) => g?.studentId === studentId);
+  if (idx !== -1) {
+    const item = state.grades[idx];
+    state.gradesByStudentId[studentId] = item;
+    return item;
   }
+
+  if (!createIfMissing) {
+    if (studentId in state.gradesByStudentId) {
+      delete state.gradesByStudentId[studentId];
+    }
+    return undefined;
+  }
+
+  const item: GradeItem = { studentId, detailedGrades: {}, finalGrades: {} };
+  state.grades.push(item);
+  state.gradesByStudentId[studentId] = item;
   return item;
 };
 
@@ -159,7 +168,7 @@ export const useNilaiStore = create<NilaiState>()(
       ) => {
         set(
           produce((state: NilaiState) => {
-            const grade = getOrCreateDraftStudentGrade(state, studentId);
+            const grade = getDraftStudentGrade(state, studentId, true)!;
             grade.detailedGrades = grade.detailedGrades ?? {};
             grade.detailedGrades[subjectId] = grade.detailedGrades[subjectId] ?? {
               slm: [],
@@ -201,7 +210,7 @@ export const useNilaiStore = create<NilaiState>()(
       ) => {
         set(
           produce((state: NilaiState) => {
-            const grade = getOrCreateDraftStudentGrade(state, studentId);
+            const grade = getDraftStudentGrade(state, studentId, true)!;
             grade.detailedGrades = grade.detailedGrades ?? {};
             grade.detailedGrades[subjectId] = grade.detailedGrades[subjectId] ?? {
               slm: [],
@@ -243,7 +252,7 @@ export const useNilaiStore = create<NilaiState>()(
 
               if (change.kind === 'cell') {
                 const targetValue = direction === 'undo' ? change.prevValue : change.nextValue;
-                const grade = getOrCreateDraftStudentGrade(state, change.studentId);
+                const grade = getDraftStudentGrade(state, change.studentId, true)!;
                 grade.detailedGrades = grade.detailedGrades ?? {};
                 grade.detailedGrades[subjectId] = grade.detailedGrades[subjectId] ?? {
                   slm: [],
@@ -293,10 +302,9 @@ export const useNilaiStore = create<NilaiState>()(
               } else {
                 const targetSnapshot = direction === 'undo' ? change.before : change.after;
                 const clonedSnapshot = cloneDetailedGrade(targetSnapshot);
-                const grade = state.gradesByStudentId[change.studentId] ??
-                  state.grades.find((g) => g.studentId === change.studentId);
 
                 if (clonedSnapshot === undefined || clonedSnapshot === null) {
+                  const grade = getDraftStudentGrade(state, change.studentId, false);
                   if (grade) {
                     if (grade.detailedGrades) {
                       delete grade.detailedGrades[subjectId];
@@ -306,7 +314,7 @@ export const useNilaiStore = create<NilaiState>()(
                     }
                   }
                 } else {
-                  const targetGrade = grade ?? getOrCreateDraftStudentGrade(state, change.studentId);
+                  const targetGrade = getDraftStudentGrade(state, change.studentId, true)!;
                   targetGrade.detailedGrades = targetGrade.detailedGrades ?? {};
                   targetGrade.detailedGrades[subjectId] = clonedSnapshot;
                   recomputeStudentSubjectFinal(targetGrade, subjectId, calcContext);
@@ -327,6 +335,9 @@ export const useNilaiStore = create<NilaiState>()(
                 grade.finalGrades = grade.finalGrades ?? {};
                 grade.finalGrades[subjectId] = finalVal;
               }
+              if (grade.studentId) {
+                state.gradesByStudentId[grade.studentId] = grade;
+              }
             });
           })
         );
@@ -345,11 +356,8 @@ export const useNilaiStore = create<NilaiState>()(
             for (const update of updates) {
               if (!update?.studentId) continue;
 
-              const existing =
-                state.gradesByStudentId[update.studentId] ??
-                state.grades.find((g) => g.studentId === update.studentId);
-
               if (update.newDetailedGrade === undefined || update.newDetailedGrade === null) {
+                const existing = getDraftStudentGrade(state, update.studentId, false);
                 if (existing) {
                   if (existing.detailedGrades) {
                     delete existing.detailedGrades[update.subjectId];
@@ -361,7 +369,7 @@ export const useNilaiStore = create<NilaiState>()(
                 continue;
               }
 
-              const targetItem = existing ?? getOrCreateDraftStudentGrade(state, update.studentId);
+              const targetItem = getDraftStudentGrade(state, update.studentId, true)!;
               targetItem.detailedGrades = targetItem.detailedGrades ?? {};
               targetItem.detailedGrades[update.subjectId] = update.newDetailedGrade;
               recomputeStudentSubjectFinal(targetItem, update.subjectId, calcContext);
@@ -389,6 +397,10 @@ export const useNilaiStore = create<NilaiState>()(
                   ...slm,
                   scores: [...slm.scores],
                 });
+              }
+
+              if (g.studentId) {
+                state.gradesByStudentId[g.studentId] = g;
               }
             });
           })
