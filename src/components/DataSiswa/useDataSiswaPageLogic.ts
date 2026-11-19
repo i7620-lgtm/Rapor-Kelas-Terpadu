@@ -4,6 +4,7 @@ import { studentFieldDefinitions } from '../../constants';
 import { processImageWithWorker } from '../../workers/workerManager';
 import { getClipboardText } from '../../utils/clipboard';
 import { useGridSelection } from '../../hooks/useGridSelection';
+import { useTableVirtualizer } from '../../hooks/useTableVirtualizer';
 import { useStudentsStore } from '../../stores/useStudentsStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useNilaiStore } from '../../stores/useNilaiStore';
@@ -119,6 +120,27 @@ export const useDataSiswaPageLogic = (props) => {
     
     const allEditableFields = useMemo(() => [nameField, ...otherFields], [nameField, otherFields]);
 
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const getStudentRowKey = useCallback(
+        (idx: number) => localStudents[idx]?.id ?? idx,
+        [localStudents]
+    );
+
+    const {
+        startIndex,
+        endIndex,
+        topSpacerHeight,
+        bottomSpacerHeight,
+        measureRow,
+        scrollToIndex,
+    } = useTableVirtualizer({
+        count: localStudents.length,
+        scrollContainerRef,
+        estimateRowHeight: 88,
+        overscan: 8,
+        getItemKey: getStudentRowKey,
+    });
+
     const {
         selectionBounds,
         isSelecting,
@@ -133,6 +155,7 @@ export const useDataSiswaPageLogic = (props) => {
         colsCount: allEditableFields.length,
         minColIndex: -1,
         containerClass: 'siswa-table-container',
+        onEnsureRowVisible: scrollToIndex,
         onDeleteSelection: (bounds) => {
             let updatedCount = 0;
             const newStudents = localStudentsRef.current.map((s) => ({ ...s }));
@@ -422,6 +445,12 @@ export const useDataSiswaPageLogic = (props) => {
         nameField,
         otherFields,
         setLocalStudents,
-        onBulkSaveStudents
+        onBulkSaveStudents,
+        scrollContainerRef,
+        startIndex,
+        endIndex,
+        topSpacerHeight,
+        bottomSpacerHeight,
+        measureRow,
     };
 };

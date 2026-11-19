@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
 
-export const BulkAddRowModal = ({ isOpen, onClose, onAdd }) => {
-    const [count, setCount] = useState(1);
+interface BulkAddRowModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onAdd: (count: number) => void;
+}
+
+export const BulkAddRowModal: React.FC<BulkAddRowModalProps> = ({ isOpen, onClose, onAdd }) => {
+    const [count, setCount] = useState<string>('1');
 
     useEffect(() => {
-        if (isOpen) setCount(1);
+        if (isOpen) setCount('1');
     }, [isOpen]);
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const num = parseInt(count.toString(), 10);
+        const num = parseInt(count, 10);
         if (num > 0) {
             onAdd(num);
             onClose();
