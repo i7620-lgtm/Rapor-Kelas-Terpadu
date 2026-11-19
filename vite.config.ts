@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       manifest: false,
       includeAssets: [
         'icon.svg',
@@ -24,6 +24,8 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/privacy\.html$/, /^\/terms\.html$/],
+        skipWaiting: true,
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
