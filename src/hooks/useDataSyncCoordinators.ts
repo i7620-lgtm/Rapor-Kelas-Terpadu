@@ -57,7 +57,18 @@ const recalculateFinalGradesForSubjects = (targetSubjectIds?: Set<string> | null
       for (let i = 0; i < targetSubjects.length; i++) {
         const subj = targetSubjects[i];
         const detailed = studentGrade.detailedGrades?.[subj.id];
-        if (!detailed) continue;
+        const prevVal = (newFinalGrades ?? studentGrade.finalGrades)?.[subj.id];
+
+        if (!detailed) {
+          if (prevVal !== null && prevVal !== undefined) {
+            if (!newFinalGrades) {
+              newFinalGrades = { ...(studentGrade.finalGrades || {}) };
+            }
+            newFinalGrades[subj.id] = null;
+            studentChanged = true;
+          }
+          continue;
+        }
 
         const config = settings?.gradeCalculation?.[subj.id] || { method: "rata-rata" };
         const curriculumKey = subj.curriculumKey || subj.fullName;
@@ -72,7 +83,6 @@ const recalculateFinalGradesForSubjects = (targetSubjectIds?: Set<string> | null
           predefinedCurriculum
         );
 
-        const prevVal = (newFinalGrades ?? studentGrade.finalGrades)?.[subj.id];
         if (calculated !== prevVal) {
           if (!newFinalGrades) {
             newFinalGrades = { ...(studentGrade.finalGrades || {}) };
