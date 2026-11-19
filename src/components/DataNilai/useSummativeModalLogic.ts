@@ -1,13 +1,36 @@
 import { useSummativeModalActionsLogic } from "./useSummativeModalActionsLogic";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
+import { cloneDetailedGrade } from "../../stores/useNilaiHistoryStore";
 import {
   getNumericValue,
   getQualitativeCode,
   generateSubjectDescription
 } from "../../utils/nilaiHelpers";
 
-export const useSummativeModalLogic = (props) => {
+const cloneGradesMap = (gradesMap: Record<string, any>): Record<string, any> => {
+  const copy: Record<string, any> = {};
+  for (const studentId of Object.keys(gradesMap || {})) {
+    copy[studentId] = cloneDetailedGrade(gradesMap[studentId]);
+  }
+  return copy;
+};
+
+const cloneWeightsConfig = (weights: any): any => {
+  const nextTp: Record<string, (number | null)[]> = {};
+  if (weights?.TP) {
+    for (const key of Object.keys(weights.TP)) {
+      const arr = weights.TP[key];
+      nextTp[key] = Array.isArray(arr) ? [...arr] : [];
+    }
+  }
+  return {
+    ...(weights || {}),
+    TP: nextTp,
+  };
+};
+
+export const useSummativeModalLogic = (props: any) => {
   const {
     isOpen,
     onClose,
@@ -47,15 +70,15 @@ export const useSummativeModalLogic = (props) => {
   }, [objectives, gradeNumber, subject]);
 
   const [slmName, setSlmName] = useState(isSLM ? item?.name || "" : "");
-  const [localObjectives, setLocalObjectives] = useState([]);
+  const [localObjectives, setLocalObjectives] = useState<any[]>([]);
   const [isTpSelectionModalOpen, setIsTpSelectionModalOpen] = useState(false);
-  const [localGrades, setLocalGrades] = useState({});
-  const [activeInput, setActiveInput] = useState({});
+  const [localGrades, setLocalGrades] = useState<Record<string, any>>({});
+  const [activeInput, setActiveInput] = useState<Record<string, any>>({});
 
   const currentObjectives = useMemo(() => {
     if (isSLM) {
       const otherObjectives = objectivesForSubject.filter(
-        (o) => o.slmId !== item?.id,
+        (o: any) => o.slmId !== item?.id,
       );
       const thisSlmObjectives = localObjectives.map((tp) => ({
         slmId: item?.id,
@@ -74,7 +97,7 @@ export const useSummativeModalLogic = (props) => {
       curriculumKey.toLowerCase().includes("kepercayaan terhadap tuhan")
     ) {
       return students.filter(
-        (s) =>
+        (s: any) =>
           String(s.agama || "")
             .trim()
             .toLowerCase() === "kepercayaan",
@@ -85,7 +108,7 @@ export const useSummativeModalLogic = (props) => {
       if (religionMatch) {
         const religion = religionMatch[1].trim().toLowerCase();
         return students.filter(
-          (s) => String(s.agama || "").toLowerCase() === religion,
+          (s: any) => String(s.agama || "").toLowerCase() === religion,
         );
       }
     }
@@ -106,7 +129,7 @@ export const useSummativeModalLogic = (props) => {
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
       setLocalGrades((prevGrades) => {
-        const newGrades = JSON.parse(JSON.stringify(prevGrades));
+        const newGrades = cloneGradesMap(prevGrades);
         for (let r = bounds.minR; r <= bounds.maxR; r++) {
           for (let c = bounds.minC; c <= bounds.maxC; c++) {
             if (r >= 0 && c >= 0) {
@@ -115,7 +138,7 @@ export const useSummativeModalLogic = (props) => {
                 const studentGrade = newGrades[student.id];
                 if (studentGrade) {
                   if (isSLM) {
-                    let slm = studentGrade.slm?.find((s) => s.id === item.id);
+                    const slm = studentGrade.slm?.find((s: any) => s.id === item.id);
                     const tpIndex = Math.floor(c / 2);
                     if (slm && slm.scores && tpIndex < slm.scores.length) {
                       if (slm.scores[tpIndex] !== null) {
@@ -166,7 +189,7 @@ export const useSummativeModalLogic = (props) => {
   });
 
   useEffect(() => {
-    const handleCopyGlobal = (e) => {
+    const handleCopyGlobal = (e: ClipboardEvent) => {
       const bounds = getSelectionBounds();
       if (!bounds) return;
 
@@ -188,7 +211,7 @@ export const useSummativeModalLogic = (props) => {
 
       let tsv = "";
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
-        let rowData = [];
+        const rowData: Array<string | number> = [];
         const student = relevantStudents[r];
         if (student) {
           const studentGrade = localGrades[student.id] || {};
@@ -196,7 +219,7 @@ export const useSummativeModalLogic = (props) => {
             if (isSLM) {
               const tpIndex = Math.floor(c / 2);
               const isKualitatif = (c % 2 !== 0);
-              const slmData = studentGrade?.slm?.find((s) => s.id === item.id);
+              const slmData = studentGrade?.slm?.find((s: any) => s.id === item.id);
               const scoreVal = slmData?.scores?.[tpIndex] ?? null;
               if (isKualitatif) {
                 const qualCode = getQualitativeCode(scoreVal, settings.predikats);
@@ -216,7 +239,7 @@ export const useSummativeModalLogic = (props) => {
 
       if (tsv) {
         e.preventDefault();
-        e.clipboardData.setData("text/plain", tsv.trimEnd());
+        e.clipboardData?.setData("text/plain", tsv.trimEnd());
         if (showToast) {
           showToast("Berhasil disalin ke clipboard", "success");
         }
@@ -225,24 +248,16 @@ export const useSummativeModalLogic = (props) => {
 
     document.addEventListener("copy", handleCopyGlobal);
     return () => document.removeEventListener("copy", handleCopyGlobal);
-  }, [getSelectionBounds, relevantStudents, localGrades, isSLM, item?.id, settings.predikats, settings.qualitativeGradingMap, type, showToast]);
+  }, [getSelectionBounds, relevantStudents, localGrades, isSLM, item?.id, settings.predikats, qualitativeGradingMap, type, showToast]);
 
   useEffect(() => {
     if (isOpen && subject?.id) {
-      const initialLocalGrades = {};
-      (students || []).forEach((student) => {
-        const studentGrade = (grades || []).find((g) => g.studentId === student.id);
-        const gradeObj = JSON.parse(
-          JSON.stringify(
-            studentGrade?.detailedGrades?.[subject.id] || {
-              slm: [],
-              sts: null,
-              sas: null,
-            },
-          ),
+      const initialLocalGrades: Record<string, any> = {};
+      (students || []).forEach((student: any) => {
+        const studentGrade = (grades || []).find((g: any) => g.studentId === student.id);
+        initialLocalGrades[student.id] = cloneDetailedGrade(
+          studentGrade?.detailedGrades?.[subject.id],
         );
-        if (!gradeObj.slm) gradeObj.slm = [];
-        initialLocalGrades[student.id] = gradeObj;
       });
       setLocalGrades(initialLocalGrades);
       setActiveInput({});
@@ -250,8 +265,8 @@ export const useSummativeModalLogic = (props) => {
 
       if (isSLM && item) {
         const initialTps = objectivesForSubject
-          .filter((obj) => obj.slmId === item.id)
-          .map((obj, index) => ({
+          .filter((obj: any) => obj.slmId === item.id)
+          .map((obj: any, index: number) => ({
             id: `tp_${index}_${item.id}`,
             text: obj.text,
             isEdited: obj.isEdited,
@@ -269,7 +284,7 @@ export const useSummativeModalLogic = (props) => {
       const curriculumKey = subject.curriculumKey || subject.fullName;
       const existingObjectives = objectives[gradeKey]?.[curriculumKey] || [];
       const otherSlmObjectives = existingObjectives.filter(
-        (obj) => obj.slmId !== item.id,
+        (obj: any) => obj.slmId !== item.id,
       );
       const newSlmObjectives = localObjectives.map((tp) => ({
         slmId: item.id,
@@ -290,11 +305,11 @@ export const useSummativeModalLogic = (props) => {
       onUpdateObjectives(newObjectivesObject);
     }
 
-    const gradesToUpdate = JSON.parse(JSON.stringify(localGrades));
+    const gradesToUpdate = cloneGradesMap(localGrades);
 
     if (isSLM && item) {
       Object.values(gradesToUpdate).forEach((studentGrade: any) => {
-        const slm = studentGrade.slm?.find((s) => s.id === item.id);
+        const slm = studentGrade.slm?.find((s: any) => s.id === item.id);
         if (slm) {
           slm.name = slmName;
         }
@@ -314,29 +329,30 @@ export const useSummativeModalLogic = (props) => {
   };
 
   const handleLocalGradeChange = useCallback(
-    (studentId, value, inputType, tpIndex = null) => {
+    (studentId: string, value: any, inputType: string, tpIndex: number | null = null) => {
       const key = `${studentId}_${isSLM ? `slm_${item.id}_tp_${tpIndex}` : type}`;
 
       setLocalGrades((prevGrades) => {
         const newGrades = { ...prevGrades };
-        const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
+        const studentGrade = cloneDetailedGrade(newGrades[studentId]);
 
-        let finalValue = value;
+        let finalValue: number | string | null = value;
 
         if (inputType === "qnt") {
-          finalValue = value === "" ? null : parseInt(value, 10);
+          const parsed = value === "" ? null : parseInt(value, 10);
           if (
             value !== "" &&
-            (isNaN(finalValue) || finalValue < 0 || finalValue > 100)
+            (parsed === null || isNaN(parsed) || parsed < 0 || parsed > 100)
           ) {
             return prevGrades;
           }
+          finalValue = parsed;
         } else if (inputType === "ql") {
           finalValue = value === "" ? null : value;
         }
 
-        if (isSLM) {
-          let slm = studentGrade.slm?.find((s) => s.id === item.id);
+        if (isSLM && tpIndex !== null) {
+          let slm = studentGrade.slm?.find((s: any) => s.id === item.id);
           if (!slm) {
             slm = {
               id: item.id,
@@ -371,12 +387,12 @@ export const useSummativeModalLogic = (props) => {
   );
 
   const handleLocalDescriptionChange = useCallback(
-    (studentId, descType, value) => {
+    (studentId: string, descType: "highest" | "lowest", value: string) => {
       setLocalGrades((prevGrades) => {
         const newGrades = { ...prevGrades };
         if (!newGrades[studentId]) return prevGrades;
-        const studentGrade = JSON.parse(JSON.stringify(newGrades[studentId]));
-        const student = students.find((s) => s.id === studentId);
+        const studentGrade = cloneDetailedGrade(newGrades[studentId]);
+        const student = students.find((s: any) => s.id === studentId);
         const generated = generateSubjectDescription(
           student,
           studentGrade,
@@ -414,8 +430,6 @@ export const useSummativeModalLogic = (props) => {
     [students, currentObjectives, settings, subject?.id],
   );
 
-
-
   const { handleBulkGenerateDescriptions, handlePaste } = useSummativeModalActionsLogic({ 
     relevantStudents, 
     subject, 
@@ -430,16 +444,16 @@ export const useSummativeModalLogic = (props) => {
   });
 
   const handleWeightChange = (
-    weightType,
-    value,
-    slmId = null,
-    tpIndex = null,
+    weightType: string,
+    value: string,
+    slmId: string | null = null,
+    tpIndex: number | null = null,
   ) => {
     const numValue = value === "" ? null : parseInt(value, 10);
-    if (value !== "" && (isNaN(numValue) || numValue < 0 || numValue > 100))
+    if (value !== "" && (numValue === null || isNaN(numValue) || numValue < 0 || numValue > 100))
       return;
 
-    const newWeights = JSON.parse(JSON.stringify(weights));
+    const newWeights = cloneWeightsConfig(weights);
 
     if (weightType === "TP" && slmId !== null && tpIndex !== null) {
       if (!newWeights.TP) newWeights.TP = {};
@@ -462,18 +476,18 @@ export const useSummativeModalLogic = (props) => {
     ]);
   };
 
-  const handleUpdateTpText = (id, text) => {
+  const handleUpdateTpText = (id: string, text: string) => {
     setLocalObjectives((prev) =>
       prev.map((tp) => (tp.id === id ? { ...tp, text, isEdited: true } : tp)),
     );
   };
 
-  const handleDeleteTp = (id, index) => {
+  const handleDeleteTp = (id: string, index: number) => {
     setLocalObjectives((prev) => prev.filter((tp) => tp.id !== id));
     setLocalGrades((prev) => {
-      const newGrades = JSON.parse(JSON.stringify(prev));
+      const newGrades = cloneGradesMap(prev);
       for (const studentId in newGrades) {
-        const slm = newGrades[studentId].slm?.find((s) => s.id === item.id);
+        const slm = newGrades[studentId].slm?.find((s: any) => s.id === item.id);
         if (slm && slm.scores?.length > index) {
           slm.scores.splice(index, 1);
         }
@@ -482,7 +496,7 @@ export const useSummativeModalLogic = (props) => {
     });
 
     if (isWeighting) {
-      const newWeights = JSON.parse(JSON.stringify(weights));
+      const newWeights = cloneWeightsConfig(weights);
       if (newWeights.TP && newWeights.TP[item.id]) {
         newWeights.TP[item.id].splice(index, 1);
         onUpdateGradeCalculation(subject.id, {
@@ -496,7 +510,7 @@ export const useSummativeModalLogic = (props) => {
   const headerRowSpan =
     isSLM && localObjectives.length > 0 && isWeighting ? 3 : 2;
 
-  const handleTpSelectionModalClose = (selectedTps) => {
+  const handleTpSelectionModalClose = (selectedTps: any[]) => {
     setIsTpSelectionModalOpen(false);
     if (selectedTps && selectedTps.length > 0) {
       const timestamp = Date.now();

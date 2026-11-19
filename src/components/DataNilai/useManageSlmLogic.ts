@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useCurriculumStore } from "../../stores/useCurriculumStore";
+import { cloneDetailedGrade } from "../../stores/useNilaiHistoryStore";
 
 export const useManageSlmLogic = (props) => {
   const {
@@ -45,7 +46,12 @@ export const useManageSlmLogic = (props) => {
 
   useEffect(() => {
     if (isOpen) {
-      setLocalSlms(JSON.parse(JSON.stringify(allSlms))); // Deep copy
+      setLocalSlms(
+        (allSlms || []).map((slm: any) => ({
+          ...slm,
+          tps: Array.isArray(slm?.tps) ? slm.tps.map((tp: any) => ({ ...tp })) : [],
+        }))
+      );
     }
   }, [isOpen, allSlms, initialActiveIds]);
 
@@ -162,7 +168,7 @@ export const useManageSlmLogic = (props) => {
           const base64Data = await new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(",")[1]);
+            reader.onload = () => resolve(String(reader.result || "").split(",")[1]);
             reader.onerror = (error) => reject(error);
           });
 
@@ -282,15 +288,11 @@ export const useManageSlmLogic = (props) => {
 
     students.forEach((student) => {
       const studentGrade = grades.find((g) => g.studentId === student.id);
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          studentGrade?.detailedGrades?.[subject.id] || {
-            slm: [],
-            sts: null,
-            sas: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(studentGrade?.detailedGrades?.[subject.id]) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
       if (!detailedGrade.slm) detailedGrade.slm = [];
       let hasChanged = false;
 

@@ -2,7 +2,41 @@ import React from 'react';
 import { QUALITATIVE_DESCRIPTORS } from '../../constants';
 import { getNumericValue, getQualitativeCode } from '../../utils/nilaiHelpers';
 
-export const SummativeRowScoreCells = ({
+export interface SummativeRowScoreCellsProps {
+  isSLM: boolean;
+  item: any;
+  student: any;
+  index: number;
+  getSelectionStyle: (
+    row: number,
+    col: number
+  ) => {
+    isCellSelected?: boolean;
+    showTransparentInput?: boolean;
+    selectionStyle?: React.CSSProperties;
+  };
+  handleMouseDownCell: (e: React.MouseEvent, row: number, col: number) => void;
+  handleMouseEnterCell: (row: number, col: number) => void;
+  handleFocusCell: (row: number, col: number) => void;
+  handlePaste: (
+    e: React.ClipboardEvent | { preventDefault: () => void; clipboardData: { getData: (type: string) => string } },
+    studentId: string,
+    tpIndex: number | string | null
+  ) => void;
+  handleLocalGradeChange: (
+    studentId: string,
+    val: string,
+    mode: "qnt" | "ql",
+    tpIndexOrType: number | string | null
+  ) => void;
+  settings: any;
+  studentGrade: any;
+  activeInput: Record<string, string>;
+  qualitativeGradingMap: any;
+  type: string;
+}
+
+export const SummativeRowScoreCells: React.FC<SummativeRowScoreCellsProps> = ({
   isSLM,
   item,
   student,
@@ -18,7 +52,7 @@ export const SummativeRowScoreCells = ({
   activeInput,
   qualitativeGradingMap,
   type
-}: any) => {
+}) => {
   return isSLM ? (
     (item && studentGrade.slm ? Array.from({ length: studentGrade.slm.find((s: any) => s.id === item.id)?.scores?.length || 0 }) : []).map((_, i) => {
       const key = `${student.id}_slm_${item.id}_tp_${i}`;
@@ -78,7 +112,7 @@ export const SummativeRowScoreCells = ({
                   ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                   : active === "qnt"
                   ? numericValue !== ""
-                    ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
+                    ? settings.predikats?.c !== undefined && parseFloat(String(numericValue)) < settings.predikats.c
                       ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
                       : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
                     : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"
@@ -177,7 +211,7 @@ export const SummativeRowScoreCells = ({
                 ? "bg-white dark:bg-slate-800 border-transparent shadow-none outline-none focus:outline-none focus:ring-0"
                 : active === "qnt"
                 ? numericValue !== ""
-                  ? settings.predikats?.c !== undefined && parseFloat(numericValue) < settings.predikats.c
+                  ? settings.predikats?.c !== undefined && parseFloat(String(numericValue)) < settings.predikats.c
                     ? "border-red-500 ring-1 ring-red-500 text-red-600 dark:text-red-300 bg-rose-50 dark:bg-rose-950/30"
                     : "border-green-500 ring-1 ring-green-500 bg-white dark:bg-slate-800"
                   : "border-red-500 ring-1 ring-red-500 bg-white dark:bg-slate-800"

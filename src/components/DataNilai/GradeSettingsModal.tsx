@@ -2,7 +2,17 @@ import React, { useState, useMemo, useEffect } from "react";
 import { QualitativeGradingTable } from "./QualitativeGradingTable";
 import { computeQualitativeGradingMap } from "../../utils/nilaiHelpers";
 
-export const GradeSettingsModal = ({
+export interface GradeSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  subject: any;
+  settings: any;
+  onUpdatePredikats: (predikats: any) => void;
+  onUpdateGradeCalculation: (subjectId: string, config: any) => void;
+  onUpdateDisplayMode?: (mode: string) => void;
+}
+
+export const GradeSettingsModal: React.FC<GradeSettingsModalProps> = ({
   isOpen,
   onClose,
   subject,

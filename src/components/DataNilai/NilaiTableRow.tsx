@@ -22,7 +22,7 @@ interface NilaiTableRowProps {
     slmId: string;
     tpIndex: number;
     text: string;
-    displayIndex: string;
+    displayIndex: number | string;
   }>;
   selectionBounds?: GridSelectionBounds | null;
   getSelectionStyle: (
@@ -40,8 +40,8 @@ interface NilaiTableRowProps {
     studentId: string,
     value: any,
     type: string,
-    slmId?: string,
-    tpIndex?: number
+    slmId?: string | null,
+    tpIndex?: number | null
   ) => void;
   handleFocusCell: (row: number, col: number) => void;
   handlePaste: (e: React.ClipboardEvent, studentId: string, key: string) => void;
@@ -52,6 +52,7 @@ interface NilaiTableRowProps {
   ) => void;
   isCapaianPinned: boolean;
   mode: "kualitatif" | "kuantitatif";
+  onRowRef?: (index: number, el: HTMLTableRowElement | null) => void;
 }
 
 export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...props }) => {
@@ -72,6 +73,7 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
     handleDescriptionChange,
     isCapaianPinned,
     mode,
+    onRowRef,
   } = props;
   
   const detailedGrade = useNilaiStore(
@@ -145,7 +147,11 @@ export const NilaiTableRow: React.FC<NilaiTableRowProps> = React.memo(({ ...prop
   }
 
   return (
-    <tr id={student.id} className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group">
+    <tr
+      ref={(el) => onRowRef?.(index, el)}
+      id={student.id}
+      className="border-b hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group"
+    >
       {/* 1. Row Index Number */}
       <td
         id={`nilai-cell-${index}--2`}

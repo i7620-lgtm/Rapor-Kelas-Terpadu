@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useGridSelection } from "../../hooks/useGridSelection";
+import { useTableVirtualizer } from "../../hooks/useTableVirtualizer";
 
 export const useNilaiKeseluruhanLogic = ({
   students,
@@ -269,6 +270,26 @@ export const useNilaiKeseluruhanLogic = ({
   }, [processedData, displaySubjects]);
 
   const colsCount = 2 + displaySubjects.length + 2;
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getKeseluruhanRowKey = useCallback(
+    (idx: number) => processedData[idx]?.id ?? idx,
+    [processedData],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: processedData.length,
+    scrollContainerRef,
+    estimateRowHeight: 48,
+    overscan: 8,
+    getItemKey: getKeseluruhanRowKey,
+  });
 
   const {
     getSelectionBounds,
@@ -280,6 +301,7 @@ export const useNilaiKeseluruhanLogic = ({
     rowsCount: processedData.length,
     colsCount: colsCount,
     containerClass: "keseluruhan-table-container",
+    onEnsureRowVisible: scrollToIndex,
   });
 
   useEffect(() => {
@@ -360,6 +382,12 @@ export const useNilaiKeseluruhanLogic = ({
     getSelectionStyle,
     handleMouseDownCell,
     handleMouseEnterCell,
-    handleFocusCell
+    handleFocusCell,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };

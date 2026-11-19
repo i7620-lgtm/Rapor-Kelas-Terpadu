@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { generateSubjectDescription, splitRowIntoColumns } from "../../utils/nilaiHelpers";
 import { getClipboardText } from "../../utils/clipboard";
 import { QUALITATIVE_DESCRIPTORS } from "../../constants";
+import { cloneDetailedGrade } from "../../stores/useNilaiHistoryStore";
 
 export const useSummativeModalActionsLogic = ({
   relevantStudents,
@@ -14,13 +15,13 @@ export const useSummativeModalActionsLogic = ({
   item,
   slmName,
   type,
-}) => {
+}: any) => {
   const handleBulkGenerateDescriptions = () => {
     setLocalGrades((prevGrades: any) => {
       const newGrades = { ...prevGrades };
       relevantStudents.forEach((student: any) => {
         if (!newGrades[student.id]) return;
-        const detailedGrade = newGrades[student.id];
+        const detailedGrade = cloneDetailedGrade(newGrades[student.id]);
 
         const generated = generateSubjectDescription(
           student,
@@ -35,6 +36,7 @@ export const useSummativeModalActionsLogic = ({
 
         detailedGrade.descriptions.highest = generated.highest;
         detailedGrade.descriptions.lowest = generated.lowest;
+        newGrades[student.id] = detailedGrade;
       });
       return newGrades;
     });
@@ -45,7 +47,7 @@ export const useSummativeModalActionsLogic = ({
     async (e: any, startStudentId: string, tpIndex: number | null = null) => {
       e.preventDefault();
       const pasteData = await getClipboardText(e);
-      let pastedRows = pasteData.split(/\r\n|\n|\r/);
+      const pastedRows = pasteData.split(/\r\n|\n|\r/);
       if (pastedRows.length > 0 && pastedRows[pastedRows.length - 1] === "") {
         pastedRows.pop();
       }
@@ -56,8 +58,11 @@ export const useSummativeModalActionsLogic = ({
 
       if (startStudentIndex === -1) return;
 
-      setLocalGrades((prevLocalGrades: any) => {
-        const newLocalGrades = JSON.parse(JSON.stringify(prevLocalGrades));
+      setLocalGrades((prevLocalGrades: Record<string, any>) => {
+        const newLocalGrades: Record<string, any> = {};
+        for (const sid of Object.keys(prevLocalGrades || {})) {
+          newLocalGrades[sid] = cloneDetailedGrade(prevLocalGrades[sid]);
+        }
         let updatedCount = 0;
 
         pastedRows.forEach((pastedValue, rowIndex) => {

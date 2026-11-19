@@ -6,7 +6,27 @@ import { ManageSlmItem } from "./ManageSlmItem";
 
 
 import { useManageSlmLogic } from './useManageSlmLogic';
-export const ManageSlmModal = (props) => {
+export interface ManageSlmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: {
+    onSaveSlmSettings: (activeIds: string[]) => void;
+    settings: any;
+  };
+  subject: any;
+  students: any[];
+  grades: any[];
+  learningObjectives: any;
+  onUpdateLearningObjectives: (gradeKey: string, subjectKey: string, list: any[]) => void;
+  onBulkUpdateGrades: (updates: any[]) => void;
+  allSlms: any[];
+  initialActiveIds: string[];
+  showToast?: (message: string, type?: string) => void;
+  gradeNumber: number;
+  predefinedCurriculum?: any;
+}
+
+export const ManageSlmModal: React.FC<ManageSlmModalProps> = (props) => {
   const { isOpen, onClose, subject, showToast, predefinedCurriculum } = props;
   // ... (content unchanged)
   

@@ -37,15 +37,11 @@ export const useNilaiTableActionsLogic = ({
       const beforeRaw = getStudentDetailedGrade(student.id);
       const before = cloneDetailedGrade(beforeRaw);
 
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          beforeRaw || {
-            slm: [],
-            sts: null,
-            sas: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(beforeRaw) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
       if (!detailedGrade.slm) detailedGrade.slm = [];
 
       const generated = generateSubjectDescription(
@@ -133,15 +129,11 @@ export const useNilaiTableActionsLogic = ({
       const beforeRaw = getStudentDetailedGrade(student.id);
       const before = cloneDetailedGrade(beforeRaw);
 
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          beforeRaw || {
-            slm: [],
-            sts: null,
-            sas: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(beforeRaw) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
       if (!detailedGrade.slm) detailedGrade.slm = [];
 
       let slmToUpdate = detailedGrade.slm?.find((s: any) => s.id === slmId);
@@ -233,15 +225,11 @@ export const useNilaiTableActionsLogic = ({
       const beforeRaw = getStudentDetailedGrade(student.id);
       const before = cloneDetailedGrade(beforeRaw);
 
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          beforeRaw || {
-            slm: [],
-            sts: null,
-            sas: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(beforeRaw) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
       if (!detailedGrade.slm) detailedGrade.slm = [];
 
       const oldScore = parseInt(detailedGrade[type], 10);
@@ -308,15 +296,11 @@ export const useNilaiTableActionsLogic = ({
       const beforeRaw = getStudentDetailedGrade(student.id);
       const before = cloneDetailedGrade(beforeRaw);
 
-      const detailedGrade = JSON.parse(
-        JSON.stringify(
-          beforeRaw || {
-            slm: [],
-            sts: null,
-            sas: null,
-          }
-        )
-      );
+      const detailedGrade = cloneDetailedGrade(beforeRaw) || {
+        slm: [],
+        sts: null,
+        sas: null,
+      };
 
       if (!detailedGrade.slm) {
         detailedGrade.slm = [];
