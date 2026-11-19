@@ -9,6 +9,7 @@ import { useNilaiStore } from "../stores/useNilaiStore";
 import { useStudentsStore } from "../stores/useStudentsStore";
 import { useCurriculumStore } from "../stores/useCurriculumStore";
 import { EmptyState } from "./EmptyState";
+import { flushRegisteredInputs } from "../utils/dataIntegrity";
 
 const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any) => {
   const { storeSubjects, storeSettings } = useSettingsStore(
@@ -69,7 +70,15 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
   });
 
   const onBulkUpdateGrades = props.onBulkUpdateGrades || ((u: any) => {
-    useNilaiStore.getState().bulkUpdateGrades(u, settings, learningObjectives, predefinedCurriculum, subjects);
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
+    useNilaiStore.getState().bulkUpdateGrades(
+      u,
+      props.settings || latestSettingsState.settings,
+      props.learningObjectives || latestCurriculumState.learningObjectives,
+      props.predefinedCurriculum || latestCurriculumState.predefinedCurriculum,
+      props.subjects || latestSettingsState.subjects
+    );
   });
 
   const onUpdateLearningObjectives = props.onUpdateLearningObjectives || ((u: any) => {
@@ -114,6 +123,13 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
     }
   };
 
+  const handleTabSelect = (nextTab: string) => {
+    flushRegisteredInputs();
+    if (onTabChange) {
+      onTabChange(nextTab);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 flex-shrink-0 mb-1 sm:mb-2">
@@ -134,7 +150,7 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
         <div className="flex flex-col">
           <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap items-center gap-1.5 border-b border-slate-200 dark:border-slate-700 pb-2 flex-shrink-0 scrollbar-hide">
             <button
-              onClick={() => onTabChange("keseluruhan")}
+              onClick={() => handleTabSelect("keseluruhan")}
               className={activeTab === "keseluruhan" ? activeButtonClass : inactiveButtonClass}
             >
               Keseluruhan
@@ -142,7 +158,7 @@ const DataNilaiPage = ({ activeTab = "keseluruhan", onTabChange, ...props }: any
             {activeSubjects.map((subject: any) => (
               <button
                 key={subject.id}
-                onClick={() => onTabChange(subject.id)}
+                onClick={() => handleTabSelect(subject.id)}
                 className={activeTab === subject.id ? activeButtonClass : inactiveButtonClass}
               >
                 {subject.label}
