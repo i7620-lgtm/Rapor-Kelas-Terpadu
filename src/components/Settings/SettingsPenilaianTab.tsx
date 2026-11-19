@@ -5,7 +5,7 @@ import { FormField } from './FormField';
 interface SettingsPenilaianTabProps {
     settings: any;
     onSettingsChange: (e: any) => void;
-    handleGradeMethodChange: (e: any) => void;
+    handleGradeMethodChange: (subjectId: string, newMethod: string) => void;
     displayMode: string;
     localClassName?: string;
     handleLocalClassNameChange?: (e: any) => void;
@@ -160,7 +160,7 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     className="sr-only peer"
-                                                    checked={settings.enableAutoRegression === true || settings.enableAutoRegression === 'true' || settings.enableAutoRegression === "true"}
+                                                    checked={Boolean(settings.enableAutoRegression)}
                                                     onChange={(e) => onSettingsChange({ target: { name: 'enableAutoRegression', value: e.target.checked, type: 'checkbox', checked: e.target.checked } })}
                                                 />
                                                 <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:relative after:inline-block after:mt-0.5 after:ml-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
@@ -177,7 +177,7 @@ export const SettingsPenilaianTab: React.FC<SettingsPenilaianTabProps> = ({
                                                 <input
                                                     type="checkbox"
                                                     className="sr-only peer"
-                                                    checked={settings.enableExitWarning === true || settings.enableExitWarning === 'true'}
+                                                    checked={Boolean(settings.enableExitWarning)}
                                                     onChange={(e) => onSettingsChange({ target: { name: 'enableExitWarning', value: e.target.checked, type: 'checkbox', checked: e.target.checked } })}
                                                 />
                                                 <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:relative after:inline-block after:mt-0.5 after:ml-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600" />
