@@ -64,15 +64,35 @@ export interface GridSelectionBounds {
   maxC: number;
 }
 
-export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, containerClass = "grid-table-container", onDeleteSelection = undefined as any }) {
+export interface UseGridSelectionOptions {
+  rowsCount: number;
+  colsCount: number;
+  minColIndex?: number;
+  containerClass?: string;
+  onDeleteSelection?: ((bounds: GridSelectionBounds) => void) | undefined;
+  onEnsureRowVisible?: (rowIndex: number) => void;
+}
+
+export function useGridSelection({
+  rowsCount,
+  colsCount,
+  minColIndex = 0,
+  containerClass = "grid-table-container",
+  onDeleteSelection = undefined as any,
+  onEnsureRowVisible,
+}: UseGridSelectionOptions) {
   const [selectionStart, setSelectionStart] = useState<{ r: number; c: number } | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<{ r: number; c: number } | null>(null);
   const [isSelectingState, setIsSelectingState] = useState(false);
   const isSelectingRef = useRef(false);
   const selectionStartRef = useRef<{ r: number; c: number } | null>(null);
+  const selectionEndRef = useRef<{ r: number; c: number } | null>(null);
   const isProgrammaticFocus = useRef(false);
+  const onEnsureRowVisibleRef = useRef(onEnsureRowVisible);
 
   selectionStartRef.current = selectionStart;
+  selectionEndRef.current = selectionEnd;
+  onEnsureRowVisibleRef.current = onEnsureRowVisible;
 
   const setIsSelecting = useCallback((val: boolean) => {
     isSelectingRef.current = val;
@@ -94,6 +114,37 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
   const getSelectionBounds = useCallback(() => selectionBounds, [selectionBounds]);
 
   useEffect(() => {
+    let focusRafId: number | null = null;
+
+    const focusAndScrollTargetCell = (newR: number, newC: number, shouldFocusInput: boolean, attempt = 0) => {
+      const input =
+        document.getElementById(`cell-${newR}-${newC}`) ||
+        (document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement | null);
+
+      if (input) {
+        if (shouldFocusInput) {
+          isProgrammaticFocus.current = true;
+          input.focus();
+          if (typeof (input as HTMLInputElement).select === 'function') {
+            (input as HTMLInputElement).select();
+          }
+          scrollCellIntoView(input, containerClass);
+          setTimeout(() => {
+            isProgrammaticFocus.current = false;
+          }, 10);
+        } else {
+          scrollCellIntoView(input, containerClass);
+        }
+        return;
+      }
+
+      if (attempt < 4) {
+        focusRafId = requestAnimationFrame(() => {
+          focusAndScrollTargetCell(newR, newC, shouldFocusInput, attempt + 1);
+        });
+      }
+    };
+
     const handleMouseUpGlobal = () => setIsSelecting(false);
     const handleMouseMoveGlobal = (e: MouseEvent) => {
       if (isSelectingRef.current && e.buttons !== 1) {
@@ -151,53 +202,40 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
           }
 
           e.preventDefault();
-          
-          setSelectionEnd((prevEnd) => {
-             if (!prevEnd) return prevEnd;
-             let newR = prevEnd.r;
-             let newC = prevEnd.c;
-             
-             if (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey)) {
-                 newR = Math.max(0, newR - 1);
-             }
-             if (e.key === "ArrowDown" || (e.key === "Enter" && !e.shiftKey)) {
-                 newR = Math.min(rowsCount - 1, newR + 1);
-             }
-             if (e.key === "ArrowLeft" || (e.key === "Tab" && e.shiftKey)) {
-                 newC = Math.max(minColIndex, newC - 1);
-             }
-             if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
-                 newC = Math.min(colsCount - 1, newC + 1);
-             }
-             
-             if (!e.shiftKey || e.key === "Enter" || e.key === "Tab") {
-                 setSelectionStart({ r: newR, c: newC });
-                 setTimeout(() => {
-                     const input = document.getElementById(`cell-${newR}-${newC}`) || document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                     if (input) {
-                         isProgrammaticFocus.current = true;
-                         input.focus();
-                         if (typeof (input as HTMLInputElement).select === 'function') {
-                             (input as HTMLInputElement).select();
-                         }
-                         scrollCellIntoView(input, containerClass);
-                         setTimeout(() => (isProgrammaticFocus.current = false), 10);
-                     } else {
-                         const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                         if (el) {
-                             scrollCellIntoView(el, containerClass);
-                         }
-                     }
-                 }, 0);
-             } else {
-                 setTimeout(() => {
-                     const el = document.querySelector(`.${containerClass} [id$="cell-${newR}-${newC}"]`) as HTMLElement;
-                     if (el) {
-                         scrollCellIntoView(el, containerClass);
-                     }
-                 }, 10);
-             }
-             return { r: newR, c: newC };
+          const prevEnd = selectionEndRef.current;
+          if (!prevEnd) return;
+
+          let newR = prevEnd.r;
+          let newC = prevEnd.c;
+
+          if (e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey)) {
+            newR = Math.max(0, newR - 1);
+          }
+          if (e.key === "ArrowDown" || (e.key === "Enter" && !e.shiftKey)) {
+            newR = Math.min(rowsCount - 1, newR + 1);
+          }
+          if (e.key === "ArrowLeft" || (e.key === "Tab" && e.shiftKey)) {
+            newC = Math.max(minColIndex, newC - 1);
+          }
+          if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
+            newC = Math.min(colsCount - 1, newC + 1);
+          }
+
+          const shouldResetStart = !e.shiftKey || e.key === "Enter" || e.key === "Tab";
+          if (shouldResetStart) {
+            setSelectionStart({ r: newR, c: newC });
+          }
+          setSelectionEnd({ r: newR, c: newC });
+
+          if (onEnsureRowVisibleRef.current) {
+            onEnsureRowVisibleRef.current(newR);
+          }
+
+          if (focusRafId !== null) {
+            cancelAnimationFrame(focusRafId);
+          }
+          focusRafId = requestAnimationFrame(() => {
+            focusAndScrollTargetCell(newR, newC, shouldResetStart, 0);
           });
         }
       } else if (e.key === "Backspace" || e.key === "Delete") {
@@ -221,6 +259,7 @@ export function useGridSelection({ rowsCount, colsCount, minColIndex = 0, contai
     window.addEventListener("mousemove", handleMouseMoveGlobal);
     window.addEventListener("keydown", handleKeyDownGlobal);
     return () => {
+      if (focusRafId !== null) cancelAnimationFrame(focusRafId);
       window.removeEventListener("mousedown", handleMouseDownGlobal);
       window.removeEventListener("mouseup", handleMouseUpGlobal);
       window.removeEventListener("mousemove", handleMouseMoveGlobal);
