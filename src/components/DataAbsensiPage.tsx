@@ -14,6 +14,12 @@ const DataAbsensiPage = (props: any) => {
     handleFocusCell,
     handleAttendanceChange,
     handlePaste,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   } = useDataAbsensiPageLogic(props);
 
   return (
@@ -39,7 +45,7 @@ const DataAbsensiPage = (props: any) => {
             if (isSelecting) setIsSelecting(false);
           }}
         >
-          <div className="flex-1 overflow-auto select-none absensi-table-container">
+          <div ref={scrollContainerRef} className="flex-1 overflow-auto select-none absensi-table-container">
             <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400 border-separate border-spacing-0">
               <thead className="text-xs text-slate-700 dark:text-slate-200 uppercase bg-slate-100 dark:bg-slate-800 sticky top-0 z-30">
                 <tr>
@@ -97,12 +103,23 @@ const DataAbsensiPage = (props: any) => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student: any, index: number) => {
+                {topSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={6} style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {students.slice(startIndex, endIndex + 1).map((student: any, sliceIdx: number) => {
+                  const index = startIndex + sliceIdx;
                   const studentAtt = getAttendanceForStudent(student.id);
                   const total = (studentAtt.sakit ?? 0) + (studentAtt.izin ?? 0) + (studentAtt.alpa ?? 0);
                   
                   return (
-                    <tr key={student.id} id={student.id} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group">
+                    <tr
+                      key={student.id}
+                      id={student.id}
+                      ref={(el) => measureRow(index, el)}
+                      className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 focus-within:bg-slate-50 dark:focus-within:bg-slate-800/70 group"
+                    >
                       <td
                         id={`cell-${index}--2`}
                         tabIndex={-1}
@@ -207,6 +224,11 @@ const DataAbsensiPage = (props: any) => {
                     </tr>
                   );
                 })}
+                {bottomSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={6} style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

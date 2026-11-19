@@ -24,6 +24,12 @@ const DataKokurikulerPage = (props: any) => {
     showBelowKkmHighlight,
     setShowBelowKkmHighlight,
     stats,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   } = useDataKokurikulerPageLogic(props);
 
   return (
@@ -131,6 +137,7 @@ const DataKokurikulerPage = (props: any) => {
           </div>
           
           <div
+            ref={scrollContainerRef}
             className="flex-1 overflow-auto select-none cocurricular-table-container"
             onMouseLeave={() => {
               if (isSelecting) setIsSelecting(false);
@@ -172,7 +179,7 @@ const DataKokurikulerPage = (props: any) => {
                       className="px-2 sm:px-3 py-2 w-[112px] sm:w-[116px] min-w-[112px] sm:min-w-[116px] text-center border-b border-slate-200 dark:border-slate-700 align-bottom relative cursor-default select-none"
                       style={getSelectionStyle(-1, dimIndex).selectionStyle}
                       onMouseDown={(e) => {
-                        if (e.target.tagName === "BUTTON") return;
+                        if ((e.target as HTMLElement).tagName === "BUTTON") return;
                         if (e.button !== 0) return;
                         if (e.shiftKey) e.preventDefault();
                         handleMouseDownCell(e, -1, dimIndex);
@@ -199,7 +206,13 @@ const DataKokurikulerPage = (props: any) => {
                 </tr>
               </thead>
               <tbody>
-                {students.map((student: any, index: number) => {
+                {topSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + COCURRICULAR_DIMENSIONS.length} style={{ height: `${topSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
+                {students.slice(startIndex, endIndex + 1).map((student: any, sliceIdx: number) => {
+                  const index = startIndex + sliceIdx;
                   const studentRatings = cocurricularData[student.id]?.[dimensionField] || {};
                   const hasMissingRating = COCURRICULAR_DIMENSIONS.some(dim => !studentRatings[dim.id] || studentRatings[dim.id] === "-" || studentRatings[dim.id] === "");
                   const hasBbRating = COCURRICULAR_DIMENSIONS.some(dim => studentRatings[dim.id] === "BB");
@@ -211,7 +224,7 @@ const DataKokurikulerPage = (props: any) => {
 
                   return (
                     <React.Fragment key={student.id}>
-                      <tr id={student.id} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 group">
+                      <tr id={student.id} ref={(el) => measureRow(index, el)} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/70 group">
                         <td
                           id={`cocurricular-cell-${index}--2`}
                           tabIndex={-1}
@@ -309,6 +322,11 @@ const DataKokurikulerPage = (props: any) => {
                     </React.Fragment>
                   );
                 })}
+                {bottomSpacerHeight > 0 && (
+                  <tr aria-hidden="true" className="pointer-events-none">
+                    <td colSpan={2 + COCURRICULAR_DIMENSIONS.length} style={{ height: `${bottomSpacerHeight}px`, padding: 0, border: 0 }} />
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -204,7 +204,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
               <label className="flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0">
                 <input 
                   type="checkbox" 
-                  checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'} 
+                  checked={Boolean(printOptions.showPrincipalSignature)} 
                   onChange={() => handlePrintOptionChange('showPrincipalSignature')} 
                   className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer" 
                 />
@@ -213,7 +213,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
               <label className="flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0">
                 <input 
                   type="checkbox" 
-                  checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'} 
+                  checked={Boolean(printOptions.showTeacherSignature)} 
                   onChange={() => handlePrintOptionChange('showTeacherSignature')} 
                   className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer" 
                 />
@@ -256,7 +256,7 @@ const PrintLegerPage: React.FC<PrintLegerPageProps> = (props) => {
                     displaySubjects={displaySubjects} 
                     statistics={statistics} 
                     isCompact={isCompact} 
-                    nameFontSize={nameFontSize} 
+                    nameFontSize={nameFontSize != null ? String(nameFontSize) : undefined} 
                     nameCellRefs={nameCellRefs}
                     kkm={parseInt(settings?.predikats?.c || '70', 10)}
                   />

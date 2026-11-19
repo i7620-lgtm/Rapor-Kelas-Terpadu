@@ -25,7 +25,10 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = (props) => {
   const { isUpdateAvailable, isUpdating, onUpdateApp } = props;
-  const { waliKelasName, stats, academicAlerts, completenessChecks } = useDashboardLogic(props);
+  const { waliKelasName, stats, academicAlerts, completenessChecks } = useDashboardLogic({
+    ...props,
+    setActivePage: props.setActivePage ?? (() => {}),
+  });
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in pb-12">
