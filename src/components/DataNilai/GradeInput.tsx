@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback, useId } from "react";
+import { registerPendingFlush } from "../../utils/dataIntegrity";
 
 export type SyntheticPasteEvent = {
   preventDefault: () => void;
@@ -37,7 +38,18 @@ export const GradeInput = React.memo<GradeInputProps>(
     onMouseDown,
     showTransparentInput,
   }) => {
-    const [localValue, setLocalValue] = useState<string>(String(value ?? ""));
+    const initialStr = String(value ?? "");
+    const [localValue, setLocalValue] = useState<string>(initialStr);
+    const flushKey = useId();
+    const localValueRef = useRef<string>(initialStr);
+    const committedValueRef = useRef<string>(initialStr);
+    const isDirtyRef = useRef<boolean>(false);
+    const onCommitRef = useRef(onCommit);
+    const readOnlyRef = useRef(readOnly);
+
+    onCommitRef.current = onCommit;
+    readOnlyRef.current = readOnly;
+
     const isFilled =
       localValue !== null &&
       localValue !== undefined &&
@@ -53,8 +65,30 @@ export const GradeInput = React.memo<GradeInputProps>(
     }
 
     useEffect(() => {
-      setLocalValue(String(value ?? ""));
+      const nextStr = String(value ?? "");
+      setLocalValue(nextStr);
+      localValueRef.current = nextStr;
+      committedValueRef.current = nextStr;
+      isDirtyRef.current = false;
     }, [value]);
+
+    const commitIfDirty = useCallback(() => {
+      if (readOnlyRef.current) return;
+      const currentVal = String(localValueRef.current ?? "");
+      if (isDirtyRef.current && currentVal !== committedValueRef.current) {
+        isDirtyRef.current = false;
+        committedValueRef.current = currentVal;
+        onCommitRef.current(currentVal);
+      }
+    }, []);
+
+    useEffect(() => {
+      const unregister = registerPendingFlush(`grade-input:${flushKey}`, commitIfDirty);
+      return () => {
+        unregister();
+        commitIfDirty();
+      };
+    }, [flushKey, commitIfDirty]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
@@ -78,14 +112,14 @@ export const GradeInput = React.memo<GradeInputProps>(
         const num = parseInt(val, 10);
         if (val === "" || (!isNaN(num) && num >= min && num <= max)) {
           setLocalValue(val);
+          localValueRef.current = val;
+          isDirtyRef.current = val !== committedValueRef.current;
         }
       }
     };
 
     const handleBlur = () => {
-      if (String(localValue) !== String(value ?? "")) {
-        onCommit(localValue);
-      }
+      commitIfDirty();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
