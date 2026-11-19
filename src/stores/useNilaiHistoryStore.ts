@@ -3,11 +3,39 @@ import { create } from "zustand";
 export const MAX_NILAI_HISTORY = 50;
 export const COALESCE_WINDOW_MS = 900;
 
-export interface GradeSnapshotChange {
+export interface GradeBulkSnapshotChange {
+  kind?: "bulk";
   studentId: string;
   before: any;
   after: any;
 }
+
+export type CellPatchField =
+  | "tp"
+  | "sts"
+  | "sas"
+  | "sts1"
+  | "sts2"
+  | "sas1"
+  | "sas2"
+  | "desc";
+
+export interface GradeCellPatchChange {
+  kind: "cell";
+  studentId: string;
+  field: CellPatchField;
+  slmId?: string;
+  slmName?: string;
+  tpIndex?: number;
+  descType?: "highest" | "lowest";
+  prevValue: any;
+  nextValue: any;
+  prevDescriptionsExisted?: boolean;
+  baselineOtherDescType?: "highest" | "lowest";
+  baselineOtherDescValue?: string;
+}
+
+export type GradeSnapshotChange = GradeBulkSnapshotChange | GradeCellPatchChange;
 
 export interface NilaiHistoryEntry {
   id: string;
@@ -37,22 +65,111 @@ interface NilaiHistoryState {
   pruneStudentsFromHistory: (validStudentIds: Set<string>) => void;
 }
 
+/**
+ * Fast structural clone for a student's single subject DetailedGrade object.
+ * Replaces expensive JSON.parse(JSON.stringify(...)) across grid & modal edits.
+ */
 export const cloneDetailedGrade = (detailedGrade: any): any => {
   if (detailedGrade === undefined || detailedGrade === null) {
     return undefined;
   }
-  return JSON.parse(JSON.stringify(detailedGrade));
+
+  const copy: Record<string, any> = { ...detailedGrade };
+
+  if (Array.isArray(detailedGrade.slm)) {
+    copy.slm = detailedGrade.slm.map((s: any) =>
+      s && typeof s === "object"
+        ? {
+            ...s,
+            scores: Array.isArray(s.scores) ? [...s.scores] : [],
+          }
+        : s
+    );
+  }
+
+  if (detailedGrade.descriptions && typeof detailedGrade.descriptions === "object") {
+    copy.descriptions = { ...detailedGrade.descriptions };
+  }
+
+  if (detailedGrade.descriptions_Genap && typeof detailedGrade.descriptions_Genap === "object") {
+    copy.descriptions_Genap = { ...detailedGrade.descriptions_Genap };
+  }
+
+  return copy;
 };
 
+/**
+ * Fast structural equality check for a single subject's DetailedGrade object.
+ * Avoids double JSON.stringify serialization on every cell or bulk operation.
+ */
 export const areDetailedGradesEqual = (a: any, b: any): boolean => {
   if (a === b) return true;
   if (!a && !b) return true;
   if (!a || !b) return false;
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
+  if (typeof a !== "object" || typeof b !== "object") return a === b;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    const valA = a[key];
+    const valB = b[key];
+    if (valA === valB) continue;
+
+    if (key === "slm") {
+      if (!Array.isArray(valA) || !Array.isArray(valB) || valA.length !== valB.length) {
+        return false;
+      }
+      for (let i = 0; i < valA.length; i++) {
+        const sA = valA[i];
+        const sB = valB[i];
+        if (sA === sB) continue;
+        if (!sA || !sB || sA.id !== sB.id || sA.name !== sB.name) return false;
+        const scoresA = Array.isArray(sA.scores) ? sA.scores : [];
+        const scoresB = Array.isArray(sB.scores) ? sB.scores : [];
+        if (scoresA.length !== scoresB.length) return false;
+        for (let j = 0; j < scoresA.length; j++) {
+          if ((scoresA[j] ?? null) !== (scoresB[j] ?? null)) return false;
+        }
+      }
+      continue;
+    }
+
+    if (key === "descriptions" || key === "descriptions_Genap") {
+      if (!valA && !valB) continue;
+      if (!valA || !valB) return false;
+      if ((valA.highest ?? "") !== (valB.highest ?? "")) return false;
+      if ((valA.lowest ?? "") !== (valB.lowest ?? "")) return false;
+      continue;
+    }
+
+    if (valA !== valB) return false;
   }
+
+  return true;
+};
+
+const isCellChangeNoop = (c: GradeCellPatchChange): boolean => {
+  if (c.field === "desc") {
+    return (c.prevValue ?? "") === (c.nextValue ?? "");
+  }
+  return (c.prevValue ?? null) === (c.nextValue ?? null);
+};
+
+const isChangeNoop = (c: GradeSnapshotChange): boolean => {
+  if (c.kind === "cell") {
+    return isCellChangeNoop(c);
+  }
+  return areDetailedGradesEqual(c.before, c.after);
+};
+
+const getCoalesceMergeKey = (c: GradeSnapshotChange): string => {
+  if (c.kind === "cell") {
+    return `cell|${c.studentId}|${c.field}|${c.slmId ?? ""}|${c.tpIndex ?? ""}|${c.descType ?? ""}`;
+  }
+  return `bulk|${c.studentId}`;
 };
 
 const createEntryId = (): string =>
@@ -67,14 +184,25 @@ export const useNilaiHistoryStore = create<NilaiHistoryState>((set, get) => ({
     const validChanges: GradeSnapshotChange[] = [];
     for (const change of rawChanges) {
       if (!change?.studentId) continue;
-      const beforeClone = cloneDetailedGrade(change.before);
-      const afterClone = cloneDetailedGrade(change.after);
-      if (!areDetailedGradesEqual(beforeClone, afterClone)) {
-        validChanges.push({
-          studentId: String(change.studentId),
-          before: beforeClone,
-          after: afterClone,
-        });
+
+      if (change.kind === "cell") {
+        if (!isCellChangeNoop(change)) {
+          validChanges.push({
+            ...change,
+            studentId: String(change.studentId),
+          });
+        }
+      } else {
+        const beforeClone = cloneDetailedGrade(change.before);
+        const afterClone = cloneDetailedGrade(change.after);
+        if (!areDetailedGradesEqual(beforeClone, afterClone)) {
+          validChanges.push({
+            kind: "bulk",
+            studentId: String(change.studentId),
+            before: beforeClone,
+            after: afterClone,
+          });
+        }
       }
     }
 
@@ -94,23 +222,34 @@ export const useNilaiHistoryStore = create<NilaiHistoryState>((set, get) => ({
         ) {
           const mergedMap = new Map<string, GradeSnapshotChange>();
           for (const c of top.changes) {
-            mergedMap.set(c.studentId, c);
+            mergedMap.set(getCoalesceMergeKey(c), c);
           }
           for (const c of validChanges) {
-            const existing = mergedMap.get(c.studentId);
+            const mKey = getCoalesceMergeKey(c);
+            const existing = mergedMap.get(mKey);
             if (existing) {
-              mergedMap.set(c.studentId, {
-                studentId: c.studentId,
-                before: existing.before,
-                after: c.after,
-              });
+              if (existing.kind === "cell" && c.kind === "cell") {
+                mergedMap.set(mKey, {
+                  ...existing,
+                  nextValue: c.nextValue,
+                });
+              } else if (existing.kind !== "cell" && c.kind !== "cell") {
+                mergedMap.set(mKey, {
+                  kind: "bulk",
+                  studentId: c.studentId,
+                  before: existing.before,
+                  after: c.after,
+                });
+              } else {
+                mergedMap.set(`${mKey}#${mergedMap.size}`, c);
+              }
             } else {
-              mergedMap.set(c.studentId, c);
+              mergedMap.set(mKey, c);
             }
           }
 
           const mergedChanges = Array.from(mergedMap.values()).filter(
-            (c) => !areDetailedGradesEqual(c.before, c.after)
+            (c) => !isChangeNoop(c)
           );
 
           if (mergedChanges.length === 0) {
