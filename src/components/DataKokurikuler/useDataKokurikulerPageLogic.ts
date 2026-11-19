@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { COCURRICULAR_DIMENSIONS } from "../../constants";
 import { getClipboardText } from "../../utils/clipboard";
 import { useGridSelection } from "../../hooks/useGridSelection";
+import { useTableVirtualizer } from "../../hooks/useTableVirtualizer";
 import { useStudentsStore } from "../../stores/useStudentsStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
 import { useCocurricularStore } from "../../stores/useCocurricularStore";
@@ -17,7 +18,7 @@ export const useDataKokurikulerPageLogic = (props: any) => {
   const showToast = props.showToast;
 
   const onUpdateCocurricularData = props.onUpdateCocurricularData || ((sid: string, did: string, val: any) => {
-    useCocurricularStore.getState().updateCocurricularData(sid, did, val, settings?.semester);
+    useCocurricularStore.getState().updateCocurricularData(sid, did, val);
   });
 
   const onSettingsChange = props.onSettingsChange || ((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,8 +26,7 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     useSettingsStore.getState().updateSettingValue(name, value);
   });
 
-  const currentSemester = settings?.semester || "Ganjil";
-  const dimensionField = currentSemester === "Genap" ? "dimensionRatings_Genap" : "dimensionRatings";
+  const dimensionField = "dimensionRatings";
 
   const [showIncompleteHighlight, setShowIncompleteHighlight] = React.useState(true);
   const [showBelowKkmHighlight, setShowBelowKkmHighlight] = React.useState(true);
@@ -55,6 +55,27 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     return { incompleteCount, belowKkmCount, filledCount, totalCells };
   }, [students, cocurricularData, dimensionField]);
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getKokurikulerRowKey = useCallback(
+    (idx: number) => students[idx]?.id ?? idx,
+    [students],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: students.length,
+    scrollContainerRef,
+    estimateRowHeight: 60,
+    overscan: 8,
+    getItemKey: getKokurikulerRowKey,
+  });
+
   const {
     isSelecting,
     setIsSelecting,
@@ -68,6 +89,7 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     colsCount: COCURRICULAR_DIMENSIONS.length,
     minColIndex: -2,
     containerClass: "cocurricular-table-container",
+    onEnsureRowVisible: scrollToIndex,
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
       for (let r = bounds.minR; r <= bounds.maxR; r++) {
@@ -246,7 +268,6 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     students,
     settings,
     cocurricularData,
-    currentSemester,
     dimensionField,
     isSelecting,
     setIsSelecting,
@@ -263,5 +284,11 @@ export const useDataKokurikulerPageLogic = (props: any) => {
     showBelowKkmHighlight,
     setShowBelowKkmHighlight,
     stats,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };
