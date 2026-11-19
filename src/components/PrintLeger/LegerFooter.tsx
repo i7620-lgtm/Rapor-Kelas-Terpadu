@@ -1,7 +1,16 @@
 import React from 'react';
 import { getTanggalRaporValue, getContextualValue } from '../../constants';
 
-export const LegerFooter = React.forwardRef(({ settings, isCompact, printOptions }, ref) => {
+interface LegerFooterProps {
+    settings: any;
+    isCompact: boolean;
+    printOptions?: {
+        showPrincipalSignature?: boolean;
+        showTeacherSignature?: boolean;
+    };
+}
+
+export const LegerFooter = React.forwardRef<HTMLDivElement, LegerFooterProps>(({ settings, isCompact, printOptions }, ref) => {
     const getTanggalRapor = () => {
         const rawTanggalRapor = getTanggalRaporValue(settings) || '';
         

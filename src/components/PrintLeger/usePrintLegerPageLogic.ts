@@ -4,6 +4,9 @@ import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStudentsStore } from '../../stores/useStudentsStore';
 import { useNilaiStore } from '../../stores/useNilaiStore';
 import { getFontEmbedCSS } from '../../utils/pdfFonts';
+import { resolveKopLayout } from '../../utils/TransliterationUtil';
+import { resolveImageForVectorPdf, runHybridPdfExportWithFallback } from '../../utils/pdfExportCoordinator';
+import type { VectorLegerPayload } from '../../types/pdfExport';
 
 const PAPER_SIZES: Record<string, { width: string; height: string }> = {
   A4: { width: '21cm', height: '29.7cm' },
@@ -50,13 +53,16 @@ export const usePrintLegerPageLogic = (props: any) => {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const cmRef = useRef<HTMLDivElement | null>(null);
   const printAreaRef = useRef<HTMLDivElement | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     const beforePrint = () => setIsPrintingState(true);
     const afterPrint = () => setIsPrintingState(false);
     window.addEventListener('beforeprint', beforePrint);
     window.addEventListener('afterprint', afterPrint);
     return () => {
+      isMountedRef.current = false;
       window.removeEventListener('beforeprint', beforePrint);
       window.removeEventListener('afterprint', afterPrint);
     };
@@ -306,85 +312,111 @@ export const usePrintLegerPageLogic = (props: any) => {
 
   const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+  const prepareLegerVectorPayload = async (
+    formatWidth: number,
+    formatHeight: number
+  ): Promise<VectorLegerPayload> => {
+    const [logoDinas, logoSekolah, ttdKepalaSekolah, ttdWaliKelas] = await Promise.all([
+      resolveImageForVectorPdf(settings?.logo_dinas),
+      resolveImageForVectorPdf(settings?.logo_sekolah),
+      resolveImageForVectorPdf(settings?.ttd_kepala_sekolah),
+      resolveImageForVectorPdf(settings?.ttd_wali_kelas),
+    ]);
+
+    const kopElements = resolveKopLayout(settings, settings?.semester || 'Ganjil');
+    const kkm = parseInt(settings?.predikats?.c || '70', 10);
+
+    return {
+      kind: 'leger',
+      formatWidth,
+      formatHeight,
+      orientation: 'portrait',
+      settings,
+      displaySubjects: displaySubjects.map((s: any) => ({
+        id: s.id,
+        label: s.label,
+        fullName: s.fullName,
+      })),
+      processedData: processedData.map((row: any) => ({
+        no: row.no,
+        namaLengkap: row.namaLengkap,
+        nisn: row.nisn,
+        nis: row.nis,
+        grades: row.grades,
+        total: row.total,
+        average: row.average,
+        rank: row.rank,
+      })),
+      statistics: statistics
+        ? {
+            subjects: statistics.subjects,
+            total: statistics.total,
+          }
+        : null,
+      kkm: Number.isNaN(kkm) ? 70 : kkm,
+      printOptions,
+      kopElements,
+      images: {
+        logoDinas,
+        logoSekolah,
+        ttdKepalaSekolah,
+        ttdWaliKelas,
+      },
+    };
+  };
+
   const handleDownloadPDF = async () => {
     setIsPrinting(true);
     showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
 
     try {
       if (pageRef.current) {
-        setExportProgress({ current: 0, total: 1, statusText: 'Mempersiapkan konversi lembar leger...' });
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const originalTransform = pageRef.current.style.transform;
-        const originalWidth = pageRef.current.style.width;
-        const originalHeight = pageRef.current.style.height;
-        const originalPosition = pageRef.current.style.position;
-        const originalLeft = pageRef.current.style.left;
-        const originalTop = pageRef.current.style.top;
-        const originalZIndex = pageRef.current.style.zIndex;
-
         const pxPerCm = 37.7952755906;
-        const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
-        const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
-
-        pageRef.current.style.transform = 'none';
-        pageRef.current.style.width = widthPx + 'px';
-        pageRef.current.style.height = heightPx + 'px';
-        pageRef.current.style.position = 'absolute';
-        pageRef.current.style.left = '0px';
-        pageRef.current.style.top = '0px';
-        pageRef.current.style.zIndex = '-9999';
-        
-        await new Promise(resolve => setTimeout(resolve, 150));
-
-        setExportProgress({ current: 0, total: 1, statusText: 'Mengonversi lembar leger ke format gambar...' });
-
-        const node = pageRef.current;
-        const scaleFactor = 2;
-        const [htmlToImage, { jsPDF }, fontEmbedCSSStr] = await Promise.all([
-          import('html-to-image'),
-          import('jspdf'),
-          getFontEmbedCSS(),
-        ]);
-        const imgData = await htmlToImage.toJpeg(node, {
-          quality: 0.98,
-          backgroundColor: '#ffffff',
-          pixelRatio: scaleFactor,
-          fontEmbedCSS: fontEmbedCSSStr,
-          style: {
-            margin: '0'
-          }
-        });
-        
-        pageRef.current.style.transform = originalTransform;
-        pageRef.current.style.width = originalWidth;
-        pageRef.current.style.height = originalHeight;
-        pageRef.current.style.position = originalPosition;
-        pageRef.current.style.left = originalLeft;
-        pageRef.current.style.top = originalTop;
-        pageRef.current.style.zIndex = originalZIndex;
-        
         const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
         const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
-        
-        const pdf = new jsPDF({
+        const widthPx = formatWidth * pxPerCm;
+        const heightPx = formatHeight * pxPerCm;
+        const fileName = `Leger_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`;
+
+        const result = await runHybridPdfExportWithFallback({
+          pages: [pageRef.current],
+          widthPx,
+          heightPx,
+          formatWidth,
+          formatHeight,
           orientation: 'portrait',
-          unit: 'cm',
-          format: [formatWidth, formatHeight]
+          fileName,
+          loadFontEmbedCSS: getFontEmbedCSS,
+          pageLabelSingular: 'lembar leger',
+          onProgress: (prog) => {
+            if (isMountedRef.current) {
+              setExportProgress(prog);
+            }
+          },
+          isMounted: () => isMountedRef.current,
+          prepareVectorPayload: () => prepareLegerVectorPayload(formatWidth, formatHeight),
         });
-        
-        setExportProgress({ current: 1, total: 1, statusText: 'Menyimpan file PDF...' });
-        pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
-        pdf.save(`Leger_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`);
-        
-        showToast('PDF berhasil diunduh.', 'success');
+
+        if (result.aborted || !isMountedRef.current) {
+          return;
+        }
+
+        if (result.usedVectorFallback) {
+          showToast('PDF berhasil dibuat (mode vektor latar belakang).', 'success');
+        } else {
+          showToast('PDF berhasil diunduh.', 'success');
+        }
       }
     } catch (error) {
       console.error('PDF generation error:', error);
-      showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+      if (isMountedRef.current) {
+        showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+      }
     } finally {
-      setIsPrinting(false);
-      setExportProgress(null);
+      if (isMountedRef.current) {
+        setIsPrinting(false);
+        setExportProgress(null);
+      }
     }
   };
 
