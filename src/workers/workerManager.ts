@@ -1,5 +1,6 @@
 // Safe Web Worker client manager with automatic timeout and main-thread fallback
 import { processAndCropImage3x4 } from '../utils/imageDB';
+import type { PdfExportProgress, PdfOrientation, VectorPdfPayload } from '../types/pdfExport';
 
 const runExportFallback = async (payload: any): Promise<Blob> => {
   const { exportToExcelBlob } = await import('../utils/excelExport');
@@ -10,6 +11,7 @@ const runExportFallback = async (payload: any): Promise<Blob> => {
 
 let imageWorkerInstance: Worker | null = null;
 let excelWorkerInstance: Worker | null = null;
+let pdfWorkerInstance: Worker | null = null;
 
 function getImageWorker(): Worker | null {
   if (typeof Worker === 'undefined') return null;
@@ -39,6 +41,25 @@ function getExcelWorker(): Worker | null {
     }
   }
   return excelWorkerInstance;
+}
+
+function getPdfWorker(): Worker | null {
+  if (typeof Worker === 'undefined') return null;
+  if (!pdfWorkerInstance) {
+    try {
+      pdfWorkerInstance = new Worker(new URL('./pdfWorker.ts', import.meta.url), {
+        type: 'module',
+      });
+    } catch (err) {
+      console.warn('Failed to initialize pdfWorker, will use fallback:', err);
+      pdfWorkerInstance = null;
+    }
+  }
+  return pdfWorkerInstance;
+}
+
+function nextRequestId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /**
@@ -194,6 +215,248 @@ export async function exportExcelWithWorker(
   });
 }
 
+function sendPdfWorkerRequest<T = any>(
+  worker: Worker,
+  message: Record<string, any>,
+  transferables: Transferable[] = [],
+  timeoutMs = 20000
+): Promise<T> {
+  const id = String(message.id);
+  return new Promise<T>((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      worker.removeEventListener('message', handleMessage);
+      worker.removeEventListener('error', handleError);
+    };
+
+    const handleError = (err: ErrorEvent) => {
+      cleanup();
+      reject(new Error(err.message || 'PDF Worker error'));
+    };
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.id === id && e.data?.type !== 'progress') {
+        cleanup();
+        if (e.data.success) {
+          resolve(e.data as T);
+        } else {
+          reject(new Error(e.data.error || 'PDF Worker operation failed'));
+        }
+      }
+    };
+
+    timeoutId = setTimeout(() => {
+      cleanup();
+      try {
+        worker.terminate();
+        pdfWorkerInstance = null;
+      } catch {
+        // ignore
+      }
+      reject(new Error('PDF Worker timed out'));
+    }, timeoutMs);
+
+    worker.addEventListener('message', handleMessage);
+    worker.addEventListener('error', handleError);
+    if (transferables.length > 0) {
+      worker.postMessage(message, transferables);
+    } else {
+      worker.postMessage(message);
+    }
+  });
+}
+
+/**
+ * Initialize stateful jsPDF assembly session in pdfWorker.
+ * Returns false if Web Worker is unavailable in the environment.
+ */
+export async function initPdfWorkerSession(
+  sessionId: string,
+  orientation: PdfOrientation,
+  formatWidth: number,
+  formatHeight: number
+): Promise<boolean> {
+  const worker = getPdfWorker();
+  if (!worker) return false;
+
+  const id = nextRequestId('pdf_init');
+  await sendPdfWorkerRequest(worker, {
+    id,
+    action: 'initSession',
+    sessionId,
+    orientation,
+    formatWidth,
+    formatHeight,
+  });
+  return true;
+}
+
+/**
+ * Transfer captured page image ArrayBuffer (zero-copy) to pdfWorker session.
+ */
+export async function addPdfPageWithWorker(
+  sessionId: string,
+  pageIndex: number,
+  imageBuffer: ArrayBuffer,
+  imageFormat: 'JPEG' | 'PNG',
+  width: number,
+  height: number
+): Promise<void> {
+  const worker = getPdfWorker();
+  if (!worker) {
+    throw new Error('PDF Worker tidak tersedia.');
+  }
+
+  const id = nextRequestId('pdf_page');
+  await sendPdfWorkerRequest(
+    worker,
+    {
+      id,
+      action: 'addImagePage',
+      sessionId,
+      pageIndex,
+      imageBuffer,
+      imageFormat,
+      width,
+      height,
+    },
+    [imageBuffer],
+    20000
+  );
+}
+
+/**
+ * Finalize stateful jsPDF session in pdfWorker and return PDF Blob.
+ */
+export async function finalizePdfWorkerSession(sessionId: string): Promise<Blob> {
+  const worker = getPdfWorker();
+  if (!worker) {
+    throw new Error('PDF Worker tidak tersedia.');
+  }
+
+  const id = nextRequestId('pdf_fin');
+  const res = await sendPdfWorkerRequest<{ success: boolean; pdfBuffer: ArrayBuffer }>(
+    worker,
+    {
+      id,
+      action: 'finalizeSession',
+      sessionId,
+    },
+    [],
+    45000
+  );
+
+  return new Blob([res.pdfBuffer], { type: 'application/pdf' });
+}
+
+/**
+ * Clean up abandoned stateful PDF session in pdfWorker.
+ */
+export function abortPdfWorkerSession(sessionId: string): void {
+  if (!pdfWorkerInstance || !sessionId) return;
+  try {
+    pdfWorkerInstance.postMessage({
+      id: nextRequestId('pdf_abort'),
+      action: 'abortSession',
+      sessionId,
+    });
+  } catch {
+    // ignore
+  }
+}
+
+async function runVectorPdfMainThreadFallback(
+  payload: VectorPdfPayload,
+  onProgress?: (progress: PdfExportProgress) => void
+): Promise<Blob> {
+  const { buildVectorPdfArrayBuffer } = await import('./pdfVectorGenerator');
+  const buffer = buildVectorPdfArrayBuffer(payload, (current, total, statusText) => {
+    onProgress?.({ current, total, statusText });
+  });
+  return new Blob([buffer], { type: 'application/pdf' });
+}
+
+/**
+ * Generate pure vector PDF inside pdfWorker (with streaming progress & main-thread fallback).
+ */
+export async function generateVectorPdfWithWorker(
+  payload: VectorPdfPayload,
+  onProgress?: (progress: PdfExportProgress) => void
+): Promise<Blob> {
+  const worker = getPdfWorker();
+  if (!worker) {
+    return runVectorPdfMainThreadFallback(payload, onProgress);
+  }
+
+  const id = nextRequestId('pdf_vec');
+
+  return new Promise<Blob>((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const resetTimeout = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        cleanup();
+        console.warn('pdfWorker vector generation timed out, falling back to main-thread');
+        try {
+          worker.terminate();
+          pdfWorkerInstance = null;
+        } catch {
+          // ignore
+        }
+        runVectorPdfMainThreadFallback(payload, onProgress).then(resolve).catch(reject);
+      }, 60000);
+    };
+
+    const cleanup = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      worker.removeEventListener('message', handleMessage);
+      worker.removeEventListener('error', handleError);
+    };
+
+    const handleError = (err: ErrorEvent) => {
+      cleanup();
+      console.warn('pdfWorker error during vector PDF, falling back to main-thread:', err.message);
+      try {
+        worker.terminate();
+        pdfWorkerInstance = null;
+      } catch {
+        // ignore
+      }
+      runVectorPdfMainThreadFallback(payload, onProgress).then(resolve).catch(reject);
+    };
+
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.id !== id) return;
+
+      if (e.data.type === 'progress') {
+        resetTimeout();
+        onProgress?.({
+          current: Number(e.data.current ?? 0),
+          total: Number(e.data.total ?? 1),
+          statusText: String(e.data.statusText ?? 'Membuat PDF vektor...'),
+        });
+        return;
+      }
+
+      cleanup();
+      if (e.data.success && e.data.pdfBuffer) {
+        resolve(new Blob([e.data.pdfBuffer], { type: 'application/pdf' }));
+      } else {
+        console.warn('pdfWorker vector generation failed, falling back to main-thread:', e.data.error);
+        runVectorPdfMainThreadFallback(payload, onProgress).then(resolve).catch(reject);
+      }
+    };
+
+    resetTimeout();
+    worker.addEventListener('message', handleMessage);
+    worker.addEventListener('error', handleError);
+    worker.postMessage({ id, action: 'generateVectorPdf', payload });
+  });
+}
+
 /**
  * Terminate all active worker instances (safe cleanup)
  */
@@ -214,5 +477,12 @@ export function terminateAllWorkers(): void {
     }
     excelWorkerInstance = null;
   }
+  if (pdfWorkerInstance) {
+    try {
+      pdfWorkerInstance.terminate();
+    } catch {
+      // ignore
+    }
+    pdfWorkerInstance = null;
+  }
 }
-
