@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
 import { useGridSelection } from '../../hooks/useGridSelection';
+import { useTableVirtualizer } from '../../hooks/useTableVirtualizer';
 import { getClipboardText } from "../../utils/clipboard";
 import { useStudentsStore } from "../../stores/useStudentsStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
@@ -44,7 +45,41 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     useExtracurricularStore.getState().setStudentExtracurriculars(newStudentEx);
   });
 
-  const activeExtracurriculars = extracurriculars.filter((e: any) => e.active);
+  const activeExtracurriculars = useMemo(
+    () => extracurriculars.filter((e: any) => e.active),
+    [extracurriculars],
+  );
+
+  const studentExtraByIdMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (studentExtracurriculars || []).forEach((se: any) => {
+      if (se?.studentId && !map.has(se.studentId)) {
+        map.set(se.studentId, se);
+      }
+    });
+    return map;
+  }, [studentExtracurriculars]);
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const getEkstraRowKey = useCallback(
+    (idx: number) => students[idx]?.id ?? idx,
+    [students],
+  );
+
+  const {
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
+    scrollToIndex,
+  } = useTableVirtualizer({
+    count: students.length,
+    scrollContainerRef,
+    estimateRowHeight: 86,
+    overscan: 8,
+    getItemKey: getEkstraRowKey,
+  });
 
   const handleAssignmentChange = (studentId: string, index: number, activityId: string) => {
     const studentExtra = studentExtracurriculars.find(
@@ -124,6 +159,7 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     colsCount: MAX_EXTRA_FIELDS * 2,
     minColIndex: -2,
     containerClass: 'ekstra-table-container',
+    onEnsureRowVisible: scrollToIndex,
     onDeleteSelection: (bounds) => {
       let updatedCount = 0;
       const newStudentExtracurricularsMap = new Map(studentExtracurriculars.map((se: any) => [se.studentId, { ...se }]));
@@ -413,5 +449,12 @@ export const useDataEkstrakurikulerPageLogic = (props: any) => {
     handleDescriptionChange,
     handlePasteActivity,
     handlePasteDescription,
+    studentExtraByIdMap,
+    scrollContainerRef,
+    startIndex,
+    endIndex,
+    topSpacerHeight,
+    bottomSpacerHeight,
+    measureRow,
   };
 };
