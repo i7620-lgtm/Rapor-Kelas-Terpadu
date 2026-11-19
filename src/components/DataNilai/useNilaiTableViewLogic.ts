@@ -5,6 +5,7 @@ import { useTableVirtualizer } from "../../hooks/useTableVirtualizer";
 import { useAllSlms } from "./useAllSlms";
 import { useNilaiStore } from "../../stores/useNilaiStore";
 import { useSettingsStore } from "../../stores/useSettingsStore";
+import { useCurriculumStore } from "../../stores/useCurriculumStore";
 import {
   areDetailedGradesEqual,
   cloneDetailedGrade,
@@ -84,11 +85,13 @@ export const useNilaiTableViewLogic = (props) => {
     const entry = useNilaiHistoryStore.getState().popUndo(subject.id);
     if (!entry) return;
 
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
     useNilaiStore.getState().applyHistoryChanges(subject.id, entry.changes, "undo", {
-      settings,
-      learningObjectives,
-      predefinedCurriculum,
-      subjects: resolvedSubjects,
+      settings: latestSettingsState.settings || settings,
+      learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+      predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+      subjects: latestSettingsState.subjects || resolvedSubjects,
     });
     if (showToast) {
       showToast(`Urungkan: ${entry.label}`, "info");
@@ -99,11 +102,13 @@ export const useNilaiTableViewLogic = (props) => {
     const entry = useNilaiHistoryStore.getState().popRedo(subject.id);
     if (!entry) return;
 
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
     useNilaiStore.getState().applyHistoryChanges(subject.id, entry.changes, "redo", {
-      settings,
-      learningObjectives,
-      predefinedCurriculum,
-      subjects: resolvedSubjects,
+      settings: latestSettingsState.settings || settings,
+      learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+      predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+      subjects: latestSettingsState.subjects || resolvedSubjects,
     });
     if (showToast) {
       showToast(`Ulangi: ${entry.label}`, "info");
@@ -484,6 +489,9 @@ export const useNilaiTableViewLogic = (props) => {
       return;
     }
 
+    const latestSettingsState = useSettingsStore.getState();
+    const latestCurriculumState = useCurriculumStore.getState();
+
     nilaiState.updateSingleGrade(
       studentId,
       subject.id,
@@ -493,10 +501,10 @@ export const useNilaiTableViewLogic = (props) => {
       tpIndex ?? undefined,
       resolvedSlmName,
       {
-        settings,
-        learningObjectives,
-        predefinedCurriculum,
-        subjects: resolvedSubjects,
+        settings: latestSettingsState.settings || settings,
+        learningObjectives: latestCurriculumState.learningObjectives || learningObjectives,
+        predefinedCurriculum: latestCurriculumState.predefinedCurriculum || predefinedCurriculum,
+        subjects: latestSettingsState.subjects || resolvedSubjects,
       }
     );
 
