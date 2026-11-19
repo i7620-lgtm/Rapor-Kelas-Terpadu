@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 import { flushAllPendingWrites } from '../stores/customPersistStorage';
+import { flushRegisteredInputs } from '../utils/dataIntegrity';
 
-const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
+const UPDATE_CHECK_THROTTLE_MS = 15 * 1000;
 
 const useServiceWorker = () => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const updateSwFnRef = useRef<((reloadPage?: boolean) => Promise<void>) | null>(null);
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
   const lastCheckRef = useRef<number>(0);
 
   useEffect(() => {
@@ -16,7 +18,18 @@ const useServiceWorker = () => {
     }
 
     let isMounted = true;
-    let swRegistration: ServiceWorkerRegistration | undefined;
+    const hadControllerOnMount = Boolean(navigator.serviceWorker.controller);
+
+    const checkForUpdate = (force = false) => {
+      const reg = registrationRef.current;
+      if (!reg) return;
+      const now = Date.now();
+      if (!force && now - lastCheckRef.current < UPDATE_CHECK_THROTTLE_MS) {
+        return;
+      }
+      lastCheckRef.current = now;
+      reg.update().catch(() => {});
+    };
 
     try {
       const updateSW = registerSW({
@@ -27,10 +40,11 @@ const useServiceWorker = () => {
           }
         },
         onRegisteredSW(_swUrl, registration) {
-          swRegistration = registration;
+          registrationRef.current = registration;
           if (registration?.waiting && isMounted) {
             setIsUpdateAvailable(true);
           }
+          checkForUpdate(true);
         },
         onRegisterError(error) {
           console.warn('[RKT] Service Worker registration skipped/failed:', error);
@@ -42,19 +56,30 @@ const useServiceWorker = () => {
       console.warn('[RKT] Failed initializing PWA registration:', error);
     }
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible' || !swRegistration) return;
-      const now = Date.now();
-      if (now - lastCheckRef.current > UPDATE_CHECK_INTERVAL_MS) {
-        lastCheckRef.current = now;
-        swRegistration.update().catch(() => {});
+    const handleControllerChange = () => {
+      if (hadControllerOnMount && isMounted) {
+        setIsUpdateAvailable(true);
       }
     };
 
+    const handleFocus = () => {
+      checkForUpdate(false);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForUpdate(false);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+    window.addEventListener('focus', handleFocus);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       isMounted = false;
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -63,9 +88,14 @@ const useServiceWorker = () => {
     if (isUpdating) return;
     setIsUpdating(true);
     try {
+      flushRegisteredInputs();
       await flushAllPendingWrites();
-      if (updateSwFnRef.current) {
+      const hasWaitingWorker = Boolean(registrationRef.current?.waiting);
+      if (hasWaitingWorker && updateSwFnRef.current) {
         await updateSwFnRef.current(true);
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 1200);
       } else {
         window.location.reload();
       }
