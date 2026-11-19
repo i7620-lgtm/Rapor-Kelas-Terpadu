@@ -1,13 +1,195 @@
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { getGradeNumber } from '../../utils/nilaiHelpers';
-import { getFontEmbedCSS, PAPER_SIZES } from './raporUtils';
+import { capitalize, generateDescription, PAPER_SIZES } from './raporUtils';
+import { getFontEmbedCSS } from '../../utils/pdfFonts';
 import { usePrintStore } from '../../stores/usePrintStore';
 import { useNilaiStore } from '../../stores/useNilaiStore';
 import { useSettingsStore } from '../../stores/useSettingsStore';
 import { useStudentsStore } from '../../stores/useStudentsStore';
+import { useAttendanceStore } from '../../stores/useAttendanceStore';
+import { useNotesStore } from '../../stores/useNotesStore';
+import { useExtracurricularStore } from '../../stores/useExtracurricularStore';
+import { useCurriculumStore } from '../../stores/useCurriculumStore';
+import { useCocurricularStore } from '../../stores/useCocurricularStore';
+import { COCURRICULAR_DIMENSIONS } from '../../constants';
+import { resolveKopLayout } from '../../utils/TransliterationUtil';
+import { resolveImageForVectorPdf, runHybridPdfExportWithFallback } from '../../utils/pdfExportCoordinator';
+import type { VectorRaporPayload, VectorRaporStudentEntry } from '../../types/pdfExport';
 
 interface UsePrintRaporPageLogicProps {
   showToast: (msg: string, type: 'success' | 'error' | 'info') => void;
+}
+
+function buildCocurricularDescriptionText(student: any, settings: any, cocurricularData: Record<string, any>): string {
+  const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+  const studentCoData = cocurricularData?.[student.id];
+  const ratings =
+    studentCoData?.dimensionRatings && typeof studentCoData.dimensionRatings === 'object'
+      ? studentCoData.dimensionRatings
+      : studentCoData?.dimensionRatings_Genap && typeof studentCoData.dimensionRatings_Genap === 'object'
+        ? studentCoData.dimensionRatings_Genap
+        : {};
+
+  const manualContent = ratings?.manualDescription || studentCoData?.manualDescription;
+  if (manualContent) return String(manualContent);
+
+  const theme = settings.cocurricular_theme || settings.cocurricular_theme_Genap;
+  const hasRatings = Object.values(ratings).some((r) => r && r !== '---');
+  if (!theme && !hasRatings) return 'Data kokurikuler belum diisi.';
+
+  const descriptionParts: string[] = [];
+  if (theme) {
+    descriptionParts.push(`${nickname} berpartisipasi aktif dalam kegiatan kokurikuler dengan tema "${theme}".`);
+  }
+
+  const sbDimensions = COCURRICULAR_DIMENSIONS.filter((dim) => ratings[dim.id] === 'SB').map((dim) => dim.label.toLowerCase());
+  const bshDimensions = COCURRICULAR_DIMENSIONS.filter((dim) => ratings[dim.id] === 'BSH').map((dim) => dim.label.toLowerCase());
+  const developingDimensions = COCURRICULAR_DIMENSIONS.filter((dim) => ['MB', 'BB'].includes(ratings[dim.id])).map((dim) =>
+    dim.label.toLowerCase()
+  );
+
+  const formatDims = (list: string[]) => {
+    if (list.length === 0) return '';
+    if (list.length === 1) return list[0];
+    const last = list[list.length - 1];
+    const rest = list.slice(0, -1).join(', ');
+    return `${rest}, dan ${last}`;
+  };
+
+  if (sbDimensions.length > 0 || bshDimensions.length > 0) {
+    let positiveSentence = 'Ia menunjukkan perkembangan yang ';
+    const parts: string[] = [];
+    if (sbDimensions.length > 0) parts.push(`sangat baik dalam aspek ${formatDims(sbDimensions)}`);
+    if (bshDimensions.length > 0) parts.push(`baik dalam aspek ${formatDims(bshDimensions)}`);
+    positiveSentence += parts.join(' serta ') + '.';
+    descriptionParts.push(positiveSentence);
+  }
+
+  if (developingDimensions.length > 0) {
+    descriptionParts.push(`Perlu bimbingan untuk lebih meningkatkan kemampuan dalam aspek ${formatDims(developingDimensions)}.`);
+  }
+
+  if (descriptionParts.length > 0 && !hasRatings) {
+    descriptionParts.push('Penilaian dimensi profil lulusan perlu ditambahkan.');
+  } else if (descriptionParts.length === 0 && hasRatings) {
+    descriptionParts.push(`${nickname} telah menyelesaikan kegiatan kokurikuler dengan baik.`);
+  }
+
+  return descriptionParts.join(' ');
+}
+
+function buildReportSubjectsForStudent(
+  student: any,
+  gradeData: any,
+  subjects: any[],
+  learningObjectives: any,
+  settings: any
+) {
+  const result: Array<{ id: string; name: string; grade: any; highest: string; lowest: string }> = [];
+  const processedGroups = new Set<string>();
+  const allActiveSubjects = subjects.filter((s) => s.active);
+
+  const groupConfigs: Record<string, (groupSubjects: any[]) => { subject: any; name: string } | null> = {
+    'Pendidikan Agama dan Budi Pekerti': (groupSubjects) => {
+      const studentReligionLower = String(student.agama || '').trim().toLowerCase();
+      if (!studentReligionLower) return null;
+      let representative = null;
+      if (studentReligionLower === 'kepercayaan') {
+        representative = groupSubjects.find((s) => s.id === 'PAKTTMYME');
+      } else {
+        representative = groupSubjects.find((s) => {
+          const match = s.fullName.toLowerCase().match(/\(([^)]+)\)/);
+          return match && match[1].trim().toLowerCase() === studentReligionLower;
+        });
+      }
+      return representative ? { subject: representative, name: 'Pendidikan Agama dan Budi Pekerti' } : null;
+    },
+    'Seni Budaya': (groupSubjects) => {
+      const chosen =
+        groupSubjects.find((s) => gradeData?.finalGrades?.[s.id] != null) ||
+        groupSubjects.find((s) => s.fullName.includes('Seni Rupa')) ||
+        groupSubjects[0];
+      return chosen ? { subject: chosen, name: 'Seni Budaya' } : null;
+    },
+    'Muatan Lokal': (groupSubjects) => {
+      const chosen = groupSubjects.find((s) => gradeData?.finalGrades?.[s.id] != null) || groupSubjects[0];
+      if (chosen) {
+        const match = chosen.fullName.match(/\(([^)]+)\)/);
+        return { subject: chosen, name: match ? match[1] : 'Muatan Lokal' };
+      }
+      return null;
+    },
+  };
+
+  Object.keys(groupConfigs).forEach((groupName) => {
+    if (processedGroups.has(groupName)) return;
+    const groupSubjects = allActiveSubjects.filter((s) => s.fullName.startsWith(groupName));
+    if (groupSubjects.length > 0) {
+      const config = groupConfigs[groupName](groupSubjects);
+      if (config && config.subject) {
+        const grade = gradeData?.finalGrades?.[config.subject.id];
+        const desc = generateDescription(student, config.subject, gradeData, learningObjectives, settings);
+        result.push({
+          id: config.subject.id,
+          name: config.name,
+          grade,
+          highest: desc.highest || '',
+          lowest: desc.lowest || '',
+        });
+      }
+      processedGroups.add(groupName);
+    }
+  });
+
+  allActiveSubjects.forEach((subject) => {
+    const isGrouped = Object.keys(groupConfigs).some((groupName) => subject.fullName.startsWith(groupName));
+    if (subject.id === 'PAKTTMYME') {
+      const studentReligion = String(student.agama || '').trim().toLowerCase();
+      if (studentReligion !== 'kepercayaan') return;
+    }
+    if (!isGrouped) {
+      const grade = gradeData?.finalGrades?.[subject.id];
+      const desc = generateDescription(student, subject, gradeData, learningObjectives, settings);
+      result.push({
+        id: subject.id,
+        name: subject.fullName,
+        grade,
+        highest: desc.highest || '',
+        lowest: desc.lowest || '',
+      });
+    }
+  });
+
+  const sortOrder = [
+    'Pendidikan Agama dan Budi Pekerti',
+    'Pendidikan Pancasila',
+    'Bahasa Indonesia',
+    'Matematika',
+    'Ilmu Pengetahuan Alam dan Sosial',
+    'Seni Budaya',
+    'Pendidikan Jasmani, Olahraga, dan Kesehatan',
+    'Bahasa Inggris',
+    'Muatan Lokal',
+  ];
+
+  const findOriginalFullName = (subjectId: string) => subjects.find((s) => s.id === subjectId)?.fullName || '';
+
+  result.sort((a, b) => {
+    const getSortKey = (item: any) => {
+      const originalFullName = findOriginalFullName(item.id);
+      if (originalFullName.startsWith('Pendidikan Agama')) return 'Pendidikan Agama dan Budi Pekerti';
+      if (originalFullName.startsWith('Seni Budaya')) return 'Seni Budaya';
+      if (originalFullName.startsWith('Muatan Lokal')) return 'Muatan Lokal';
+      return item.name;
+    };
+    const aSortKey = getSortKey(a);
+    const bSortKey = getSortKey(b);
+    const aIndex = sortOrder.findIndex((key) => aSortKey.startsWith(key));
+    const bIndex = sortOrder.findIndex((key) => bSortKey.startsWith(key));
+    return (aIndex === -1 ? 99 : aIndex) - (bIndex === -1 ? 99 : bIndex);
+  });
+
+  return result;
 }
 
 export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProps) => {
@@ -118,6 +300,116 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
     );
   }, []);
 
+  const prepareRaporVectorPayload = async (
+    targetStudents: any[],
+    formatWidth: number,
+    formatHeight: number
+  ): Promise<VectorRaporPayload> => {
+    const currentSettings = useSettingsStore.getState().settings;
+    const currentSubjects = useSettingsStore.getState().subjects;
+    const currentGrades = useNilaiStore.getState().grades;
+    const currentAttendance = useAttendanceStore.getState().attendance;
+    const currentNotes = useNotesStore.getState().notes;
+    const currentStudentExtra = useExtracurricularStore.getState().studentExtracurriculars;
+    const currentExtracurriculars = useSettingsStore.getState().extracurriculars;
+    const currentLearningObjectives = useCurriculumStore.getState().learningObjectives;
+    const currentCocurricularData = useCocurricularStore.getState().cocurricularData;
+    const studentPhotoUrls = useStudentsStore.getState().studentPhotoUrls;
+
+    const [logoCover, logoDinas, logoSekolah, ttdKepalaSekolah, ttdWaliKelas] = await Promise.all([
+      resolveImageForVectorPdf(currentSettings.logo_cover),
+      resolveImageForVectorPdf(currentSettings.logo_dinas),
+      resolveImageForVectorPdf(currentSettings.logo_sekolah),
+      resolveImageForVectorPdf(currentSettings.ttd_kepala_sekolah),
+      resolveImageForVectorPdf(currentSettings.ttd_wali_kelas),
+    ]);
+
+    const entries: VectorRaporStudentEntry[] = await Promise.all(
+      targetStudents.map(async (student) => {
+        const gradeData = currentGrades.find((g: any) => String(g.studentId) === String(student.id));
+        const rank = studentRanks.get(student.id)?.rank ?? null;
+        const shouldDisplayRank = Boolean(
+          rank &&
+            rankingOption !== 'none' &&
+            ((rankingOption === 'top3' && rank <= 3) || (rankingOption === 'top10' && rank <= 10))
+        );
+
+        const attRow = currentAttendance.find((a: any) => String(a.studentId) === String(student.id));
+        const toInt = (val: any) => (val === null || val === undefined || val === '' ? 0 : Number(val) || 0);
+        const attendanceObj = {
+          sakit: toInt(attRow?.sakit),
+          izin: toInt(attRow?.izin),
+          alpa: toInt(attRow?.alpa),
+        };
+
+        const rawNote = currentNotes?.[student.id] || currentNotes?.[`${student.id}_Genap`] || '';
+        let noteContent = String(rawNote).trim();
+        if (shouldDisplayRank) {
+          const nickname = capitalize(student.namaPanggilan || (student.namaLengkap || '').split(' ')[0]);
+          const cleanNote = noteContent.replace(/Selamat!.*Peringkat \d+ di kelas\.?\s*/i, '').trim();
+          noteContent = `Selamat! ${nickname} berhasil meraih Peringkat ${rank} di kelas.${cleanNote ? ` ${cleanNote}` : ''}`;
+        }
+
+        const studentExtra = currentStudentExtra.find((se: any) => String(se.studentId) === String(student.id));
+        const extraActivities = (studentExtra?.assignedActivities || [])
+          .filter(Boolean)
+          .map((activityId: string) => {
+            const act = currentExtracurriculars.find((e: any) => e.id === activityId);
+            return {
+              id: activityId,
+              name: act?.name || '',
+              description: studentExtra?.descriptions?.[activityId] || 'Mengikuti kegiatan dengan baik.',
+            };
+          });
+
+        const photoSrc = studentPhotoUrls[student.id] || student.foto || '';
+        const photoImage = await resolveImageForVectorPdf(photoSrc);
+
+        return {
+          student,
+          rank,
+          shouldDisplayRank,
+          reportSubjects: buildReportSubjectsForStudent(
+            student,
+            gradeData,
+            currentSubjects,
+            currentLearningObjectives,
+            currentSettings
+          ),
+          cocurricularDescription: buildCocurricularDescriptionText(student, currentSettings, currentCocurricularData),
+          extraActivities,
+          attendance: attendanceObj,
+          noteContent,
+          photoImage,
+        };
+      })
+    );
+
+    const kopElements = resolveKopLayout(currentSettings, currentSettings?.semester || 'Ganjil');
+    const kkm = parseInt(currentSettings?.predikats?.c || '70', 10);
+
+    return {
+      kind: 'rapor',
+      formatWidth,
+      formatHeight,
+      orientation: 'portrait',
+      settings: currentSettings,
+      selectedPages,
+      hideGradesForFaseA: isFaseA && Boolean(hideGradesForFaseA),
+      kkm: Number.isNaN(kkm) ? 70 : kkm,
+      printOptions,
+      kopElements,
+      images: {
+        logoCover,
+        logoDinas,
+        logoSekolah,
+        ttdKepalaSekolah,
+        ttdWaliKelas,
+      },
+      entries,
+    };
+  };
+
   const handleDownloadPDF = async () => {
     setIsPrinting(true);
     showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
@@ -134,6 +426,9 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
 
     try {
       if (printAreaRef.current) {
+        // Yield briefly so full DOM render after flushAll settles
+        await new Promise((resolve) => setTimeout(resolve, 120));
+
         const pages = Array.from(
           printAreaRef.current.querySelectorAll('.rapor-page, .report-page')
         ) as HTMLElement[];
@@ -143,88 +438,11 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
           return;
         }
 
-        setExportProgress({ current: 0, total: pages.length, statusText: 'Mempersiapkan modul PDF & halaman...' });
-        const [[htmlToImage, { jsPDF }, fontEmbedCSSStr]] = await Promise.all([
-          Promise.all([import('html-to-image'), import('jspdf'), getFontEmbedCSS()]),
-          new Promise((resolve) => setTimeout(resolve, 300)),
-        ]);
-
         const pxPerCm = 37.7952755906;
-        const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
-        const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
         const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
         const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
-
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'cm',
-          format: [formatWidth, formatHeight],
-        });
-
-        for (let i = 0; i < pages.length; i++) {
-          setExportProgress({
-            current: i,
-            total: pages.length,
-            statusText: `Mengonversi halaman ${i + 1} dari ${pages.length} ke format gambar...`
-          });
-
-          const node = pages[i];
-
-          const originalTransform = node.style.transform;
-          const originalWidth = node.style.width;
-          const originalHeight = node.style.height;
-          const originalPosition = node.style.position;
-          const originalLeft = node.style.left;
-          const originalTop = node.style.top;
-          const originalZIndex = node.style.zIndex;
-
-          node.style.transform = 'none';
-          node.style.width = widthPx + 'px';
-          node.style.height = heightPx + 'px';
-          node.style.position = 'absolute';
-          node.style.left = '0px';
-          node.style.top = '0px';
-          node.style.zIndex = '-9999';
-
-          await new Promise((resolve) => setTimeout(resolve, 150));
-
-          const scaleFactor = 2;
-          const imgData = await htmlToImage.toJpeg(node, {
-            quality: 0.98,
-            backgroundColor: '#ffffff',
-            pixelRatio: scaleFactor,
-            fontEmbedCSS: fontEmbedCSSStr,
-            style: {
-              margin: '0',
-            },
-          });
-
-          node.style.transform = originalTransform;
-          node.style.width = originalWidth;
-          node.style.height = originalHeight;
-          node.style.position = originalPosition;
-          node.style.left = originalLeft;
-          node.style.top = originalTop;
-          node.style.zIndex = originalZIndex;
-
-          if (!isMountedRef.current) {
-            console.log('PDF generation aborted: component unmounted');
-            return;
-          }
-
-          if (i > 0) {
-            pdf.addPage();
-          }
-          pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
-        }
-
-        if (!isMountedRef.current) return;
-
-        setExportProgress({
-          current: pages.length,
-          total: pages.length,
-          statusText: 'Menyimpan file PDF...'
-        });
+        const widthPx = formatWidth * pxPerCm;
+        const heightPx = formatHeight * pxPerCm;
 
         let fileName = 'Rapor.pdf';
         if (selectedStudentId !== 'all') {
@@ -232,8 +450,37 @@ export const usePrintRaporPageLogic = ({ showToast }: UsePrintRaporPageLogicProp
           if (student) fileName = `Rapor_${student.namaLengkap.replace(/[^a-z0-9]/gi, '_')}.pdf`;
         }
 
-        pdf.save(fileName);
-        if (isMountedRef.current) {
+        const targetStudents =
+          selectedStudentId === 'all'
+            ? students
+            : students.filter((s) => String(s.id) === selectedStudentId);
+
+        const result = await runHybridPdfExportWithFallback({
+          pages,
+          widthPx,
+          heightPx,
+          formatWidth,
+          formatHeight,
+          orientation: 'portrait',
+          fileName,
+          loadFontEmbedCSS: getFontEmbedCSS,
+          pageLabelSingular: 'halaman',
+          onProgress: (prog) => {
+            if (isMountedRef.current) {
+              setExportProgress(prog);
+            }
+          },
+          isMounted: () => isMountedRef.current,
+          prepareVectorPayload: () => prepareRaporVectorPayload(targetStudents, formatWidth, formatHeight),
+        });
+
+        if (result.aborted || !isMountedRef.current) {
+          return;
+        }
+
+        if (result.usedVectorFallback) {
+          showToast('PDF berhasil dibuat (mode vektor latar belakang).', 'success');
+        } else {
           showToast('PDF berhasil diunduh.', 'success');
         }
       }

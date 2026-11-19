@@ -26,19 +26,8 @@ export function useReportPagesForStudentLogic(student: any, settings: any, rank:
     const setCocurricularData = useCocurricularStore((state) => state.setCocurricularData);
 
     const onUpdateDescription = useCallback((sid: string, subId: string, type: 'highest' | 'lowest', val: string, currentDescriptions: any) => {
-        setGrades(prev => {
-            const n = JSON.parse(JSON.stringify(prev));
-            const g = n.find((x: any) => x.studentId === sid);
-            if (g) {
-                if (!g.detailedGrades[subId]) g.detailedGrades[subId] = { slm: [], sts: null, sas: null };
-                if (!g.detailedGrades[subId].descriptions) {
-                    g.detailedGrades[subId].descriptions = currentDescriptions || { highest: "", lowest: "" };
-                }
-                g.detailedGrades[subId].descriptions[type] = val;
-            }
-            return n;
-        });
-    }, [setGrades]);
+        useNilaiStore.getState().updateSingleDescription(sid, subId, type, val, currentDescriptions);
+    }, []);
 
     const onUpdateStudent = useCallback((id: string, k: string, v: string) => setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, [k]: v } : s))), [setStudents]);
 

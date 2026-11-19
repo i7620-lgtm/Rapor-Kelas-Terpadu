@@ -4,6 +4,16 @@ import { capitalize } from './raporUtils';
 import { EditableDescription } from './EditableDescription';
 import { DecisionSection, CocurricularSection, ExtracurricularSection, SignaturesSection, HeadmasterSignatureSection, AttendanceAndNotesSection } from "./ReportFooterParts";
 
+export interface ReportFooterSectionRefs {
+    cocurricularRef?: React.RefObject<HTMLDivElement | null>;
+    extraRef?: React.RefObject<HTMLDivElement | null>;
+    attendanceAndNotesRef?: React.RefObject<HTMLDivElement | null>;
+    decisionRef?: React.RefObject<HTMLDivElement | null>;
+    parentFeedbackRef?: React.RefObject<HTMLDivElement | null>;
+    signaturesRef?: React.RefObject<HTMLDivElement | null>;
+    headmasterRef?: React.RefObject<HTMLDivElement | null>;
+}
+
 interface ReportFooterContentProps {
     student: any;
     settings: any;
@@ -28,10 +38,11 @@ interface ReportFooterContentProps {
     onUpdateExtraDescription: (studentId: string, extraId: string, val: string) => void;
     onUpdateCocurricularManual: (studentId: string, val: string) => void;
     onUpdateSettings: (key: string, val: any) => void;
+    sectionRefs?: ReportFooterSectionRefs;
     compactLevel?: number;
 }
 
-export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProps>((props, ref) => {
+export const ReportFooterContent = React.forwardRef<ReportFooterSectionRefs, ReportFooterContentProps>((props, ref) => {
     const { 
         student, settings, attendance, notes, studentExtracurriculars, extracurriculars, cocurricularData,
         rank, rankingOption,
@@ -39,10 +50,11 @@ export const ReportFooterContent = React.forwardRef<any, ReportFooterContentProp
         showParentFeedback, showParentTeacherSignature, showHeadmasterSignature,
         printOptions,
         onUpdateNote, onUpdateAttendance, onUpdateExtraDescription, onUpdateCocurricularManual, onUpdateSettings,
+        sectionRefs,
         compactLevel = 0
     } = props;
 
-    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = (ref as any) || {};
+    const { cocurricularRef, extraRef, attendanceAndNotesRef, decisionRef, parentFeedbackRef, signaturesRef, headmasterRef } = sectionRefs || (ref as ReportFooterSectionRefs) || {};
 
     const shouldDisplayRank = rank && rankingOption !== 'none' && (
         (rankingOption === 'top3' && rank <= 3) ||

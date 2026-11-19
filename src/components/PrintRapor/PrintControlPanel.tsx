@@ -151,7 +151,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
                 <input
                   type="checkbox"
                   name="all"
-                  checked={allSelected === true || allSelected === 'true'}
+                  checked={Boolean(allSelected)}
                   onChange={handlePageSelectionChange}
                   className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer"
                 />
@@ -177,7 +177,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
               <label className="flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0">
                 <input
                   type="checkbox"
-                  checked={printOptions.showPrincipalSignature === true || printOptions.showPrincipalSignature === 'true'}
+                  checked={Boolean(printOptions.showPrincipalSignature)}
                   onChange={() => handlePrintOptionChange('showPrincipalSignature')}
                   className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer"
                 />
@@ -186,7 +186,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
               <label className="flex items-center space-x-2 cursor-pointer min-h-[40px] lg:min-h-0">
                 <input
                   type="checkbox"
-                  checked={printOptions.showTeacherSignature === true || printOptions.showTeacherSignature === 'true'}
+                  checked={Boolean(printOptions.showTeacherSignature)}
                   onChange={() => handlePrintOptionChange('showTeacherSignature')}
                   className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer"
                 />
@@ -202,7 +202,7 @@ export const PrintControlPanel: React.FC<PrintControlPanelProps> = ({
                   <input
                     type="checkbox"
                     name="hideGrades"
-                    checked={hideGradesForFaseA === true || hideGradesForFaseA === 'true'}
+                    checked={Boolean(hideGradesForFaseA)}
                     onChange={(e) => setHideGradesForFaseA(e.target.checked)}
                     className="h-4 w-4 text-indigo-600 border-slate-300 dark:border-slate-600 rounded cursor-pointer"
                   />

@@ -13,23 +13,19 @@ export const PageFooter: React.FC<PageFooterProps> = ({ student, settings, curre
     const nisn = student.nisn || '-';
 
     return (
-        React.createElement('div', { 
-            className: "absolute left-[1.5cm] right-[1.5cm] font-times", 
-            style: { 
+        <div
+            className="absolute left-[1.5cm] right-[1.5cm] font-times"
+            style={{
                 bottom: `${PAGE_BOTTOM_MARGIN_CM}cm`,
                 fontSize: '10pt',
                 height: `${PAGE_NUMBER_FOOTER_HEIGHT_CM}cm`,
-            }
-        },
-            React.createElement('div', { className: "border-t border-slate-400 mb-[20px]", style: { marginTop: '0px' } }),
-            React.createElement('div', { className: "flex justify-between items-center" },
-                React.createElement('div', null,
-                    `${classNameVal} | ${studentName} | ${nisn}`
-                ),
-                React.createElement('div', null,
-                    `Halaman ${currentPage}`
-                )
-            )
-        )
+            }}
+        >
+            <div className="border-t border-slate-400 mb-[20px]" style={{ marginTop: '0px' }} />
+            <div className="flex justify-between items-center">
+                <div>{`${classNameVal} | ${studentName} | ${nisn}`}</div>
+                <div>{`Halaman ${currentPage}`}</div>
+            </div>
+        </div>
     );
 };

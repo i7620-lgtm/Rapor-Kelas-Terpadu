@@ -15,22 +15,22 @@ export function useReportChunks({
     attendance,
     notes,
     cocurricularData
-}) {
-    const [academicPageChunks, setAcademicPageChunks] = useState(null);
+}: any) {
+    const [academicPageChunks, setAcademicPageChunks] = useState<any[] | null>(null);
     const [compactLevel, setCompactLevel] = useState(0);
     const [cmToPx, setCmToPx] = useState(0);
 
-    const studentInfoRef = useRef(null);
-    const tableHeaderRef = useRef(null);
-    const tableBodyRef = useRef(null);
-    const cocurricularRef = useRef(null);
-    const extraRef = useRef(null);
-    const attendanceAndNotesRef = useRef(null);
-    const decisionRef = useRef(null);
-    const parentFeedbackRef = useRef(null);
-    const signaturesRef = useRef(null);
-    const headmasterRef = useRef(null);
-    const cmRef = useRef(null);
+    const studentInfoRef = useRef<HTMLDivElement | null>(null);
+    const tableHeaderRef = useRef<HTMLTableSectionElement | null>(null);
+    const tableBodyRef = useRef<HTMLTableSectionElement | null>(null);
+    const cocurricularRef = useRef<HTMLDivElement | null>(null);
+    const extraRef = useRef<HTMLDivElement | null>(null);
+    const attendanceAndNotesRef = useRef<HTMLDivElement | null>(null);
+    const decisionRef = useRef<HTMLDivElement | null>(null);
+    const parentFeedbackRef = useRef<HTMLDivElement | null>(null);
+    const signaturesRef = useRef<HTMLDivElement | null>(null);
+    const headmasterRef = useRef<HTMLDivElement | null>(null);
+    const cmRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         setCompactLevel(0);
@@ -62,14 +62,14 @@ export function useReportChunks({
             const allItems = [];
             
             if (tableBodyRef.current) {
-                const rowHeights = Array.from(tableBodyRef.current.children).map(row => row.offsetHeight);
-                reportSubjects.forEach((subject, index) => {
+                const rowHeights = Array.from(tableBodyRef.current.children).map(row => (row as HTMLElement).offsetHeight);
+                reportSubjects.forEach((subject: any, index: number) => {
                     allItems.push({ type: 'academic', content: subject, height: rowHeights[index] });
                 });
             }
 
-            const studentExtraData = studentExtracurriculars.find(se => se.studentId === studentId);
-            const hasExtras = (studentExtraData?.assignedActivities || []).some(id => id && extracurriculars.some(e => e.id === id));
+            const studentExtraData = studentExtracurriculars.find((se: any) => se.studentId === studentId);
+            const hasExtras = (studentExtraData?.assignedActivities || []).some((id: any) => id && extracurriculars.some((e: any) => e.id === id));
 
             const footerItems = [
                 { type: 'cocurricular', ref: cocurricularRef },

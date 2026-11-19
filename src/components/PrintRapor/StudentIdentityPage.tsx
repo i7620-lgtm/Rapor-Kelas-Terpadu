@@ -1,10 +1,6 @@
 import React from 'react';
 import { EditableDescription } from './EditableDescription';
-import { 
-    getTanggalRaporValue, 
-    getTanggalRaporKey, 
-    getContextualValue 
-} from '../../constants';
+import { getTanggalRaporValue, getTanggalRaporKey, getContextualValue } from '../../constants';
 import { useStudentsStore } from '../../stores/useStudentsStore';
 
 interface StudentIdentityPageProps {
@@ -14,17 +10,26 @@ interface StudentIdentityPageProps {
     onUpdateSettings: (key: string, val: any) => void;
 }
 
-export const StudentIdentityPage: React.FC<StudentIdentityPageProps> = ({ 
-    student, 
-    settings, 
-    onUpdateStudent, 
-    onUpdateSettings 
+interface StudentIdentityField {
+    key?: string;
+    no?: string;
+    label: string;
+    value?: string;
+    sameLine?: boolean;
+    sub?: boolean;
+}
+
+export const StudentIdentityPage: React.FC<StudentIdentityPageProps> = ({
+    student,
+    settings,
+    onUpdateStudent,
+    onUpdateSettings,
 }) => {
     const photoUrl = useStudentsStore((state) => state.studentPhotoUrls[student.id]);
     const photoSrc = photoUrl || student.foto || '';
     const tanggalRaporValue = getTanggalRaporValue(settings) || `${settings.kota_kabupaten || 'Tempat'}, ____-__-____`;
 
-    const identitasSiswa = [
+    const identitasSiswa: StudentIdentityField[] = [
         { key: 'namaLengkap', no: '1.', label: 'Nama Murid', value: (student.namaLengkap || '').toUpperCase() },
         { key: 'nisn', no: '2.', label: 'NISN', value: student.nisn || '-' },
         { key: 'nis', label: 'NIS', value: student.nis || '-', sameLine: true },
@@ -48,69 +53,93 @@ export const StudentIdentityPage: React.FC<StudentIdentityPageProps> = ({
     ];
 
     return (
-        React.createElement('div', { className: 'font-times', style: { fontSize: '12pt' } },
-            React.createElement('h2', { className: 'text-center font-bold mb-4', style: { fontSize: '12pt' } }, 'IDENTITAS MURID'),
-            React.createElement('table', { className: 'w-full', style: { tableLayout: 'fixed' } },
-                React.createElement('tbody', null,
-                    identitasSiswa.map((item: any, index: number) => {
-                        if (item.sameLine) return null; // Skip direct render, handled in parent
-                        
-                        let valueRender;
+        <div className="font-times" style={{ fontSize: '12pt' }}>
+            <h2 className="text-center font-bold mb-4" style={{ fontSize: '12pt' }}>
+                IDENTITAS MURID
+            </h2>
+            <table className="w-full" style={{ tableLayout: 'fixed' }}>
+                <tbody>
+                    {identitasSiswa.map((item, index) => {
+                        if (item.sameLine) return null;
+
+                        let valueRender: React.ReactNode;
                         if (item.label === 'NISN') {
-                             // Custom merge for NISN/NIS
-                             const nextItem = identitasSiswa[index + 1];
-                             valueRender = (
-                                React.createElement('div', { className: 'flex gap-1' },
-                                    React.createElement(EditableDescription, { value: item.value, onSave: (val) => onUpdateStudent(student.id, item.key, val), placeholder: "-" }),
-                                    React.createElement('span', null, '/'),
-                                    React.createElement(EditableDescription, { value: nextItem.value, onSave: (val) => onUpdateStudent(student.id, nextItem.key, val), placeholder: "-" })
-                                )
-                             );
-                        } else if (item.key) {
+                            const nextItem = identitasSiswa[index + 1];
                             valueRender = (
-                                React.createElement(EditableDescription, {
-                                    value: item.value || '-',
-                                    onSave: (val) => onUpdateStudent(student.id, item.key, val),
-                                    placeholder: "-",
-                                    multiline: item.key.includes('alamat')
-                                })
+                                <div className="flex gap-1">
+                                    <EditableDescription
+                                        value={item.value || '-'}
+                                        onSave={(val) => item.key && onUpdateStudent(student.id, item.key, val)}
+                                        placeholder="-"
+                                    />
+                                    <span>/</span>
+                                    <EditableDescription
+                                        value={nextItem.value || '-'}
+                                        onSave={(val) => nextItem.key && onUpdateStudent(student.id, nextItem.key, val)}
+                                        placeholder="-"
+                                    />
+                                </div>
+                            );
+                        } else if (item.key) {
+                            const fieldKey = item.key;
+                            valueRender = (
+                                <EditableDescription
+                                    value={item.value || '-'}
+                                    onSave={(val) => onUpdateStudent(student.id, fieldKey, val)}
+                                    placeholder="-"
+                                    multiline={fieldKey.includes('alamat')}
+                                />
                             );
                         } else {
                             valueRender = item.value || (item.sub ? '-' : '');
                         }
 
                         return (
-                            React.createElement('tr', { key: index, className: 'align-top' },
-                                React.createElement('td', { className: 'w-[5%] py-[1.5px]' }, item.no || ''),
-                                React.createElement('td', { className: `w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}` }, item.label),
-                                React.createElement('td', { className: 'w-[3%] py-[1.5px] text-center' }, item.label ? ':' : ''),
-                                React.createElement('td', { className: 'w-[57%] py-[1.5px]' }, valueRender)
-                            )
+                            <tr key={index} className="align-top">
+                                <td className="w-[5%] py-[1.5px]">{item.no || ''}</td>
+                                <td className={`w-[35%] py-[1.5px] ${item.sub ? 'pl-4' : ''}`}>{item.label}</td>
+                                <td className="w-[3%] py-[1.5px] text-center">{item.label ? ':' : ''}</td>
+                                <td className="w-[57%] py-[1.5px]">{valueRender}</td>
+                            </tr>
                         );
-                    })
-                )
-            ),
-            React.createElement('div', { className: 'flex justify-between items-end pt-10' },
-                React.createElement('div', { 
-                    className: 'border-2 border-black flex items-center justify-center text-slate-400 relative overflow-hidden text-center text-sm',
-                    style: { width: '3cm', height: '4cm', minWidth: '3cm', minHeight: '4cm' }
-                },
-                    photoSrc ? React.createElement('img', { src: photoSrc, alt: "Foto Siswa", className: "w-full h-full object-cover" }) : 'Pas Foto 3x4'
-                ),
-                React.createElement('div', { className: 'text-center relative' },
-                    React.createElement(EditableDescription, { value: tanggalRaporValue, onSave: (val) => onUpdateSettings(getTanggalRaporKey(settings), val), placeholder: "Tempat, Tanggal" }),
-                    React.createElement('div', { className: 'mt-1' }, 'Kepala Sekolah,'),
-                    React.createElement('div', { className: 'h-20 w-full relative flex items-center justify-center' },
-                        settings.ttd_kepala_sekolah && React.createElement('img', { 
-                            src: settings.ttd_kepala_sekolah, 
-                            alt: "TTD Kepala Sekolah", 
-                            className: 'h-20 object-contain absolute z-10' 
-                        })
-                    ),
-                    React.createElement('div', { className: 'font-bold underline relative z-20' }, getContextualValue(settings, 'nama_kepala_sekolah') || '_________________'),
-                    React.createElement('div', null, `${getContextualValue(settings, 'nip_label_kepala_sekolah') || 'NIP'}. ${getContextualValue(settings, 'nip_kepala_sekolah') || '-'}`)
-                )
-            )
-        )
+                    })}
+                </tbody>
+            </table>
+            <div className="flex justify-between items-end pt-10">
+                <div
+                    className="border-2 border-black flex items-center justify-center text-slate-400 relative overflow-hidden text-center text-sm"
+                    style={{ width: '3cm', height: '4cm', minWidth: '3cm', minHeight: '4cm' }}
+                >
+                    {photoSrc ? (
+                        <img src={photoSrc} alt="Foto Siswa" className="w-full h-full object-cover" />
+                    ) : (
+                        'Pas Foto 3x4'
+                    )}
+                </div>
+                <div className="text-center relative">
+                    <EditableDescription
+                        value={tanggalRaporValue}
+                        onSave={(val) => onUpdateSettings(getTanggalRaporKey(settings), val)}
+                        placeholder="Tempat, Tanggal"
+                    />
+                    <div className="mt-1">Kepala Sekolah,</div>
+                    <div className="h-20 w-full relative flex items-center justify-center">
+                        {settings.ttd_kepala_sekolah && (
+                            <img
+                                src={settings.ttd_kepala_sekolah}
+                                alt="TTD Kepala Sekolah"
+                                className="h-20 object-contain absolute z-10"
+                            />
+                        )}
+                    </div>
+                    <div className="font-bold underline relative z-20">
+                        {getContextualValue(settings, 'nama_kepala_sekolah') || '_________________'}
+                    </div>
+                    <div>
+                        {`${getContextualValue(settings, 'nip_label_kepala_sekolah') || 'NIP'}. ${getContextualValue(settings, 'nip_kepala_sekolah') || '-'}`}
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
