@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { DefaultPiagamBackground } from './DefaultPiagamBackground';
 import { generateInitialPiagamLayout, toRoman, getTextWidth, PIAGAM_WIDTH, PIAGAM_HEIGHT, PIAGAM_VIEWBOX } from './utils';
 import { getTanggalRaporValue, getContextualValue } from '../../constants';
+import { resolvePiagamFontFamily } from '../../utils/fontStacks';
 
 export const PiagamPage = ({ student, settings, pageStyle, rank, average, printOptions }: any) => {
     let rawLayout = settings?.piagam_layout ?? settings?.piagam_layout_Genap;
@@ -22,11 +23,32 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
         return `PERINGKAT ${toRoman(rank)}`;
     }, [rank]);
 
+    const [fontVersion, setFontVersion] = useState(0);
+
+    useEffect(() => {
+        if (typeof document === 'undefined' || !document.fonts) return;
+        let cancelled = false;
+
+        const bumpFontVersion = () => {
+            if (!cancelled) {
+                setFontVersion((v) => v + 1);
+            }
+        };
+
+        document.fonts.ready.then(bumpFontVersion).catch(() => {});
+        document.fonts.addEventListener?.('loadingdone', bumpFontVersion);
+
+        return () => {
+            cancelled = true;
+            document.fonts.removeEventListener?.('loadingdone', bumpFontVersion);
+        };
+    }, []);
+
     const { dynamicBoxWidth, dynamicBoxX } = useMemo(() => {
         const rankTextDef = layout.find((el: any) => el.id === 'rank_text');
         if (rankTextDef && rankString) {
             const fontSize = rankTextDef.fontSize || 24;
-            const fontFamily = rankTextDef.fontFamily || 'Tinos';
+            const fontFamily = resolvePiagamFontFamily(rankTextDef.fontFamily, rankTextDef.id);
             const fontWeight = rankTextDef.fontWeight || 'bold';
             const fontSpec = `${fontWeight} ${fontSize}px ${fontFamily}`;
             const textWidth = getTextWidth(rankString, fontSpec);
@@ -44,7 +66,7 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
             return { dynamicBoxWidth: width, dynamicBoxX: x };
         }
         return { dynamicBoxWidth: 300, dynamicBoxX: (PIAGAM_WIDTH - 300) / 2 };
-    }, [layout, rankString]);
+    }, [layout, rankString, fontVersion]);
 
     const replacePlaceholders = (text: string) => {
         if (!text) return '';
@@ -122,10 +144,13 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                         const elementsToRender = [];
 
                         if (currentEl.type === 'text') {
-                            let textAnchor = "start", xPos = currentEl.x;
-                            if (currentEl.textAlign === 'center') { textAnchor = "middle"; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
-                            else if (currentEl.textAlign === 'right') { textAnchor = "end"; xPos = currentEl.x + (currentEl.width ?? 0); }
+                            let textAnchor: 'start' | 'middle' | 'end' = 'start';
+                            let xPos = currentEl.x;
+                            if (currentEl.textAlign === 'center') { textAnchor = 'middle'; xPos = currentEl.x + (currentEl.width ?? 0) / 2; }
+                            else if (currentEl.textAlign === 'right') { textAnchor = 'end'; xPos = currentEl.x + (currentEl.width ?? 0); }
                             
+                            const resolvedFontFamily = resolvePiagamFontFamily(currentEl.fontFamily, currentEl.id);
+
                             if (currentEl.id === 'piagam_title') {
                                 // MANUAL LAYERING FOR SHADOW (Guarantees Print Output)
                                 // Layer 1: Shadow (Gold)
@@ -136,8 +161,8 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                                         y={currentEl.y + 3}
                                         fontSize={currentEl.fontSize}
                                         fontWeight={currentEl.fontWeight}
-                                        textAnchor={textAnchor as any}
-                                        fontFamily={currentEl.fontFamily}
+                                        textAnchor={textAnchor}
+                                        fontFamily={resolvedFontFamily}
                                         fill="#F59E0B" // Gold Shadow Color
                                         dominantBaseline={currentEl.dominantBaseline || 'auto'}
                                         style={{ userSelect: 'none', letterSpacing: '0.15em' }}
@@ -151,8 +176,8 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                                         y={currentEl.y}
                                         fontSize={currentEl.fontSize}
                                         fontWeight={currentEl.fontWeight}
-                                        textAnchor={textAnchor as any}
-                                        fontFamily={currentEl.fontFamily}
+                                        textAnchor={textAnchor}
+                                        fontFamily={resolvedFontFamily}
                                         fill={currentEl.fill || '#800000'}
                                         dominantBaseline={currentEl.dominantBaseline || 'auto'}
                                         style={{ userSelect: 'none', letterSpacing: '0.15em' }}
@@ -167,8 +192,8 @@ export const PiagamPage = ({ student, settings, pageStyle, rank, average, printO
                                         y={currentEl.y} 
                                         fontSize={currentEl.fontSize} 
                                         fontWeight={currentEl.fontWeight} 
-                                        textAnchor={textAnchor as any} 
-                                        fontFamily={currentEl.fontFamily} 
+                                        textAnchor={textAnchor} 
+                                        fontFamily={resolvedFontFamily} 
                                         fill={currentEl.fill || 'black'} 
                                         dominantBaseline={currentEl.dominantBaseline || 'auto'} 
                                         style={{ textDecoration: currentEl.textDecoration || 'none', ...(currentEl.style || {}) }} 

@@ -11,12 +11,12 @@ export const PIAGAM_WIDTH = 1115;
 export const PIAGAM_HEIGHT = 749; 
 export const PIAGAM_VIEWBOX = `0 0 ${PIAGAM_WIDTH} ${PIAGAM_HEIGHT}`;
 
-export const toRoman = (num: number) => {
-    if (isNaN(num)) return num;
+export const toRoman = (num: number): string => {
+    if (isNaN(num)) return '';
     const roman: { [key: string]: number } = { M: 1000, CM: 900, D: 500, CD: 400, C: 100, XC: 90, L: 50, XL: 40, X: 10, IX: 9, V: 5, IV: 4, I: 1 };
     let str = '';
-    for (let i of Object.keys(roman)) {
-        let q = Math.floor(num / roman[i]);
+    for (const i of Object.keys(roman)) {
+        const q = Math.floor(num / roman[i]);
         num -= q * roman[i];
         str += i.repeat(q);
     }
@@ -43,7 +43,11 @@ export const generateInitialPiagamLayout = (settings: any) => {
     const xOffset = (PIAGAM_WIDTH - 800) / 2;
 
     const adaptedKopElements = kopLayout.map((el: any) => {
-        let newElement = { ...el, id: `kop_${el.id}` };
+        const newElement = { ...el, id: `kop_${el.id}` };
+
+        if (newElement.type === 'text' && !newElement.fontFamily) {
+            newElement.fontFamily = el.id?.includes('aksara_') ? 'Noto Sans Balinese' : 'Tinos';
+        }
         
         // Adapt X position for the wider piagam format
         if (el.textAlign === 'center') {

@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { getFontEmbedCSS } from '../../utils/pdfFonts';
-import { PAPER_SIZES } from './utils';
+import { getFontEmbedCSS, waitForDocumentFontsReady } from '../../utils/pdfFonts';
+import { generateInitialPiagamLayout, PAPER_SIZES } from './utils';
 import { useDashboardLogic } from '../Dashboard/useDashboardLogic';
+import { resolveImageForVectorPdf, runHybridPdfExportWithFallback } from '../../utils/pdfExportCoordinator';
+import type { VectorPiagamPayload } from '../../types/pdfExport';
 
 const NOOP = () => {};
 
@@ -55,12 +57,16 @@ export const usePrintPiagamPageLogic = ({
     const [isPrinting, setIsPrinting] = useState(false);
     const [isPrintingState, setIsPrintingState] = useState(false);
     const [exportProgress, setExportProgress] = useState<{ current: number; total: number; statusText: string } | null>(null);
+    const isMountedRef = useRef(true);
+
     useEffect(() => {
+        isMountedRef.current = true;
         const beforePrint = () => setIsPrintingState(true);
         const afterPrint = () => setIsPrintingState(false);
         window.addEventListener('beforeprint', beforePrint);
         window.addEventListener('afterprint', afterPrint);
         return () => {
+            isMountedRef.current = false;
             window.removeEventListener('beforeprint', beforePrint);
             window.removeEventListener('afterprint', afterPrint);
         };
@@ -73,7 +79,7 @@ export const usePrintPiagamPageLogic = ({
     });
 
     const [scale, setScale] = useState(1);
-    const printAreaRef = useRef(null);
+    const printAreaRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         const updateScale = () => {
@@ -154,9 +160,91 @@ export const usePrintPiagamPageLogic = ({
 
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+    const studentsToRender = useMemo(() => {
+        const rankedStudents = students.filter(s => studentRankings.has(s.id) && studentRankings.get(s.id).rank !== null)
+                                     .sort((a, b) => studentRankings.get(a.id).rank - studentRankings.get(b.id).rank);
+        
+        if (selectedFilter === 'top3') {
+            return rankedStudents.filter(s => {
+                const rank = studentRankings.get(s.id).rank;
+                return rank >= 1 && rank <= 3;
+            });
+        } else if (selectedFilter === 'top10') {
+             return rankedStudents.filter(s => {
+                const rank = studentRankings.get(s.id).rank;
+                return rank >= 1 && rank <= 10;
+            });
+        }
+        
+        return rankedStudents; // 'all'
+    }, [students, selectedFilter, studentRankings]);
+
+    const preparePiagamVectorPayload = async (
+        formatWidth: number,
+        formatHeight: number,
+        orientation: 'portrait' | 'landscape'
+    ): Promise<VectorPiagamPayload> => {
+        let rawLayout = settings?.piagam_layout ?? settings?.piagam_layout_Genap;
+        if (typeof rawLayout === 'string') {
+            try {
+                rawLayout = JSON.parse(rawLayout);
+            } catch {
+                rawLayout = null;
+            }
+        }
+        const layout = Array.isArray(rawLayout) && rawLayout.length > 0
+            ? rawLayout
+            : generateInitialPiagamLayout(settings);
+
+        const [piagamBackground, logoDinas, logoSekolah, ttdKepalaSekolah, ttdWaliKelas] = await Promise.all([
+            resolveImageForVectorPdf(settings?.piagam_background),
+            resolveImageForVectorPdf(settings?.logo_dinas),
+            resolveImageForVectorPdf(settings?.logo_sekolah),
+            resolveImageForVectorPdf(settings?.ttd_kepala_sekolah),
+            resolveImageForVectorPdf(settings?.ttd_wali_kelas),
+        ]);
+
+        const entries = studentsToRender.map((student) => {
+            const rankInfo = studentRankings.get(student.id);
+            return {
+                student,
+                rank: rankInfo?.rank ?? null,
+                average: rankInfo?.average || '0.00',
+            };
+        });
+
+        return {
+            kind: 'piagam',
+            formatWidth,
+            formatHeight,
+            orientation,
+            settings,
+            printOptions,
+            layout,
+            images: {
+                piagamBackground,
+                logoDinas,
+                logoSekolah,
+                ttdKepalaSekolah,
+                ttdWaliKelas,
+            },
+            entries,
+        };
+    };
+
     const handleDownloadPDF = async () => {
         setIsPrinting(true);
         showToast('Mempersiapkan PDF (Ini mungkin memakan waktu)...', 'info');
+
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            e.preventDefault();
+            e.returnValue = 'Proses pembuatan PDF sedang berlangsung. Yakin ingin meninggalkan halaman?';
+            return e.returnValue;
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        }
 
         try {
             if (printAreaRef.current) {
@@ -167,94 +255,56 @@ export const usePrintPiagamPageLogic = ({
                      return;
                 }
 
-                setExportProgress({ current: 0, total: pages.length, statusText: 'Mempersiapkan modul PDF & halaman...' });
-                const [[htmlToImage, { jsPDF }, fontEmbedCSSStr]] = await Promise.all([
-                    Promise.all([import('html-to-image'), import('jspdf'), getFontEmbedCSS()]),
-                    new Promise(resolve => setTimeout(resolve, 300)),
-                ]);
-                
                 const pxPerCm = 37.7952755906;
-                const widthPx = parseFloat(PAPER_SIZES[paperSize].width) * pxPerCm;
-                const heightPx = parseFloat(PAPER_SIZES[paperSize].height) * pxPerCm;
                 const formatWidth = parseFloat(PAPER_SIZES[paperSize].width);
                 const formatHeight = parseFloat(PAPER_SIZES[paperSize].height);
-                
-                // PrintPiagam is typically landscape. A4 width > height
+                const widthPx = formatWidth * pxPerCm;
+                const heightPx = formatHeight * pxPerCm;
                 const orientation = formatWidth > formatHeight ? 'landscape' : 'portrait';
+                const fileName = `Piagam_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`;
 
-                const pdf = new jsPDF({
-                    orientation: orientation,
-                    unit: 'cm',
-                    format: [formatWidth, formatHeight]
-                });
-                
-                for (let i = 0; i < pages.length; i++) {
-                    setExportProgress({
-                        current: i,
-                        total: pages.length,
-                        statusText: `Mengonversi piagam ${i + 1} dari ${pages.length} ke format gambar...`
-                    });
-
-                    const node = pages[i];
-                    
-                    const originalTransform = node.style.transform;
-                    const originalWidth = node.style.width;
-                    const originalHeight = node.style.height;
-                    const originalPosition = node.style.position;
-                    const originalLeft = node.style.left;
-                    const originalTop = node.style.top;
-                    const originalZIndex = node.style.zIndex;
-
-                    node.style.transform = 'none';
-                    node.style.width = widthPx + 'px';
-                    node.style.height = heightPx + 'px';
-                    node.style.position = 'absolute';
-                    node.style.left = '0px';
-                    node.style.top = '0px';
-                    node.style.zIndex = '-9999';
-                    
-                    await new Promise(resolve => setTimeout(resolve, 150));
-                    
-                    const scaleFactor = 2;
-                    const imgData = await htmlToImage.toJpeg(node, {
-                        quality: 0.98,
-                        backgroundColor: '#ffffff',
-                        pixelRatio: scaleFactor,
-                        fontEmbedCSS: fontEmbedCSSStr,
-                        style: {
-                            margin: '0'
+                const result = await runHybridPdfExportWithFallback({
+                    pages,
+                    widthPx,
+                    heightPx,
+                    formatWidth,
+                    formatHeight,
+                    orientation,
+                    fileName,
+                    loadFontEmbedCSS: getFontEmbedCSS,
+                    pageLabelSingular: 'piagam',
+                    onProgress: (prog) => {
+                        if (isMountedRef.current) {
+                            setExportProgress(prog);
                         }
-                    });
-                    
-                    node.style.transform = originalTransform;
-                    node.style.width = originalWidth;
-                    node.style.height = originalHeight;
-                    node.style.position = originalPosition;
-                    node.style.left = originalLeft;
-                    node.style.top = originalTop;
-                    node.style.zIndex = originalZIndex;
-                    
-                    if (i > 0) {
-                        pdf.addPage();
-                    }
-                    pdf.addImage(imgData, 'JPEG', 0, 0, formatWidth, formatHeight);
-                }
-                
-                setExportProgress({
-                    current: pages.length,
-                    total: pages.length,
-                    statusText: 'Menyimpan file PDF...'
+                    },
+                    isMounted: () => isMountedRef.current,
+                    prepareVectorPayload: () => preparePiagamVectorPayload(formatWidth, formatHeight, orientation),
                 });
 
-                pdf.save(`Piagam_${settings.nama_kelas || 'Kelas'}_${settings.semester || 'Semester'}.pdf`);
-                showToast('PDF berhasil diunduh.', 'success');
+                if (result.aborted || !isMountedRef.current) {
+                    return;
+                }
+
+                if (result.usedVectorFallback) {
+                    showToast('PDF berhasil dibuat (mode vektor latar belakang).', 'success');
+                } else {
+                    showToast('PDF berhasil diunduh.', 'success');
+                }
             }
         } catch (error) {
             console.error('PDF generation error:', error);
-            showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+            if (isMountedRef.current) {
+                showToast('Gagal menghasilkan PDF. Silahkan coba lagi.', 'error');
+            }
         } finally {
-            setIsPrinting(false);
-            setExportProgress(null);
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            }
+            if (isMountedRef.current) {
+                setIsPrinting(false);
+                setExportProgress(null);
+            }
         }
     };
 
@@ -290,32 +340,14 @@ export const usePrintPiagamPageLogic = ({
         `;
         document.head.appendChild(style);
 
-        setTimeout(() => {
-            window.print();
-            setIsPrinting(false);
-            setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
-        }, 500);
+        waitForDocumentFontsReady().finally(() => {
+            setTimeout(() => {
+                window.print();
+                setIsPrinting(false);
+                setTimeout(() => document.getElementById(styleId)?.remove(), 1000);
+            }, 300);
+        });
     };
-
-    const studentsToRender = useMemo(() => {
-        const rankedStudents = students.filter(s => studentRankings.has(s.id) && studentRankings.get(s.id).rank !== null)
-                                     .sort((a, b) => studentRankings.get(a.id).rank - studentRankings.get(b.id).rank);
-        
-        if (selectedFilter === 'top3') {
-            return rankedStudents.filter(s => {
-                const rank = studentRankings.get(s.id).rank;
-                return rank >= 1 && rank <= 3;
-            });
-        } else if (selectedFilter === 'top10') {
-             return rankedStudents.filter(s => {
-                const rank = studentRankings.get(s.id).rank;
-                return rank >= 1 && rank <= 10;
-            });
-        }
-        
-        return rankedStudents; // 'all'
-    }, [students, selectedFilter, studentRankings]);
-    
 
     const pageStyle = {
         width: PAPER_SIZES[paperSize].width,

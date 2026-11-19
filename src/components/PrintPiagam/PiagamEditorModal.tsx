@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInitialPiagamLayout, PIAGAM_VIEWBOX } from './utils';
+import { resolvePiagamFontFamily } from '../../utils/fontStacks';
 
 export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: any) => {
     const [elements, setElements] = useState<any[]>([]);
-    const [selectedElementId, setSelectedElementId] = useState(null);
+    const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
     const dragInfo = useRef<any>(null);
     const GRID_SIZE = 10;
@@ -19,7 +20,7 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
                 }
             }
             const layoutToLoad = Array.isArray(rawLayout) && rawLayout.length > 0
-                ? JSON.parse(JSON.stringify(rawLayout))
+                ? rawLayout.map((el: any) => ({ ...el, ...(el?.style ? { style: { ...el.style } } : {}) }))
                 : generateInitialPiagamLayout(settings);
             setElements(layoutToLoad);
             setSelectedElementId(null);
@@ -127,19 +128,22 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
                                         
                                         let elementRender;
                                         if (el.type === 'text') {
-                                            let textAnchor = "start", xPos = el.x;
-                                            if (el.textAlign === 'center') { textAnchor = "middle"; xPos = el.x + (el.width ?? 0) / 2; }
-                                            else if (el.textAlign === 'right') { textAnchor = "end"; xPos = el.x + (el.width ?? 0); }
+                                            let textAnchor: 'start' | 'middle' | 'end' = 'start';
+                                            let xPos = el.x;
+                                            if (el.textAlign === 'center') { textAnchor = 'middle'; xPos = el.x + (el.width ?? 0) / 2; }
+                                            else if (el.textAlign === 'right') { textAnchor = 'end'; xPos = el.x + (el.width ?? 0); }
                                             
+                                            const resolvedFontFamily = resolvePiagamFontFamily(el.fontFamily, el.id);
+
                                             if (el.id === 'piagam_title') {
                                                 elementRender = (
                                                     <g>
-                                                        <text x={xPos + 3} y={el.y + 3} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={el.fontFamily} fill="#F59E0B" dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>
-                                                        <text x={xPos} y={el.y} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={el.fontFamily} fill={el.fill || 'black'} dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>
+                                                        <text x={xPos + 3} y={el.y + 3} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={resolvedFontFamily} fill="#F59E0B" dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>
+                                                        <text x={xPos} y={el.y} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={resolvedFontFamily} fill={el.fill || 'black'} dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>
                                                     </g>
                                                 );
                                             } else {
-                                                elementRender = <text x={xPos} y={el.y} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={el.fontFamily} fill={el.fill || 'black'} dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>;
+                                                elementRender = <text x={xPos} y={el.y} fontSize={el.fontSize} fontWeight={el.fontWeight} textAnchor={textAnchor} fontFamily={resolvedFontFamily} fill={el.fill || 'black'} dominantBaseline={el.dominantBaseline || 'auto'} style={{ userSelect: 'none', textDecoration: el.textDecoration || 'none', ...(el.style || {}) }}>{el.content}</text>;
                                             }
                                         } else if (el.type === 'image') {
                                             const imageUrl = String(settings[el.content] || '');
@@ -190,12 +194,13 @@ export const PiagamEditorModal = ({ isOpen, onClose, settings, onSaveLayout }: a
                                      <>
                                         <div><label className="text-xs font-semibold">Teks</label><textarea value={selectedElement.content} onChange={e => updateElement(selectedElementId, { content: e.target.value })} className="w-full p-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" rows={3} /></div>
                                         <div><label className="text-xs font-semibold">Ukuran Font</label><input type="number" value={selectedElement.fontSize} onChange={e => updateElement(selectedElementId, { fontSize: parseInt(e.target.value) })} className="w-full p-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 tabular-nums" /></div>
-                                        <div><label className="text-xs font-semibold">Jenis Font</label><select value={selectedElement.fontFamily} onChange={e => updateElement(selectedElementId, { fontFamily: e.target.value })} className="w-full p-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+                                        <div><label className="text-xs font-semibold">Jenis Font</label><select value={selectedElement.fontFamily || 'Tinos'} onChange={e => updateElement(selectedElementId, { fontFamily: e.target.value })} className="w-full p-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                                             <option value="Tinos">Tinos (Formal)</option>
                                             <option value="Pinyon Script">Pinyon Script (Elegan)</option>
                                             <option value="Alex Brush">Alex Brush (Klasik)</option>
                                             <option value="Great Vibes">Great Vibes (Artistik)</option>
                                             <option value="Dancing Script">Dancing Script (Santai)</option>
+                                            {selectedElement.fontFamily === 'Noto Sans Balinese' && <option value="Noto Sans Balinese">Noto Sans Balinese (Aksara Bali)</option>}
                                             <option value="system-ui">System UI (Modern)</option>
                                         </select></div>
                                         <div><label className="text-xs font-semibold">Ketebalan</label><select value={selectedElement.fontWeight} onChange={e => updateElement(selectedElementId, { fontWeight: e.target.value })} className="w-full p-1.5 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"><option value="normal">Normal</option><option value="bold">Tebal</option></select></div>
