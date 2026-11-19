@@ -1,4 +1,4 @@
-export const initDB = (): Promise<IDBDatabase> => {
+const initDB = (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('RKT_ImagesDB', 1);
         request.onerror = () => reject(request.error);
@@ -45,7 +45,7 @@ export const deleteImageFromDB = async (key: string): Promise<void> => {
     });
 };
 
-export const listAllImageKeys = async (): Promise<string[]> => {
+const listAllImageKeys = async (): Promise<string[]> => {
     const db = await initDB();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(['images'], 'readonly');
@@ -149,9 +149,9 @@ export const IMAGE_KEYS = [
     'piagam_background', 'ttd_kepala_sekolah', 'ttd_wali_kelas'
 ];
 
-export const STUDENT_PHOTO_PREFIX = 'student_photo_';
+const STUDENT_PHOTO_PREFIX = 'student_photo_';
 
-export const getStudentPhotoKey = (studentId: string): string =>
+const getStudentPhotoKey = (studentId: string): string =>
     `${STUDENT_PHOTO_PREFIX}${studentId}`;
 
 export const loadAllImagesFromDB = async (): Promise<Record<string, string>> => {

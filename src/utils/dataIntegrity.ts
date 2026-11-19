@@ -27,7 +27,7 @@ export function flushRegisteredInputs(): void {
   }
 }
 
-export function deduplicateStudents(students: any[]): { students: any[]; removed: number } {
+function deduplicateStudents(students: any[]): { students: any[]; removed: number } {
   if (!Array.isArray(students)) return { students: [], removed: 0 };
   const seen = new Set<string>();
   const deduped: any[] = [];

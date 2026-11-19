@@ -17,7 +17,7 @@ export interface ValidationReport {
 /**
  * Safe conversion helpers to avoid corrupting our state with undefined, NaN, or raw nulls.
  */
-export const safeString = (val: any, fallback = ""): string => {
+const safeString = (val: any, fallback = ""): string => {
   if (val === null || val === undefined) return fallback;
   if (typeof val === "object") {
     try {
@@ -30,13 +30,13 @@ export const safeString = (val: any, fallback = ""): string => {
   return str === "null" || str === "undefined" ? fallback : str;
 };
 
-export const safeNumber = (val: any, fallback: number | null = null): number | null => {
+const safeNumber = (val: any, fallback: number | null = null): number | null => {
   if (val === null || val === undefined || val === "") return null;
   const num = Number(val);
   return isNaN(num) ? fallback : num;
 };
 
-export const safeInt = (val: any, fallback: number | null = null): number | null => {
+const safeInt = (val: any, fallback: number | null = null): number | null => {
   const num = safeNumber(val, fallback);
   return num === null ? null : Math.floor(num);
 };

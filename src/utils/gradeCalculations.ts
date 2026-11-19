@@ -1,4 +1,4 @@
-export const excelRound = (num) => {
+const excelRound = (num: number | null | undefined) => {
     if (num === null || typeof num === 'undefined') return null;
     return Math.round(num + Number.EPSILON);
 };

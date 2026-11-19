@@ -442,14 +442,18 @@ export const resolveKopLayout = (settings: any, _currentSemester: string = 'Ganj
  * @param {number} tolerance A value from 0-255 to determine how close a color must be to the background color to be removed.
  * @returns {Promise<string>} A promise that resolves with the base64 string of the new transparent PNG image.
  */
-export function removeImageBackground(base64String, tolerance = 20) {
-    return new Promise((resolve, reject) => {
+export function removeImageBackground(base64String: string, tolerance = 20): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "Anonymous";
 
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error("Canvas context tidak tersedia."));
+                return;
+            }
 
             canvas.width = img.width;
             canvas.height = img.height;

@@ -55,8 +55,8 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
 
         const rStoreSheet = workbook.Sheets["_DataStore"];
         if (rStoreSheet) {
-             const storeData = XLSX.utils.sheet_to_json(rStoreSheet, { header: 1 });
-             let parsedMap = {};
+             const storeData = XLSX.utils.sheet_to_json(rStoreSheet, { header: 1 }) as any[][];
+             const parsedMap: Record<string, any> = {};
              let hasValidSignature = false;
              
              for (const r of storeData.slice(1)) {
@@ -121,11 +121,11 @@ export const parseExcelBlob = async (blob, predefinedCurriculum) => {
         }
 
         const wsAset = findSheet(["Aset Gambar", "Images", "Assets"]);
-        const assetMap = {};
+        const assetMap: Record<string, string> = {};
         if (wsAset) {
-            const assetData = XLSX.utils.sheet_to_json(wsAset, { header: 1 });
-            const chunksByKey = {};
-            assetData.forEach(row => { const keyPart = row[0], data = row[1]; if (keyPart && data) { const match = keyPart.match(/^(.*)_part_(\d+)$/); if (match) { const realKey = match[1], idx = parseInt(match[2], 10); if (!chunksByKey[realKey]) chunksByKey[realKey] = []; chunksByKey[realKey][idx] = data; } } });
+            const assetData = XLSX.utils.sheet_to_json(wsAset, { header: 1 }) as any[][];
+            const chunksByKey: Record<string, string[]> = {};
+            assetData.forEach(row => { const keyPart = row[0], data = row[1]; if (keyPart && data) { const match = String(keyPart).match(/^(.*)_part_(\d+)$/); if (match) { const realKey = match[1], idx = parseInt(match[2], 10); if (!chunksByKey[realKey]) chunksByKey[realKey] = []; chunksByKey[realKey][idx] = String(data); } } });
             Object.entries(chunksByKey).forEach(([key, chunks]) => { assetMap[key] = chunks.join(''); });
         }
         const wsMapel = findSheet(["Mata Pelajaran", "Mata_Pelajaran"]);
